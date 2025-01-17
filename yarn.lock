@@ -119,7 +119,7 @@
     ora "5.4.1"
     rxjs "7.8.1"
 
-"@angular/animations@^18.2.0", "@angular/animations@18.2.13":
+"@angular/animations@^18.2.13", "@angular/animations@18.2.13":
   version "18.2.13"
   resolved "https://registry.npmjs.org/@angular/animations/-/animations-18.2.13.tgz"
   integrity sha512-rG5J5Ek5Hg+Tz2NjkNOaG6PupiNK/lPfophXpsR1t/nWujqnMWX2krahD/i6kgD+jNWNKCJCYSOVvCx/BHOtKA==
@@ -180,7 +180,7 @@
     symbol-observable "4.0.0"
     yargs "17.7.2"
 
-"@angular/common@^18.0.0", "@angular/common@^18.2.13", "@angular/common@18.2.13":
+"@angular/common@^18.0.0", "@angular/common@^18.2.13", "@angular/common@>=14.0.0", "@angular/common@>=16.0.0-0", "@angular/common@18.2.13":
   version "18.2.13"
   resolved "https://registry.npmjs.org/@angular/common/-/common-18.2.13.tgz"
   integrity sha512-4ZqrNp1PoZo7VNvW+sbSc2CB2axP1sCH2wXl8B0wdjsj8JY1hF1OhuugwhpAHtGxqewed2kCXayE+ZJqSTV4jw==
@@ -208,7 +208,7 @@
   dependencies:
     tslib "^2.3.0"
 
-"@angular/core@^18.0.0", "@angular/core@^18.2.0", "@angular/core@18.2.13":
+"@angular/core@^18.0.0", "@angular/core@^18.2.0", "@angular/core@>=16.0.0-0", "@angular/core@18.2.13":
   version "18.2.13"
   resolved "https://registry.npmjs.org/@angular/core/-/core-18.2.13.tgz"
   integrity sha512-8mbWHMgO95OuFV1Ejy4oKmbe9NOJ3WazQf/f7wks8Bck7pcihd0IKhlPBNjFllbF5o+04EYSwFhEtvEgjMDClA==
@@ -229,7 +229,7 @@
   dependencies:
     tslib "^2.3.0"
 
-"@angular/platform-browser@^18.2.0", "@angular/platform-browser@18.2.13":
+"@angular/platform-browser@^18.2.0", "@angular/platform-browser@>=16.0.0-0", "@angular/platform-browser@18.2.13":
   version "18.2.13"
   resolved "https://registry.npmjs.org/@angular/platform-browser/-/platform-browser-18.2.13.tgz"
   integrity sha512-tu7ZzY6qD3ATdWFzcTcsAKe7M6cJeWbT/4/bF9unyGO3XBPcNYDKoiz10+7ap2PUd0fmPwvuvTvSNJiFEBnB8Q==
@@ -258,6 +258,13 @@
   dependencies:
     critters "0.0.24"
     tslib "^2.3.0"
+
+"@auth0/angular-jwt@^5.2.0":
+  version "5.2.0"
+  resolved "https://registry.npmjs.org/@auth0/angular-jwt/-/angular-jwt-5.2.0.tgz"
+  integrity sha512-9FS2L0QwGNlxA/zgeehCcsR9CZscouyXkoIj1fODM36A8BLfdzg9k9DWAXUQ2Drjk0AypGAFzeNZR4vsLMhdeQ==
+  dependencies:
+    tslib "^2.0.0"
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.24.7", "@babel/code-frame@^7.25.9", "@babel/code-frame@^7.26.0", "@babel/code-frame@^7.26.2":
   version "7.26.2"
@@ -4727,6 +4734,13 @@ neo-async@^2.6.2:
   version "2.6.2"
   resolved "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
+
+ngx-toastr@^19.0.0:
+  version "19.0.0"
+  resolved "https://registry.npmjs.org/ngx-toastr/-/ngx-toastr-19.0.0.tgz"
+  integrity sha512-6pTnktwwWD+kx342wuMOWB4+bkyX9221pAgGz3SHOJH0/MI9erLucS8PeeJDFwbUYyh75nQ6AzVtolgHxi52dQ==
+  dependencies:
+    tslib "^2.3.0"
 
 node-addon-api@^6.1.0:
   version "6.1.0"

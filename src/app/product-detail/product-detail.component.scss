@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f8f8f8;
+    background-color: #f4f4f4;
 }
 
 .container {
@@ -26,6 +26,7 @@ body {
     height: auto;
     max-width: 350px;
     border-radius: 8px;
+    border: 1px solid #ddd;
 }
 
 .product-info {
@@ -34,8 +35,10 @@ body {
 }
 
 .product-info h1 {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
 }
 
 .product-info .brand {
@@ -59,6 +62,7 @@ body {
     border-radius: 5px;
     font-size: 16px;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .add-to-cart-btn:hover {
@@ -85,21 +89,55 @@ body {
 
 .related-products {
     width: 300px;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .related-products h3 {
     font-size: 18px;
+    font-weight: bold;
     margin-bottom: 10px;
+    color: #333;
+}
+
+.related-products-scroll {
+    max-height: 300px; /* Giới hạn chiều cao */
+    overflow-y: auto; /* Thêm thanh cuộn */
+    padding-right: 10px; /* Khoảng cách với thanh cuộn */
+    scrollbar-width: thin; /* Thanh cuộn mỏng (trên Firefox) */
+    scrollbar-color: #ccc #f1f1f1; /* Màu thanh cuộn (trên Firefox) */
+}
+
+/* Tùy chỉnh thanh cuộn cho Chrome, Edge */
+.related-products-scroll::-webkit-scrollbar {
+    width: 6px; /* Chiều rộng thanh cuộn */
+}
+
+.related-products-scroll::-webkit-scrollbar-thumb {
+    background: #ccc; /* Màu của thanh cuộn */
+    border-radius: 10px; /* Bo góc */
+}
+
+.related-products-scroll::-webkit-scrollbar-thumb:hover {
+    background: #aaa; /* Màu khi hover */
 }
 
 .related-product-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 15px;
-    background-color: #f1f1f1;
+    margin-bottom: 10px;
     padding: 10px;
     border-radius: 8px;
+    background-color: #f9f9f9;
+    transition: box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.related-product-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .related-product-item img {
@@ -107,17 +145,21 @@ body {
     height: 60px;
     object-fit: cover;
     border-radius: 8px;
+    border: 1px solid #ddd;
 }
 
 .related-product-item p {
     font-size: 14px;
     font-weight: bold;
+    color: #333;
+    margin: 0;
 }
 
 .related-product-item span {
     font-size: 14px;
     color: #e74c3c;
 }
+
 
 .product-description {
     margin-top: 20px;
@@ -129,11 +171,13 @@ body {
 
 .product-description h2 {
     font-size: 20px;
-    margin-bottom: 10px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
 }
 
 .product-description p {
     font-size: 16px;
-    color: #333;
+    color: #555;
     line-height: 1.6;
 }

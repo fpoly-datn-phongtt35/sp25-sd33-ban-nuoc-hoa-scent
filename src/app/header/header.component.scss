@@ -29,7 +29,16 @@
     font-size: 18px;
     font-weight: bold;
 }
+.banner {
+  width: 100%;
+  margin-bottom: 20px;
+}
 
+.banner-image {
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+}
 .navbar a:hover {
     color: #007bff;
 }

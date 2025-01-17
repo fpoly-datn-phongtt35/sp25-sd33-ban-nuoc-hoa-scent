@@ -1,56 +1,53 @@
 <app-header></app-header>
-<body>
-    <div class="container">
-        <div class="product-detail">
-            <!-- Cột trái: Hình ảnh sản phẩm -->
-            <div class="product-image">
-                <img src="scandal-perfume.jpg" alt="Jean Paul Gaultier Scandal Pour Homme">
-            </div>
-
-            <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
-            <div class="product-info">
-                <h1>Jean Paul Gaultier Scandal Pour Homme EDT 7ml MINI</h1>
-                <p class="brand">Hãng: Jean Paul Gaultier | Tình trạng: Còn hàng</p>
-                <p class="price">280.000đ</p>
-                <button class="add-to-cart-btn">Thêm vào giỏ hàng</button>
-
-                <p class="shipping-note">Miễn phí vận chuyển cho đơn hàng từ 750.000đ.</p>
-                <ul class="benefits-list">
-                    <li>Đổi trả miễn phí trong 7 ngày.</li>
-                    <li>Hàng chính hãng 100%.</li>
-                    <li>Hỗ trợ thanh toán linh hoạt.</li>
-                </ul>
-            </div>
-
-            <!-- Cột phải: Sản phẩm gợi ý -->
-            <div class="related-products">
-                <h3>Có thể bạn quan tâm</h3>
-                <div class="related-product-item">
-                    <img src="related1.jpg" alt="Sản phẩm liên quan">
-                    <p>Davidoff Cool Water Parfum</p>
-                    <span>250.000đ - 1.800.000đ</span>
-                </div>
-                <div class="related-product-item">
-                    <img src="related2.jpg" alt="Sản phẩm liên quan">
-                    <p>Yves Saint Laurent Y EDT</p>
-                    <span>320.000đ - 2.400.000đ</span>
-                </div>
-                <div class="related-product-item">
-                    <img src="related3.jpg" alt="Sản phẩm liên quan">
-                    <p>Prada Luna Rossa Black</p>
-                    <span>350.000đ - 3.000.000đ</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Phần mô tả sản phẩm -->
-        <div class="product-description">
-            <h2>Mô tả chi tiết</h2>
-            <p>
-                Scandal Pour Homme là một hương thơm độc đáo đầy sức hút của thương hiệu nổi tiếng Jean Paul Gaultier. Với hương đầu tươi mát và nồng nàn,
-                sản phẩm phù hợp cho các dịp lễ hoặc các buổi tiệc. Công thức kết hợp tinh tế từ cam quýt và hổ phách mang lại cảm giác mạnh mẽ nhưng không kém phần tinh tế.
-            </p>
-        </div>
+<div class="container" *ngIf="product">
+  <div class="product-detail">
+    <!-- Cột trái: Hình ảnh sản phẩm -->
+    <div class="product-image">
+      <img [src]="product.hinhAnh" [alt]="product.tenSanPham" />
     </div>
-</body>
+
+    <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
+    <div class="product-info">
+      <h1>{{ product.tenSanPham }}</h1>
+      <p class="brand">
+        <strong>Hãng:</strong> {{ product.thuongHieu }}
+      </p>
+      <p class="brand">
+        <strong>Thể tích:</strong> {{ product.theTich }}ml
+      </p>
+      <p class="brand">
+        <strong>Mùi hương:</strong> {{ product.muiHuong }}
+      </p>
+      <p class="price">{{ product.gia | number }} VND</p>
+      <button class="add-to-cart-btn">Thêm vào giỏ hàng</button>
+
+      <p class="shipping-note">Miễn phí vận chuyển cho đơn hàng từ 750.000đ.</p>
+      <ul class="benefits-list">
+        <li>Đổi trả miễn phí trong 7 ngày.</li>
+        <li>Hàng chính hãng 100%.</li>
+        <li>Hỗ trợ thanh toán linh hoạt.</li>
+      </ul>
+      
+    </div>
+    <div class="related-products">
+        <h3>Có thể bạn quan tâm</h3>
+        <div class="related-products-scroll">
+          <div class="related-product-item" *ngFor="let product of recommendedProducts">
+            <img [src]="product.hinhAnhSanPham" alt="{{ product.tenSanPham }}" />
+            <div>
+              <p>{{ product.tenSanPham }}</p>
+              <span>{{ product.giaSanPham | number }}đ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+  </div>
+
+  <!-- Phần mô tả sản phẩm -->
+  <div class="product-description">
+    <h2>Mô tả chi tiết</h2>
+    <p>{{ product.moTa }}</p>
+  </div>
+</div>
 <app-footer></app-footer>

@@ -1,61 +1,52 @@
 <app-header></app-header>
 <div class="banner">
-    <img src="banner1.jpg" alt="Banner Sản Phẩm">
+  <img src="banner1.jpg" alt="Banner Sản Phẩm" class="banner-image" />
 </div>
-<!-- Sản phẩm nổi bật -->
-<section class="product-section">
-    <h2>Sản phẩm nổi bật</h2>
-    <div class="product-grid">
-        <div class="product-card">
-            <img src="path/to/product1.jpg" alt="Sản phẩm 1">
-            <h3>Nước hoa A</h3>
-            <p>1.500.000 VNĐ</p>
-        </div>
-        <div class="product-card">
-            <img src="path/to/product2.jpg" alt="Sản phẩm 2">
-            <h3>Nước hoa B</h3>
-            <p>2.000.000 VNĐ</p>
-        </div>
-        <div class="product-card">
-            <img src="path/to/product3.jpg" alt="Sản phẩm 3">
-            <h3>Nước hoa C</h3>
-            <p>2.500.000 VNĐ</p>
-        </div>
-        <div class="product-card">
-            <img src="path/to/product4.jpg" alt="Sản phẩm 4">
-            <h3>Nước hoa D</h3>
-            <p>3.000.000 VNĐ</p>
-        </div>
-    </div>
-</section>
+<div class="container">
+  <!-- Banner -->
+  
 
-<!-- Sản phẩm mới -->
-<section class="product-section">
-    <h2>Sản phẩm mới</h2>
-    <div class="product-grid">
-        <div class="product-card">
-            <img src="path/to/new-product1.jpg" alt="Sản phẩm mới 1">
-            <h3>Nước hoa E</h3>
-            <p>2.200.000 VNĐ</p>
-        </div>
-        <div class="product-card">
-            <img src="path/to/new-product2.jpg" alt="Sản phẩm mới 2">
-            <h3>Nước hoa F</h3>
-            <p>1.800.000 VNĐ</p>
-        </div>
-        <div class="product-card">
-            <img src="path/to/new-product3.jpg" alt="Sản phẩm mới 3">
-            <h3>Nước hoa G</h3>
-            <p>3.100.000 VNĐ</p>
-        </div>
-        <div class="product-card">
-            <img src="path/to/new-product4.jpg" alt="Sản phẩm mới 4">
-            <h3>Nước hoa H</h3>
-            <p>1.500.000 VNĐ</p>
-        </div>
-    </div>
-</section>
+  <!-- Tiêu đề -->
+  <h1 class="section-title">Danh sách sản phẩm</h1>
 
-<!-- Footer -->
+  <!-- Danh sách sản phẩm -->
+  <div class="product-grid">
+    <div 
+      *ngFor="let product of sanPhams" 
+      class="product-card" 
+      (click)="viewProductDetail(product.idSanPham)"
+    >
+      <div class="product-image-container">
+        <img [src]="product.hinhAnhSanPham" alt="{{ product.tenSanPham }}" class="product-image" />
+      </div>
+      <div class="product-info">
+        <h2 class="product-title">{{ product.tenSanPham }}</h2>
+        <p class="product-price">Giá: {{ product.giaSanPham | number }} VND</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phân trang -->
+  <nav class="pagination-container">
+    <ul class="pagination">
+      <li class="page-item" *ngIf="currentPage > 1">
+        <button class="page-link" (click)="onPageChange(1)">First</button>
+      </li>
+      <li class="page-item" *ngIf="currentPage > 1">
+        <button class="page-link" (click)="onPageChange(currentPage - 1)">Previous</button>
+      </li>
+      <ng-container *ngFor="let page of visiblePages || []">
+        <li class="page-item" [ngClass]="{ active: page === currentPage }">
+          <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+        </li>
+      </ng-container>
+      <li class="page-item" *ngIf="currentPage < totalPages">
+        <button class="page-link" (click)="onPageChange(currentPage + 1)">Next</button>
+      </li>
+      <li class="page-item" *ngIf="currentPage < totalPages">
+        <button class="page-link" (click)="onPageChange(totalPages)">Last</button>
+      </li>
+    </ul>
+  </nav>
+</div>
 <app-footer></app-footer>
-

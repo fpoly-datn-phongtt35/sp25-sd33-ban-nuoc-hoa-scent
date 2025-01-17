@@ -1,1 +1,42 @@
-/* You can add global styles to this file, and also import other style files */
+/* Tùy chỉnh vị trí */
+.toast-bottom-right {
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  /* Kiểu thông báo thành công */
+  .toast-success {
+    background-color: #af874c !important; 
+    color: #fff !important;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    padding: 15px;
+  }
+  
+  /* Kiểu thông báo lỗi */
+  .toast-error {
+    background-color: #deaa61 !important; /* Đỏ */
+    color: #fff !important;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    padding: 15px;
+  }
+  
+  /* Kiểu thông báo cảnh báo */
+  .toast-warning {
+    background-color: #ff9800 !important; /* Cam */
+    color: #fff !important;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    padding: 15px;
+  }
+  
+  /* Thanh tiến trình */
+  .toast-progress {
+    background-color: #fff !important; /* Màu trắng cho thanh tiến trình */
+    height: 4px;
+  }
+  
