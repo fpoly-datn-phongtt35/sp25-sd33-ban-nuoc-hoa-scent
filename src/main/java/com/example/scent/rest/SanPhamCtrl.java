@@ -46,7 +46,7 @@ public class SanPhamCtrl {
     public void delete(@PathVariable Integer id) { sps.delete(id);
     }
     @GetMapping("/detail/{id}")
-    public List<Spct> detail(@PathVariable Integer id){
+    public SanPham detail(@PathVariable Integer id){
         return sps.detail(id);
     }
 }

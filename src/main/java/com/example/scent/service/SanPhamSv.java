@@ -35,12 +35,12 @@ public class SanPhamSv {
     }
 
 
-//    public SanPham detail(Integer id) {
-//        return spi.findById(id).get();
-//    }
-    public List<Spct> detail(Integer id){
-        return spi.getAllSpctByIdSp(id);
+    public SanPham detail(Integer id) {
+        return spi.findById(id).get();
     }
+//    public List<Spct> detail(Integer id){
+//        return spi.getAllSpctByIdSp(id);
+//    }
 
     public List<SanPham> searchByName(String name) {
         return spi.findByTenContainingIgnoreCase(name);
