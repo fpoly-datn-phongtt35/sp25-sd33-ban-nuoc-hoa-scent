@@ -33,8 +33,6 @@ public class Spct {
     private BigDecimal donGia;
     @Column(name = "so_luong_ton_kho")
     private Integer soLuongTonKho;
-    @Column(name = "trang_thai")
-    private String trangThai;
     @Column(name = "dung_tich")
     private Integer dungTich;
     @ManyToOne
@@ -68,13 +66,7 @@ public class Spct {
         this.soLuongTonKho = soLuongTonKho;
     }
 
-    public String getTrangThai() {
-        return trangThai;
-    }
 
-    public void setTrangThai(String trangThai) {
-        this.trangThai = trangThai;
-    }
 
     public SanPham getSanPham() {
         return sanPham;
