@@ -44,6 +44,10 @@ public class DonHang {
     private BigDecimal tongTien;
     @Column(name = "phuong_thuc_van_chuyen")
     private String phuongThucVanChuyen;
+    @Column(name = "trang_thai")
+    private String trangThai;
+    @Column(name = "ngay_tao")
+    private LocalDateTime ngayTao;
     @Column(name = "ngay_van_chuyen")
     private LocalDateTime ngayVanChuyen;
     @Column(name = "phuong_thuc_thanh_toan")
