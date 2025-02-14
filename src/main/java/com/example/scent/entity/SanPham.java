@@ -28,11 +28,11 @@ public class SanPham {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Integer idSanPham;
     @Column(name = "ten")
-    private String ten;
+    private String tenSanPham;
     @Column(name = "mo_ta")
-    private String moTa;
+    private String moTaSanPham;
     @ManyToOne
     @JoinColumn(name = "id_thuong_hieu")
     private ThuongHieu thuongHieu;
@@ -51,28 +51,54 @@ public class SanPham {
     private HuongCuoi huongCuoi;
 
 
-    public Integer getId() {
-        return id;
+    public HuongDau getHuongDau() {
+        return huongDau;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setHuongDau(HuongDau huongDau) {
+        this.huongDau = huongDau;
     }
 
-    public String getTen() {
-        return ten;
+    public HuongGiua getHuongGiua() {
+        return huongGiua;
     }
 
-    public void setTen(String ten) {
-        this.ten = ten;
+    public void setHuongGiua(HuongGiua huongGiua) {
+        this.huongGiua = huongGiua;
     }
 
-    public String getMoTa() {
-        return moTa;
+    public HuongCuoi getHuongCuoi() {
+        return huongCuoi;
     }
 
-    public void setMoTa(String moTa) {
-        this.moTa = moTa;
+    public void setHuongCuoi(HuongCuoi huongCuoi) {
+        this.huongCuoi = huongCuoi;
+    }
+
+
+
+    public Integer getIdSanPham() {
+        return idSanPham;
+    }
+
+    public void setIdSanPham(Integer idSanPham) {
+        this.idSanPham = idSanPham;
+    }
+
+    public String getTenSanPham() {
+        return tenSanPham;
+    }
+
+    public void setTenSanPham(String tenSanPham) {
+        this.tenSanPham = tenSanPham;
+    }
+
+    public String getMoTaSanPham() {
+        return moTaSanPham;
+    }
+
+    public void setMoTaSanPham(String moTaSanPham) {
+        this.moTaSanPham = moTaSanPham;
     }
 
     public ThuongHieu getThuongHieu() {

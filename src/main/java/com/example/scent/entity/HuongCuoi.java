@@ -24,7 +24,7 @@ public class HuongCuoi {
     @Column(name = "id")
     private Integer id;
     @Column(name = "mota")
-    private String mota;
+    private String moTaHuongCuoi;
 
 
     public Integer getId() {
@@ -35,12 +35,12 @@ public class HuongCuoi {
         this.id = id;
     }
 
-    public String getMota() {
-        return mota;
+    public String getMoTaHuongCuoi() {
+        return moTaHuongCuoi;
     }
 
-    public void setMota(String mota) {
-        this.mota = mota;
+    public void setMoTaHuongCuoi(String moTaHuongCuoi) {
+        this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
 

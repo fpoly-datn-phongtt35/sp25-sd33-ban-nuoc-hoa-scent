@@ -1,13 +1,14 @@
 package com.example.scent.service;
 
 
+import com.example.scent.dto.SanPhamDto;
 import com.example.scent.entity.SanPham;
-import com.example.scent.entity.Spct;
 import com.example.scent.repo.SanPhamInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 
 @Service
 public class SanPhamSv {
@@ -35,14 +36,14 @@ public class SanPhamSv {
     }
 
 
-    public SanPham detail(Integer id) {
-        return spi.findById(id).get();
+    public List<SanPhamDto> detail(Integer idSanPham) {
+        return spi.getDetail(idSanPham);
     }
 //    public List<Spct> detail(Integer id){
 //        return spi.getAllSpctByIdSp(id);
 //    }
 
-    public List<SanPham> searchByName(String name) {
-        return spi.findByTenContainingIgnoreCase(name);
-    }
+//    public List<SanPham> searchByName(String name) {
+//        return spi.findByTenContainingIgnoreCase(name);
+//    }
 }
