@@ -25,6 +25,10 @@ public class SanPhamCtrl {
     public SanPhamCtrl(SanPhamSv sps) {
         this.sps = sps;
     }
+    @GetMapping("/search/{tenSanPham}")
+    public List<SanPham> search(@PathVariable String tenSanPham){
+        return sps.searchByName(tenSanPham);
+    }
 
     @GetMapping("/getAll")
     public List<SanPham> getAll() {

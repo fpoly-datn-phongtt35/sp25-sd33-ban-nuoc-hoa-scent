@@ -43,7 +43,7 @@ public class SanPhamSv {
 //        return spi.getAllSpctByIdSp(id);
 //    }
 
-//    public List<SanPham> searchByName(String name) {
-//        return spi.findByTenContainingIgnoreCase(name);
-//    }
+    public List<SanPham> searchByName(String tenSanPham) {
+        return spi.searchByName(tenSanPham);
+    }
 }
