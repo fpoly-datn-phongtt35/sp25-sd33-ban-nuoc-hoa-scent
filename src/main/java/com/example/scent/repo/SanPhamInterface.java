@@ -3,6 +3,7 @@ package com.example.scent.repo;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.entity.SanPham;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @Repository
 
-public interface SanPhamInterface extends JpaRepository<SanPham, Integer> {
+public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham> {
     //List<SanPham> findByTenContainingIgnoreCase(String tenSanPham);
 
     // các bí danh như idSanPham, tenSanPham, idSpct,...

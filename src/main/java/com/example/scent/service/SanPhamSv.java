@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.entity.SanPham;
 import com.example.scent.repo.SanPhamInterface;
+import com.example.scent.spec.SanPhamSpec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,5 +46,11 @@ public class SanPhamSv {
 
     public List<SanPham> searchByName(String tenSanPham) {
         return spi.searchByName(tenSanPham);
+    }
+    public List<SanPham> filter(Integer idThuongHieu, Integer idDanhMuc) {
+        return spi.findAll(
+                SanPhamSpec.hasThuongHieu(idThuongHieu)
+                        .and(SanPhamSpec.hasDanhMuc(idDanhMuc))
+        );
     }
 }
