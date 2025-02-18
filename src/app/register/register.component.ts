@@ -1,44 +1,51 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
+import { UserService } from '../service/user.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule,CommonModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrls: ['./register.component.scss']
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
-    this.registerForm = this.fb.group(
-      {
-        fullname: ['', [Validators.required, Validators.minLength(3)]],
-        email: ['', [Validators.required, Validators.email]],
-        phone: ['', [Validators.required, Validators.pattern('^\\d{10}$')]],
-        password: ['', [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ['', Validators.required]
-      },
-      {
-        validators: this.matchPasswords
-      }
-    );
+  constructor(private fb: FormBuilder, private userService: UserService,private router: Router) { 
+    this.registerForm = this.fb.group({
+      hoTen: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      sdt: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      tenDangNhap: ['', [Validators.required, Validators.minLength(3)]],
+      matKhau: ['', [Validators.required, Validators.minLength(6)]],
+      xacNhanMatKhau: ['', Validators.required]
+    }, { validators: this.checkPasswords });
   }
 
-  matchPasswords(group: FormGroup) {
-    const password = group.get('password')?.value;
-    const confirmPassword = group.get('confirmPassword')?.value;
-    return password === confirmPassword ? null : { passwordMismatch: true };
-  }
+  checkPasswords: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+    const pass = group.get('matKhau')?.value;
+    const confirmPass = group.get('xacNhanMatKhau')?.value;
+    return pass === confirmPass ? null : { notSame: true };
+  };
+
+  ngOnInit(): void {}
 
   onSubmit() {
     if (this.registerForm.valid) {
-      console.log('Form Submitted:', this.registerForm.value);
-      alert('Đăng ký thành công!');
-      this.registerForm.reset();
+      this.userService.register(this.registerForm.value).subscribe({
+        next: (data: any) => {
+          console.log('Registration successful', data);
+          alert('Đăng ký thành công');
+          this.router.navigate(['/login']); // Điều hướng đến trang đăng nhập sau khi đăng ký thành công
+        },
+        error: (error: any) => {
+          console.error('Registration failed', error);
+        }
+      });
     }
   }
 }

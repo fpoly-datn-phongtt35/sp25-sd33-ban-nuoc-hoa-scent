@@ -1,26 +1,27 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, RouterStateSnapshot, CanActivate, Router } from '@angular/router';
-import { TokenService } from '../token.service';
-import { UserService } from '../user.service';
-import { UserResponse } from '../../responses/user/user.reponse';
+import { CanActivate, Router } from '@angular/router';
+import { Console } from 'console';
+import { TokenService } from '../service/token.service';
+ // Đường dẫn đúng đến TokenService
 
 @Injectable({
   providedIn: 'root',
 })
 export class AdminGuard implements CanActivate {
-  constructor(private tokenService: TokenService, private router: Router, private userService: UserService) {}
+  constructor(private tokenService: TokenService, private router: Router) {}
 
-  canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    const isTokenExpired = this.tokenService.isTokenExpired();
-    const isUserIdValid = this.tokenService.getUserId() > 0;
-    const userResponse: UserResponse | null = this.userService.getUserResponseFromLocalStorage();
-    const isAdmin = userResponse?.role.name === 'ADMIN';
-
-    if (!isTokenExpired && isUserIdValid && isAdmin) {
+  canActivate(): boolean {
+    const role = this.tokenService.getRole();
+    console.log('Vai trò người dùng trong AdminGuard:', role);
+    if (role === 'ADMIN') {
+      console.log('Người dùng là admin. Cho phép truy cập.');
       return true;
     } else {
-      this.router.navigate(['/login']);
+      console.log('Người dùng không phải admin. Điều hướng về trang chủ.');
+      this.router.navigate(['/']); // Điều hướng về trang chủ
       return false;
     }
   }
+  
+  
 }

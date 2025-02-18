@@ -1,63 +1,41 @@
-
-<body>
-    <div class="cart-container">
-        <h2>Giỏ hàng của bạn</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th><input type="checkbox"></th>
-                    <th>Sản phẩm</th>
-                    <th>Giá</th>
-                    <th>Số lượng</th>
-                    <th>Xóa</th>
-                    <th>Thành tiền</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><input type="checkbox"></td>
-                    <td class="product-info">
-                        <img src="https://via.placeholder.com/50" alt="Sản phẩm">
-                        Giorgio Armani Emporio Armani Stronger With You Absolutely Parfum
-                    </td>
-                    <td>1.200.000đ</td>
-                    <td><input type="number" class="quantity-input" value="1" min="1"></td>
-                    <td><button class="remove-btn">🗑️</button></td>
-                    <td>1.200.000đ</td>
-                </tr>
-                <tr>
-                    <td><input type="checkbox"></td>
-                    <td class="product-info">
-                        <img src="https://via.placeholder.com/50" alt="Sản phẩm">
-                        Giorgio Armani Acqua di Giò Pour Homme Parfum v1
-                    </td>
-                    <td>1.500.000đ</td>
-                    <td><input type="number" class="quantity-input" value="1" min="1"></td>
-                    <td><button class="remove-btn">🗑️</button></td>
-                    <td>1.500.000đ</td>
-                </tr>
-                <tr>
-                    <td><input type="checkbox"></td>
-                    <td class="product-info">
-                        <img src="https://via.placeholder.com/50" alt="Sản phẩm">
-                        Giorgio Armani Acqua di Giò Pour Homme Parfum v2
-                    </td>
-                    <td>1.500.000đ</td>
-                    <td><input type="number" class="quantity-input" value="1" min="1"></td>
-                    <td><button class="remove-btn">🗑️</button></td>
-                    <td>1.500.000đ</td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="total-container">
-            <div class="select-all">
-              
-                <label for="select-all">Chọn tất cả (3)</label>
-            </div>
-            <div class="total-info">
-                <span><strong>Tổng tiền: 2.700.000đ</strong></span>
-                <button class="btn-order">Đặt hàng</button>
-            </div>
+<!-- shopping-cart.component.html -->
+<div class="cart-container">
+    <h2>Giỏ hàng của bạn</h2>
+    <table>
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all" onclick="selectAll(this)"></th>
+                <th>Sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Xóa</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let item of cartItems">
+                <td><input type="checkbox"></td>
+                <td class="product-info">
+                    <img src="{{ item.product.imageURL }}" alt="Sản phẩm">
+                    {{ item.product.productName }}
+                </td>
+                <td>{{ item.product.price | currency:'VND' }}</td>
+                <td>
+                    <input type="number" class="quantity-input" [(ngModel)]="item.quantity" min="1">
+                </td>
+                <td><button class="remove-btn" (click)="removeItem(item)">🗑️</button></td>
+                <td>{{ item.quantity * item.product.price | currency:'VND' }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="total-container">
+        <div class="select-all">
+            <input type="checkbox" id="select-all-bottom" onclick="selectAll(this)">
+            <label for="select-all-bottom">Chọn tất cả ({{ cartItems.length }})</label>
+        </div>
+        <div class="total-info">
+            <span><strong>Tổng tiền: {{ getTotal() | currency:'VND' }}</strong></span>
+            <button class="btn-order">Đặt hàng</button>
         </div>
     </div>
-</body>
+</div>

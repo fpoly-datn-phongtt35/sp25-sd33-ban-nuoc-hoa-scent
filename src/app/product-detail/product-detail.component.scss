@@ -103,7 +103,7 @@ body {
 }
 
 .related-products-scroll {
-    max-height: 300px; /* Giới hạn chiều cao */
+    max-height: 500px; /* Giới hạn chiều cao */
     overflow-y: auto; /* Thêm thanh cuộn */
     padding-right: 10px; /* Khoảng cách với thanh cuộn */
     scrollbar-width: thin; /* Thanh cuộn mỏng (trên Firefox) */
@@ -180,4 +180,29 @@ body {
     font-size: 16px;
     color: #555;
     line-height: 1.6;
+}
+.popup {
+    position: fixed;
+    width: 200px; /* Kích thước có thể điều chỉnh tùy ý */
+    height: 100px; /* Giảm chiều cao để tránh che khuất */
+    bottom: 10%; /* Đặt ở phía dưới của màn hình */
+    left: 50%; /* Giữa theo chiều ngang */
+    transform: translateX(-50%); /* Điều chỉnh để canh giữa */
+    background-color: #fff; /* Nền trắng */
+    border: 1px solid #000; /* Viền đen để dễ nhận biết */
+    z-index: 100; /* Đảm bảo nằm trên các nội dung khác */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Thêm bóng để dễ phân biệt */
+}
+
+.close-btn {
+    padding: 5px 10px;
+    margin-top: 10px; /* Giảm khoảng cách từ nội dung đến nút đóng */
+    background-color: #f44336; /* Màu đỏ cho nút đóng */
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
 }

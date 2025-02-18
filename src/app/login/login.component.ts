@@ -5,11 +5,14 @@ import { Router } from '@angular/router';
  // Thay đổi đường dẫn tùy thuộc vào cấu trúc dự án
 import { TokenService } from '../service/token.service';
 import { loginService } from '../service/login';
-import { ToastrService } from 'ngx-toastr';
+import { RouterModule } from '@angular/router';
+
+
+
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule,RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
@@ -20,8 +23,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: loginService,
     private tokenService: TokenService,
-    private router: Router,
-    private toastr: ToastrService 
+    private router: Router
+    
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -29,32 +32,31 @@ export class LoginComponent {
     });
   }
 
-  onSubmit() {
+  onSubmit(): void {
     if (this.loginForm.valid) {
       const { username, password } = this.loginForm.value;
-
+  
       this.authService.login(username, password).subscribe({
-        next: (response: { token: string }) => {
-          if (response?.token) {
-            this.tokenService.setToken(response.token);
-            this.toastr.success('Đăng nhập thành công!', 'Thành công');
-
-            const role = this.tokenService.getRole();
-            if (role === 'USER') {
-              this.router.navigate(['']);
-            } else if (role === 'ADMIN') {
-              this.router.navigate(['/admin']);
-            }
+        next: (token: string) => {  // Directly use token as a string
+          console.log('Token nhận được:', token);
+          this.tokenService.setToken(token);  // Store the token
+          const role = this.tokenService.getRole();  // Assume getRole reads the role from the stored token
+          console.log('Vai trò sau khi đăng nhập:', role);
+  
+          if (role === 'ADMIN') {
+            this.router.navigate(['/admin']);
+          } else {
+            this.router.navigate(['/']);
           }
         },
-        error: () => {
-          this.toastr.error('Tên đăng nhập hoặc mật khẩu không đúng!', 'Lỗi');
-        },
+        error: (error: any) => {
+          console.error('Đăng nhập thất bại', error);
+        }
       });
-    } else {
-      this.toastr.warning('Vui lòng điền đầy đủ thông tin!', 'Cảnh báo');
     }
   }
+  
+  
   
   
 }

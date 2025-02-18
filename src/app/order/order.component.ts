@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
 
+import { ActivatedRoute } from '@angular/router'; 
 @Component({
   selector: 'app-order',
   standalone: true,
@@ -10,5 +11,5 @@ import { HeaderComponent } from '../header/header.component';
   styleUrl: './order.component.scss'
 })
 export class OrderComponent {
-
+ 
 }

@@ -3,23 +3,33 @@
   <div class="product-detail">
     <!-- Cột trái: Hình ảnh sản phẩm -->
     <div class="product-image">
-      <img [src]="product.hinhAnh" [alt]="product.tenSanPham" />
+      <img [src]="product.imageURL" [alt]="product.productName" />
     </div>
 
     <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
     <div class="product-info">
-      <h1>{{ product.tenSanPham }}</h1>
+      <h1>{{ product.productName }}</h1>
       <p class="brand">
-        <strong>Hãng:</strong> {{ product.thuongHieu }}
+        <strong>Hãng:</strong> {{ product.brandName }}
       </p>
-      <p class="brand">
-        <strong>Thể tích:</strong> {{ product.theTich }}ml
+      <div class="fragrance-notes">
+        <p>
+          <strong>Hương Đầu:</strong> {{ product.topNoteDescription }}
+        </p>
+        <p>
+          <strong>Hương giữa:</strong> {{ product.middleNoteDescription }}
+        </p>
+        <p>
+          <strong>Hương cuối:</strong> {{ product.baseNoteDescription }}
+        </p>
+      </div>
+      <p class="volume">
+        <strong>Dung tích:</strong> {{ product.volume }}ml
       </p>
-      <p class="brand">
-        <strong>Mùi hương:</strong> {{ product.muiHuong }}
+      <p class="price">
+        Giá: <strong>{{ product.price | number }}</strong> VND
       </p>
-      <p class="price">{{ product.gia | number }} VND</p>
-      <button class="add-to-cart-btn">Thêm vào giỏ hàng</button>
+      <button [disabled]="!product"  class="add-to-cart-btn" (click)="addToCart()">Thêm vào giỏ hàng</button>
 
       <p class="shipping-note">Miễn phí vận chuyển cho đơn hàng từ 750.000đ.</p>
       <ul class="benefits-list">
@@ -27,27 +37,27 @@
         <li>Hàng chính hãng 100%.</li>
         <li>Hỗ trợ thanh toán linh hoạt.</li>
       </ul>
-      
     </div>
+
+    <!-- Cột phải: Sản phẩm liên quan -->
     <div class="related-products">
-        <h3>Có thể bạn quan tâm</h3>
-        <div class="related-products-scroll">
-          <div class="related-product-item" *ngFor="let product of recommendedProducts">
-            <img [src]="product.hinhAnhSanPham" alt="{{ product.tenSanPham }}" />
-            <div>
-              <p>{{ product.tenSanPham }}</p>
-              <span>{{ product.giaSanPham | number }}đ</span>
-            </div>
+      <h3>Có thể bạn quan tâm</h3>
+      <div class="related-products-scroll">
+        <div class="related-product-item" *ngFor="let relatedProduct of recommendedProducts" (click)="viewRelatedProduct(relatedProduct.productId)">
+          <img [src]="relatedProduct.imageURL" [alt]="relatedProduct.productName" />
+          <div>
+            <p>{{ relatedProduct.productName }}</p>
+            <span>{{ relatedProduct.price | number }} VND</span>
           </div>
         </div>
       </div>
-      
+    </div>
   </div>
 
   <!-- Phần mô tả sản phẩm -->
   <div class="product-description">
     <h2>Mô tả chi tiết</h2>
-    <p>{{ product.moTa }}</p>
+    <p>{{ product.description }}</p>
   </div>
 </div>
 <app-footer></app-footer>

@@ -6,40 +6,80 @@
       <p>User Name</p>
     </div>
     <nav class="menu">
+      <!-- Thống kê -->
       <li class="nav-item mb-3">
-      <a href="#" class="nav-link" [ngClass]="{'active': selectedNav === 'dashboard'}" (click)="showComponent('dashboard')">
-        <i class="bi bi-house"></i> Thống kê
-      </a>
+        <a 
+          href="#" 
+          class="nav-link" 
+          [ngClass]="{'active': selectedComponent === 'dashboard'}" 
+          (click)="showComponent('dashboard')">
+          <i class="bi bi-house"></i> Thống kê
+        </a>
       </li>
+
+      <!-- Voucher -->
       <li class="nav-item mb-3">
-      <a href="#" class="nav-link" [ngClass]="{'active': selectedNav === 'voucher'}" (click)="showComponent('voucher')">
-        <i class="bi bi-gift"></i> Voucher
-      </a>
+        <a 
+          href="#" 
+          class="nav-link" 
+          [ngClass]="{'active': selectedComponent === 'voucher'}" 
+          (click)="showComponent('voucher')">
+          <i class="bi bi-gift"></i> Voucher
+        </a>
       </li>
+
+      <!-- Hóa đơn -->
       <li class="nav-item mb-3">
-      <a href="#" class="nav-link" [ngClass]="{'active': selectedNav === 'invoice'}" (click)="showComponent('invoice')">
-        <i class="bi bi-receipt"></i> Hóa đơn
-      </a>
-    </li>
+        <a 
+          href="#" 
+          class="nav-link" 
+          [ngClass]="{'active': selectedComponent === 'invoice'}" 
+          (click)="showComponent('invoice')">
+          <i class="bi bi-receipt"></i> Hóa đơn
+        </a>
+      </li>
+
+      <!-- Sản phẩm -->
       <li class="nav-item mb-3">
-        <a class="nav-link" [ngClass]="{'active': selectedNav === 'products'}" (click)="showComponent('products')">
+        <a 
+          href="#" 
+          class="nav-link" 
+          [ngClass]="{'active': selectedComponent === 'products'}" 
+          (click)="showComponent('products')">
           <i class="bi bi-bag icon"></i> Sản phẩm
         </a>
       </li>
+
+      <!-- Nhân viên -->
       <li class="nav-item mb-3">
-      <a href="#" class="nav-link" [ngClass]="{'active': selectedNav === 'staff'}" (click)="showComponent('staff')">
-        <i class="bi bi-person"></i> Nhân viên
-      </a>
+        <a 
+          href="#" 
+          class="nav-link" 
+          [ngClass]="{'active': selectedComponent === 'staff'}" 
+          (click)="showComponent('staff')">
+          <i class="bi bi-person"></i> Nhân viên
+        </a>
       </li>
+
+      <!-- Khách hàng -->
       <li class="nav-item mb-3">
-      <a href="#" class="nav-link" [ngClass]="{'active': selectedNav === 'customer'}" (click)="showComponent('customer')">
-        <i class="bi bi-people"></i> Khách hàng
-      </a>
+        <a 
+          href="#" 
+          class="nav-link" 
+          [ngClass]="{'active': selectedComponent === 'customer'}" 
+          (click)="showComponent('customer')">
+          <i class="bi bi-people"></i> Khách hàng
+        </a>
       </li>
+
+      <!-- Đăng xuất -->
       <li class="nav-item mb-3">
-      <a href="#" class="nav-link logout" (click)="logout()">
-        <i class="bi bi-box-arrow-right"></i> Đăng xuất
-      </a>
+        <a 
+          href="#" 
+          class="nav-link logout" 
+          (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i> Đăng xuất
+        </a>
       </li>
     </nav>
   </div>
@@ -47,14 +87,12 @@
   <!-- Main Content -->
   <div class="col-md-10 col-lg-10 overflow-auto p-4">
     <ng-container [ngSwitch]="selectedComponent">
+      <app-statistics *ngSwitchCase="'dashboard'"></app-statistics>
+      <app-vourcher *ngSwitchCase="'voucher'"></app-vourcher>
+      <app-invoice *ngSwitchCase="'invoice'"></app-invoice>
       <app-product-admin *ngSwitchCase="'products'"></app-product-admin>
       <app-user-admin *ngSwitchCase="'staff'"></app-user-admin>
       <app-customer *ngSwitchCase="'customer'"></app-customer>
-      <app-vourcher  *ngSwitchCase="'voucher'"></app-vourcher>
-      <app-statistics *ngSwitchCase="'dashboard'"></app-statistics>
-     
-      <app-invoice *ngSwitchCase="'invoice'"></app-invoice>
-     
     </ng-container>
   </div>
 </div>

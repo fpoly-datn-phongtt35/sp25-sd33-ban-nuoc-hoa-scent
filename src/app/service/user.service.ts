@@ -1,11 +1,18 @@
 import { Injectable } from '@angular/core';
-import { UserResponse } from '../../responses/user/user.reponse';
+
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { UserResponse } from './response/user.response';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserService {
   private readonly USER_KEY = 'user';
+
+  private baseUrl = 'http://localhost:8080/rest/tai-khoan';
+
+  constructor(private http: HttpClient) { }
 
   getUserResponseFromLocalStorage(): UserResponse | null {
     const userJson = localStorage.getItem(this.USER_KEY);
@@ -18,5 +25,9 @@ export class UserService {
 
   clearUser(): void {
     localStorage.removeItem(this.USER_KEY);
+  }
+
+  register(user: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/register`, user);
   }
 }

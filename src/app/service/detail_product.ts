@@ -7,13 +7,13 @@ import { Observable } from 'rxjs';
 })
 export class DetailService {
     private apiBaseUrl = 'http://localhost:8080/rest'; // Thay bằng URL API của bạn
-    private apiUrl = 'http://localhost:8080/rest/san-pham/sorted-by-price';
+    private apiUrl = 'http://localhost:8080/rest/san-pham/sorted';
 
     constructor(private http: HttpClient) {}
   
     // Lấy thông tin chi tiết sản phẩm theo ID
     getProductDetailById(productId: number): Observable<any> {
-      return this.http.get(`${this.apiBaseUrl}/san-pham/${productId}`);
+      return this.http.get(`${this.apiBaseUrl}/san-pham/chitiet/${productId}`);
     }
     getRecommendedProducts(): Observable<any[]> {
         return this.http.get<any[]>(this.apiUrl);

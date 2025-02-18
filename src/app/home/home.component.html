@@ -14,14 +14,14 @@
     <div 
       *ngFor="let product of sanPhams" 
       class="product-card" 
-      (click)="viewProductDetail(product.idSanPham)"
+      (click)="viewProductDetail(product.productId)"
     >
       <div class="product-image-container">
-        <img [src]="product.hinhAnhSanPham" alt="{{ product.tenSanPham }}" class="product-image" />
+        <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
       </div>
       <div class="product-info">
-        <h2 class="product-title">{{ product.tenSanPham }}</h2>
-        <p class="product-price">Giá: {{ product.giaSanPham | number }} VND</p>
+        <h2 class="product-title">{{ product.productName }}</h2>
+        <p class="product-price">Giá: {{ product.price | number }} VND</p>
       </div>
     </div>
   </div>

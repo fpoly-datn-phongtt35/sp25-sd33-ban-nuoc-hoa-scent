@@ -1,11 +1,11 @@
 <header class="header">
     <div class="logo">
-        <h1><img src="logo.webp" alt=""></h1>
+        <h1><img src="logo.webp" alt="Logo"></h1>
     </div>
     <nav class="navbar">
         <a routerLink="/">Trang chủ</a>
         <a routerLink="/product">Sản phẩm</a>
-        <a href="#">Liên hệ</a>
+        <a routerLink="/contact">Liên hệ</a>
     </nav>
    
     <div class="header-icons">
@@ -15,16 +15,18 @@
         <a class="icon-link" (click)="toggleShoppingCart()">
             <i class="bi bi-cart"></i>
         </a>
-        <ng-container >
-            <!-- *ngIf="isLoggedIn; else notLoggedIn" -->
-            <!-- <span class="username">Xin chào, {{ username }}</span> -->
-            <button class="logout-btn" >Đăng xuất</button>
-          </ng-container>
-          <ng-template #notLoggedIn>
-            <button class="login-btn" >Đăng nhập</button>
-          </ng-template>
-    </div>
 
+        <ng-container>
+            <ng-container *ngIf="isLoggedIn; else notLoggedIn">
+                <span class="username">Xin chào, {{ username }}</span>
+                <button class="logout-btn" (click)="logout()">Đăng xuất</button>
+            </ng-container>
+        </ng-container>
+
+        <ng-template #notLoggedIn>
+            <button class="login-btn" (click)="goToLogin()">Đăng nhập</button>
+        </ng-template>
+    </div>
 </header>
 
 <!-- Popup giỏ hàng -->
