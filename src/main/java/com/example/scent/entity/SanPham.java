@@ -58,6 +58,13 @@ public class SanPham {
     @JoinColumn(name = "id_huong_cuoi")
     private HuongCuoi huongCuoi;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "sanPham")
+    private List<Spct> spcts;
+    @JsonIgnore
+    @OneToMany(mappedBy = "sanPham")
+    private List<HinhAnh> hinhAnhs;
+
 
     public HuongDau getHuongDau() {
         return huongDau;

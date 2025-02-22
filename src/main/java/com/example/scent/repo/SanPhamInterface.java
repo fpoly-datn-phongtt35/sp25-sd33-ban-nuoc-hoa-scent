@@ -1,7 +1,10 @@
 package com.example.scent.repo;
 
 import com.example.scent.dto.SanPhamDto;
+import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.SanPham;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -45,9 +48,11 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    dm.ten_danh_muc as tenDanhMuc,\n" +
             "    hd.mota as moTaHuongDau,\n" +
             "    hg.mota as moTaHuongGiua,\n" +
-            "    hc.mota as moTaHuongCuoi\n" +
+            "    hc.mota as moTaHuongCuoi,\n" +
+            "    ha.link as imageURL\n" +
             "from \n" +
             "    san_pham sp\n" +
+            "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +
             "left join \n" +
             "    spct spct on sp.id = spct.id_san_pham\n" +
             "left join \n" +
@@ -61,9 +66,27 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "left join \n" +
             "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
             "where\n" +
-            "    sp.id = :idSanPham\n", nativeQuery = true)
+            "    sp.id = :idSanPham\n ", nativeQuery = true)
+
+
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
 
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link)) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "JOIN sp.hinhAnhs ha " +
+
+            "GROUP BY sp.idSanPham, sp.tenSanPham")
+    Page<SanPhamInfoDTO> findAllProductsWithImages(Pageable pageable);
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link)) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "JOIN sp.hinhAnhs ha " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham " +
+            "ORDER BY MIN(spct.donGia) DESC")
+    List<SanPhamInfoDTO> findAllProductsWithImagesSorted();
     @Query(value = "select * from san_pham where lower(ten) like lower(CONCAT('%', :tenSanPham, '%'))", nativeQuery = true)
     List<SanPham> searchByName(@Param("tenSanPham") String tenSanPham);
 

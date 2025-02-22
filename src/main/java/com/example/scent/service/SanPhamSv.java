@@ -2,10 +2,13 @@ package com.example.scent.service;
 
 
 import com.example.scent.dto.SanPhamDto;
+import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.SanPham;
 import com.example.scent.repo.SanPhamInterface;
 import com.example.scent.spec.SanPhamSpec;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -52,5 +55,12 @@ public class SanPhamSv {
                 SanPhamSpec.hasThuongHieu(idThuongHieu)
                         .and(SanPhamSpec.hasDanhMuc(idDanhMuc))
         );
+    }
+    public Page<SanPhamInfoDTO> getAllProductDetails(Pageable pageable) {
+        return spi.findAllProductsWithImages(pageable);
+    }
+
+    public List<SanPhamInfoDTO> getSortedProducts() {
+        return spi.findAllProductsWithImagesSorted();
     }
 }

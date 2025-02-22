@@ -21,4 +21,5 @@ public interface SanPhamDto {
     String getMoTaHuongDau();
     String getMoTaHuongGiua();
     String getMoTaHuongCuoi();
+    String getimageURL();
 }

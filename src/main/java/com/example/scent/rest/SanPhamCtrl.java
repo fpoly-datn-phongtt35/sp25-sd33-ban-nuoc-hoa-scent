@@ -1,10 +1,14 @@
 package com.example.scent.rest;
 
 import com.example.scent.dto.SanPhamDto;
+import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.service.SanPhamSv;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -91,6 +95,16 @@ public class SanPhamCtrl {
             @RequestParam(required = false) Integer idDanhMuc) {
         List<SanPham> sp = sps.filter(idThuongHieu, idDanhMuc);
         return ResponseEntity.ok(sp);
+    }
+
+    @GetMapping("/All")
+    public ResponseEntity<Page<SanPhamInfoDTO>> getAllProductDetails(@PageableDefault(size = 13) Pageable pageable) {
+        Page<SanPhamInfoDTO> productDetails = sps.getAllProductDetails(pageable);
+        return ResponseEntity.ok(productDetails);
+    }
+    @GetMapping("/sorted")
+    public List<SanPhamInfoDTO> getSortedProducts() {
+        return sps.getSortedProducts();
     }
 }
 
