@@ -46,8 +46,7 @@ public class Spct {
     @Column(name = "so_luong_ton_kho")
     private Integer soLuongTonKho;
 
-    @Column(name = "trang_thai")
-    private String trangThai;
+
 
     @NotNull(message = "Dung tích không được để trống")
     @Positive(message = "Dung tích phải là số dương")
@@ -81,13 +80,7 @@ public class Spct {
         this.soLuongTonKho = soLuongTonKho;
     }
 
-    public String getTrangThai() {
-        return trangThai;
-    }
 
-    public void setTrangThai(String trangThai) {
-        this.trangThai = trangThai;
-    }
 
     public SanPham getSanPham() {
         return sanPham;
