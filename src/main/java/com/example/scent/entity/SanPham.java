@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -29,8 +31,14 @@ public class SanPham {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Integer idSanPham;
+
+    @NotEmpty(message = "Tên sản phẩm không được để trống")
+    @Size(max = 100, message = "Tên sản phẩm không được vượt quá 100 ký tự")
     @Column(name = "ten")
     private String tenSanPham;
+
+    @NotEmpty(message = "Mô tả sản phẩm không được để trống")
+    @Size(max = 500, message = "Mô tả sản phẩm không được vượt quá 500 ký tự")
     @Column(name = "mo_ta")
     private String moTaSanPham;
     @ManyToOne

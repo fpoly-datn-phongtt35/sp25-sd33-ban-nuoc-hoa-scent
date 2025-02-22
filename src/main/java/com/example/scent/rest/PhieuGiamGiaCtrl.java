@@ -2,7 +2,12 @@ package com.example.scent.rest;
 
 import com.example.scent.entity.PhieuGiamGia;
 
+import com.example.scent.entity.SanPham;
 import com.example.scent.service.PhieuGiamGiaSv;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin("*")
 @RestController
@@ -32,15 +39,36 @@ public class PhieuGiamGiaCtrl {
     }
 
     @PostMapping("/add")
-    public PhieuGiamGia create(@RequestBody PhieuGiamGia pgg) {
-        return pggs.add(pgg);
+    public ResponseEntity<?> create(@Valid @RequestBody PhieuGiamGia pgg, BindingResult result) {
+        if (result.hasErrors()) {
+
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        pggs.add(pgg);
+        return ResponseEntity.ok("ok");
     }
 
     @PutMapping("/update")
-    public PhieuGiamGia update(@RequestBody PhieuGiamGia pgg) {
-        return pggs.update(pgg);
-    }
+    public ResponseEntity<?> update(@Valid @RequestBody PhieuGiamGia pgg,BindingResult result) {
+        if (result.hasErrors()) {
 
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        pggs.update(pgg);
+        return ResponseEntity.ok("ok");
+    }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { pggs.delete(id);
     }
