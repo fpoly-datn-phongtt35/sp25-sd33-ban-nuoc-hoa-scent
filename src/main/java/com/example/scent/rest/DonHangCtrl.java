@@ -32,15 +32,36 @@ public class DonHangCtrl {
     }
 
     @PostMapping("/add")
-    public DonHang create(@RequestBody DonHang dh) {
-        return dhs.add(dh);
+    public ResponseEntity<?> create(@Valid @RequestBody DonHang dh,BindingResult result) {
+        if (result.hasErrors()) {
+
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        dhs.add(dh);
+        return ResponseEntity.ok("ok");
     }
 
     @PutMapping("/update")
-    public DonHang update(@RequestBody DonHang dh) {
-        return dhs.update(dh);
-    }
+    public ResponseEntity<?> update(@Valid @RequestBody DonHang dh, BindingResult result) {
+        if (result.hasErrors()) {
 
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        dhs.update(dh);
+        return ResponseEntity.ok("ok");
+    }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { dhs.delete(id);
     }

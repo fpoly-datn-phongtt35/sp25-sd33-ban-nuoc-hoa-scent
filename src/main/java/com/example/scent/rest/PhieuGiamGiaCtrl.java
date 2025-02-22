@@ -32,15 +32,36 @@ public class PhieuGiamGiaCtrl {
     }
 
     @PostMapping("/add")
-    public PhieuGiamGia create(@RequestBody PhieuGiamGia pgg) {
-        return pggs.add(pgg);
+    public ResponseEntity<?> create(@Valid @RequestBody SanPham sp, BindingResult result) {
+        if (result.hasErrors()) {
+
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        sps.add(sp);
+        return ResponseEntity.ok("ok");
     }
 
     @PutMapping("/update")
-    public PhieuGiamGia update(@RequestBody PhieuGiamGia pgg) {
-        return pggs.update(pgg);
-    }
+    public ResponseEntity<?> update(@Valid @RequestBody SanPham sp,BindingResult result) {
+        if (result.hasErrors()) {
 
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        sps.update(sp);
+        return ResponseEntity.ok("ok");
+    }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { pggs.delete(id);
     }

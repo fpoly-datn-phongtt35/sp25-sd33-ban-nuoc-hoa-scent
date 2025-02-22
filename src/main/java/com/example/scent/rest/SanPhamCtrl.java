@@ -38,14 +38,39 @@ public class SanPhamCtrl {
     }
 
     @PostMapping("/add")
-    public SanPham create(@RequestBody SanPham sp) {
-        return sps.add(sp);
+    public ResponseEntity<?> create(@Valid @RequestBody Spct spct, BindingResult result) {
+
+        if (result.hasErrors()) {
+
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+        }
+
+        spcts.add(spct);
+        return ResponseEntity.ok("ok");
     }
 
     @PutMapping("/update")
-    public SanPham update(@RequestBody SanPham sp) {
-        return sps.update(sp);
+    public ResponseEntity<?> update(@Valid @RequestBody Spct spct,BindingResult result) {
+
+        if (result.hasErrors()) {
+
+            Map<String, String> errorsMap = new HashMap<>();
+
+            for (FieldError error : result.getFieldErrors()) {
+                errorsMap.put(error.getField(), error.getDefaultMessage());
+            }
+            return ResponseEntity.badRequest().body(errorsMap);
+
+        }
+        spcts.update(spct);
+        return ResponseEntity.ok("ok");
     }
+
 
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { sps.delete(id);
