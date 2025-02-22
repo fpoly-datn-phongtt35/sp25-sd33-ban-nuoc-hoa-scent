@@ -32,7 +32,7 @@ public class Spct {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Integer idSpct;
 
     @NotNull(message = "Đơn giá không được để trống")
     @DecimalMin(value = "0.0", inclusive = false, message = "Đơn giá phải là số dương")
@@ -57,17 +57,14 @@ public class Spct {
     @ManyToOne
     @JoinColumn(name = "id_san_pham")
     private SanPham sanPham;
-
-
-
-
+    public Integer getIdSpct() {
+        return idSpct;
     public Integer getId() {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+        public void setIdSpct(Integer idSpct) {
+            this.idSpct = idSpct;
 
     public BigDecimal getDonGia() {
         return donGia;

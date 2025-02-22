@@ -2,8 +2,12 @@ package com.example.scent.rest;
 
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.entity.SanPham;
+import com.example.scent.entity.Spct;
 import com.example.scent.service.SanPhamSv;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin("*")
 @RestController
@@ -38,7 +44,7 @@ public class SanPhamCtrl {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> create(@Valid @RequestBody Spct spct, BindingResult result) {
+    public ResponseEntity<?> create(@Valid @RequestBody SanPham sp, BindingResult result) {
 
         if (result.hasErrors()) {
 
@@ -50,12 +56,12 @@ public class SanPhamCtrl {
             return ResponseEntity.badRequest().body(errorsMap);
         }
 
-        spcts.add(spct);
+        sps.add(sp);
         return ResponseEntity.ok("ok");
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody Spct spct,BindingResult result) {
+    public ResponseEntity<?> update(@Valid @RequestBody SanPham sp,BindingResult result) {
 
         if (result.hasErrors()) {
 
@@ -67,7 +73,7 @@ public class SanPhamCtrl {
             return ResponseEntity.badRequest().body(errorsMap);
 
         }
-        spcts.update(spct);
+        sps.update(sp);
         return ResponseEntity.ok("ok");
     }
 
