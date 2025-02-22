@@ -54,18 +54,17 @@ public class Spct {
     @Pattern(regexp = "^[0-9]+$", message = "Dung tích phải là số và không chứa ký tự hoặc chữ cái")
     @Column(name = "dung_tich")
     private Integer dungTich;
+
     @ManyToOne
     @JoinColumn(name = "id_san_pham")
     private SanPham sanPham;
     public Integer getIdSpct() {
         return idSpct;
-    public Integer getId() {
-        return id;
     }
 
-        public void setIdSpct(Integer idSpct) {
-            this.idSpct = idSpct;
-
+    public void setIdSpct(Integer idSpct) {
+        this.idSpct = idSpct;
+    }
     public BigDecimal getDonGia() {
         return donGia;
     }
