@@ -87,7 +87,21 @@ public class TaiKhoanSv implements UserDetailsService {
     }
     private BCryptPasswordEncoder e = new BCryptPasswordEncoder(12);
     public TaiKhoan create(TaiKhoan taiKhoan) {
+        // Kiểm tra xem tên tài khoản đã tồn tại hay chưa
+        Optional<TaiKhoan> existingAccount = tki.findByTenDangNhap(taiKhoan.getTenDangNhap());
+        if (existingAccount.isPresent()) {
+            throw new RuntimeException("Tên tài khoản đã tồn tại");
+        }
+
+        // Xử lý vai trò: nếu không có vai trò được cung cấp, sử dụng "USER"
+        if (taiKhoan.getVaiTro() == null || taiKhoan.getVaiTro().isEmpty()) {
+            taiKhoan.setVaiTro("USER");
+        }
+
+        // Mã hóa mật khẩu trước khi lưu
         taiKhoan.setMatKhau(e.encode(taiKhoan.getMatKhau()));
+
+        // Lưu tài khoản mới
         return tki.save(taiKhoan);
     }
 }
