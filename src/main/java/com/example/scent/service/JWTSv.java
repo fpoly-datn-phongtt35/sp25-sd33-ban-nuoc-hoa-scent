@@ -1,5 +1,6 @@
 package com.example.scent.service;
 
+import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -43,6 +44,8 @@ public class JWTSv {
         Map<String, Object> claims = new HashMap<>();
         String role = tki.getRole(username);
         claims.put("roles", role);
+        TaiKhoan tk = tki.findByUsername(username);
+        claims.put("UserID", tk.getId());
         return Jwts.builder()
                 .claims()//bản đồ chứa các cấu hình payload tùy chỉnh của jwt
                 .add(claims)
