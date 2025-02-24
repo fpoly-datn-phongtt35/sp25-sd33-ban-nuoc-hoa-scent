@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +107,26 @@ public class SanPhamCtrl {
     @GetMapping("/sorted")
     public List<SanPhamInfoDTO> getSortedProducts() {
         return sps.getSortedProducts();
+    }
+
+    @PostMapping("/add-with-image")
+    public SanPham createWithImage(@RequestParam("ten") String tenSanPham,
+                                   @RequestParam("moTa") String moTaSanPham,
+                                   @RequestParam("image") MultipartFile image) throws IOException {
+
+        String imageUrl = sps.uploadImageToPostimages(image);
+
+
+        SanPham sanPham = new SanPham();
+        sanPham.setTenSanPham(tenSanPham);
+        sanPham.setMoTaSanPham(moTaSanPham);
+
+        SanPham savedSanPham = sps.add(sanPham);
+
+
+        sps.saveImage(savedSanPham.getIdSanPham(), imageUrl);
+
+        return savedSanPham;
     }
 }
 
