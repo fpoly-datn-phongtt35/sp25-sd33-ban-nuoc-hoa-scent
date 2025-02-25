@@ -1,5 +1,6 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.entity.DonHang;
 
 import com.example.scent.service.DonHangSv;
@@ -7,15 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +23,23 @@ public class DonHangCtrl {
 
     public DonHangCtrl(DonHangSv dhs) {
         this.dhs = dhs;
+    }
+
+    @GetMapping("/statistics")
+    public List<SanPhamThongKeDto> getProductStatistics(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        return dhs.getProductStatistics(year, month);
+    }
+
+    @GetMapping("/revenue")
+    public Double getRevenue(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+
+        Double totalRevenue = dhs.getTotalRevenue(year, month);
+
+        return totalRevenue;
     }
 
     @GetMapping("/getAll")

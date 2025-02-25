@@ -1,26 +1,13 @@
 package com.example.scent.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
 import lombok.NoArgsConstructor;
-
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -64,10 +51,6 @@ public class DonHang {
     @Column(name = "phuong_thuc_van_chuyen")
     private String phuongThucVanChuyen;
 
-    @NotEmpty(message = "Trạng thái không được để trống")
-    @Column(name = "trang_thai")
-    private String trangThai;
-
     @NotNull(message = "Ngày tạo không được để trống")
     @FutureOrPresent(message = "Ngày tạo phải là ngày hiện tại hoặc tương lai")
     @Column(name = "ngay_tao")
@@ -92,6 +75,17 @@ public class DonHang {
     @OneToOne
     @JoinColumn(name = "id_phieu_giam_gia", unique = true)
     private PhieuGiamGia phieuGiamGia;
+
+    @Column(name = "trang_thai")
+    private Integer trangThai;
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
 
     public Integer getId() {
         return id;
