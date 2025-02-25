@@ -14,5 +14,10 @@ public interface SpctInterface extends JpaRepository<Spct, Integer>{
             "FROM spct \n" +
             "WHERE id_san_pham =:idSanPham", nativeQuery = true)
     List<Spct> findByidSanPham(@Param("idSanPham") int idSanPham);
+
+    @Query("SELECT spct FROM Spct spct " +
+            "ORDER BY CASE WHEN spct.soLuongTonKho <= 5 THEN 0 ELSE 1 END, spct.idSpct")
+    List<Spct> findAll();
+
 }
 
