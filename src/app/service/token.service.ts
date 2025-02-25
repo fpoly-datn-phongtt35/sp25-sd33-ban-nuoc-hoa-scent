@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
+import jwt_decode from 'jwt-decode';
 
 @Injectable({
   providedIn: 'root',
@@ -53,23 +54,15 @@ export class TokenService {
   }
 
   getUserId(): number {
-    if (this.isLocalStorageAvailable()) {
-      const user = localStorage.getItem(this.USER_KEY);
-      if (!user) {
-        console.warn('Không tìm thấy thông tin người dùng');
-        return 0;
-      }
-      try {
-        const userObject = JSON.parse(user);
-        return userObject?.id ?? 0;
-      } catch (error) {
-        console.error('Lỗi khi giải mã thông tin người dùng:', error);
-        return 0;
-      }
+    const userInfo = this.getUserInfo(); // Đảm bảo phương thức này trả về payload chính xác của token
+    if (userInfo) {
+        console.log('User Info:', userInfo); // Đây là lệnh log để bạn có thể kiểm tra đầu ra
+        return userInfo.UserID || 0; // Chú ý: Sử dụng 'UserID' như trong token
     }
-    console.warn('localStorage is not available');
     return 0;
-  }
+}
+
+
 
   isTokenExpired(): boolean {
     const token = this.getToken();
@@ -100,6 +93,7 @@ export class TokenService {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Payload từ token:', payload);
         return payload;
       } catch (error) {
         console.error('Lỗi khi giải mã token:', error);
@@ -120,13 +114,14 @@ export class TokenService {
   
     try {
       const payload = JSON.parse(atob(token.split('.')[1])); // Giải mã payload
-      console.log('Vai trò từ token:', payload.role);
-      return payload.role || null;
+      console.log('Vai trò từ token:', payload);
+      return payload.roles || null;
     } catch (error) {
       console.error('Lỗi khi giải mã token:', error);
       return null;
     }
   }
   
+
   
 }

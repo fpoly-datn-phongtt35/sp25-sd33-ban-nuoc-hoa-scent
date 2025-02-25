@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { TokenService } from '../service/token.service';
 import { loginService } from '../service/login';
 import { RouterModule } from '@angular/router';
+import { CartService } from '../service/cart.Service';
 
 
 
@@ -23,7 +24,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: loginService,
     private tokenService: TokenService,
-    private router: Router
+    private router: Router,
+    private cartService: CartService
     
   ) {
     this.loginForm = this.fb.group({
@@ -38,10 +40,18 @@ export class LoginComponent {
   
       this.authService.login(username, password).subscribe({
         next: (token: string) => {  // Directly use token as a string
+         
           console.log('Token nhận được:', token);
           this.tokenService.setToken(token);  // Store the token
           const role = this.tokenService.getRole();  // Assume getRole reads the role from the stored token
           console.log('Vai trò sau khi đăng nhập:', role);
+          const UserID: number = this.tokenService.getUserId(); // UserID là number
+          console.log('ID:', UserID);
+          this.cartService.setUserId(UserID.toString()); // Chuyển thành string trước khi truyền vào
+          
+         
+          
+
   
           if (role === 'ADMIN') {
             this.router.navigate(['/admin']);

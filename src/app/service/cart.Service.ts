@@ -5,90 +5,167 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class CartService {
-  private cart: Map<number, number> = new Map(); // Sử dụng Map để lưu trữ giỏ hàng, key là id sản phẩm, value là số lượng
-  private cartItems: any[] = [];
-  private cartSubject: BehaviorSubject<Map<number, number>> = new BehaviorSubject(this.cart);
+  private cart: Map<number, number> = new Map();
+  private cartSubject: BehaviorSubject<Map<number, number>> = new BehaviorSubject(new Map());
+  private userId: string | null = null;
 
-  
   constructor() {
-    this.loadCartFromLocalStorage(); // Tải giỏ hàng từ localStorage khi khởi tạo
+   
   }
 
-  // Phương thức thêm sản phẩm vào giỏ hàng
+  
+  setUserId(userId: string | null): void {
+    this.userId = userId;
+    console.log('user đăng nhập',userId)
+    if (userId) {
+      this.loadCartFromLocalStorage(); // Tải giỏ hàng khi người dùng đăng nhập
+    } else {
+     
+      this.cartSubject.next(new Map()); // Cập nhật cho các subscribers
+    }
+  }
+  getUserId(): string | null {
+    if (this.userId) {
+      return this.userId; // Trả về userId nếu đã có
+    }
+  
+    // Nếu chưa có, thử lấy từ localStorage
+    const storedUserId = localStorage.getItem("currentUserId");
+    if (storedUserId) {
+      console.log("🔄 UserID khôi phục từ localStorage:", storedUserId);
+      this.setUserId(storedUserId); // Cập nhật vào CartService
+      return storedUserId;
+    }
+  
+    console.warn("⚠️ Không tìm thấy userId!");
+    return null; // Trả về null nếu không có userId
+  }
+  
+ 
+
   addToCart(productId: number, quantity: number = 1): void {
     console.log('Adding product to cart:', productId, quantity);
+    
     if (this.cart.has(productId)) {
       this.cart.set(productId, (this.cart.get(productId) || 0) + quantity);
     } else {
       this.cart.set(productId, quantity);
     }
-    this.saveCartToLocalStorage();
+    this.updateCartInLocalStorage(); // Gọi hàm cập nhật cart vào localStorage
+    this.cartSubject.next(new Map(this.cart));
+}
+  
+  private saveCart(): void {
+    if (!this.userId) {
+      console.log("No user logged in, saving cart temporarily.");
+      // Tạm thời lưu giỏ hàng cho người dùng chưa đăng nhập
+      localStorage.setItem('temp-cart', JSON.stringify(Array.from(this.cart.entries())));
+    } else {
+      localStorage.setItem(`cart-${this.userId}`, JSON.stringify(Array.from(this.cart.entries())));
+      console.log(`Cart updated in localStorage for userId ${this.userId}`);
+    }
   }
   
 
-  // Phương thức lấy giỏ hàng
-  getCart(): Map<number, number> {
-    return this.cart;
+  updateCartInLocalStorage(): void {
+    console.log("🔹 Đang chạy updateCartInLocalStorage...");
+    console.log("📌 userId hiện tại:", this.userId);
+  
+    if (!this.userId) {
+      console.warn("⛔ Không có userId, không lưu giỏ hàng!");
+      return;
+    }
+    
+  
+    const cartArray = Array.from(this.cart.entries());
+    localStorage.setItem(`cart-${this.userId}`, JSON.stringify(cartArray));
+    console.log(`✅ Giỏ hàng đã cập nhật trong localStorage cho userId ${this.userId}:`, cartArray);
   }
+  
+ 
+  
+  public removeFromCart(productId: number): void {
+    console.log("🔹 Đang chạy updateCartInLocalStorage...");
+    console.log("📌 userId hiện tại khi xoá:", this.userId);
+    console.log("Current cart items:", Array.from(this.cart.entries()));
 
-  // Lưu giỏ hàng vào localStorage
-  private saveCartToLocalStorage(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      console.log('Cart before saving to localStorage:', this.cart);
-      localStorage.setItem('cart', JSON.stringify(Array.from(this.cart.entries())));
+    if (!this.userId) {
+      console.error("No user logged in, cannot remove product.");
+      return;
+    }
+  
+    // Đảm bảo productId là kiểu số nguyên
+    const productKey = Number(productId); 
+  
+    if (this.cart.has(productKey)) {
+      this.cart.delete(productKey);
+      this.updateCartInLocalStorage();
+      this.cartSubject.next(new Map(this.cart));
+      console.log(`Product ${productId} removed from cart for user ${this.userId}`);
+    } else {
+      console.log(`Product ${productId} not found in cart for user ${this.userId}`);
     }
   }
+  
+  
 
-  // Tải giỏ hàng từ localStorage
+
+  public updateCart(productId: number, quantity: number): void {
+    if (!this.userId) return;
+    if (quantity > 0) {
+      this.cart.set(productId, quantity);
+    } else {
+      this.removeFromCart(productId);
+    }
+    this.updateCartInLocalStorage();
+  }
+
+  public clearCart(): void {
+    this.cart.clear();
+    this.updateCartInLocalStorage();
+  }
+
+  
+
+  private saveCartToLocalStorage(userId: string): void {
+    // Chỉ thực hiện lưu vào localStorage nếu đang ở trên client-side
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(`cart-${userId}`, JSON.stringify(Array.from(this.cart.entries())));
+    }
+  }
+  
   private loadCartFromLocalStorage(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const storedCart = localStorage.getItem('cart');
-      if (storedCart) {
-        this.cart = new Map(JSON.parse(storedCart));
-        console.log('Cart loaded from localStorage:', this.cart); // Kiểm tra giỏ hàng đã được tải lại
-      }
+    if (!this.userId) return;
+    
+    const storedCart = localStorage.getItem(`cart-${this.userId}`);
+    if (storedCart) {
+      this.cart = new Map(JSON.parse(storedCart));
+      this.cartSubject.next(new Map(this.cart));
+      console.log(`Cart loaded from localStorage for userId ${this.userId}`, this.cart);
+    } else {
+      console.log(`No cart found in localStorage for userId ${this.userId}`);
     }
   }
+  
+  clearCartOnClient(): void {
+    this.cart.clear();
+    this.cartSubject.next(new Map());
+    console.log("Cart has been cleared on the client-side.");
+  }
+  
+ 
+  
 
-  // Phương thức xóa sản phẩm khỏi giỏ hàng
-  removeFromCart(productId: number): void {
-    if (this.cart.has(productId)) {
-      this.cart.delete(productId);
-      this.saveCartToLocalStorage(); // Cập nhật lại localStorage sau khi xóa sản phẩm
-      this.updateCart1();
-      
-    }
-  }
-  getCartObservable() {
+  public getCartObservable() {
     return this.cartSubject.asObservable();
   }
-  private updateCart1(): void {
-    this.saveCartToLocalStorage();
-    this.cartSubject.next(this.cart);
+
+  public getCartOrderCount(): number {
+    return this.cart.size;
   }
-  // Phương thức cập nhật số lượng sản phẩm
-  updateCart(productId: number, quantity: number): void {
-    if (this.cart.has(productId) && quantity > 0) {
-      this.cart.set(productId, quantity);
-      this.saveCartToLocalStorage(); // Lưu trữ lại giỏ hàng sau khi cập nhật
-    } else if (quantity <= 0) {
-      this.removeFromCart(productId); // Nếu số lượng <= 0, xóa sản phẩm khỏi giỏ hàng
-    }
-  }
-  getCartOrderCount(): number {
-    return this.cart.size; // Đếm số lượng loại sản phẩm trong giỏ hàng
+
+  public getItems(): any[] {
+    return Array.from(this.cart.entries()).map(([productId, quantity]) => ({ productId, quantity }));
   }
   
-  // Phương thức làm trống giỏ hàng
-  clearCart(): void {
-    this.cart.clear();
-    this.saveCartToLocalStorage(); // Xóa giỏ hàng từ localStorage
-  }
-  getItems() {
-    const items = localStorage.getItem('cart');
-    return items ? JSON.parse(items) : [];
-  }
-  saveItems(items: any[]) {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }
 }

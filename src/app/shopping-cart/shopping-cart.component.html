@@ -5,6 +5,7 @@
         <thead>
             <tr>
                 <th><input type="checkbox" id="select-all" onclick="selectAll(this)"></th>
+                <th>Ảnh</th>
                 <th>Sản phẩm</th>
                 <th>Giá</th>
                 <th>Số lượng</th>
@@ -13,20 +14,28 @@
             </tr>
         </thead>
         <tbody>
-            <tr *ngFor="let item of cartItems">
-                <td><input type="checkbox"></td>
-                <td class="product-info">
-                    <img src="{{ item.product.imageURL }}" alt="Sản phẩm">
-                    {{ item.product.productName }}
-                </td>
-                <td>{{ item.product.price | currency:'VND' }}</td>
-                <td>
-                    <input type="number" class="quantity-input" [(ngModel)]="item.quantity" min="1">
-                </td>
-                <td><button class="remove-btn" (click)="removeItem(item)">🗑️</button></td>
-                <td>{{ item.quantity * item.product.price | currency:'VND' }}</td>
+            <tr *ngFor="let item of cartItems; trackBy: trackByProduct">
+              <td><input type="checkbox"></td>
+              <td class="product-info">
+                <!-- Kiểm tra lại item.product.imageURL có phải là đường dẫn hợp lệ và item.product có tồn tại -->
+                <img [src]="item.product.imageURL" alt="">
+              </td>
+              <!-- Đảm bảo rằng các thuộc tính productName, price của product được truy cập đúng -->
+              <td>{{ item.product.tenSanPham }}</td>
+              <td>{{ item.product?.donGia | currency:'VND' }}</td>
+              <td>
+                <input type="number" class="quantity-input" [(ngModel)]="item.quantity" min="1">
+              </td>
+              <td>
+                <!-- Kiểm tra điều kiện xóa sản phẩm dựa trên id sản phẩm -->
+                <button class="remove-btn" *ngIf="item.product && item.product.idSanPham !== undefined" (click)="removeItem(item.product.idSanPham)">Xóa</button>
+              </td>
+              <!-- Tính toán tổng giá tiền dựa trên số lượng và giá sản phẩm -->
+              <td>{{ item.quantity * item.product.donGia | currency:'VND' }}</td>
             </tr>
-        </tbody>
+          </tbody>
+          
+        
     </table>
     <div class="total-container">
         <div class="select-all">

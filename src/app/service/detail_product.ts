@@ -13,7 +13,7 @@ export class DetailService {
   
     // Lấy thông tin chi tiết sản phẩm theo ID
     getProductDetailById(productId: number): Observable<any> {
-      return this.http.get(`${this.apiBaseUrl}/san-pham/chitiet/${productId}`);
+      return this.http.get(`${this.apiBaseUrl}/san-pham/detail/${productId}`);
     }
     getRecommendedProducts(): Observable<any[]> {
         return this.http.get<any[]>(this.apiUrl);

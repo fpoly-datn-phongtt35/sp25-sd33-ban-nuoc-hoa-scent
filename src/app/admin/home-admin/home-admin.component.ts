@@ -50,7 +50,7 @@ export class HomeAdminComponent implements OnInit {
   
   showComponent(component: string): void {
     const role = this.tokenService.getRole();
-    console.log('Vai trò hiện tại khi nhấn vào menu:', role);
+    console.log('Vai trò hiện tại khi nhấn vào menu11111111:', role);
   
     if (role === 'ADMIN') {
       this.selectedComponent = component; // Cập nhật component hiển thị

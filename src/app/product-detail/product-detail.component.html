@@ -3,31 +3,34 @@
   <div class="product-detail">
     <!-- Cột trái: Hình ảnh sản phẩm -->
     <div class="product-image">
-      <img [src]="product.imageURL" [alt]="product.productName" />
+      <img [src]="product.imageURL" [alt]="product.tenSanPham" />
+      <ng-template #noImage><p>Không có hình ảnh</p></ng-template>
     </div>
 
     <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
     <div class="product-info">
-      <h1>{{ product.productName }}</h1>
+      
+      <h1>{{ product['tenSanPham'] || 'Không có tên' }}</h1>
+
       <p class="brand">
-        <strong>Hãng:</strong> {{ product.brandName }}
+        <strong>Hãng:</strong> {{ product.tenThuongHieu }}
       </p>
       <div class="fragrance-notes">
         <p>
-          <strong>Hương Đầu:</strong> {{ product.topNoteDescription }}
+          <strong>Hương Đầu:</strong> {{ product.moTaHuongDau }}
         </p>
         <p>
-          <strong>Hương giữa:</strong> {{ product.middleNoteDescription }}
+          <strong>Hương giữa:</strong> {{ product.moTaHuongGiua }}
         </p>
         <p>
-          <strong>Hương cuối:</strong> {{ product.baseNoteDescription }}
+          <strong>Hương cuối:</strong> {{ product.moTaHuongCuoi }}
         </p>
       </div>
       <p class="volume">
-        <strong>Dung tích:</strong> {{ product.volume }}ml
+        <strong>Dung tích:</strong> {{ product.dungTich }}ml
       </p>
       <p class="price">
-        Giá: <strong>{{ product.price | number }}</strong> VND
+        Giá: <strong>{{ product.donGia | number }}</strong> VND
       </p>
       <button [disabled]="!product"  class="add-to-cart-btn" (click)="addToCart()">Thêm vào giỏ hàng</button>
 
@@ -44,10 +47,10 @@
       <h3>Có thể bạn quan tâm</h3>
       <div class="related-products-scroll">
         <div class="related-product-item" *ngFor="let relatedProduct of recommendedProducts" (click)="viewRelatedProduct(relatedProduct.productId)">
-          <img [src]="relatedProduct.imageURL" [alt]="relatedProduct.productName" />
+          <img [src]="relatedProduct.imageURL" [alt]="relatedProduct.tenSanPham" />
           <div>
-            <p>{{ relatedProduct.productName }}</p>
-            <span>{{ relatedProduct.price | number }} VND</span>
+            <p>{{ relatedProduct.tenSanPham }}</p>
+            <span>{{ relatedProduct.donGia | number }} VND</span>
           </div>
         </div>
       </div>
@@ -57,7 +60,7 @@
   <!-- Phần mô tả sản phẩm -->
   <div class="product-description">
     <h2>Mô tả chi tiết</h2>
-    <p>{{ product.description }}</p>
+    <p>{{ product.moTaSanPham }}</p>
   </div>
 </div>
 <app-footer></app-footer>

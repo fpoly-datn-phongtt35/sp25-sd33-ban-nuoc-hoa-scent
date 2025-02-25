@@ -39,14 +39,21 @@ export class ProductDetailComponent implements OnInit {
     if (productId) {
       this.detailService.getProductDetailById(parseInt(productId, 10)).subscribe({
         next: (data: any) => {
-          this.product = data;
-          console.log('Product loaded:', this.product); // Kiểm tra dữ liệu sản phẩm
+          console.log('Dữ liệu API trả về:', data); // Debug API
+          if (data && data.length > 0) {
+            this.product = { ...data[0] }; // ✅ Chỉ lấy phần tử đầu tiên của mảng
+            console.log('Sản phẩm được gán:', this.product);
+            console.log('Tên sản phẩm:', this.product.tenSanPham);
+          } else {
+            console.error('Không tìm thấy sản phẩm');
+            alert('Không tìm thấy sản phẩm');
+          }
           this.isLoading = false;
         },
         error: (err: any) => {
           this.isLoading = false; 
-          console.error('Error loading product detail:', err);
-          alert('Error loading product detail');
+          console.error('Lỗi khi tải sản phẩm:', err);
+          alert('Lỗi khi tải sản phẩm');
         }
       });
     } else {
@@ -54,6 +61,7 @@ export class ProductDetailComponent implements OnInit {
       alert('Product ID is missing');
     }
   }
+  
   
 
   loadRecommendedProducts(): void {
@@ -66,11 +74,11 @@ export class ProductDetailComponent implements OnInit {
   addToCart(): void {
     console.log('Product being added:', this.product);
     // Kiểm tra chỉ các thuộc tính cần thiết
-    if (!this.product || !this.product.productId) {
+    if (!this.product || !this.product.idSanPham) {
       alert('Product details are missing or not fully loaded');
-      console.log('Product ID:', this.product?.productId);
-console.log('Product Name:', this.product?.productName);
-console.log('Product Price:', this.product?.price);
+      console.log('Product ID:', this.product?. idSanPham);
+console.log('Product Name:', this.product?. idSanPham);
+console.log('Product Price:', this.product?.donGia);
 
       return;
     }
