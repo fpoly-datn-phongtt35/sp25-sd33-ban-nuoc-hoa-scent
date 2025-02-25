@@ -90,5 +90,6 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Query(value = "select * from san_pham where lower(ten) like lower(CONCAT('%', :tenSanPham, '%'))", nativeQuery = true)
     List<SanPham> searchByName(@Param("tenSanPham") String tenSanPham);
 
+
 }
 

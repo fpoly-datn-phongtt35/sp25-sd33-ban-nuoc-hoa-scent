@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,23 +111,17 @@ public class SanPhamCtrl {
     }
 
     @PostMapping("/add-with-image")
-    public SanPham createWithImage(@RequestParam("ten") String tenSanPham,
-                                   @RequestParam("moTa") String moTaSanPham,
-                                   @RequestParam("image") MultipartFile image) throws IOException {
+    public ResponseEntity<?> createWithImage(
+            @RequestParam("ten") String tenSanPham,
+            @RequestParam("moTa") String moTaSanPham,
+            @RequestParam("image") MultipartFile image) {
 
-        String imageUrl = sps.uploadImageToPostimages(image);
-
-
-        SanPham sanPham = new SanPham();
-        sanPham.setTenSanPham(tenSanPham);
-        sanPham.setMoTaSanPham(moTaSanPham);
-
-        SanPham savedSanPham = sps.add(sanPham);
-
-
-        sps.saveImage(savedSanPham.getIdSanPham(), imageUrl);
-
-        return savedSanPham;
+        try {
+            SanPham savedSanPham = sps.addProductWithImage(tenSanPham, moTaSanPham, image);
+            return ResponseEntity.ok(savedSanPham);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi thêm sản phẩm!");
+        }
     }
 }
 
