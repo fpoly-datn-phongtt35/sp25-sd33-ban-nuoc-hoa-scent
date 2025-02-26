@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class SanPhamService {
   private apiURL = 'http://localhost:8080/rest/san-pham/All'; // URL của API
+  private baseUrl = 'http://localhost:8080/rest/san-pham';
 
   constructor(private http: HttpClient) {
     console.log('SanPhamService đã được khởi tạo.');
@@ -16,5 +17,9 @@ export class SanPhamService {
   getSanPhamDetails(page: number = 0, size: number = 12): Observable<any> {
     console.log(`Requesting API: ${this.apiURL}?page=${page}&size=${size}`);
     return this.http.get<any>(`${this.apiURL}?page=${page}&size=${size}`);
+  }
+ 
+  getProductVolumes(productId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/volums/${productId}`);
   }
 }

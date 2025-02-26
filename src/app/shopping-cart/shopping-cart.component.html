@@ -7,6 +7,7 @@
                 <th><input type="checkbox" id="select-all" onclick="selectAll(this)"></th>
                 <th>Ảnh</th>
                 <th>Sản phẩm</th>
+                <th>Dung tích</th>
                 <th>Giá</th>
                 <th>Số lượng</th>
                 <th>Xóa</th>
@@ -22,6 +23,7 @@
               </td>
               <!-- Đảm bảo rằng các thuộc tính productName, price của product được truy cập đúng -->
               <td>{{ item.product.tenSanPham }}</td>
+              <td>{{ item.product.dungTich }}</td>
               <td>{{ item.product?.donGia | currency:'VND' }}</td>
               <td>
                 <input type="number" class="quantity-input" [(ngModel)]="item.quantity" min="1">

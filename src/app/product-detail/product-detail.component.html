@@ -32,7 +32,21 @@
       <p class="price">
         Giá: <strong>{{ product.donGia | number }}</strong> VND
       </p>
-      <button [disabled]="!product"  class="add-to-cart-btn" (click)="addToCart()">Thêm vào giỏ hàng</button>
+     <!-- Đoạn HTML này sẽ hiển thị một dropdown để chọn dung tích sản phẩm -->
+  <!-- Volume selection buttons -->
+  <p *ngFor="let volume of volumes">
+    <button type="button" class="volume-button" [ngClass]="{'selected': selectedVolume === volume}" (click)="selectVolume(volume)">
+      {{ volume.dungTich }}ml - {{ volume.donGia | currency:'VND':'symbol':'1.0-0' }}
+    </button>
+  </p>
+  
+
+<!-- Thêm nút này trong product-detail.component.html -->
+
+
+<button [disabled]="!product || !selectedVolume" class="add-to-cart-btn" (click)="addToCart()">
+  Thêm vào giỏ hàng
+</button>
 
       <p class="shipping-note">Miễn phí vận chuyển cho đơn hàng từ 750.000đ.</p>
       <ul class="benefits-list">
@@ -64,3 +78,5 @@
   </div>
 </div>
 <app-footer></app-footer>
+
+
