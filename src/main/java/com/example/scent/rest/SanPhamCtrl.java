@@ -1,6 +1,7 @@
 package com.example.scent.rest;
 
 import com.example.scent.dto.SanPhamDto;
+import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
@@ -84,7 +85,10 @@ public class SanPhamCtrl {
         return ResponseEntity.ok("ok");
     }
 
-
+    @GetMapping("/volums/{productId}")
+    public List<SanPhamDungTich> getProductVolumes(@PathVariable Integer productId) {
+        return sps.getProductVolumesByProductId(productId);
+    }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { sps.delete(id);
     }

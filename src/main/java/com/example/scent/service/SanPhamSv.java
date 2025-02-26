@@ -2,6 +2,7 @@ package com.example.scent.service;
 
 
 import com.example.scent.dto.SanPhamDto;
+import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
@@ -111,5 +112,9 @@ public class SanPhamSv {
             hai.save(hinhAnh);
         }
         return savedSanPham;
+    }
+
+    public List<SanPhamDungTich> getProductVolumesByProductId(Integer productId) {
+        return spi.findByIdSanPham(productId);
     }
 }

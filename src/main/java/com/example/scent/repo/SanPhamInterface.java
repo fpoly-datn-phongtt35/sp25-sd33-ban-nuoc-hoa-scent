@@ -1,6 +1,7 @@
 package com.example.scent.repo;
 
 import com.example.scent.dto.SanPhamDto;
+import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.SanPham;
 import org.springframework.data.domain.Page;
@@ -90,6 +91,9 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Query(value = "select * from san_pham where lower(ten) like lower(CONCAT('%', :tenSanPham, '%'))", nativeQuery = true)
     List<SanPham> searchByName(@Param("tenSanPham") String tenSanPham);
 
+
+    @Query("SELECT new com.example.scent.dto.SanPhamDungTich(p.idSanPham, spct.dungTich, spct.donGia) FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1")
+    List<SanPhamDungTich> findByIdSanPham(Integer productId);
 
 }
 
