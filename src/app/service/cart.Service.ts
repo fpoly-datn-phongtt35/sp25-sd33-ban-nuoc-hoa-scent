@@ -5,8 +5,8 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class CartService {
-  private cart: Map<number, number> = new Map();
-  private cartSubject: BehaviorSubject<Map<number, number>> = new BehaviorSubject(new Map());
+  private cart: Map<string, { product: any, quantity: number, volume: string }> = new Map();
+  private cartSubject: BehaviorSubject<Map<string, { product: any, quantity: number, volume: string }>> = new BehaviorSubject(new Map());
   private userId: string | null = null;
 
   constructor() {
@@ -40,20 +40,40 @@ export class CartService {
     console.warn("⚠️ Không tìm thấy userId!");
     return null; // Trả về null nếu không có userId
   }
-  
- 
-
-  addToCart(productId: number, quantity: number = 1): void {
-    console.log('Adding product to cart:', productId, quantity);
-    
-    if (this.cart.has(productId)) {
-      this.cart.set(productId, (this.cart.get(productId) || 0) + quantity);
-    } else {
-      this.cart.set(productId, quantity);
+  addToCart(product: any, quantity: number = 1): void {
+    if (!product || !product.idSanPham) {
+        console.error("❌ Không thể thêm sản phẩm không hợp lệ vào giỏ hàng!", product);
+        return;
     }
-    this.updateCartInLocalStorage(); // Gọi hàm cập nhật cart vào localStorage
+
+    const productKey = `${product.idSanPham}_${product.dungTich}`;
+    console.log(`🛒 Đang thêm vào giỏ hàng - Key: ${productKey}`);
+
+    if (this.cart.has(productKey)) {
+        const existingProduct = this.cart.get(productKey);
+        if (existingProduct) {
+            existingProduct.quantity = (existingProduct.quantity || 0) + quantity;
+            this.cart.set(productKey, existingProduct);
+        } else {
+            console.warn(`⚠️ Sản phẩm có key ${productKey} bị undefined!`, existingProduct);
+        }
+    } else {
+        this.cart.set(productKey, {
+            product: { ...product }, // Lưu bản sao của sản phẩm
+            quantity,
+            volume: product.dungTich
+        });
+    }
+
+    console.log("✅ Giỏ hàng hiện tại:", Array.from(this.cart.entries()));
+
+    this.updateCartInLocalStorage();
     this.cartSubject.next(new Map(this.cart));
 }
+
+  
+  
+  
   
   private saveCart(): void {
     if (!this.userId) {
@@ -66,65 +86,51 @@ export class CartService {
     }
   }
   
-
   updateCartInLocalStorage(): void {
-    console.log("🔹 Đang chạy updateCartInLocalStorage...");
-    console.log("📌 userId hiện tại:", this.userId);
-  
     if (!this.userId) {
-      console.warn("⛔ Không có userId, không lưu giỏ hàng!");
-      return;
+        console.warn("⚠️ Không có userId, không lưu giỏ hàng!");
+        return;
     }
-    
-  
-    const cartArray = Array.from(this.cart.entries());
+
+    const cartArray = Array.from(this.cart.entries()).map(([key, value]) => {
+        if (!value || !value.product) {
+            console.warn(`⚠️ Bỏ qua mục không hợp lệ trong giỏ hàng - Key: ${key}`, value);
+            return null;
+        }
+        return [key, value];
+    }).filter(item => item !== null);
+
     localStorage.setItem(`cart-${this.userId}`, JSON.stringify(cartArray));
-    console.log(`✅ Giỏ hàng đã cập nhật trong localStorage cho userId ${this.userId}:`, cartArray);
-  }
+    console.log(`✅ Giỏ hàng đã cập nhật vào localStorage cho userId ${this.userId}:`, cartArray);
+}
+
   
  
-  
-  public removeFromCart(productId: number): void {
-    console.log("🔹 Đang chạy updateCartInLocalStorage...");
-    console.log("📌 userId hiện tại khi xoá:", this.userId);
-    console.log("Current cart items:", Array.from(this.cart.entries()));
-
-    if (!this.userId) {
-      console.error("No user logged in, cannot remove product.");
-      return;
-    }
-  
-    // Đảm bảo productId là kiểu số nguyên
-    const productKey = Number(productId); 
-  
+  removeFromCart(productKey: string): void {
     if (this.cart.has(productKey)) {
       this.cart.delete(productKey);
       this.updateCartInLocalStorage();
       this.cartSubject.next(new Map(this.cart));
-      console.log(`Product ${productId} removed from cart for user ${this.userId}`);
+      console.log(`Product ${productKey} removed from cart.`);
     } else {
-      console.log(`Product ${productId} not found in cart for user ${this.userId}`);
+      console.log(`Product ${productKey} not found in cart.`);
+    }
+  }
+  updateCart(productKey: string, quantity: number, volume: string): void {
+    if (this.cart.has(productKey)) {
+      const existingProduct = this.cart.get(productKey);
+      if (existingProduct) {
+        // Update the existing product with the new quantity
+        this.cart.set(productKey, { ...existingProduct, quantity: quantity });
+        this.updateCartInLocalStorage();
+        this.cartSubject.next(new Map(this.cart));
+      }
+    } else {
+      // Optionally handle the case where product is not found in the cart
+      console.log('Product not found in cart, could not update.');
     }
   }
   
-  
-
-
-  public updateCart(productId: number, quantity: number): void {
-    if (!this.userId) return;
-    if (quantity > 0) {
-      this.cart.set(productId, quantity);
-    } else {
-      this.removeFromCart(productId);
-    }
-    this.updateCartInLocalStorage();
-  }
-
-  public clearCart(): void {
-    this.cart.clear();
-    this.updateCartInLocalStorage();
-  }
-
   
 
   private saveCartToLocalStorage(userId: string): void {
@@ -133,17 +139,14 @@ export class CartService {
       localStorage.setItem(`cart-${userId}`, JSON.stringify(Array.from(this.cart.entries())));
     }
   }
-  
-  private loadCartFromLocalStorage(): void {
-    if (!this.userId) return;
-    
+  loadCartFromLocalStorage(): void {
     const storedCart = localStorage.getItem(`cart-${this.userId}`);
     if (storedCart) {
       this.cart = new Map(JSON.parse(storedCart));
       this.cartSubject.next(new Map(this.cart));
-      console.log(`Cart loaded from localStorage for userId ${this.userId}`, this.cart);
+      console.log('Cart loaded from localStorage:', this.cart);
     } else {
-      console.log(`No cart found in localStorage for userId ${this.userId}`);
+      console.log('No cart found in localStorage.');
     }
   }
   

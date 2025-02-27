@@ -140,24 +140,28 @@ export class ProductDetailComponent implements OnInit {
 
   addToCart(): void {
     if (!this.selectedVolume) {
-      alert('Vui lòng chọn dung tích trước khi thêm vào giỏ hàng!');
-      return;
+        alert('Vui lòng chọn dung tích trước khi thêm vào giỏ hàng!');
+        return;
     }
-    console.log('Product being added:', this.product);
-    // Kiểm tra chỉ các thuộc tính cần thiết
-    if (!this.product || !this.product.idSanPham) {
-      alert('Product details are missing or not fully loaded');
-      console.log('Product ID:', this.product?. idSanPham);
-console.log('Product Name:', this.product?. idSanPham);
-console.log('Product Price:', this.product?.donGia);
 
-      return;
+    console.log('🛒 Sản phẩm được thêm vào giỏ hàng:', this.product);
+
+    if (!this.product || !this.product.idSanPham) {
+        console.error("❌ Lỗi: Thông tin sản phẩm bị thiếu!", this.product);
+        return;
     }
-    this.cartService.addToCart(this.product, 1);
-    alert('Product added to cart!');
-  }
-  
-  
+
+    // Tạo bản sao của sản phẩm để tránh lỗi khi lưu vào giỏ hàng
+    const productCopy = {
+        ...this.product,
+        dungTich: this.selectedVolume.dungTich,
+        donGia: this.selectedVolume.donGia
+    };
+
+    this.cartService.addToCart(productCopy, 1);
+    alert('✅ Sản phẩm đã được thêm vào giỏ hàng!');
+}
+
   
   
 

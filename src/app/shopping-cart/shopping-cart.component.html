@@ -29,9 +29,8 @@
                 <input type="number" class="quantity-input" [(ngModel)]="item.quantity" min="1">
               </td>
               <td>
-                <!-- Kiểm tra điều kiện xóa sản phẩm dựa trên id sản phẩm -->
-                <button class="remove-btn" *ngIf="item.product && item.product.idSanPham !== undefined" (click)="removeItem(item.product.idSanPham)">Xóa</button>
-              </td>
+                <button class="remove-btn" (click)="removeItem(item.product.idSanPham, item.product.dungTich)">Xóa</button>
+            </td>
               <!-- Tính toán tổng giá tiền dựa trên số lượng và giá sản phẩm -->
               <td>{{ item.quantity * item.product.donGia | currency:'VND' }}</td>
             </tr>
