@@ -73,21 +73,32 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
 
 
-    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link)) " +
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.hinhAnhs ha " +
-
-            "GROUP BY sp.idSanPham, sp.tenSanPham")
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.huongDau hd " +
+            "JOIN sp.huongGiua hg " +
+            "JOIN sp.danhMuc dm " +
+            "JOIN sp.huongCuoi hc " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi")
     Page<SanPhamInfoDTO> findAllProductsWithImages(Pageable pageable);
 
-    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link)) " +
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.huongDau hd " +
+            "JOIN sp.huongGiua hg " +
+            "JOIN sp.huongCuoi hc " +
+            "JOIN sp.danhMuc dm " +
             "JOIN sp.hinhAnhs ha " +
-            "GROUP BY sp.idSanPham, sp.tenSanPham " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
             "ORDER BY MIN(spct.donGia) DESC")
     List<SanPhamInfoDTO> findAllProductsWithImagesSorted();
+
+
     @Query(value = "select * from san_pham where lower(ten) like lower(CONCAT('%', :tenSanPham, '%'))", nativeQuery = true)
     List<SanPham> searchByName(@Param("tenSanPham") String tenSanPham);
 
