@@ -138,7 +138,7 @@ public class SanPhamCtrl {
 
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
-            Pageable pageable) {
+            @PageableDefault(size = 12) Pageable pageable) {
         return sps.searchSanPham( minPrice, maxPrice, pageable);
     }
 }
