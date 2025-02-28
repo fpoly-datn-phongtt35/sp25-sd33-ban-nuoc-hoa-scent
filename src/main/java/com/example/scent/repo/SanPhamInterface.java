@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -68,8 +69,6 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
             "where\n" +
             "    sp.id = :idSanPham\n ", nativeQuery = true)
-
-
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
 
 
@@ -106,5 +105,44 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Query("SELECT new com.example.scent.dto.SanPhamDungTich(p.idSanPham, spct.dungTich, spct.donGia) FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1")
     List<SanPhamDungTich> findByIdSanPham(Integer productId);
 
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "JOIN sp.hinhAnhs ha " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.huongDau hd " +
+            "JOIN sp.huongGiua hg " +
+            "JOIN sp.danhMuc dm " +
+            "JOIN sp.huongCuoi hc " +
+            "WHERE sp.tenSanPham LIKE %:searchQuery% " +
+            "OR th.tenThuongHieu LIKE %:searchQuery% " +
+            "OR hd.moTaHuongDau LIKE %:searchQuery% " +
+            "OR hg.moTaHuongGiua LIKE %:searchQuery% " +
+            "OR hc.moTaHuongCuoi LIKE %:searchQuery% " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi ")
+    Page<SanPhamInfoDTO> findBySearchQuery(@Param("searchQuery") String searchQuery, Pageable pageable);
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "WHERE (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
+            "ORDER BY MIN(spct.donGia) ASC")
+    Page<SanPhamInfoDTO> searchSanPhamByPrice(
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            Pageable pageable);
 }
+
 

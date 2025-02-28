@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.client.RestTemplate;
 
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.List;
 
@@ -116,5 +117,13 @@ public class SanPhamSv {
 
     public List<SanPhamDungTich> getProductVolumesByProductId(Integer productId) {
         return spi.findByIdSanPham(productId);
+    }
+
+    public Page<SanPhamInfoDTO> findBySearchQuery(String searchQuery, Pageable pageable) {
+        return spi.findBySearchQuery(searchQuery, pageable);
+    }
+
+    public Page<SanPhamInfoDTO> searchSanPham( BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        return spi.searchSanPhamByPrice(minPrice, maxPrice, pageable);
     }
 }

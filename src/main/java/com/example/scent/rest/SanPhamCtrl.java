@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +127,19 @@ public class SanPhamCtrl {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi thêm sản phẩm!");
         }
+    }
+
+    @GetMapping("/search")
+    public Page<SanPhamInfoDTO> searchSanPham(@RequestParam("searchQuery") String searchQuery,@PageableDefault(size = 12) Pageable pageable) {
+        return sps.findBySearchQuery(searchQuery, pageable);
+    }
+    @GetMapping("/search-price")
+    public Page<SanPhamInfoDTO> searchSanPham(
+
+            @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
+            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
+            Pageable pageable) {
+        return sps.searchSanPham( minPrice, maxPrice, pageable);
     }
 }
 
