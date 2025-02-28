@@ -7,24 +7,24 @@
   
 
   <!-- Tiêu đề -->
-  <h1 class="section-title">Danh sách sản phẩm</h1>
-
-  <!-- Danh sách sản phẩm -->
-  <div class="product-grid">
-    <div 
-      *ngFor="let product of sanPhams" 
-      class="product-card" 
-      (click)="viewProductDetail(product.idSanPham)"
-    >
-      <div class="product-image-container">
-        <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
-      </div>
-      <div class="product-info">
-        <h2 class="product-title">{{ product.tenSanPham }}</h2>
-        <p class="product-price">Giá: {{ product.donGia | number }} VND</p>
-      </div>
+ 
+  <div class="search-container">
+    <input type="text" [(ngModel)]="query" placeholder="Nhập từ khóa tìm kiếm...">
+    <button (click)="onSearch()">Tìm kiếm</button>
+  </div>
+  
+  <div *ngIf="sanPhams.length > 0" class="product-grid">
+    <div *ngFor="let product of sanPhams" class="product-card" (click)="viewProductDetail(product.idSanPham)">
+      <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image">
+      <h2>{{ product.tenSanPham }}</h2>
+      <p>Giá: {{ product.donGia | number }} VND</p>
     </div>
   </div>
+  
+  <div *ngIf="sanPhams.length === 0" class="no-results">
+    Không tìm thấy sản phẩm nào.
+  </div>
+  
 
   <!-- Phân trang -->
   <nav class="pagination-container">

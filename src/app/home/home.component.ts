@@ -4,12 +4,12 @@ import { HeaderComponent } from '../header/header.component';
 import { SanPhamService } from '../service/product.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-
+import { FormsModule } from '@angular/forms'; 
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [HeaderComponent, FooterComponent, CommonModule],
+  imports: [HeaderComponent, FooterComponent, CommonModule,FormsModule],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'], // Sửa từ styleUrl thành styleUrls
 })
@@ -19,7 +19,8 @@ export class HomeComponent implements OnInit {
   totalPages: number = 0; // Tổng số trang
   pageSize: number = 12; // Số sản phẩm mỗi trang
   visiblePages: number[] = []; // Các trang hiển thị
-
+  query: string = '';
+  results: any[] = [];
   constructor(private sanPhamService: SanPhamService,private router: Router) {}
 
   ngOnInit(): void {
@@ -47,10 +48,17 @@ export class HomeComponent implements OnInit {
   onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.fetchSanPhamDetails();
+      // Kiểm tra nếu có truy vấn tìm kiếm, sử dụng nó để tải kết quả
+      if (this.query) {
+        this.loadSearchResults();  // Tải kết quả tìm kiếm với trang hiện tại và kích thước trang
+      } else {
+        this.fetchSanPhamDetails();  // Tải lại toàn bộ sản phẩm nếu không có truy vấn tìm kiếm
+      }
     }
   }
-
+  
+ 
+  
   // Cập nhật các trang hiển thị
   updateVisiblePages(): void {
     const pagesToShow = 5; // Hiển thị tối đa 5 trang
@@ -67,5 +75,32 @@ export class HomeComponent implements OnInit {
       console.error('Product ID is invalid:', productId); // Log lỗi nếu `productId` không hợp lệ
     }
   }
+  
+  onSearch(): void {
+    if (this.query.trim()) {
+      this.currentPage = 1; // Reset to the first page for new search
+      this.loadSearchResults(); // Call to load search results based on the query
+    } else {
+      this.fetchSanPhamDetails(); // Fetch all products when there is no query
+    }
+  }
+  
+  loadSearchResults(): void {
+    this.sanPhamService.searchProducts(this.query.trim(), this.currentPage - 1, this.pageSize).subscribe({
+      next: (data: any) => {
+        console.log('text:',data);
+        this.sanPhams = data.content;
+        this.totalPages = data.totalPages;
+        this.updateVisiblePages();
+      },
+      error: (error: any) => {
+        console.error('Search error:', error);
+        this.sanPhams = [];
+      },
+      complete: () => console.log('Search completed')
+    });
+  }
+  
+  
   
 }

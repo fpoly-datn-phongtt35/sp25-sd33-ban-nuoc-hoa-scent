@@ -20,12 +20,14 @@
   margin-bottom: 20px;
   color: #333;
 }
-
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr); /* Giới hạn luôn hiển thị 4 cột */
   gap: 20px;
+  justify-items: center; /* Căn giữa các sản phẩm trong mỗi cột */
 }
+
+
 
 .product-card {
   border: 1px solid #ddd;
@@ -34,7 +36,11 @@
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  max-width: 250px; /* Giới hạn chiều rộng tối đa của thẻ sản phẩm */
+  width: 100%; /* Đảm bảo rằng thẻ sản phẩm mở rộng để phù hợp với không gian cột */
+  margin: 0 auto; /* Căn giữa thẻ trong không gian cột */
 }
+
 
 .product-card:hover {
   transform: scale(1.05);
@@ -74,17 +80,45 @@
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  color: #007bff;
+  color: #dbe4ed;
   cursor: pointer;
   text-decoration: none;
 }
 
 .page-item.active .page-link {
-  background-color: #007bff;
+  background-color: #ebaae4;
   color: #fff;
   font-weight: bold;
 }
 
 .page-link:hover {
-  background-color: #f1f1f1;
+  background-color: #f39d9d;
 }
+
+.search-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+input[type="text"] {
+  padding: 10px;
+  margin-right: 10px;
+  width: 300px; /* Chiều rộng cố định cho input */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
