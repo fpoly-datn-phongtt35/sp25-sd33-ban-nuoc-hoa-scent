@@ -143,6 +143,24 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "WHERE dm.tenDanhMuc = ?1 " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
+            "ORDER BY MIN(spct.donGia)")
+    List<SanPhamInfoDTO> findSanPhamByDanhMuc(String tenDanhMuc);
 }
 
 

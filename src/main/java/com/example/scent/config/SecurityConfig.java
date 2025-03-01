@@ -43,7 +43,8 @@ public class SecurityConfig {
                         /*ko yêu cầu xác thực cho 2 request này (ko chỉ phục vụ cho mục đích test, mà còn vì trong thực tế
                         yêu cầu xác thực mới cho đăng ký hay đăng nhập là ngu*/
                         .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login").permitAll()
-                        .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","rest/san-pham/sorted").permitAll()
+                        .requestMatchers("/rest/danh-muc/getAll").permitAll()
+                        .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
                         //còn lại request nào cũng cần xác thực mới cho phép
                         .anyRequest().authenticated())
                 //http.formLogin(Customizer.withDefaults()); //xác thực bằng gửi biểu mẫu yêu cầu đăng nhập

@@ -126,4 +126,8 @@ public class SanPhamSv {
     public Page<SanPhamInfoDTO> searchSanPham( BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
         return spi.searchSanPhamByPrice(minPrice, maxPrice, pageable);
     }
+
+    public List<SanPhamInfoDTO> findSanPhamByDanhMuc(String tenDanhMuc) {
+        return spi.findSanPhamByDanhMuc(tenDanhMuc);
+    }
 }

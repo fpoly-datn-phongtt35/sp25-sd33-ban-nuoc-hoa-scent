@@ -141,6 +141,11 @@ public class SanPhamCtrl {
             @PageableDefault(size = 12) Pageable pageable) {
         return sps.searchSanPham( minPrice, maxPrice, pageable);
     }
+
+    @GetMapping("/search-danhmuc")
+    public List<SanPhamInfoDTO> getSanPhamByDanhMuc(@RequestParam String tenDanhMuc) {
+        return sps.findSanPhamByDanhMuc(tenDanhMuc);
+    }
 }
 
 
