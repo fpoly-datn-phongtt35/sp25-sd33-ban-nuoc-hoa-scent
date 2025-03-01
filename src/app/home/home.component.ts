@@ -6,10 +6,11 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms'; 
 
+import { MatSliderModule } from '@angular/material/slider';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [HeaderComponent, FooterComponent, CommonModule,FormsModule],
+  imports: [HeaderComponent, FooterComponent, CommonModule,FormsModule,MatSliderModule],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'], // Sửa từ styleUrl thành styleUrls
 })
@@ -21,13 +22,30 @@ export class HomeComponent implements OnInit {
   visiblePages: number[] = []; // Các trang hiển thị
   query: string = '';
   results: any[] = [];
+  minPrice: number = 100000; // Giá tối thiểu
+  maxPrice: number = 10000000; // Giá tối đa
+  selectedMinPrice: number = 100000; // Giá bắt đầu
+  selectedMaxPrice: number = 10000000; // Giá kết thúc
+
+  categories: any[] = [];
   constructor(private sanPhamService: SanPhamService,private router: Router) {}
 
   ngOnInit(): void {
     this.fetchSanPhamDetails();
-    
+    this.fetDanhMuc();
   }
 
+  fetDanhMuc():void{
+    this.sanPhamService.getCategories().subscribe({
+      next: (data: any[]) => {
+        this.categories = data;
+      },
+      error: (err: any) => {
+        console.error('Failed to get categories:', err);
+      }
+    });
+  
+  }
   // Lấy danh sách sản phẩm từ API
   fetchSanPhamDetails(): void {
     this.sanPhamService.getSanPhamDetails(this.currentPage - 1, this.pageSize).subscribe(
@@ -48,14 +66,17 @@ export class HomeComponent implements OnInit {
   onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      // Kiểm tra nếu có truy vấn tìm kiếm, sử dụng nó để tải kết quả
+  
       if (this.query) {
-        this.loadSearchResults();  // Tải kết quả tìm kiếm với trang hiện tại và kích thước trang
+        this.loadSearchResults();  // Tìm kiếm theo query
+      } else if (this.selectedMinPrice !== this.minPrice || this.selectedMaxPrice !== this.maxPrice) {
+        this.fetchSanPhamDetailsPrice();  // Tìm kiếm theo khoảng giá
       } else {
-        this.fetchSanPhamDetails();  // Tải lại toàn bộ sản phẩm nếu không có truy vấn tìm kiếm
+        this.fetchSanPhamDetails();  // Lấy toàn bộ sản phẩm
       }
     }
   }
+  
   
  
   
@@ -101,6 +122,22 @@ export class HomeComponent implements OnInit {
     });
   }
   
-  
+  fetchSanPhamDetailsPrice(): void {
+    this.sanPhamService.searchSanPhamByPrice(this.selectedMinPrice, this.selectedMaxPrice,this.currentPage -1,this.pageSize).subscribe(
+      (data: any) => {
+        console.log('lọc:',data);
+        this.sanPhams = data.content;
+       
+        this.totalPages = data.totalPages;
+        this.updateVisiblePages();
+      },
+      (error: any) => console.error('Lỗi khi gọi API:', error)
+    );
+  }
+
+  filterByPrice(): void {
+    console.log(`Lọc giá từ: ${this.selectedMinPrice} đ đến ${this.selectedMaxPrice} đ`);
+    this.fetchSanPhamDetailsPrice();
+  }
   
 }

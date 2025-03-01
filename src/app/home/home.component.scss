@@ -1,69 +1,136 @@
-.container {
-  padding: 20px;
-}
-
-.banner {
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-.banner-image {
-  width: 100%;
-  border-radius: 10px;
-  object-fit: cover;
-}
-
-
-.section-title {
-  font-size: 24px;
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Giới hạn luôn hiển thị 4 cột */
+/* 🌟 Container tổng chia 2 cột */
+.main-container {
+  display: flex;
   gap: 20px;
-  justify-items: center; /* Căn giữa các sản phẩm trong mỗi cột */
+  max-width: 1200px;
+  margin: auto;
+  align-items: flex-start;
 }
 
-
-
-.product-card {
-  border: 1px solid #ddd;
-  border-radius: 10px;
+/* 📌 Danh mục bên trái */
+.category-container {
+  width: 250px;
+  background: #fff;
   padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  max-width: 250px; /* Giới hạn chiều rộng tối đa của thẻ sản phẩm */
-  width: 100%; /* Đảm bảo rằng thẻ sản phẩm mở rộng để phù hợp với không gian cột */
-  margin: 0 auto; /* Căn giữa thẻ trong không gian cột */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 65px;
 }
 
-
-.product-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.product-image {
-  width: 100%;
-  height: auto;
-  border-radius: 5px;
+.category-container h3 {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
   margin-bottom: 10px;
 }
 
-.product-title {
+.category-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.category-container ul li {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.category-container ul li:last-child {
+  border-bottom: none;
+}
+
+.category-container ul li a {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+
+.category-container ul li a:hover {
+  color: #d4a017;
+}
+
+/* 🛍️ Container sản phẩm bên phải */
+.product-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 🔎 Tìm kiếm & Bộ lọc giá */
+.search-filter-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+/* 🔎 Ô tìm kiếm */
+.search-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 400px;
+  margin-top: 15px;
+  
+}
+
+.search-box input {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
   font-size: 18px;
-  margin: 10px 0;
+  width: 40px;
 }
 
-.product-price {
-  font-size: 16px;
-  color: #e63946;
+.search-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  margin-left: 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: bold;
+  transition: background 0.3s;
 }
 
+.search-button:hover {
+  background-color: #0056b3;
+}
+
+/* 🎚️ Bộ lọc giá */
+.filter-container {
+  padding: 15px;
+  border: 2px solid #b9b9b7;
+  border-radius: 10px;
+  text-align: center;
+  background-color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
+  width: 220px;
+}
+
+mat-slider .mdc-slider__thumb {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 14px solid #d4a017; /* Màu vàng giống theme */
+  transform: translateY(-5px); /* Điều chỉnh vị trí */
+}
+mat-slider .mdc-slider__thumb:hover {
+  border-bottom-color: #b68910 !important; /* Đổi màu khi hover */
+  transform: scale(1.2) translateY(-5px);
+}
+mat-slider .mdc-slider__track {
+  background-color: #d4a017 !important; /* Màu nền của thanh trượt */
+  height: 4px;
+}
 .pagination {
   display: flex;
   justify-content: center;
@@ -80,45 +147,103 @@
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  color: #dbe4ed;
+  color: #007bff;
   cursor: pointer;
   text-decoration: none;
 }
 
 .page-item.active .page-link {
-  background-color: #ebaae4;
+  background-color: #007bff;
   color: #fff;
   font-weight: bold;
 }
-
+.divider {
+  margin: 15px 0;
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #ccc, transparent);
+}
 .page-link:hover {
-  background-color: #f39d9d;
+  background-color: #f1f1f1;
 }
 
-.search-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+
+/* 📌 Tiêu đề bộ lọc */
+.filter-container h4 {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
 }
 
-input[type="text"] {
-  padding: 10px;
-  margin-right: 10px;
-  width: 300px; /* Chiều rộng cố định cho input */
-  border: 1px solid #ccc;
-  border-radius: 5px;
+/* 🎚️ Thanh trượt */
+.price-slider {
+  width: 100%;
+  margin: 5px 0;
 }
 
-button {
-  padding: 10px 20px;
-  background-color: #007bff;
+/* 💰 Hiển thị giá trị */
+.price-range {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin: 3px 0;
+}
+
+.price-range strong {
+  color: #43413d;
+}
+
+/* 🔘 Nút lọc */
+.filter-button {
+  background-color: #4e4e4c;
   color: white;
+  padding: 5px 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background 0.3s;
 }
 
-button:hover {
-  background-color: #0056b3;
+.filter-button:hover {
+  background-color: #b68910;
 }
 
+/* 🛍️ Danh sách sản phẩm */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  justify-content: center;
+  max-width: 900px;
+  margin: auto;
+}
+
+/* 🏷️ Thẻ sản phẩm */
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  background: #fff;
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  max-width: 200px; /* Giảm kích thước ô sản phẩm */
+}
+.product-card:hover {
+  transform: scale(1.05);
+}
+
+/* 📷 Ảnh sản phẩm */
+.product-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.product-title {
+  font-size: 14px; /* Giảm kích thước chữ tiêu đề */
+  font-weight: bold;
+  color: #333;
+}
