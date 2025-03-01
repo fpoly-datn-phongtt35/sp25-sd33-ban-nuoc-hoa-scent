@@ -160,7 +160,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
             "ORDER BY MIN(spct.donGia)")
-    List<SanPhamInfoDTO> findSanPhamByDanhMuc(String tenDanhMuc);
+    Page<SanPhamInfoDTO> findSanPhamByDanhMuc(String tenDanhMuc,Pageable pageable);
 }
 
 

@@ -143,8 +143,8 @@ public class SanPhamCtrl {
     }
 
     @GetMapping("/search-danhmuc")
-    public List<SanPhamInfoDTO> getSanPhamByDanhMuc(@RequestParam String tenDanhMuc) {
-        return sps.findSanPhamByDanhMuc(tenDanhMuc);
+    public Page<SanPhamInfoDTO> getSanPhamByDanhMuc(@RequestParam String tenDanhMuc,@PageableDefault(size = 12) Pageable pageable) {
+        return sps.findSanPhamByDanhMuc(tenDanhMuc,pageable);
     }
 }
 
