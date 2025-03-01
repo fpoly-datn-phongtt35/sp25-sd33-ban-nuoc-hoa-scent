@@ -26,6 +26,7 @@ export class HomeComponent implements OnInit {
   maxPrice: number = 10000000; // Giá tối đa
   selectedMinPrice: number = 100000; // Giá bắt đầu
   selectedMaxPrice: number = 10000000; // Giá kết thúc
+  currentCategory: string = '';
 
   categories: any[] = [];
   constructor(private sanPhamService: SanPhamService,private router: Router) {}
@@ -71,7 +72,10 @@ export class HomeComponent implements OnInit {
         this.loadSearchResults();  // Tìm kiếm theo query
       } else if (this.selectedMinPrice !== this.minPrice || this.selectedMaxPrice !== this.maxPrice) {
         this.fetchSanPhamDetailsPrice();  // Tìm kiếm theo khoảng giá
-      } else {
+      } 
+      else if (this.currentCategory) {
+        this.loadProductsByCategory(this.currentCategory);  // Tải sản phẩm theo danh mục hiện tại
+      }else {
         this.fetchSanPhamDetails();  // Lấy toàn bộ sản phẩm
       }
     }
@@ -135,6 +139,21 @@ export class HomeComponent implements OnInit {
     );
   }
 
+  loadProductsByCategory(category: string): void {
+    this.currentPage = 1; // Reset trang về đầu tiên
+    this.sanPhamService.getProductsByCategory(category, this.currentPage - 1, this.pageSize).subscribe({
+      next: (data: any) => {
+        console.log('lọc2:',data);
+        this.sanPhams = data.content;
+        this.totalPages = data.totalPages;
+        this.updateVisiblePages();
+      },
+      error: (err: any) => {
+        console.error('Failed to load products by category:', err);
+      }
+    });
+  }
+  
   filterByPrice(): void {
     console.log(`Lọc giá từ: ${this.selectedMinPrice} đ đến ${this.selectedMaxPrice} đ`);
     this.fetchSanPhamDetailsPrice();

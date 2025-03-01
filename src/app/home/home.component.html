@@ -10,7 +10,7 @@
     <h3>DANH MỤC</h3>
     <ul>
       <li *ngFor="let category of categories">
-        {{ category.tenDanhMuc }}
+        <a href="#" (click)="loadProductsByCategory(category.tenDanhMuc)">{{ category.tenDanhMuc }}</a>
       </li>
     </ul>
     <hr class="divider">

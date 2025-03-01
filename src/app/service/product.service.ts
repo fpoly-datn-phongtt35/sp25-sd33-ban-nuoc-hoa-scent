@@ -9,6 +9,7 @@ export class SanPhamService {
   private apiURL = 'http://localhost:8080/rest/san-pham/All'; // URL của API
   private baseUrl = 'http://localhost:8080/rest/san-pham';
   private apiSearch = 'http://localhost:8080/rest/san-pham/search';
+  private apiSearchdm = 'http://localhost:8080/rest/san-pham/search-danhmuc';
 private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll'
   constructor(private http: HttpClient) {
     console.log('SanPhamService đã được khởi tạo.');
@@ -44,4 +45,14 @@ private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll'
   getCategories(): Observable<any> {
     return this.http.get<any>(this.apiDanhMuc);
   }
+  public getProductsByCategory(category: string, page: number = 0, pageSize: number = 12): Observable<any> {
+    let params = new HttpParams()
+        .set('tenDanhMuc', category)
+        .set('page', page.toString())
+        .set('pageSize', pageSize.toString());
+
+    return this.http.get<any>(this.apiSearchdm, { params });
+}
+
+
 }
