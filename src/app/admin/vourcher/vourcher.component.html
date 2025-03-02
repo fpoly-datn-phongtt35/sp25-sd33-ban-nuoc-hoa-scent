@@ -1,65 +1,66 @@
 <div class="voucher-container">
-    <div class="header d-flex justify-content-between align-items-center mb-3">
-      <h2>Voucher</h2>
-      <div class="search-container">
-        <input type="text" class="search-input" placeholder="Search">
-        <button class="search-btn"><i class="bi bi-search"></i></button>
-      </div>
-    </div>
-  
-    <!-- Toolbar -->
-    <div class="toolbar d-flex gap-2 mb-2">
-      <button class="btn btn-primary">+ Add</button>
-      <button class="btn btn-danger">Delete</button>
-      <div class="flex-grow-1"></div>
-      <button class="btn btn-outline-secondary">Export Data</button>
-      <select class="sort-dropdown">
-        <option selected disabled>Sort by: ID</option>
-        <option>Name</option>
-        <option>Price</option>
-        <option>Status</option>
-      </select>
-    </div>
-  
-    <!-- Table -->
-    <table class="table table-bordered">
-      <thead class="table-header">
-        <tr>
-            <th>ID</th>
-          <th>Mã giảm giá</th>
-          <th>Giá trị giảm</th>
-         
-          <th>Ngày bắt đầu</th>
-          <th>Ngày hết hạn</th>
-          <th>Điều kiện</th>
-         
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-            <td>1</td>
-          <td>khong</td>
-         
-          <td>1.430.000₫</td>
-          <td>1 Jan, 2025</td>
-          <td>25 Jan, 2025</td>
-          <td>ĐƠn hàng trên 1 củ</td>
-        </tr>
-        
-      </tbody>
-    </table>
-  
-    <!-- Pagination -->
-    <div class="pagination-container">
-      <ul class="pagination">
-        <li class="page-item"><a href="#" class="page-link">1</a></li>
-        <li class="page-item active"><a href="#" class="page-link">2</a></li>
-        <li class="page-item"><a href="#" class="page-link">3</a></li>
-        <li class="page-item"><a href="#" class="page-link">4</a></li>
-        <li class="page-item"><a href="#" class="page-link">5</a></li>
-        <li class="page-item disabled"><span>...</span></li>
-        <li class="page-item"><a href="#" class="page-link">20</a></li>
-      </ul>
+  <div class="header d-flex justify-content-between align-items-center mb-3">
+    <h2>Voucher</h2>
+    <div class="search-container form-inline">
+      <input type="text" class="form-control mr-2 search-input" placeholder="Search" aria-label="Search vouchers">
+      <button class="btn btn-outline-primary search-btn" aria-label="Search button">
+        <i class="bi bi-search"></i>
+      </button>
     </div>
   </div>
-  
+
+  <!-- Toolbar -->
+  <div class="toolbar d-flex gap-2 mb-2">
+    <button class="btn btn-primary" aria-label="Add new voucher">+ Add</button>
+    <button class="btn btn-danger" aria-label="Delete selected vouchers">Delete</button>
+    <div class="flex-grow-1"></div>
+    <button class="btn btn-outline-secondary" aria-label="Export data">Export Data</button>
+    <select class="form-control sort-dropdown" aria-label="Sort vouchers">
+      <option value="id" selected>Sort by: ID</option>
+      <option value="name">Name</option>
+      <option value="price">Price</option>
+      <option value="status">Status</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+<!-- Sử dụng safe navigation operator khi truy cập properties -->
+<div >
+    
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Mã giảm giá</th>
+            <th>Giá trị</th>
+            <th>Ngày bắt đầu</th>
+            <th>Ngày hết hạn</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of phieuGiamGias">
+            <td>{{ item.id }}</td>
+            <td>{{ item.maGiamGia }}</td>
+            <td>{{ item.giaTriGiam }}</td>
+            <td>{{ item.ngayBatDau }}</td>
+            <td>{{ item.ngayHetHan }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <ul class="pagination">
+      <li class="page-item"><a href="#" class="page-link">1</a></li>
+      <li class="page-item active"><a href="#" class="page-link">2</a></li>
+      <li class="page-item"><a href="#" class="page-link">3</a></li>
+      <li class="page-item"><a href="#" class="page-link">4</a></li>
+      <li class="page-item"><a href="#" class="page-link">5</a></li>
+      <li class="page-item disabled"><span>...</span></li>
+      <li class="page-item"><a href="#" class="page-link">20</a></li>
+    </ul>
+  </div>
+</div>
