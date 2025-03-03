@@ -1,66 +1,75 @@
-<body>
-    <div class="product-container">
-      <header class="header">
-        <h2>Sản phẩm</h2>
-        <div class="header-controls">
-          <div class="search-box">
-            <input type="text" placeholder="Search">
-            <i class="bi bi-search"></i>
-          </div>
-          <i class="bi bi-bell"></i>
-        </div>
-      </header>
-  
-      <div class="product-actions">
-        <button class="btn-add-product">+ Add product</button>
-        <div class="btn-group">
-          <button class="btn-export">Export data</button>
-          <select class="sort-select">
-            <option value="id">Sort by: ID</option>
-            <option value="name">Sort by: Name</option>
-          </select>
-        </div>
-      </div>
-  
-      <table class="product-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Hình ảnh</th>
-            <th>Tên</th>
-            <th>Thương hiệu</th>
-            <th>Danh mục</th>
-            <th>Đơn giá</th>
-            <th>Số lượng tồn kho</th>
-            <th>Dung tích</th>
-            <th>Thành phần</th>
-            <th>Mùi hương</th>
-            <th>Trạng thái</th>
-          </tr>
-        </thead>
-        <tbody>
-          <td>0</td>
-         <td>1</td>
-         <td>2</td>
-         <td>3</td>
-         <td>4</td>
-         <td>5</td>
-         <td>6</td>
-         <td>7</td>
-         <td>8</td>
-         <td>9</td>
-         <td>10</td>
-        </tbody>
-      </table>
-  
-      <div class="pagination">
-        <button class="page-btn">1</button>
-        <button class="page-btn active">2</button>
-        <button class="page-btn">3</button>
-        <button class="page-btn">4</button>
-        <button class="page-btn">5</button>
-        <span>...</span>
-        <button class="page-btn">20</button>
+<div class="product-container">
+  <header class="header">
+    <h2>Sản phẩm</h2>
+    <div class="header-controls">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm..." />
+        <button >
+          <i class="bi bi-search"></i>
+        </button>
       </div>
     </div>
-  </body>
+  </header>
+
+  <div class="product-actions">
+    <button class="btn-add-product">+ Thêm sản phẩm</button>
+    <div class="btn-group">
+      <button class="btn-export">Xuất dữ liệu</button>
+    </div>
+  </div>
+
+  <table class="product-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Hình ảnh</th>
+        <th>Tên</th>
+        <th>Thương hiệu</th>
+        <th>Danh mục</th>
+        <th>Mùi hương</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let product of products">
+        <td>{{ product.idSanPham }}</td>
+        <td>
+          <div class="product-image">
+            <img *ngIf="product.imageURL; else noImage" [src]="product.imageURL" [alt]="product.tenSanPham" />
+            <ng-template #noImage><p>Không có hình ảnh</p></ng-template>
+          </div>
+        </td>
+        <td>{{ product.tenSanPham }}</td>
+        <td>{{ product.tenThuongHieu }}</td>
+        <td>{{ product.tenDanhMuc }}</td>
+        <td class="fragrance-column">
+          <ul>
+            <li><strong>Tầng đầu:</strong> {{ product.moTaHuongDau }}</li>
+            <li><strong>Tầng giữa:</strong> {{ product.moTaHuongGiua }}</li>
+            <li><strong>Tầng cuối:</strong> {{ product.moTaHuongCuoi }}</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <button class="page-btn" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0">
+      &laquo; Trước
+    </button>
+
+    <button
+      class="page-btn"
+      *ngFor="let page of getPages(); let i = index"
+      (click)="changePage(i)"
+      [ngClass]="{'active': currentPage === i}"
+    >
+      {{ i + 1 }}
+    </button>
+
+    <button class="page-btn" (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages - 1">
+      Tiếp &raquo;
+    </button>
+  </div>
+
+
+</div>

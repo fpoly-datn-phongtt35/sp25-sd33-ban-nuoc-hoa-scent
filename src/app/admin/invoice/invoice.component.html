@@ -1,6 +1,6 @@
 <div class="invoice-container">
     <h2 class="section-title">Hóa đơn</h2>
-  
+
     <!-- Bộ lọc trạng thái đơn hàng -->
     <div class="status-tabs">
       <button class="tab active">Tất cả</button>
@@ -11,13 +11,13 @@
       <button class="tab">Trả hàng/Hoàn tiền</button>
       <button class="tab">Đã hoàn tiền</button>
     </div>
-  
+
     <!-- Bộ lọc ngày và hành động -->
     <div class="filter-actions">
       <label for="date-filter">Ngày tạo</label>
       <input type="date" id="start-date">
       <input type="date" id="end-date">
-  
+
       <div class="action-buttons">
         <button class="btn-export">Export data</button>
         <select class="sort-dropdown">
@@ -27,7 +27,7 @@
         </select>
       </div>
     </div>
-  
+
     <!-- Bảng dữ liệu hóa đơn -->
     <table class="invoice-table">
       <thead>
@@ -39,37 +39,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Lattafa Eclaire EDP</td>
-          <td>Available</td>
-          <td>1.430.000đ</td>
-          <td>001</td>
-        </tr>
-        <tr>
-          <td>Lattafa Eclaire EDP</td>
-          <td>Available</td>
-          <td>1.430.000đ</td>
-          <td>002</td>
-        </tr>
-        <tr>
-          <td>Lattafa Eclaire EDP</td>
-          <td>Sold out</td>
-          <td>1.430.000đ</td>
-          <td>003</td>
-        </tr>
-        <tr>
-          <td>Lattafa Eclaire EDP</td>
-          <td>Available</td>
-          <td>1.430.000đ</td>
-          <td>004</td>
-        </tr>
-        <tr>
-          <td>Lattafa Eclaire EDP</td>
-          <td>Available</td>
-          <td>1.430.000đ</td>
-          <td>005</td>
+        <tr *ngFor="let invoice of orders">
+          <td>{{ invoice.tenNguoiNhanHang }}</td>
+          <td>{{ invoice.trangThai }}</td>
+          <td>{{ invoice.tongTien | number: '1.0-3' }}đ</td>
+          <td>{{ invoice.id }}</td>
         </tr>
       </tbody>
     </table>
   </div>
-  

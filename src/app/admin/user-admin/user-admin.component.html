@@ -10,7 +10,7 @@
         <button class="export-btn">Export Excel</button>
       </div>
     </div>
-  
+
     <div class="table-container">
       <table class="table">
         <thead>
@@ -26,23 +26,22 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <td>Nguyễn Văn A</td>
-            <td>usern</td>
-            <td>s</td>
-            <td>012345678</td>
-            <td>ADMIN</td>
-            <td>Đang làm</td>
+          <tr *ngFor="let account of accounts; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ account.hoTen }}</td>
+            <td>{{ account.tenDangNhap }}</td>
+            <td>{{ account.email }}</td>
+            <td>{{ account.sdt }}</td>
+            <td>{{ account.vaiTro }}</td>
+            <td>{{ account.trangThai || 'Đang làm' }}</td>  <!-- Nếu API không có trạng thái thì mặc định là 'Đang làm' -->
             <td class="actions">
-              <button class="btn-action edit"><i class="bi bi-pencil"></i></button>
+              <button class="btn-action edit" ><i class="bi bi-pencil"></i></button>
               <button class="btn-action delete"><i class="bi bi-trash"></i></button>
               <button class="btn-action view"><i class="bi bi-eye"></i></button>
             </td>
           </tr>
-          
         </tbody>
       </table>
+
     </div>
   </div>
-  

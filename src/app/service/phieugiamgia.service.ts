@@ -10,10 +10,9 @@ import { TokenService } from './token.service';
 
 export class PhieugiamgiaService {
     constructor(private http: HttpClient) { }
-  private apiUrl = 'http://localhost:8080/rest/phieu-giam-gia/getAll'; // URL API của bạn
+  private apiUrl = 'http://localhost:8080/rest/phieu-giam-gia'; // URL API của bạn
 
   getAllPhieuGiamGia(): Observable<any> {
-    return this.http.get(this.apiUrl);
+    return this.http.get(`${this.apiUrl}/getAll`);
   }
-
 }
