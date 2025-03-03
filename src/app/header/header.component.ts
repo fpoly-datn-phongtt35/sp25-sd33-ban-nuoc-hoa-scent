@@ -23,6 +23,12 @@ export class HeaderComponent {
   }
 
   toggleShoppingCart() {
+    const token = this.tokenService.getToken();
+    if (!token || this.tokenService.isTokenExpired()) {
+        
+        this.router.navigate(['/login']);
+        return;
+    }
     this.isShoppingCartOpen = !this.isShoppingCartOpen;
   }
 

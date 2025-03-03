@@ -6,6 +6,19 @@
   margin: auto;
   align-items: flex-start;
 }
+.banner {
+  width: 100%;  /* Đảm bảo banner chiếm toàn bộ chiều rộng */
+  height: 500px;  /* Điều chỉnh chiều cao banner, có thể thay đổi giá trị này */
+  overflow: hidden;
+  position: relative;
+}
+
+.banner-image {
+  width: 100%;  /* Ảnh sẽ tự động chiếm toàn bộ chiều rộng của phần tử */
+  height: 100%;  /* Ảnh sẽ tự động có chiều cao 100% so với phần tử chứa */
+  object-fit: contain;  /* Giữ tỷ lệ ảnh, làm cho ảnh lấp đầy phần tử mà không bị méo */
+ 
+}
 
 /* 📌 Danh mục bên trái */
 .category-container {

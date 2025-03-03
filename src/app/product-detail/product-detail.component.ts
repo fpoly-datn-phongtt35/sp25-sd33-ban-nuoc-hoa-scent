@@ -9,6 +9,8 @@ import { HeaderComponent } from '../header/header.component';
 import { CartService } from '../service/cart.Service';
 import { SanPhamService } from '../service/product.service';
 import { FormsModule } from '@angular/forms'; 
+import { AuthGuard } from '../Guard/authguard';
+import { TokenService } from '../service/token.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -28,7 +30,7 @@ export class ProductDetailComponent implements OnInit {
     private router: Router,
     private detailService: DetailService,
     private cartService: CartService,
-    private sanPhamService: SanPhamService
+    private sanPhamService: SanPhamService,private tokenService:TokenService
   ) {}
 
   ngOnInit(): void {
@@ -139,6 +141,13 @@ export class ProductDetailComponent implements OnInit {
   }
 
   addToCart(): void {
+    const token = this.tokenService.getToken();
+    if (!token || this.tokenService.isTokenExpired()) {
+        alert('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!');
+        // Chuyển hướng đến trang đăng nhập
+        this.router.navigate(['/login']);
+        return;
+    }
     if (!this.selectedVolume) {
         alert('Vui lòng chọn dung tích trước khi thêm vào giỏ hàng!');
         return;
