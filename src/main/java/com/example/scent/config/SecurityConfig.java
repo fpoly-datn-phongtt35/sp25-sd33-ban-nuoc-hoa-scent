@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpMethod;
 
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -42,10 +43,22 @@ public class SecurityConfig {
                 .authorizeHttpRequests(r -> r
                         /*ko yêu cầu xác thực cho 2 request này (ko chỉ phục vụ cho mục đích test, mà còn vì trong thực tế
                         yêu cầu xác thực mới cho đăng ký hay đăng nhập là ngu*/
-                        .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login").permitAll()
-                        .requestMatchers("/rest/danh-muc/getAll").permitAll()
+                        .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login","rest/tai-khoan/getAll").permitAll()
+                        .requestMatchers("/rest/danh-muc/getAll","/rest/phieu-giam-gia/getAll").permitAll()
+                        .requestMatchers("/rest/khach-hang/getAll").permitAll()
+                        .requestMatchers("/rest/don-hang/getAll").permitAll()
                         .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
-                        //còn lại request nào cũng cần xác thực mới cho phép
+                        .requestMatchers("rest/spct/getAll").permitAll()
+//                         // // // // // // // // // // // // // // // // // // // //
+//                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
+//                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
+//                        .requestMatchers("rest/huong-dau/getAll").permitAll()
+//                        .requestMatchers("rest/huong-giua/getAll").permitAll()
+//                        .requestMatchers("rest/huong-cuoi/getAll").permitAll()
+//                        .requestMatchers("rest/phan-hoi/getAll").permitAll()
+//                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
+//                        .requestMatchers("rest/ctdh/getAll").permitAll()
+//                        còn lại request nào cũng cần xác thực mới cho phép
                         .anyRequest().authenticated())
                 //http.formLogin(Customizer.withDefaults()); //xác thực bằng gửi biểu mẫu yêu cầu đăng nhập
                 //xác thực mặc định, gửi thông tin đăng nhập được mã hóa đi kèm với request (để có thể test trên postman)

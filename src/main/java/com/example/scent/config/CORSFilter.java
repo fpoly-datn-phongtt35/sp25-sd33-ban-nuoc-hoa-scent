@@ -9,29 +9,33 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.io.IOException;
-
 @Component
 public class CORSFilter implements Filter {
     @Override
-    public void doFilter(ServletRequest reg, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
         HttpServletResponse response = (HttpServletResponse) res;
-        HttpServletRequest request = (HttpServletRequest) reg;
-        response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Header, Authorization, X_Requested-With, observe");
+        HttpServletRequest request = (HttpServletRequest) req;
+
+        // Set to specific domain for production
+
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:4200");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
         response.setHeader("Access-Control-Max-Age", "3600");
         response.setHeader("Access-Control-Allow-Credentials", "true");
-        if (request.getMethod().equals("OPTIONS")) {
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             response.setStatus(HttpServletResponse.SC_OK);
         } else {
-            chain.doFilter(reg, res);
+            chain.doFilter(req, res);
         }
     }
 
     @Override
-    public void init(FilterConfig con) {
+    public void init(FilterConfig config) {
     }
 
     @Override
