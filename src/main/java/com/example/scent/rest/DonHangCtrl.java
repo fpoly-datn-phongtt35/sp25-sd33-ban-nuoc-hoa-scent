@@ -87,5 +87,16 @@ public class DonHangCtrl {
         dhs.updateTrangThaiDonHang(id);
         return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành 'Đang xử lý' thành công");
     }
+    @GetMapping("/get-don-hang-chua-xu-ly")
+    public ResponseEntity<List<DonHang>> getDonHangChoXuLy() {
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai(0);
+        return ResponseEntity.ok(donHangs);
+    }
 
+    // API lấy danh sách đơn hàng có trạng thái "đang xử lý" (trangThai = 1)
+    @GetMapping("/get-don-hang-dang-xu-ly")
+    public ResponseEntity<List<DonHang>> getDonHangDangXuLy() {
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai(1);
+        return ResponseEntity.ok(donHangs);
+    }
 }

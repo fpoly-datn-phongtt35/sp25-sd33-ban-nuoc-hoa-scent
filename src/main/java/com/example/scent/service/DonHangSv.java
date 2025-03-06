@@ -55,4 +55,7 @@ public class DonHangSv {
     public void updateTrangThaiDonHang(Integer id) {
         dhi.updateStatusToProcessing(id);
     }
+    public List<DonHang> getDonHangByTrangThai(Integer trangThai) {
+        return dhi.findByTrangThai(trangThai);
+    }
 }
