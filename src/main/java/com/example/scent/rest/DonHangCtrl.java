@@ -81,4 +81,11 @@ public class DonHangCtrl {
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { dhs.delete(id);
     }
+
+    @PutMapping("/update-trang-thai-dh/{id}")
+    public ResponseEntity<String> updateStatusToProcessing(@PathVariable Integer id) {
+        dhs.updateTrangThaiDonHang(id);
+        return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành 'Đang xử lý' thành công");
+    }
+
 }

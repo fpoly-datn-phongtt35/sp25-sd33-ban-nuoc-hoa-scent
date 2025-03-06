@@ -3,6 +3,7 @@ package com.example.scent.repo;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.entity.DonHang;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,5 +35,9 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
                 GROUP BY YEAR(dh.ngay_van_chuyen), MONTH(dh.ngay_van_chuyen), sp.ten
                 ORDER BY nam DESC, thang DESC, soLuong DESC """, nativeQuery = true)
     List<SanPhamThongKeDto> getProductStatistics(@Param("year") Integer year, @Param("month") Integer month, @Param("status") Integer status);
+
+    @Modifying
+    @Query("UPDATE DonHang d SET d.trangThai = 2 WHERE d.id = :id")
+    void updateStatusToProcessing(@Param("id") Integer id);
 
 }

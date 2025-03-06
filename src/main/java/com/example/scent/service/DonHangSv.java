@@ -6,6 +6,7 @@ import com.example.scent.entity.DonHang;
 import com.example.scent.repo.DonHangInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -48,5 +49,10 @@ public class DonHangSv {
 
     public DonHang detail(Integer id) {
         return dhi.findById(id).get();
+    }
+
+    @Transactional
+    public void updateTrangThaiDonHang(Integer id) {
+        dhi.updateStatusToProcessing(id);
     }
 }
