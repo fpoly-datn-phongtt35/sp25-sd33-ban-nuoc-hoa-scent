@@ -31,6 +31,9 @@ public class DonHang {
     @Column(name = "dia_chi_giao_hang")
     private String diaChiGiaoHang;
 
+    @Column(name = "ma_van_don")
+    private String maVanDon;
+
     @NotEmpty(message = "SĐT người nhận không được để trống")
     @Pattern(regexp = "^0.*$", message = "SĐT phải bắt đầu bằng số 0")
     @Pattern(regexp = "^\\d+$", message = "SĐT phải chỉ chứa các chữ số")
@@ -85,6 +88,14 @@ public class DonHang {
 
     public void setTrangThai(Integer trangThai) {
         this.trangThai = trangThai;
+    }
+
+    public String getMaVanDon() {
+        return maVanDon;
+    }
+
+    public void setMaVanDon(String maVanDon) {
+        this.maVanDon = maVanDon;
     }
 
     public Integer getId() {
