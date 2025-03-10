@@ -4,20 +4,24 @@
     <table>
         <thead>
             <tr>
-                <th><input type="checkbox" id="select-all" onclick="selectAll(this)"></th>
+              <th>
+                <input type="checkbox" (change)="toggleSelectAll()" [checked]="isAllSelected">
+              </th>
+              
                 <th>Ảnh</th>
                 <th>Sản phẩm</th>
+                
                 <th>Dung tích</th>
                 <th>Giá</th>
                 <th>Số lượng</th>
                 <th>Xóa</th>
-                <th>Thành tiền</th>
+               
             </tr>
         </thead>
         <tbody>
             <tr *ngFor="let item of cartItems; trackBy: trackByProduct">
-              <input type="checkbox" (change)="onProductSelect(item, $event)">
-
+             <td> <input type="checkbox" (change)="onProductSelect(item, $event)" [checked]="selectedProducts.includes(item)">
+             </td>
 
               <td class="product-info">
                 <!-- Kiểm tra lại item.product.imageURL có phải là đường dẫn hợp lệ và item.product có tồn tại -->
@@ -34,7 +38,7 @@
                 <button class="remove-btn" (click)="removeItem(item.product.idSanPham, item.product.dungTich)">Xóa</button>
             </td>
               <!-- Tính toán tổng giá tiền dựa trên số lượng và giá sản phẩm -->
-              <td>{{ item.quantity * item.product.donGia | currency:'VND' }}</td>
+             
             </tr>
           </tbody>
           
@@ -42,11 +46,11 @@
     </table>
     <div class="total-container">
         <div class="select-all">
-            <input type="checkbox" id="select-all-bottom" onclick="selectAll(this)">
-            <label for="select-all-bottom">Chọn tất cả ({{ cartItems.length }})</label>
+            <h6 >Tất cả ({{ cartItems.length }})</h6>
         </div>
         <div class="total-info">
-            <span><strong>Tổng tiền: {{ getTotal() | currency:'VND' }}</strong></span>
+          <span><strong>Tổng tiền:</strong> {{ totalAmount | number }} VND</span>
+
             <button class="btn-order" (click)="placeOrder()">Đặt hàng</button>
         </div>
     </div>
