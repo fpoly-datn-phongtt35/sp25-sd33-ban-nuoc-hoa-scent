@@ -155,6 +155,12 @@ mat-slider .mdc-slider__track {
 .page-item {
   margin: 0 5px;
 }
+.pagination-container {
+  min-height: 50px; /* Đảm bảo có đủ chỗ để hiển thị */
+  padding: 10px;
+  background-color: white; /* Kiểm tra nếu bị che */
+}
+
 
 .page-link {
   padding: 8px 12px;

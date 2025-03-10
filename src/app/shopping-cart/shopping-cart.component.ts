@@ -6,10 +6,12 @@ import { CartService } from '../service/cart.Service';
 import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { TokenService } from '../service/token.service';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-shopping-cart',
   standalone: true,
-  imports: [CommonModule,FormsModule],
+  imports: [CommonModule,FormsModule,RouterModule],
   templateUrl: './shopping-cart.component.html',
   styleUrls: ['./shopping-cart.component.scss'] // Sửa thành "styleUrls"
 })
@@ -18,8 +20,8 @@ export class ShoppingCartComponent implements OnInit{
   cartItems: any[] = [];
   userId: string | null = null;
   private subscriptions: Subscription = new Subscription();
-
-  constructor(private cartService: CartService,private cdr: ChangeDetectorRef,private tokenService: TokenService) {}
+  selectedProducts: any[] = [];
+  constructor(private cartService: CartService,private cdr: ChangeDetectorRef,private tokenService: TokenService,private router: Router) {}
  
   ngOnInit() {
     // Đăng ký Observable để nhận thông tin cập nhật giỏ hàng và userId
@@ -29,7 +31,22 @@ export class ShoppingCartComponent implements OnInit{
       })
     );
   }
-
+  onProductSelect(product: any, event: Event) {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    if (isChecked) {
+      this.selectedProducts.push(product);
+    } else {
+      this.selectedProducts = this.selectedProducts.filter(p => p.id !== product.id);
+    }
+  }
+  
+  
+  placeOrder() {
+    // Lưu danh sách sản phẩm đã chọn vào localStorage để sử dụng ở trang đặt hàng
+    localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
+    this.router.navigate(['/app-order']);
+  }
+  
   ngOnDestroy() {
     // Hủy đăng ký để tránh memory leaks
     this.subscriptions.unsubscribe();

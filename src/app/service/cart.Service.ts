@@ -8,11 +8,27 @@ export class CartService {
   private cart: Map<string, { product: any, quantity: number, volume: string }> = new Map();
   private cartSubject: BehaviorSubject<Map<string, { product: any, quantity: number, volume: string }>> = new BehaviorSubject(new Map());
   private userId: string | null = null;
-
+  selectedCartItems: any[] = [];
   constructor() {
    
   }
 
+  getCart(): any[] {
+    const userId = this.getUserId(); // Lấy userId từ session/localStorage
+    if (!userId) {
+      console.warn("⚠️ Không có userId, không thể lấy giỏ hàng!");
+      return [];
+    }
+  
+    const storedCart = localStorage.getItem(`cart-${userId}`);
+    if (storedCart) {
+      console.log("📦 Giỏ hàng lấy từ localStorage:", JSON.parse(storedCart));
+      return JSON.parse(storedCart).map(([key, value]: [string, any]) => value);
+    }
+  
+    console.log("🛒 Giỏ hàng trống trong localStorage.");
+    return [];
+  }
   
   setUserId(userId: string | null): void {
     this.userId = userId;
@@ -170,5 +186,15 @@ export class CartService {
   public getItems(): any[] {
     return Array.from(this.cart.entries()).map(([productId, quantity]) => ({ productId, quantity }));
   }
+  setSelectedCartItems(items: any[]) {
+    this.selectedCartItems = items;
+  }
   
+  getSelectedCartItems() {
+    return this.selectedCartItems;
+  }
+  
+  clearSelectedItems() {
+    this.selectedCartItems = [];
+  }
 }

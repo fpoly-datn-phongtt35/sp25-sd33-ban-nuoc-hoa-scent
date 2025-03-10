@@ -34,6 +34,7 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void {
     this.fetchSanPhamDetails();
     this.fetDanhMuc();
+    this.onPageChange(1);
   }
 
   fetDanhMuc():void{
@@ -50,36 +51,48 @@ export class HomeComponent implements OnInit {
   // Lấy danh sách sản phẩm từ API
   fetchSanPhamDetails(): void {
     this.sanPhamService.getSanPhamDetails(this.currentPage - 1, this.pageSize).subscribe(
-      (data: any) => {
-        console.log('API Response:', data); // Kiểm tra dữ liệu trả về từ API
-        this.sanPhams = data.content;
-        this.totalPages = data.totalPages;
-        this.updateVisiblePages();
-      },
-      (error: any) => {
-        console.error('Lỗi khi gọi API:', error);
-      }
+        (data: any) => {
+            console.log("📥 API Response:", data); // Kiểm tra dữ liệu API trả về
+            this.sanPhams = data.content;
+            this.totalPages = data.page?.totalPages ?? 1;  // Sửa lỗi lấy totalPages
+            console.log("🔢 Tổng số trang:", this.totalPages);
+            this.updateVisiblePages();
+        },
+        (error: any) => {
+            console.error("❌ Lỗi khi gọi API:", error);
+        }
     );
-  }
+}
+
   
 
   // Chuyển đến trang mới
   onPageChange(page: number): void {
+    console.log("🔄 Chuyển sang trang:", page);
+    console.log("📌 Tổng số trang:", this.totalPages);
+    
     if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-  
-      if (this.query) {
-        this.loadSearchResults();  // Tìm kiếm theo query
-      } else if (this.selectedMinPrice !== this.minPrice || this.selectedMaxPrice !== this.maxPrice) {
-        this.fetchSanPhamDetailsPrice();  // Tìm kiếm theo khoảng giá
-      } 
-      else if (this.currentCategory) {
-        this.loadProductsByCategory(this.currentCategory);  // Tải sản phẩm theo danh mục hiện tại
-      }else {
-        this.fetchSanPhamDetails();  // Lấy toàn bộ sản phẩm
-      }
+        this.currentPage = page;
+        console.log("📌 Trang hiện tại sau cập nhật:", this.currentPage);
+        
+        if (this.query) {
+            console.log("🔍 Đang tìm kiếm theo query:", this.query);
+            this.loadSearchResults();  // Tìm kiếm theo query
+        } else if (this.selectedMinPrice !== this.minPrice || this.selectedMaxPrice !== this.maxPrice) {
+            console.log("💰 Đang lọc theo giá:", this.selectedMinPrice, "-", this.selectedMaxPrice);
+            this.fetchSanPhamDetailsPrice();  // Tìm kiếm theo khoảng giá
+        } else if (this.currentCategory) {
+            console.log("📂 Đang lọc theo danh mục:", this.currentCategory);
+            this.loadProductsByCategory(this.currentCategory);  // Tải sản phẩm theo danh mục hiện tại
+        } else {
+            console.log("📦 Đang tải tất cả sản phẩm...");
+            this.fetchSanPhamDetails();  // Lấy toàn bộ sản phẩm
+        }
+    } else {
+        console.warn("⚠️ Trang yêu cầu không hợp lệ:", page);
     }
-  }
+}
+
   
   
  
@@ -89,9 +102,9 @@ export class HomeComponent implements OnInit {
     const pagesToShow = 5; // Hiển thị tối đa 5 trang
     const startPage = Math.max(1, this.currentPage - Math.floor(pagesToShow / 2));
     const endPage = Math.min(this.totalPages, startPage + pagesToShow - 1);
-
     this.visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   }
+  
 
   viewProductDetail(productId: number): void {
     if (productId) {

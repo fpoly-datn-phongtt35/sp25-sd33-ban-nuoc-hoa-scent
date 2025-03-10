@@ -1,104 +1,87 @@
 <app-header></app-header>
+
 <div class="order-container">
-    <!-- Thông tin đặt hàng -->
-    <div class="customer-info">
-      <h3>Thông tin nhận hàng</h3>
-      <form>
-       
-        <div class="form-group">
-          <label for="name">Họ và tên</label>
-          <input type="text" id="name" placeholder="Họ và tên">
-        </div>
-        <div class="form-group">
-          <label for="phone">Số điện thoại (tùy chọn)</label>
-          <div class="phone-input">
-            <input type="tel" id="phone" placeholder="Số điện thoại">
-            <span class="flag-icon">🇻🇳</span>
-          </div>
-        </div>
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" placeholder="Email">
-          </div>
-       
-        <div class="form-group">
-          <label for="city">Tỉnh thành</label>
-          <select id="city">
-            <option>Chọn tỉnh thành</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="district">Quận huyện (tùy chọn)</label>
-          <select id="district">
-            <option>Chọn quận huyện</option>
-          </select>
-        </div>
-        <div class="form-group">
-            <label for="address">Địa chỉ (tùy chọn)</label>
-            <input type="text" id="address" placeholder="Địa chỉ (tùy chọn)">
-          </div>
-        <div class="form-group">
-          <label for="note">Ghi chú (tùy chọn)</label>
-          <textarea id="note" placeholder="Ghi chú (tùy chọn)"></textarea>
-        </div>
-        
-      </form>
+  <!-- Form Thông Tin Giao Hàng -->
+  <form #orderForm="ngForm" (ngSubmit)="onSubmit()" class="order-form">
+    <h2>Thông tin giao hàng</h2>
+
+    <!-- Tên người nhận -->
+    <label for="tenNguoiNhanHang">Tên người nhận:</label>
+    <input type="text" id="tenNguoiNhanHang" [(ngModel)]="orderData.tenNguoiNhanHang" name="tenNguoiNhanHang"
+      required minlength="3" #tenNguoiNhanHang="ngModel">
+    <div class="error" *ngIf="tenNguoiNhanHang.invalid && tenNguoiNhanHang.touched">
+      <span *ngIf="tenNguoiNhanHang.errors?.['required']">⚠️ Tên không được để trống!</span>
+      <span *ngIf="tenNguoiNhanHang.errors?.['minlength']">⚠️ Tên phải có ít nhất 3 ký tự!</span>
     </div>
-  
-    <!-- Đơn hàng -->
-    <div class="order-summary">
-      <h3>Đơn hàng</h3>
-      <div class="order-item">
-        <input type="checkbox" checked>
-        <div class="item-info">
-          <span>Giorgio Armani Emporio Armani Stronger With You Absolutely Parfum</span>
-          <span>1.200.000đ</span>
-        </div>
-      </div>
-      <div class="order-item">
-        <input type="checkbox" checked>
-        <div class="item-info">
-          <span>Giorgio Armani Acqua di Giò Pour Homme Parfum</span>
-          <span>1.500.000đ</span>
-        </div>
-      </div>
-  
-      <!-- Mã giảm giá -->
-      <div class="discount-code">
-        <input type="text" placeholder="Nhập mã giảm giá">
-        <button type="button" class="apply-btn">Áp dụng</button>
-      </div>
-  
-      <!-- Tổng tiền -->
-      <div class="summary-info">
-        <p>Tạm tính: <strong>2.700.000đ</strong></p>
-        <p>Phí vận chuyển:</p>
-        <div class="payment-method">
-            <label class="main-label">Phí vận chuyển:</label>
-            <div class="radio-group">
-              <span class="radio-title">Thanh toán:</span>
-              <label class="radio-option">
-                <input style="width: 15Px;" type="radio" name="payment" value="online">
-                <span class="radio-text">Thanh toán qua ngân hàng trực tuyến</span>
-              </label>
-              <label class="radio-option">
-                <input style="width: 15Px;" type="radio" name="payment" value="cod">
-                <span class="radio-text">Thanh toán khi nhận hàng (COD)</span>
-              </label>
+
+    <!-- Địa chỉ giao hàng -->
+    <label for="diaChiGiaoHang">Địa chỉ giao hàng:</label>
+    <input type="text" id="diaChiGiaoHang" [(ngModel)]="orderData.diaChiGiaoHang" name="diaChiGiaoHang"
+      required minlength="5" #diaChiGiaoHang="ngModel">
+    <div class="error" *ngIf="diaChiGiaoHang.invalid && diaChiGiaoHang.touched">
+      <span *ngIf="diaChiGiaoHang.errors?.['required']">⚠️ Địa chỉ không được để trống!</span>
+      <span *ngIf="diaChiGiaoHang.errors?.['minlength']">⚠️ Địa chỉ phải có ít nhất 5 ký tự!</span>
+    </div>
+
+    <!-- Số điện thoại -->
+    <label for="sdtNguoiNhan">Số điện thoại:</label>
+    <input type="text" id="sdtNguoiNhan" [(ngModel)]="orderData.sdtNguoiNhan" name="sdtNguoiNhan"
+      required pattern="^0[0-9]{9}$" #sdtNguoiNhan="ngModel">
+    <div class="error" *ngIf="sdtNguoiNhan.invalid && sdtNguoiNhan.touched">
+      <span *ngIf="sdtNguoiNhan.errors?.['required']">⚠️ Số điện thoại không được để trống!</span>
+      <span *ngIf="sdtNguoiNhan.errors?.['pattern']">⚠️ Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0!</span>
+    </div>
+
+    <!-- Phương thức thanh toán -->
+    <label for="phuongThucThanhToan">Phương thức thanh toán:</label>
+    <select id="phuongThucThanhToan" [(ngModel)]="orderData.phuongThucThanhToan" name="phuongThucThanhToan"
+      required #phuongThucThanhToan="ngModel">
+      <option value="" disabled selected>-- Chọn phương thức thanh toán --</option>
+      <option value="ck">Chuyển khoản</option>
+      <option value="tienMat">Tiền mặt</option>
+    </select>
+    <div class="error" *ngIf="phuongThucThanhToan.invalid && phuongThucThanhToan.touched">
+      <span *ngIf="phuongThucThanhToan.errors?.['required']">⚠️ Hãy chọn phương thức thanh toán!</span>
+    </div>
+
+    <button type="submit" [disabled]="orderForm.invalid">Đặt hàng</button>
+  </form>
+
+  <!-- Danh Sách Sản Phẩm Đã Chọn -->
+  <div class="order-summary">
+    <h3>Sản phẩm đã chọn</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ảnh</th>
+          <th>Tên sản phẩm</th>
+          <th>Số lượng</th>
+          <th>Dung tích</th>
+          <th>Giá</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of selectedProducts; let i = index">
+          <td><img [src]="item.imageUrl" alt="Ảnh sản phẩm" width="80"></td>
+          <td>{{ item.tenSanPham }}</td>
+          <td>
+            <div class="quantity-buttons">
+              <button style="color: black;" (click)="updateQuantity(i, -1)">-</button>
+              <span>{{ item.quantity }}</span>
+              <button style="color: black;" (click)="updateQuantity(i, 1)">+</button>
             </div>
-          </div>
-          
-          
-          
-          
-          
-      </div>
-  
-      <!-- Xác nhận -->
-      <div class="total-confirm">
-        <p>Tổng tiền: <strong>2.700.000đ</strong></p>
-        <button type="submit" class="confirm-btn">Xác nhận</button>
-      </div>
-    </div>
+          </td>
+          <td>{{ item.volume }}</td>
+          <td>{{ item.donGia | number }} VND</td>
+          <td>
+            <button class="delete-button" (click)="removeProduct(i)">X</button>
+          </td>
+        </tr>
+      </tbody>
+      
+    </table>
   </div>
-  <app-footer></app-footer>
+</div>
+
+<app-footer></app-footer>

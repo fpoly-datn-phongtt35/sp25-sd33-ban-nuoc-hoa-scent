@@ -100,10 +100,12 @@ export class ProductDetailComponent implements OnInit {
     }
   }
   selectVolume(volume: any): void {
+    console.log("🔍 Kiểm tra volume:", volume);
   this.selectedVolume = volume; // Set the selected volume
   this.product.dungTich = volume.dungTich;
   this.product.donGia = volume.donGia; // Update the product price based on selected volume
-  console.log(`Giá được cập nhật là: ${this.product.donGia} VND cho dung tích ${this.selectedVolume.dungTich}ml`);
+  this.product.idSpct=volume.idSpct;
+  console.log(`Giá được cập nhật là: ${this.product.donGia} VND cho dung tích ${this.selectedVolume.dungTich}ml với idSpct mới : ${this.product.idSpct}`);
 }
 
   

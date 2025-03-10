@@ -16,7 +16,9 @@
         </thead>
         <tbody>
             <tr *ngFor="let item of cartItems; trackBy: trackByProduct">
-              <td><input type="checkbox"></td>
+              <input type="checkbox" (change)="onProductSelect(item, $event)">
+
+
               <td class="product-info">
                 <!-- Kiểm tra lại item.product.imageURL có phải là đường dẫn hợp lệ và item.product có tồn tại -->
                 <img [src]="item.product.imageURL" alt="">
@@ -45,7 +47,7 @@
         </div>
         <div class="total-info">
             <span><strong>Tổng tiền: {{ getTotal() | currency:'VND' }}</strong></span>
-            <button class="btn-order">Đặt hàng</button>
+            <button class="btn-order" (click)="placeOrder()">Đặt hàng</button>
         </div>
     </div>
 </div>
