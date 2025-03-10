@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,12 +34,16 @@ public class ChiTietDonHang {
     private Integer soLuong;
     @Column(name = "thanh_tien", precision = 19, scale = 4)
     private BigDecimal thanhTien;
-    @ManyToOne
-    @JoinColumn(name = "id_don_hang")
-    private DonHang donHang;
+
     @ManyToOne
     @JoinColumn(name = "id_spct")
     private Spct spct;
+
+    @ManyToOne
+    @JoinColumn(name = "id_don_hang")
+    @JsonBackReference
+    private DonHang donHang;
+
 
     public Integer getId() {
         return id;

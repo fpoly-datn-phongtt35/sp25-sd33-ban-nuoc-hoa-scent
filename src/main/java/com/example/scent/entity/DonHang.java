@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -31,8 +33,8 @@ public class DonHang {
     @Column(name = "dia_chi_giao_hang")
     private String diaChiGiaoHang;
 
-    @Column(name = "ma_van_don")
-    private String maVanDon;
+//    @Column(name = "ma_van_don")
+//    private String maVanDon;
 
     @NotEmpty(message = "SĐT người nhận không được để trống")
     @Pattern(regexp = "^0.*$", message = "SĐT phải bắt đầu bằng số 0")
@@ -45,8 +47,7 @@ public class DonHang {
     private String ghiChu;
 
     @NotNull(message = "Tổng tiền không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Tổng tiền phải lớn hơn 0")
-    @Pattern(regexp = "^(\\d+|(\\d+\\.\\d{1,4}))$", message = "Tổng tiền phải là số nguyên hoặc số thập phân với tối đa 4 chữ số thập phân")
+
     @Column(name = "tong_tien", precision = 19, scale = 4)
     private BigDecimal tongTien;
 
@@ -55,7 +56,7 @@ public class DonHang {
     private String phuongThucVanChuyen;
 
     @NotNull(message = "Ngày tạo không được để trống")
-    @FutureOrPresent(message = "Ngày tạo phải là ngày hiện tại hoặc tương lai")
+
     @Column(name = "ngay_tao")
     private LocalDateTime ngayTao;
 
@@ -82,6 +83,11 @@ public class DonHang {
     @Column(name = "trang_thai")
     private Integer trangThai;
 
+
+    @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<ChiTietDonHang> chiTietDonHangs;
+
     public Integer getTrangThai() {
         return trangThai;
     }
@@ -90,13 +96,13 @@ public class DonHang {
         this.trangThai = trangThai;
     }
 
-    public String getMaVanDon() {
-        return maVanDon;
-    }
-
-    public void setMaVanDon(String maVanDon) {
-        this.maVanDon = maVanDon;
-    }
+//    public String getMaVanDon() {
+//        return maVanDon;
+//    }
+//
+//    public void setMaVanDon(String maVanDon) {
+//        this.maVanDon = maVanDon;
+//    }
 
     public Integer getId() {
         return id;
@@ -176,6 +182,30 @@ public class DonHang {
 
     public void setKhachHang(KhachHang khachHang) {
         this.khachHang = khachHang;
+    }
+
+    public LocalDateTime getNgayTao() {
+        return ngayTao;
+    }
+
+    public void setNgayTao(LocalDateTime ngayTao) {
+        this.ngayTao = ngayTao;
+    }
+
+    public TaiKhoan getTaiKhoan() {
+        return taiKhoan;
+    }
+
+    public void setTaiKhoan(TaiKhoan taiKhoan) {
+        this.taiKhoan = taiKhoan;
+    }
+
+    public List<ChiTietDonHang> getChiTietDonHangs() {
+        return chiTietDonHangs;
+    }
+
+    public void setChiTietDonHangs(List<ChiTietDonHang> chiTietDonHangs) {
+        this.chiTietDonHangs = chiTietDonHangs;
     }
 
 

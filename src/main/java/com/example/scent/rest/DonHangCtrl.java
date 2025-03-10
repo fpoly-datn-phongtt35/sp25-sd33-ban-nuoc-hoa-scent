@@ -1,5 +1,6 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.entity.DonHang;
 
@@ -98,5 +99,20 @@ public class DonHangCtrl {
     public ResponseEntity<List<DonHang>> getDonHangDangXuLy() {
         List<DonHang> donHangs = dhs.getDonHangByTrangThai(1);
         return ResponseEntity.ok(donHangs);
+    }
+//    @PostMapping
+//    public ResponseEntity<DonHangDTO> createOrder(@RequestBody DonHangDTO orderRequest) {
+//        DonHang createdOrder = dhs.createOrder(orderRequest);
+//
+//        // 🔥 DEBUG: Kiểm tra có hình ảnh không
+//
+//
+//        return ResponseEntity.ok(orderRequest); // ✅ Trả về DonHangDTO (chứa imageURL)
+//    }
+
+    @PostMapping
+    public ResponseEntity<DonHang> createOrder(@RequestBody DonHangDTO orderRequest) {
+        DonHang createdOrder = dhs.createOrder(orderRequest);
+        return ResponseEntity.ok(createdOrder);
     }
 }
