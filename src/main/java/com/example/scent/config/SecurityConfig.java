@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/rest/khach-hang/getAll").permitAll()
                         .requestMatchers("/rest/don-hang/getAll").permitAll()
                         .requestMatchers("/rest/don-hang").permitAll()
+                        .requestMatchers("rest/phieu-giam-gia/add").permitAll()
                         .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
                         .requestMatchers("rest/spct/getAll").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //

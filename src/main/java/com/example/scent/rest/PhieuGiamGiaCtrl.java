@@ -51,7 +51,7 @@ public class PhieuGiamGiaCtrl {
         }
 
         pggs.add(pgg);
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.ok(pgg);
     }
 
     @PutMapping("/update")
