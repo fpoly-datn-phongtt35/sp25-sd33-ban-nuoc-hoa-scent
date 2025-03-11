@@ -15,4 +15,8 @@ export class PhieugiamgiaService {
   getAllPhieuGiamGia(): Observable<any> {
     return this.http.get(`${this.apiUrl}/getAll`);
   }
+  addVoucher(voucher: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/add`, voucher);
+  }
+  
 }
