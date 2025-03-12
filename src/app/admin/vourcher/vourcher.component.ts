@@ -69,19 +69,23 @@ export class VourcherComponent {
   
     modalRef.componentInstance.voucher = { ...voucher }; // 🔥 Truyền dữ liệu vào modal
   
-    modalRef.result.then(
-      (updatedVoucher: any) => {
-        if (updatedVoucher) {
-          // Cập nhật dữ liệu tại chỗ mà không cần load lại trang
-          const index = this.phieuGiamGias.findIndex((v) => v.id === updatedVoucher.id);
-          if (index !== -1) {
-            this.phieuGiamGias[index] = updatedVoucher;
-          }
+    modalRef.componentInstance.voucherUpdated.subscribe((updatedVoucher: any) => {
+      if (updatedVoucher) {
+        console.log('🔄 Cập nhật voucher:', updatedVoucher);
+        
+        // ✅ Cập nhật dữ liệu trực tiếp trong danh sách
+        const index = this.phieuGiamGias.findIndex((v) => v.id === updatedVoucher.id);
+        if (index !== -1) {
+          this.phieuGiamGias[index] = { ...updatedVoucher };
         }
-      },
-      (reason: any) => {
-        console.log('Modal bị đóng:', reason);
+  
+        this.cdr.detectChanges(); // 🔥 Cập nhật UI ngay lập tức
       }
+    });
+  
+    modalRef.result.then(
+      () => console.log('✅ Modal đóng thành công'),
+      (reason: any) => console.log('❌ Modal bị đóng:', reason)
     );
   }
   
