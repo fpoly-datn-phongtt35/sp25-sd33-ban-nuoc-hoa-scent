@@ -18,5 +18,11 @@ export class PhieugiamgiaService {
   addVoucher(voucher: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/add`, voucher);
   }
+  deleteVoucher(voucherId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/del/${voucherId}`);
+  }
+  updateVoucher(voucher: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update`, voucher);
+  }
   
 }
