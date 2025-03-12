@@ -67,7 +67,7 @@ public class PhieuGiamGiaCtrl {
         }
 
         pggs.update(pgg);
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.ok(pgg);
     }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { pggs.delete(id);
