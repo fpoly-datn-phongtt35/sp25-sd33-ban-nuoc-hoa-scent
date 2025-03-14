@@ -35,7 +35,7 @@ export class AddCustomerComponent {
         (response) => {
           alert('Thêm khách hàng thành công!');
           this.customerAdded.emit(response); // ✅ Gửi dữ liệu mới về `CustomerComponent`
-          this.activeModal.dismiss(); // ✅ Đóng modal sau khi thêm thành công
+          this.closeModal(); // ✅ Đóng modal sau khi thêm thành công
         },
         (error) => {
           console.error('Lỗi khi thêm khách hàng:', error);

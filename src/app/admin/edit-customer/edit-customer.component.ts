@@ -57,15 +57,17 @@ export class EditCustomerComponent implements OnInit {
   }
 
   closeModal() {
-    console.log('🛑 Đóng modal...', this.activeModal);
+    console.log('🛑 Attempting to close modal...', this.activeModal);
 
+    // 🟢 Gọi dismiss() trước
     if (this.activeModal) {
         this.activeModal.dismiss('cancel');
-        console.log('✅ Đã gọi dismiss()');
+        console.log('✅ Dismiss method called');
     } else {
-        console.error('❌ ActiveModal không hoạt động');
+        console.error('❌ ActiveModal is not available');
     }
 
+    // 🟠 Backup plan: Xóa modal bằng Bootstrap
     setTimeout(() => {
         const modalElement = document.querySelector('.modal');
         if (modalElement) {
@@ -76,8 +78,10 @@ export class EditCustomerComponent implements OnInit {
             backdrop.remove();
         }
         document.body.classList.remove('modal-open');
-        console.log('✅ Đã đóng modal thủ công');
+        console.log('✅ Forced modal removal executed');
+
+        // 🔥 Kích hoạt Change Detection để cập nhật UI
         this.cdr.detectChanges();
     }, 100);
-  }
+}
 }

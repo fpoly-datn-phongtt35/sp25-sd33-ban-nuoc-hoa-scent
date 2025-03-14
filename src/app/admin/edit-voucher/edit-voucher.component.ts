@@ -22,8 +22,8 @@ export class EditVoucherComponent {
     private phieuGiamGiaService: PhieugiamgiaService,
     private cdr: ChangeDetectorRef
   ) {
-    
-    
+
+
   }
 
   ngOnInit() {
@@ -43,11 +43,11 @@ export class EditVoucherComponent {
   updateVoucher() {
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value };
-  
+
       // ✅ Gộp ngày & giờ đúng định dạng
       formData.ngayBatDau = this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau);
       formData.ngayHetHan = this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan);
-  
+
       // 🚀 Xóa dữ liệu thừa trước khi gửi API
       delete formData.gioPhutBatDau;
       delete formData.gioPhutHetHan;
@@ -74,16 +74,16 @@ export class EditVoucherComponent {
     if (!datetime) return ''; // Nếu null, trả về chuỗi rỗng để tránh lỗi
     return datetime.split('T')[0]; // Lấy phần YYYY-MM-DD
   }
-  
+
   extractTime(datetime: string | null): string {
     if (!datetime) return ''; // Nếu null, trả về chuỗi rỗng
     return datetime.split('T')[1]?.slice(0, 5) || ''; // Lấy HH:mm
   }
-  
-  
+
+
   closeModal() {
     console.log('🛑 Attempting to close modal...', this.activeModal);
-    
+
     // 🟢 Gọi dismiss() trước
     if (this.activeModal) {
         this.activeModal.dismiss('cancel');
@@ -107,6 +107,6 @@ export class EditVoucherComponent {
 
         // 🔥 Kích hoạt Change Detection để cập nhật UI
         this.cdr.detectChanges();
-    }, 300);
+    }, 100);
 }
 }
