@@ -4,8 +4,10 @@ import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.entity.DonHang;
 
+import com.example.scent.entity.TaiKhoan;
 import com.example.scent.service.DonHangSv;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -114,5 +116,11 @@ public class DonHangCtrl {
     public ResponseEntity<DonHang> createOrder(@RequestBody DonHangDTO orderRequest) {
         DonHang createdOrder = dhs.createOrder(orderRequest);
         return ResponseEntity.ok(createdOrder);
+    }
+    @GetMapping("page")
+    public Page<DonHang> getAllTaiKhoan(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return dhs.getPageDonHang(page, size);
     }
 }

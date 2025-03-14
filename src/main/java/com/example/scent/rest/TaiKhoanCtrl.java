@@ -2,15 +2,8 @@ package com.example.scent.rest;
 
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.service.TaiKhoanSv;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -51,6 +44,12 @@ public class TaiKhoanCtrl {
 
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { tks.delete(id);
+    }
+    @GetMapping("page")
+    public Page<TaiKhoan> getAllTaiKhoan(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return tks.getPageTaiKhoan(page, size);
     }
 }
 

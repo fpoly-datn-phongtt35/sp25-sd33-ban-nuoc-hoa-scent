@@ -4,6 +4,9 @@ package com.example.scent.service;
 import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.repo.PhieuGiamGiaInterface;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,5 +39,9 @@ public class PhieuGiamGiaSv {
 
     public PhieuGiamGia detail(Integer id) {
         return pggi.findById(id).get();
+    }
+    public Page<PhieuGiamGia> getPagePhieuGiamGia(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return pggi.findAll(pageable);
     }
 }
