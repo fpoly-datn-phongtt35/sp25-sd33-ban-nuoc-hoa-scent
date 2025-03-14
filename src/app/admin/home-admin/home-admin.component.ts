@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ProductAdminComponent } from '../product-admin/product-admin.component';
-import { CommonModule } from '@angular/common'; 
+import { CommonModule } from '@angular/common';
 import { UserAdminComponent } from '../user-admin/user-admin.component';
 import { CustomerComponent } from '../customer/customer.component';
 import { VourcherComponent } from '../vourcher/vourcher.component';
@@ -37,7 +37,7 @@ export class HomeAdminComponent implements OnInit {
   ngOnInit(): void {
     const role = this.tokenService.getRole();
     console.log('Vai trò khi vào HomeAdminComponent:', role);
-  
+
     if (role !== 'ADMIN') {
       console.error('Bạn không phải admin, điều hướng về trang chủ.');
       this.router.navigate(['/']); // Chuyển hướng nếu không phải admin
@@ -46,12 +46,12 @@ export class HomeAdminComponent implements OnInit {
       this.selectedComponent = 'dashboard'; // Mặc định là dashboard
     }
   }
-  
-  
+
+
   showComponent(component: string): void {
     const role = this.tokenService.getRole();
     console.log('Vai trò hiện tại khi nhấn vào menu11111111:', role);
-  
+
     if (role === 'ADMIN') {
       this.selectedComponent = component; // Cập nhật component hiển thị
       console.log(`Hiển thị component: ${component}`);
@@ -60,11 +60,11 @@ export class HomeAdminComponent implements OnInit {
       this.router.navigate(['/']);
     }
   }
-  
-  
-  
-  
-  
+
+
+
+
+
 
   logout(): void {
     const token = this.tokenService.getToken();

@@ -34,20 +34,20 @@ export class AddVoucherComponent {
 
   saveVoucher() {
     console.log('📌 Dữ liệu trong form:', this.voucherForm.value);
-  
+
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value }; // 🔥 Tạo bản sao để tránh lỗi
-  
+
       // ✅ Chuyển đổi ngày + giờ đúng định dạng
       formData.ngayBatDau = this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau);
       formData.ngayHetHan = this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan);
-  
+
       // 🚀 Xóa dữ liệu thừa trước khi gửi API
       delete formData.gioPhutBatDau;
       delete formData.gioPhutHetHan;
-  
+
       console.log('📤 Dữ liệu gửi đi:', formData);
-  
+
       this.phieuGiamGiaService.addVoucher(formData).subscribe(
         (response: any) => {
           console.log('✅ API Response:', response);
@@ -66,7 +66,7 @@ export class AddVoucherComponent {
   }
   closeModal() {
     console.log('🛑 Attempting to close modal...', this.activeModal);
-    
+
     // 🟢 Gọi dismiss() trước
     if (this.activeModal) {
         this.activeModal.dismiss('cancel');
@@ -90,20 +90,20 @@ export class AddVoucherComponent {
 
         // 🔥 Kích hoạt Change Detection để cập nhật UI
         this.cdr.detectChanges();
-    }, 300);
+    }, 100);
 }
 
 
 
 
-  
-  
+
+
   // Hàm ghép ngày & giờ thành `YYYY-MM-DDTHH:mm:ss`
   combineDateTime(date: string, time: string): string {
     if (!date || !time) return ''; // Tránh lỗi nếu thiếu dữ liệu
     return `${date}T${time}:00`; // Format `YYYY-MM-DDTHH:mm:ss`
   }
-  
+
   reloadTable() {
     const event = new CustomEvent('reloadTable'); // 🔥 Tạo sự kiện reload
     window.dispatchEvent(event); // 📢 Gửi sự kiện reload table

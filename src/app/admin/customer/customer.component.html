@@ -1,48 +1,109 @@
 <div class="customer-container">
-    <div class="header-section">
-      <h2>Khách hàng</h2>
-      <div class="actions">
-        <button class="btn btn-primary">Thêm mới</button>
-        <div class="search-box">
-          <input type="text" placeholder="Search" />
-          <button class="search-btn"><i class="bi bi-search"></i></button>
-        </div>
-        <button class="export-btn">Export Excel</button>
-      </div>
-    </div>
+  <div class="header-section">
+    <h2>📋 Khách hàng</h2>
+    <div class="actions">
+      <button class="btn btn-primary" (click)="openAddCustomerModal()">+ Thêm mới</button>
 
-    <div class="table-container">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>ID</th>
-            <th>Tên người dùng</th>
-            <th>Email</th>
-            <th>SDT</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let customer of customers; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ customer.id }}</td>
-            <td>{{ customer.tenKhachHang }}</td>
-            <td>{{ customer.email }}</td>
-            <td>{{ customer.sdt }}</td>
-            <td class="actions">
-              <button class="btn-order">
-                <i class="bi bi-cart"></i> Đơn hàng
-              </button>
-              <button class="btn-action edit">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button class="btn-action delete">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- 🔎 Tìm kiếm -->
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm..." (input)="searchCustomer()" />
+        <button class="search-btn"><i class="bi bi-search"></i></button>
+      </div>
+
+      <!-- 📤 Xuất Excel -->
+      <button class="export-btn" (click)="exportToExcel()">Xuất Excel</button>
     </div>
   </div>
+
+  <!-- 📌 Bảng danh sách khách hàng -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>ID</th>
+          <th>Tên người dùng</th>
+          <th>Email</th>
+          <th>SDT</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of filteredCustomers; let i = index">
+          <td>{{ i + 1 + page * size }}</td>
+          <td>{{ customer.id }}</td>
+          <td>{{ customer.tenKhachHang }}</td>
+          <td>{{ customer.email }}</td>
+          <td>{{ customer.sdt }}</td>
+          <td class="actions">
+            <button class="btn-order" (click)="openInvoice(customer.id)">
+              <i class="bi bi-cart"></i> Đơn hàng
+            </button>
+            <button class="btn-action edit" (click)="openUpdateCustomerModal(customer)">
+              <i class="bi bi-pencil"></i> Chỉnh sửa
+            </button>
+            <button class="btn-action delete" (click)="deleteCustomer(customer.id)">
+              <i class="bi bi-trash"></i> Xóa
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang đẹp với Bootstrap -->
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+
+    <!-- Nút "Trang đầu" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="goToPage(0)">«</button>
+    </li>
+
+    <!-- Nút "Trước" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="prevPage()">‹</button>
+    </li>
+
+    <!-- Hiển thị trang đầu nếu page > 2 -->
+    <li class="page-item" *ngIf="page > 2">
+      <button class="page-link" (click)="goToPage(0)">1</button>
+    </li>
+
+    <!-- Dấu "..." nếu cần -->
+    <li class="page-item disabled" *ngIf="page > 3">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị các trang gần nhất -->
+    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+    </li>
+
+    <!-- Dấu "..." nếu có nhiều trang -->
+    <li class="page-item disabled" *ngIf="page < totalPages - 4">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
+    <li class="page-item" *ngIf="page < totalPages - 3">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+    </li>
+
+    <!-- Nút "Sau" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="nextPage()">›</button>
+    </li>
+
+    <!-- Nút "Trang cuối" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+    </li>
+  </ul>
+</nav>
+
+
+
+
