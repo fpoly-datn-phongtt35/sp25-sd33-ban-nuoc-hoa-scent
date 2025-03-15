@@ -8,10 +8,14 @@ import { TokenService } from './token.service';
   providedIn: 'root'
 })
 export class DonhangService {
-  private apiUrl='http://localhost:8080/rest/don-hang';
-  constructor(private http: HttpClient) { }
+  private apiUrl = 'http://localhost:8080/rest/don-hang';
 
-  getDonhang(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/getAll`);
+  constructor(private http: HttpClient) {}
+ getDonhang(page: number, size: number): Observable<any> {
+    let params = `/page?page=${page}&size=${size}`;
+    // if (searchTerm) {
+    //   params += `&search=${searchTerm}`;
+    // }
+    return this.http.get(`${this.apiUrl}${params}`);
   }
 }

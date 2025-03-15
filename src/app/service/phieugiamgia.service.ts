@@ -12,9 +12,14 @@ export class PhieugiamgiaService {
     constructor(private http: HttpClient) { }
   private apiUrl = 'http://localhost:8080/rest/phieu-giam-gia'; // URL API của bạn
 
-  getAllPhieuGiamGia(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/getAll`);
+  getAllPhieuGiamGia(page: number, size: number): Observable<any> {
+    let params = `/page?page=${page}&size=${size}`;
+    // if (searchTerm) {
+    //   params += `&search=${searchTerm}`;
+    // }
+    return this.http.get(`${this.apiUrl}${params}`);
   }
+
   addVoucher(voucher: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/add`, voucher);
   }
@@ -24,5 +29,5 @@ export class PhieugiamgiaService {
   updateVoucher(voucher: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/update`, voucher);
   }
-  
+
 }

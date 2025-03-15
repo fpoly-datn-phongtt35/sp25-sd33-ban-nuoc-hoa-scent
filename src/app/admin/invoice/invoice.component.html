@@ -1,50 +1,106 @@
-<div class="invoice-container">
-    <h2 class="section-title">Hóa đơn</h2>
+<div class="container mt-4">
+  <h2 class="text-center mb-4">Danh sách đơn hàng</h2>
 
-    <!-- Bộ lọc trạng thái đơn hàng -->
-    <div class="status-tabs">
-      <button class="tab active">Tất cả</button>
-      <button class="tab">Chờ xác nhận</button>
-      <button class="tab">Đang chuẩn bị</button>
-      <button class="tab">Đang giao</button>
-      <button class="tab">Đã hủy</button>
-      <button class="tab">Trả hàng/Hoàn tiền</button>
-      <button class="tab">Đã hoàn tiền</button>
-    </div>
-
-    <!-- Bộ lọc ngày và hành động -->
-    <div class="filter-actions">
-      <label for="date-filter">Ngày tạo</label>
-      <input type="date" id="start-date">
-      <input type="date" id="end-date">
-
-      <div class="action-buttons">
-        <button class="btn-export">Export data</button>
-        <select class="sort-dropdown">
-          <option value="id">Sort by: ID</option>
-          <option value="price">Sort by: Price</option>
-          <option value="date">Sort by: Date</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Bảng dữ liệu hóa đơn -->
-    <table class="invoice-table">
-      <thead>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover text-center">
+      <thead class="table-primary">
         <tr>
-          <th>Name</th>
-          <th>Status</th>
-          <th>Price</th>
-          <th>ID Tài Khoản</th>
+          <th>Tên Người Nhận</th>
+          <th>Địa Chỉ Giao Hàng</th>
+          <th>SĐT Người Nhận</th>
+          <th>Ghi Chú</th>
+          <th>Tổng Tiền</th>
+          <th>Phương Thức Thanh Toán</th>
+          <th>Ngày Tạo</th>
+          <th>Ngày Vận Chuyển</th>
+          <th>Phương Thức Vận Chuyển</th>
+          <th>Tên Khách Hàng</th>
+          <th>Địa Chỉ Khách Hàng</th>
+          <th>Email Khách Hàng</th>
+          <th>SĐT Khách Hàng</th>
+          <th>Phiếu Giảm Giá</th>
+          <th>Trạng Thái</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let invoice of orders">
-          <td>{{ invoice.tenNguoiNhanHang }}</td>
-          <td>{{ invoice.trangThai }}</td>
-          <td>{{ invoice.tongTien | number: '1.0-3' }}đ</td>
-          <td>{{ invoice.id }}</td>
+        <tr *ngFor="let order of orders">
+          <td>{{ order.tenNguoiNhanHang }}</td>
+          <td>{{ order.diaChiGiaoHang }}</td>
+          <td>{{ order.sdtNguoiNhan }}</td>
+          <td>{{ order.ghiChu }}</td>
+          <td>{{ order.tongTien | number: '1.0-3' }}đ</td>
+          <td>{{ order.phuongThucThanhToan }}</td>
+          <td>{{ order.ngayTao | date: 'yyyy-MM-dd HH:mm' }}</td>
+          <td>{{ order.ngayVanChuyen | date: 'yyyy-MM-dd HH:mm' }}</td>
+          <td>{{ order.phuongThucVanChuyen }}</td>
+          <td>{{ order.khachHang.tenKhachHang }}</td>
+          <td>{{ order.khachHang.diaChi }}</td>
+          <td>{{ order.khachHang.email }}</td>
+          <td>{{ order.khachHang.sdt }}</td>
+          <td>{{ order.phieuGiamGia ? order.phieuGiamGia : 'không' }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'bg-success': order.trangThai == 1,
+              'bg-warning': order.trangThai == 0,
+              'bg-danger': order.trangThai == -1
+            }">
+              {{ getStatusText(order.trangThai) }}
+            </span>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
+</div>
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang đẹp với Bootstrap -->
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+
+    <!-- Nút "Trang đầu" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="goToPage(0)">«</button>
+    </li>
+
+    <!-- Nút "Trước" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="prevPage()">‹</button>
+    </li>
+
+    <!-- Hiển thị trang đầu nếu page > 2 -->
+    <li class="page-item" *ngIf="page > 2">
+      <button class="page-link" (click)="goToPage(0)">1</button>
+    </li>
+
+    <!-- Dấu "..." nếu cần -->
+    <li class="page-item disabled" *ngIf="page > 3">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị các trang gần nhất -->
+    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+    </li>
+
+    <!-- Dấu "..." nếu có nhiều trang -->
+    <li class="page-item disabled" *ngIf="page < totalPages - 4">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
+    <li class="page-item" *ngIf="page < totalPages - 3">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+    </li>
+
+    <!-- Nút "Sau" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="nextPage()">›</button>
+    </li>
+
+    <!-- Nút "Trang cuối" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+    </li>
+  </ul>
+</nav>

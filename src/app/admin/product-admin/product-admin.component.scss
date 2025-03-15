@@ -1,190 +1,87 @@
-.product-container {
-  width: 90%;
-  margin: 20px auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.header {
+.header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
-.header-controls {
+.header-section h2 {
+  margin: 0;
+}
+
+.actions {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .search-box {
   display: flex;
   align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 10px;
 }
 
 .search-box input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.product-actions {
-  display: flex;
-  justify-content: space-between;
-  margin: 20px 0;
-}
-
-.btn-add-product {
-  background: #28a745;
-  color: white;
-  padding: 8px 16px;
   border: none;
-  border-radius: 5px;
+  outline: none;
 }
 
-.btn-group {
-  display: flex;
-  align-items: center;
-}
-
-.btn-export {
-  background: #007bff;
-  color: white;
-  padding: 8px 16px;
+.search-box button {
+  background: none;
   border: none;
-  border-radius: 5px;
-  margin-right: 10px;
+  cursor: pointer;
 }
 
-.sort-select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.export-btn {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.product-table {
+.export-btn:hover {
+  background-color: #218838;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.product-table th,
-.product-table td {
-  padding: 10px;
-  border: 1px solid #ddd;
+.table th, .table td {
+  padding: 12px 15px;
   text-align: center;
+  border-bottom: 1px solid #ddd;
 }
 
-.product-image img {
-  width: 120px;
-  height: 150px;
-  object-fit: cover; /* Giữ tỷ lệ hình ảnh mà không bị méo */
+.table th {
+  background-color: #f8f9fa;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
+.table tr:nth-child(even) {
+  background-color: #f9f9f9;
 }
 
-.page-btn {
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  padding: 5px 10px;
-  margin: 2px;
-  cursor: pointer;
+.table tr:hover {
+  background-color: #f1f1f1;
 }
 
-.page-btn.active {
-  background: #007bff;
-  color: white;
-}
-/* Style cho hộp tìm kiếm */
-.search-box {
-  display: flex;
-  align-items: center;
-  position: relative;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  overflow: hidden;
-  background-color: white;
-}
-
-/* Ô nhập tìm kiếm */
-.search-box input {
-  width: 250px; /* Điều chỉnh độ rộng phù hợp */
-  padding: 10px;
+.btn-action {
+  background-color: transparent;
   border: none;
-  outline: none;
-  font-size: 16px;
-}
-
-/* Nút tìm kiếm */
-.search-box button {
-  background: #007bff; /* Màu xanh đậm */
-  border: none;
-  padding: 10px 15px;
+  padding: 5px;
+  margin: 0 3px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #555;
 }
-
-.search-box button i {
-  color: white;
-  font-size: 18px;
-}
-
-/* Khi hover vào nút tìm kiếm */
-.search-box button:hover {
-  background: #0056b3;
-}
-/* Căn chỉnh danh sách tầng hương */
-.fragrance-column {
-  text-align: left; /* Căn trái nội dung */
-  vertical-align: top; /* Đảm bảo nội dung hiển thị từ đầu dòng */
-  padding: 10px; /* Tạo khoảng cách giữa nội dung và viền ô */
-}
-
-/* Định dạng danh sách tầng hương */
-.fragrance-column ul {
-  list-style-type: disc; /* Dùng dấu chấm làm bullet */
-  padding-left: 20px; /* Lùi vào một khoảng để đẹp hơn */
-  margin: 0; /* Loại bỏ margin thừa */
-}
-
-/* Định dạng các mục trong danh sách */
-.fragrance-column ul li {
-  margin-bottom: 5px; /* Khoảng cách giữa các dòng */
-  padding-left: 5px; /* Dịch vào một chút để chữ không dính vào bullet */
-  line-height: 1.5; /* Giãn dòng giúp dễ đọc hơn */
-}
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.page-btn {
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  padding: 8px 12px;
-  margin: 2px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.page-btn:hover {
-  background: #007bff;
-  color: white;
-}
-
-.page-btn.active {
-  background: #007bff;
-  color: white;
-}
-
-.page-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+.btn-action:hover {
+  opacity: 0.8;
 }

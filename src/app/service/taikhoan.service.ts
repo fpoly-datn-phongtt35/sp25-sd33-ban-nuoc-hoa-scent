@@ -11,7 +11,11 @@ export class AccountService {
 
   constructor(private http: HttpClient) {}
 
-  getAccounts(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/getAll`);
+  getAccounts(page: number, size: number): Observable<any> {
+    let params = `/page?page=${page}&size=${size}`;
+    // if (searchTerm) {
+    //   params += `&search=${searchTerm}`;
+    // }
+    return this.http.get(`${this.apiUrl}${params}`);
   }
 }

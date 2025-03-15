@@ -1,75 +1,116 @@
-<div class="product-container">
-  <header class="header">
-    <h2>Sản phẩm</h2>
-    <div class="header-controls">
+<div class="employee-container">
+  <div class="header-section">
+    <h2>Sản Phẩm</h2>
+    <div class="actions">
+      <button class="btn btn-primary">Thêm mới</button>
       <div class="search-box">
-        <input type="text" placeholder="Tìm kiếm..." />
-        <button >
-          <i class="bi bi-search"></i>
-        </button>
+        <input type="text" placeholder="Search" />
+        <button class="search-btn"><i class="bi bi-search"></i></button>
       </div>
-    </div>
-  </header>
-
-  <div class="product-actions">
-    <button class="btn-add-product">+ Thêm sản phẩm</button>
-    <div class="btn-group">
-      <button class="btn-export">Xuất dữ liệu</button>
+      <button class="export-btn">Export Excel</button>
     </div>
   </div>
 
-  <table class="product-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Hình ảnh</th>
-        <th>Tên</th>
-        <th>Thương hiệu</th>
-        <th>Danh mục</th>
-        <th>Mùi hương</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let product of products">
-        <td>{{ product.idSanPham }}</td>
-        <td>
-          <div class="product-image">
-            <img *ngIf="product.imageURL; else noImage" [src]="product.imageURL" [alt]="product.tenSanPham" />
-            <ng-template #noImage><p>Không có hình ảnh</p></ng-template>
+  <div class="table-container">
+    <table class="table">
+        <tr>
+          <th>STT</th>
+          <th>Hình ảnh</th>
+          <th>Tên</th>
+          <th>Thương hiệu</th>
+          <th>Danh mục</th>
+          <th>Mùi hương</th>
+          <th>Action</th>
+        </tr>
+      <tbody>
+        <tr *ngFor="let product of products; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>
+            <img *ngIf="product.imageURL; else noImage"
+                 [src]="product.imageURL"
+                 [alt]="product.tenSanPham"
+                  width="100" height="150"/>
+            <ng-template #noImage><p class="text-muted">Không có hình ảnh</p></ng-template>
+          </td>
+          <td>{{ product.tenSanPham }}</td>
+          <td>{{ product.tenThuongHieu }}</td>
+          <td>{{ product.tenDanhMuc }}</td>
+          <td>
+            <ul class="text-start">
+              <li><strong>Tầng đầu:</strong> {{ product.moTaHuongDau }}</li>
+              <li><strong>Tầng giữa:</strong> {{ product.moTaHuongGiua }}</li>
+              <li><strong>Tầng cuối:</strong> {{ product.moTaHuongCuoi }}</li>
+            </ul>
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateProductModal(product)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-danger btn-sm me-1" (click)="deleteProduct(product.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+            <button class="btn btn-primary btn-sm" (click)="viewProduct(product.id)">
+              <i class="bi bi-eye"></i>
+            </button>
           </div>
-        </td>
-        <td>{{ product.tenSanPham }}</td>
-        <td>{{ product.tenThuongHieu }}</td>
-        <td>{{ product.tenDanhMuc }}</td>
-        <td class="fragrance-column">
-          <ul>
-            <li><strong>Tầng đầu:</strong> {{ product.moTaHuongDau }}</li>
-            <li><strong>Tầng giữa:</strong> {{ product.moTaHuongGiua }}</li>
-            <li><strong>Tầng cuối:</strong> {{ product.moTaHuongCuoi }}</li>
-          </ul>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="pagination">
-    <button class="page-btn">
-      &laquo; Trước
-    </button>
-
-    <button
-      class="page-btn"
-      *ngFor="let page of getPages(); let i = index"
-      (click)="changePage(i)"
-      [ngClass]="{'active': currentPage === i}"
-    >
-      {{ i + 1 }}
-    </button>
-
-    <button class="page-btn">
-      Tiếp &raquo;
-    </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+ <!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang đẹp với Bootstrap -->
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+
+    <!-- Nút "Trang đầu" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="goToPage(0)">«</button>
+    </li>
+
+    <!-- Nút "Trước" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="prevPage()">‹</button>
+    </li>
+
+    <!-- Hiển thị trang đầu nếu page > 2 -->
+    <li class="page-item" *ngIf="page > 2">
+      <button class="page-link" (click)="goToPage(0)">1</button>
+    </li>
+
+    <!-- Dấu "..." nếu cần -->
+    <li class="page-item disabled" *ngIf="page > 3">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị các trang gần nhất -->
+    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+    </li>
+
+    <!-- Dấu "..." nếu có nhiều trang -->
+    <li class="page-item disabled" *ngIf="page < totalPages - 4">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
+    <li class="page-item" *ngIf="page < totalPages - 3">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+    </li>
+
+    <!-- Nút "Sau" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="nextPage()">›</button>
+    </li>
+
+    <!-- Nút "Trang cuối" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+    </li>
+  </ul>
+</nav>
 
 
 </div>

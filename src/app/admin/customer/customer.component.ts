@@ -121,23 +121,23 @@ export class CustomerComponent implements OnInit {
     });
 }
 
-
-  // ❌ Xóa khách hàng
-  deleteCustomer(id: number) {
-    if (confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
-        this.customerService.deleteCustomer(id).subscribe({
-            next: () => {
-                console.log('✅ Xóa khách hàng thành công!');
-                alert('🗑 Xóa khách hàng thành công!');
-                this.loadCustomers(); // ✅ Load lại danh sách
-            },
-            error: (error) => {
-                console.error('❌ Lỗi khi xóa khách hàng:', error);
-                alert('❌ Không thể xóa khách hàng. Vui lòng thử lại!');
-            }
-        });
-    }
-}
+// Bỏ xóa Khách hàng
+//   // ❌ Xóa khách hàng
+//   deleteCustomer(id: number) {
+//     if (confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
+//         this.customerService.deleteCustomer(id).subscribe({
+//             next: () => {
+//                 console.log('✅ Xóa khách hàng thành công!');
+//                 alert('🗑 Xóa khách hàng thành công!');
+//                 this.loadCustomers(); // ✅ Load lại danh sách
+//             },
+//             error: (error) => {
+//                 console.error('❌ Lỗi khi xóa khách hàng:', error);
+//                 alert('❌ Không thể xóa khách hàng. Vui lòng thử lại!');
+//             }
+//         });
+//     }
+// }
 openInvoice(id:number){
   alert('📤 Cái này chưa làm nhá!');
 }
