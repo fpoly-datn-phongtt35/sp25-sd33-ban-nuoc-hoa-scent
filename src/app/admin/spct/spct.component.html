@@ -1,0 +1,38 @@
+<div class="header-section">
+  <button class="btn btn-link text-dark fs-4 fw-bold d-flex align-items-center gap-2" (click)="closeDetail()">
+    <i class="bi bi-arrow-left fs-3"></i> Quay lại Sản Phẩm
+  </button>
+
+
+<div class="actions">
+    <button class="btn btn-primary">Thêm mới</button>
+    <div class="search-box">
+      <input type="text" placeholder="Search" />
+      <button class="search-btn"><i class="bi bi-search"></i></button>
+    </div>
+    <button class="export-btn">Export Excel</button>
+  </div>
+</div>
+<div class="container mt-4">
+  <h2 class="text-center">Danh sách sản phẩm</h2>
+  <table class="table">
+    <thead class="table-hover">
+      <tr>
+        <th>Tên sản phẩm</th>
+        <th>Thương hiệu</th>
+        <th>Dung tích</th>
+        <th>Đơn giá</th>
+        <th>Số lượng tồn kho</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let sp of spct">
+        <td>{{ sp.sanPham?.tenSanPham }}</td>
+        <td>{{ sp.sanPham.thuongHieu?.tenThuongHieu || 'Không có dữ liệu' }}</td>
+        <td>{{ sp.dungTich }} ml</td>
+        <td>{{ sp.donGia }} VNĐ</td>
+        <td>{{ sp.soLuongTonKho }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

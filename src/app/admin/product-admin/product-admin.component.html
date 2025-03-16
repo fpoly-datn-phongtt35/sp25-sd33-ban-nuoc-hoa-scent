@@ -1,6 +1,12 @@
-<div class="employee-container">
+
+<div class="product-admin-container">
+  <app-spct
+  *ngIf="selectedProductId !== null"
+  [productId]="selectedProductId"
+  (closeSpct)="closeProductDetail()"></app-spct>
+
+  <div *ngIf="selectedProductId === null">
   <div class="header-section">
-    <h2>Sản Phẩm</h2>
     <div class="actions">
       <button class="btn btn-primary">Thêm mới</button>
       <div class="search-box">
@@ -10,9 +16,8 @@
       <button class="export-btn">Export Excel</button>
     </div>
   </div>
-
   <div class="table-container">
-    <table class="table">
+    <table class="table table-hover">
         <tr>
           <th>STT</th>
           <th>Hình ảnh</th>
@@ -23,19 +28,19 @@
           <th>Action</th>
         </tr>
       <tbody>
-        <tr *ngFor="let product of products; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>
+        <tr *ngFor="let product of products; let i = index" >
+          <td (click)="onRowClick(product.idSanPham)">{{ i + 1 }}</td>
+          <td (click)="onRowClick(product.idSanPham)">
             <img *ngIf="product.imageURL; else noImage"
                  [src]="product.imageURL"
                  [alt]="product.tenSanPham"
                   width="100" height="150"/>
             <ng-template #noImage><p class="text-muted">Không có hình ảnh</p></ng-template>
           </td>
-          <td>{{ product.tenSanPham }}</td>
-          <td>{{ product.tenThuongHieu }}</td>
-          <td>{{ product.tenDanhMuc }}</td>
-          <td>
+          <td (click)="onRowClick(product.idSanPham)">{{ product.tenSanPham }}</td>
+          <td (click)="onRowClick(product.idSanPham)">{{ product.tenThuongHieu }}</td>
+          <td (click)="onRowClick(product.idSanPham)">{{ product.tenDanhMuc }}</td>
+          <td (click)="onRowClick(product.idSanPham)">
             <ul class="text-start">
               <li><strong>Tầng đầu:</strong> {{ product.moTaHuongDau }}</li>
               <li><strong>Tầng giữa:</strong> {{ product.moTaHuongGiua }}</li>
@@ -47,10 +52,10 @@
             <button class="btn btn-warning btn-sm me-1" (click)="openUpdateProductModal(product)">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-danger btn-sm me-1" (click)="deleteProduct(product.id)">
+            <button class="btn btn-danger btn-sm me-1" (click)="deleteProduct(product.idSanPham)">
               <i class="bi bi-trash"></i>
             </button>
-            <button class="btn btn-primary btn-sm" (click)="viewProduct(product.id)">
+            <button class="btn btn-primary btn-sm" (click)="viewProduct(product.idSanPham)">
               <i class="bi bi-eye"></i>
             </button>
           </div>
@@ -113,4 +118,5 @@
 </nav>
 
 
+</div>
 </div>

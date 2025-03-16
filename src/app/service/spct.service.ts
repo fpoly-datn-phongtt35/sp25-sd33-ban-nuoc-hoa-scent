@@ -14,4 +14,7 @@ export class SpctService {
   getSpcts(): Observable<any> {
     return this.http.get(`${this.apiUrl}/getAll`);
   }
+  geSpctByIdProduct(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/getByidSanPham/${id}`);
+  }
 }

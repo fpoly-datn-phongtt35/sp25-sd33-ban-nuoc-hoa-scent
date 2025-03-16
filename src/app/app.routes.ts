@@ -31,5 +31,6 @@ export const routes: Routes = [
   },
   { path: 'login', component: LoginComponent },
   { path: 'detail/:id', component: ProductDetailComponent },
+  { path: 'product/:id', component: ProductDetailComponent }, // Định tuyến chi tiết sản phẩm
 ];
 
