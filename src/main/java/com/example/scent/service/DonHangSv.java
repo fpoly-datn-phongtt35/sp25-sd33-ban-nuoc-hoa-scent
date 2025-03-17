@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.OrderItemDto;
 import com.example.scent.dto.SanPhamThongKeDto;
+import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.*;
 import com.example.scent.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,5 +152,9 @@ public class DonHangSv {
     public Page<DonHang> getPageDonHang(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return dhi.findAll(pageable);
+    }
+
+    public List<donhangDetailDTO> getDonHangDetailsById(Integer id) {
+        return dhi.findDonHangDetailsById(id);
     }
 }

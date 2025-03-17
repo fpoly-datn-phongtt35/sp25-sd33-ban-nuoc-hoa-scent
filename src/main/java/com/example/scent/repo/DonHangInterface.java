@@ -1,6 +1,8 @@
 package com.example.scent.repo;
 
+import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
+import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -41,4 +43,16 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     void updateStatusToProcessing(@Param("id") Integer id);
     List<DonHang> findByTrangThai(Integer trangThai);
 
+    @Query("SELECT new com.example.scent.dto.donhangDetailDTO(" +
+            "dh.id, dh.tenNguoiNhanHang, dh.diaChiGiaoHang, dh.sdtNguoiNhan, " +
+            " dh.tongTien, dh.ngayTao, dh.ngayVanChuyen, " +
+            "dh.phuongThucVanChuyen, dh.phuongThucThanhToan, sp.tenSanPham, sp.moTaSanPham, " +
+            "spct.dungTich, spct.donGia, ctdh.soLuong, ha.link) " +
+            "FROM DonHang dh " +
+            "JOIN dh.chiTietDonHangs ctdh " +
+            "JOIN ctdh.spct spct " +
+            "JOIN spct.sanPham sp " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "WHERE dh.id = :id")
+    List<donhangDetailDTO> findDonHangDetailsById(@Param("id") Integer id);
 }

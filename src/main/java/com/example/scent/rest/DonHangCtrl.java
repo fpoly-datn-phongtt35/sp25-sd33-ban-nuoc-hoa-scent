@@ -2,6 +2,7 @@ package com.example.scent.rest;
 
 import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
+import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
 
 import com.example.scent.entity.TaiKhoan;
@@ -122,5 +123,15 @@ public class DonHangCtrl {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return dhs.getPageDonHang(page, size);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<List<donhangDetailDTO>> getDonHangDetails(@PathVariable Integer id) {
+        List<donhangDetailDTO> details = dhs.getDonHangDetailsById(id);
+        if (details != null && !details.isEmpty()) {
+            return ResponseEntity.ok(details);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
