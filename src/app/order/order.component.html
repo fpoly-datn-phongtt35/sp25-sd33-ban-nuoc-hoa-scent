@@ -44,6 +44,11 @@
       <span *ngIf="phuongThucThanhToan.errors?.['required']">⚠️ Hãy chọn phương thức thanh toán!</span>
     </div>
 
+    <label for="ghichu">Ghi chú:</label>
+    <input type="text" id="ghichu" [(ngModel)]="orderData.ghichu" name="ghichu"
+        #ghichu="ngModel">
+
+
     <button type="submit" [disabled]="orderForm.invalid">Đặt hàng</button>
   </form>
 

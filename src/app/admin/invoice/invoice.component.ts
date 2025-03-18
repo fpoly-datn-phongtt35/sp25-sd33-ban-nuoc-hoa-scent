@@ -28,7 +28,7 @@ export class InvoiceComponent implements OnInit {
     console.log('📌 Gọi API với:', this.page, this.size);
 
     this.donHangService.getDonhang(this.page, this.size).subscribe({
-      next: (response) => {
+      next: (response: { content: never[]; page: { totalPages: number; }; }) => {
         console.log('✅ API response:', response);
         this.orders = response.content || [];
         this.filteredDonhang = response.content || [];

@@ -1,0 +1,53 @@
+<app-header></app-header>
+<div class="order-detail-container">
+    <!-- Thông tin người nhận -->
+    <div class="order-info">
+      <h2>Thông Tin Người Nhận</h2>
+      <p><strong>Tên Người Nhận:</strong> {{ orderDetails[0].tenNguoiNhan }}</p>
+      <p><strong>Địa Chỉ:</strong> {{ orderDetails[0].diaChiGiaoHang }}</p>
+      <p><strong>SĐT:</strong> {{ orderDetails[0].sdtNguoiNhan }}</p>
+      <p><strong>Ngày tạo:</strong> {{ orderDetails[0].ngayTao }}</p>
+      <p><strong>Ngày vận chuyển:</strong> {{ orderDetails[0].ngayVanChuyen }}</p>
+      <p><strong>Phương thức thanh toán:</strong> {{ orderDetails[0].phuongThucThanhToan }}</p>
+      <p><strong>Phương thức vận chuyển:</strong> {{ orderDetails[0].phuongThucVanChuyen }}</p>
+
+      <!-- Thêm phần thông tin thanh toán -->
+      <div class="payment-info">
+        <h2>Thông Tin Thanh Toán</h2>
+        <p><strong>Tổng Tiền:</strong> </p>
+        <p><strong>Giảm Giá:</strong> </p>
+        <p><strong>Phí Vận Chuyển:</strong> </p>
+        <p class="total-amount"><strong>Thành Tiền:</strong> </p>
+      </div>
+    </div>
+
+    <!-- Bảng sản phẩm -->
+    <div class="product-info">
+      <h2>Sản Phẩm Trong Đơn</h2>
+      <div class="table-container">
+        <table>
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Ảnh</th>
+                <th>Tên</th>
+                <th>Dung tích</th>
+                <th>Số lượng</th>
+                <th>Giá</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of orderDetails; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td><img [src]="item.hinhAnh" alt="Product Image"></td>
+                <td>{{ item.tenSanPham }}</td>
+                <td>{{ item.dungTich }}ml</td>
+                <td>{{ item.soLuong }}</td>
+                <td>{{ item.donGiaSPCT }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+    </div>
+</div>
+<app-footer></app-footer>

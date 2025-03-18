@@ -4,6 +4,8 @@ import { ProductAdminComponent } from './admin/product-admin/product-admin.compo
 import { AdminGuard } from './Guard/adminGuard';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
+import { OrderDetailComponent } from './order-detail/order-detail.component';
+import { OrderSuccessComponent } from './order-success/order-success.component';
 import { OrderComponent } from './order/order.component';
 import { ProductDetailComponent } from './product-detail/product-detail.component';
 import { ProductComponent } from './product/product.component';
@@ -24,6 +26,11 @@ export const routes: Routes = [
     component: HomeAdminComponent,
     canActivate: [AdminGuard], // Chỉ admin được truy cập
   },
+  // app-routing.module.ts
+{ path: 'order-success/:orderId', component: OrderSuccessComponent },
+{ path: 'order-details/:id', component: OrderDetailComponent },
+
+
   {
     path: 'product_admin',
     component: ProductAdminComponent,

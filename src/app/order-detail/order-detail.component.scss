@@ -1,0 +1,126 @@
+/* Container chính */
+.order-detail-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Thông tin người nhận */
+.order-info {
+    flex: 1;
+    max-width: 40%;
+    background-color: #f8f8f8;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Phần thông tin thanh toán */
+.payment-info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #e3f2fd; /* Màu xanh nhạt */
+    border-radius: 8px;
+    border-left: 4px solid #2196F3;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.payment-info h2 {
+    font-size: 18px;
+    color: #1976D2;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.payment-info p {
+    font-size: 16px;
+    color: #333;
+    margin: 5px 0;
+}
+
+.payment-info .total-amount {
+    font-size: 18px;
+    font-weight: bold;
+    color: #D32F2F; /* Màu đỏ cho tổng thanh toán */
+}
+
+/* Bảng sản phẩm */
+.product-info {
+    flex: 1.5;
+    max-width: 55%;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    max-width: 100%;
+    overflow-x: auto; /* Tạo thanh cuộn khi nội dung quá rộng */
+}
+
+/* Bảng sản phẩm */
+table {
+    width: 100%;
+    min-width: 700px; /* Đảm bảo bảng không bị co lại quá nhỏ */
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 16px;
+}
+
+td {
+    font-size: 14px;
+    color: #333;
+}
+
+td img {
+    width: 60px;
+    height: 60px;
+    border-radius: 5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .order-detail-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .order-info, .product-info {
+        max-width: 100%;
+        width: 90%;
+        margin-bottom: 20px;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 8px;
+    }
+
+    td img {
+        width: 50px;
+        height: 50px;
+    }
+}

@@ -21,6 +21,7 @@ interface Order {
   sdtNguoiNhan: string;
   phuongThucThanhToan: string;
   chiTietDonHangs: OrderDetail[];
+  ghichu: string;
 }
 
 @Component({
@@ -37,7 +38,8 @@ export class OrderComponent {
     diaChiGiaoHang: '',
     sdtNguoiNhan: '',
     phuongThucThanhToan: '',
-    chiTietDonHangs: []
+    chiTietDonHangs: [],
+    ghichu: '',
   };
 
   selectedProducts: any[] = []; // Danh sách sản phẩm để hiển thị
@@ -109,7 +111,8 @@ export class OrderComponent {
       chiTietDonHangs: this.orderData.chiTietDonHangs.map(item => ({
         spctId: Number(item.spctId),
         quantity: Number(item.quantity)
-      }))
+      })),
+      ghichu:this.orderData.ghichu
     };
   
     console.log("📤 Dữ liệu gửi đi:", formattedOrderData);
@@ -122,7 +125,9 @@ export class OrderComponent {
         this.cartService.clearCartOnClient();
         localStorage.removeItem('selectedProducts');
         
-        this.router.navigateByUrl('/order-success');
+        // Điều hướng với orderId
+this.router.navigate(['/order-success', response.id]);
+
       },
       error: (error: any) => {
         console.error('❌ Lỗi khi tạo đơn hàng:', error);
