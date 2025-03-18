@@ -14,12 +14,11 @@
           <th>Ngày Tạo</th>
           <th>Ngày Vận Chuyển</th>
           <th>Phương Thức Vận Chuyển</th>
-          <th>Tên Khách Hàng</th>
-          <th>Địa Chỉ Khách Hàng</th>
-          <th>Email Khách Hàng</th>
-          <th>SĐT Khách Hàng</th>
+         <th>Tên tài khoản</th>
+         <th>ID tài khoản </th>
           <th>Phiếu Giảm Giá</th>
-          <th>Trạng Thái</th>
+          <th class="status-column">Trạng Thái</th>
+          <th>Hành động</th>
         </tr>
       </thead>
       <tbody>
@@ -33,20 +32,28 @@
           <td>{{ order.ngayTao | date: 'yyyy-MM-dd HH:mm' }}</td>
           <td>{{ order.ngayVanChuyen | date: 'yyyy-MM-dd HH:mm' }}</td>
           <td>{{ order.phuongThucVanChuyen }}</td>
-          <td>{{ order.khachHang.tenKhachHang }}</td>
-          <td>{{ order.khachHang.diaChi }}</td>
-          <td>{{ order.khachHang.email }}</td>
-          <td>{{ order.khachHang.sdt }}</td>
+         <td>{{order.taiKhoan.tenDangNhap}}</td>
+         <td>{{order.taiKhoan.id}}</td>
           <td>{{ order.phieuGiamGia ? order.phieuGiamGia : 'không' }}</td>
-          <td>
-            <span class="badge" [ngClass]="{
-              'bg-success': order.trangThai == 1,
-              'bg-warning': order.trangThai == 0,
-              'bg-danger': order.trangThai == -1
-            }">
-              {{ getStatusText(order.trangThai) }}
-            </span>
+          <td style="min-width: 150px; white-space: nowrap;">
+            <select 
+              class="form-control" 
+              id="orderStatus" 
+              [(ngModel)]="order.selectedStatus" 
+              (change)="updateStatus(order.id, order.selectedStatus)"
+              [ngStyle]="getStatusStyle(order.selectedStatus)">
+              
+              <option [ngValue]="1">Chờ Xác Nhận</option>
+              <option [ngValue]="2">Đã Xác Nhận</option>
+              <option [ngValue]="3">Đang Giao</option>
+              <option [ngValue]="4">Đã Thanh Toán</option>
+              <option [ngValue]="5">Đã Hủy</option>
+            </select>
           </td>
+          
+          <td><button class="btn btn-primary btn-sm"  (click)="openDetailModal(order)">
+            <i class="bi bi-eye"></i>
+          </button></td>
         </tr>
       </tbody>
     </table>

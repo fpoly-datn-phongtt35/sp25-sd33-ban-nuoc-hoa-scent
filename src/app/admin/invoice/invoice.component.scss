@@ -1,29 +1,71 @@
-.container {
-  max-width: 100%;
+
+.table th, .table td {
+    white-space: nowrap;
 }
 
-h2 {
-  font-size: 24px;
-  font-weight: bold;
+.table th.ten-nguoi-nhan,
+.table td.ten-nguoi-nhan {
+    width: 15%; /* Điều chỉnh theo nhu cầu */
 }
 
-.table {
-  font-size: 14px;
-  border-radius: 8px;
-  overflow: hidden;
+.table th.dia-chi,
+.table td.dia-chi {
+    width: 20%; /* Điều chỉnh theo nhu cầu */
 }
 
-.table th {
-  white-space: nowrap;
-  text-align: center;
+.table th.sdt,
+.table td.sdt {
+    width: 10%; /* Điều chỉnh theo nhu cầu */
 }
 
-.table td {
-  vertical-align: middle;
+.table th.tong-tien,
+.table td.tong-tien {
+    width: 10%; /* Điều chỉnh theo nhu cầu */
 }
 
-.badge {
-  font-size: 12px;
-  padding: 5px 10px;
-  border-radius: 5px;
+.table th.ngay-tao,
+.table td.ngay-tao,
+.table td.trang-thai,
+.table th.ngay-van-chuyen,
+.table td.ngay-van-chuyen {
+    width: 12%; /* Điều chỉnh theo nhu cầu */
 }
+
+.table th.phuong-thuc,
+.table td.phuong-thuc {
+    width: 10%; /* Điều chỉnh theo nhu cầu */
+}
+
+.table th.hanh-dong,
+.table td.hanh-dong {
+    width: 5%; /* Điều chỉnh theo nhu cầu */
+}
+.table th, .table td {
+  min-width: 100px; /* Điều chỉnh theo nhu cầu thực tế */
+  white-space: nowrap; /* Đảm bảo văn bản không bị xuống dòng */
+  overflow: visible; /* Cho phép văn bản hiển thị đầy đủ */
+  text-overflow: clip; /* Tránh cắt văn bản */
+}
+.status-column {
+  min-width: 150px; /* Đặt độ rộng tối thiểu cho cột */
+  white-space: nowrap; /* Ngăn chặn xuống dòng */
+}
+.status-cho-xac-nhan {
+    color: red;
+}
+.status-da-xac-nhan {
+    color: blue;
+}
+.status-dang-giao {
+    color: rgb(159, 159, 6);
+}
+.status-da-thanh-toan {
+    color: white;
+    background-color: grey; /* Để văn bản màu trắng dễ đọc hơn */
+}
+.status-da-huy {
+    color: black;
+    background-color: lightgray; /* Đặt màu nền cho trạng thái đã hủy để dễ đọc hơn */
+}
+
+

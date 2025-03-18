@@ -1,0 +1,50 @@
+/* Định dạng cho header của modal */
+.modal-header {
+    background-color: #6c6d6e;  /* Màu nền */
+    color: white;              /* Màu chữ */
+    padding: 10px 15px;        /* Đệm xung quanh */
+    border-bottom: 1px solid #dee2e6;  /* Viền dưới */
+}
+
+/* Định dạng nút đóng */
+.modal-header .close {
+    color: rgb(135, 127, 127);              /* Màu chữ của nút đóng */
+    opacity: 1;                /* Làm cho nút đóng không trong suốt */
+}
+
+/* Định dạng bảng */
+.table {
+    width: 100%;               /* Chiều rộng của bảng */
+    max-width: 100%;           /* Chiều rộng tối đa của bảng */
+    margin-bottom: 1rem;       /* Khoảng cách dưới bảng */
+    background-color: transparent; /* Màu nền */
+}
+
+.table th, .table td {
+    padding: 0.75rem;          /* Đệm cho mỗi ô */
+    vertical-align: top;       /* Canh lề trên cho nội dung */
+    border-top: 1px solid #dee2e6;  /* Viền trên mỗi ô */
+}
+
+.table thead th {
+    vertical-align: bottom;    /* Canh lề dưới cho header */
+    border-bottom: 2px solid #dee2e6;  /* Viền dưới mạnh cho header */
+}
+
+/* Định dạng ảnh sản phẩm */
+.table img {
+    width: 50px;               /* Chiều rộng ảnh */
+    height: auto;              /* Chiều cao tự động */
+    border-radius: 5px;        /* Làm tròn góc của ảnh */
+}
+
+/* Phần nội dung của modal */
+.modal-body {
+    padding: 15px;             /* Đệm xung quanh nội dung */
+}
+.total-amount {
+    font-size: 16px;  /* Cỡ chữ lớn hơn */
+    font-weight: bold; /* In đậm */
+    padding-top: 10px; /* Khoảng cách phía trên */
+    color: #0e1013;   /* Màu chữ */
+}
