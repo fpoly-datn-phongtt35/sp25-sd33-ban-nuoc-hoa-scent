@@ -26,13 +26,13 @@ public class Spct {
     @Column(name = "id")
     private Integer idSpct;
 
-    @NotNull(message = "Đơn giá không được để trống")
+
     @Transient // ✅ Không lưu vào database
     private List<String> imageUrl;
     @Column(name = "don_gia", precision = 19, scale = 4)
     private BigDecimal donGia;
 
-    @NotNull(message = "Số lượng tồn kho không được để trống")
+
 
     @Column(name = "so_luong_ton_kho")
     private Integer soLuongTonKho;

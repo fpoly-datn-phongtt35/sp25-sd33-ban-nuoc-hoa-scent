@@ -9,6 +9,7 @@ import com.example.scent.entity.TaiKhoan;
 import com.example.scent.service.DonHangSv;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -132,6 +133,18 @@ public class DonHangCtrl {
             return ResponseEntity.ok(details);
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/capnhat-trangthai/{id}")
+    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id, @RequestParam Integer trangThai) {
+        try {
+            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai);
+            return ResponseEntity.ok(donHang);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Lỗi cập nhật trạng thái: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
         }
     }
 }

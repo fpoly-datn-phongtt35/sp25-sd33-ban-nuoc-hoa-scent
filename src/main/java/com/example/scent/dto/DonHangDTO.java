@@ -24,4 +24,5 @@ public class DonHangDTO {
     private LocalDateTime ngayVanChuyen;
     private List<OrderItemDto> chiTietDonHangs;
     private List<String> imageURL;
+    private String ghichu;
 }

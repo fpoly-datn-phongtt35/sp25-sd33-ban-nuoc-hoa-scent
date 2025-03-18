@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -119,7 +121,7 @@ public class DonHangSv {
             itemDTO.setImageURL(productImages); // Gán danh sách ảnh vào OrderItemDto
             System.out.println("Hình ảnh sản phẩm ID " + spct.getSanPham().getIdSanPham() + ": " + productImages);
             spct.setImageUrl(productImages);
-            spct.setSoLuongTonKho(spct.getSoLuongTonKho() - itemDTO.getQuantity());
+            spct.setSoLuongTonKho(spct.getSoLuongTonKho());
             chiTietList.add(chiTiet);
 
         }
@@ -135,6 +137,7 @@ public class DonHangSv {
         newOrder.setNgayVanChuyen(orderRequest.getNgayVanChuyen());
         newOrder.setTongTien(tongTien);
         newOrder.setTrangThai(1);
+        newOrder.setGhiChu(orderRequest.getGhichu());
 
         DonHang savedOrder = dhi.save(newOrder);
 
@@ -148,13 +151,91 @@ public class DonHangSv {
 
         return savedOrder;
     }
+    private Map<Integer, List<String>> getHinhAnhBySanPhamIds(List<Integer> sanPhamIds) {
+        // Giả sử bạn có một repository là sanPhamRepository và hinhAnhRepository
+        Map<Integer, List<String>> imageMap = new HashMap<>();
+
+        for (Integer id : sanPhamIds) {
+            List<HinhAnh> hinhAnhs = hinhAnhInterface.findBySanPhamId(id);
+            List<String> imageUrls = hinhAnhs.stream()
+                    .map(HinhAnh::getLink)  // Giả sử HinhAnh có phương thức getUrl
+                    .collect(Collectors.toList());
+            imageMap.put(id.intValue(), imageUrls);
+        }
+
+        return imageMap;
+    }
 
     public Page<DonHang> getPageDonHang(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return dhi.findAll(pageable);
-    }
+        Page<DonHang> donHangPage = dhi.findAll(pageable);
+
+        // Lấy các ID sản phẩm từ các đơn hàng trong trang
+        List<Integer> sanPhamIds = donHangPage.getContent().stream()
+                .flatMap(dh -> dh.getChiTietDonHangs().stream())
+                .map(ctdh -> ctdh.getSpct().getSanPham().getIdSanPham())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Lấy hình ảnh tương ứng cho mỗi sản phẩm
+        Map<Integer, List<String>> imageMap = getHinhAnhBySanPhamIds(sanPhamIds);
+
+        // Gán hình ảnh vào SPCT
+        donHangPage.getContent().forEach(dh -> {
+            dh.getChiTietDonHangs().forEach(ctdh -> {
+                Spct spct = ctdh.getSpct();
+                SanPham sp = spct.getSanPham();
+                if (imageMap.containsKey(sp.getIdSanPham())) {
+                    spct.setImageUrl(imageMap.get(sp.getIdSanPham()));  // Gán danh sách URL hình ảnh
+                }
+            });
+        });
+
+        return donHangPage;
+        }
 
     public List<donhangDetailDTO> getDonHangDetailsById(Integer id) {
         return dhi.findDonHangDetailsById(id);
     }
+    @Transactional
+    public DonHang capNhatTrangThaiDonHang(Integer id, Integer trangThai) throws Exception {
+        DonHang donHang = dhi.findById(id)
+                .orElseThrow(() -> new Exception("Không tìm thấy đơn hàng với ID: " + id));
+
+        if (trangThai == 4) {
+            System.out.println("⚠️ Đang cập nhật tồn kho...");
+
+            for (ChiTietDonHang chiTiet : donHang.getChiTietDonHangs()) {
+                Spct spct = chiTiet.getSpct();
+                if (spct != null) {
+                    int soLuongTonKhoCu = spct.getSoLuongTonKho();
+                    int soLuongTru = chiTiet.getSoLuong();
+                    int soLuongMoi = soLuongTonKhoCu - soLuongTru;
+
+                    System.out.println("🛒 Sản phẩm: " + spct.getIdSpct() + " | Tồn kho trước: " + soLuongTonKhoCu + " | Trừ: " + soLuongTru + " | Tồn kho sau: " + soLuongMoi);
+
+                    if (soLuongMoi < 0) {
+                        System.out.println("❌ Không đủ tồn kho, rollback transaction!");
+                        throw new Exception("Không đủ tồn kho cho sản phẩm ID: " + spct.getIdSpct());
+                    }
+
+                    spct.setSoLuongTonKho(soLuongMoi);
+                    spc.save(spct);
+                }
+            }
+        }
+
+        donHang.setTrangThai(trangThai);
+        DonHang updatedOrder = dhi.save(donHang);
+
+        System.out.println("✅ Đơn hàng ID " + id + " cập nhật thành công. Trạng thái mới: " + trangThai);
+
+        // ✅ Thêm log xác nhận transaction
+        System.out.println("🔄 Commit transaction thành công!");
+
+        return updatedOrder;
+    }
+
+
+
 }

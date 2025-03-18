@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -86,6 +87,7 @@ public class DonHang {
 
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
+    @BatchSize(size = 10)
     private List<ChiTietDonHang> chiTietDonHangs;
 
     public Integer getTrangThai() {

@@ -4,6 +4,9 @@ import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
+import com.example.scent.entity.SanPham;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -55,4 +58,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
             "LEFT JOIN sp.hinhAnhs ha " +
             "WHERE dh.id = :id")
     List<donhangDetailDTO> findDonHangDetailsById(@Param("id") Integer id);
+
+    @Query("SELECT dh FROM DonHang dh " +
+            "LEFT JOIN FETCH dh.chiTietDonHangs ctdh " +
+            "LEFT JOIN FETCH ctdh.spct spct " +
+            "LEFT JOIN FETCH spct.sanPham sp " +
+            "LEFT JOIN FETCH sp.hinhAnhs")
+    Page<DonHang> findAllWithDetails(Pageable pageable);
+
 }
