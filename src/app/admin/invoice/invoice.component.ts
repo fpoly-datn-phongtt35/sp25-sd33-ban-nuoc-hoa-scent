@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { DonhangService } from '../../service/donhang.service';
 import { OrderDetaiAdminComponent } from '../order-detai-admin/order-detai-admin.component';
 import { HttpClient } from '@angular/common/http';
+import { UserDetailOrderComponent } from '../user-detail-order/user-detail-order.component';
 @Component({
   selector: 'app-invoice',
   standalone: true,
@@ -43,7 +44,10 @@ export class InvoiceComponent implements OnInit {
     );
   }
   
-  
+  xemChiTietTaiKhoan(order: any) {
+    const modalRef = this.modalService.open(UserDetailOrderComponent);
+    modalRef.componentInstance.taiKhoan = order.taiKhoan; // Truyền dữ liệu vào modal
+  }
   openDetailModal(order: any) {
     const modalRef = this.modalService.open(OrderDetaiAdminComponent, { size: 'lg' });
     modalRef.componentInstance.order = order; // Truyền đơn hàng vào component modal

@@ -28,8 +28,8 @@ import { Router } from '@angular/router';
   styleUrls: ['./home-admin.component.scss'], // Sửa từ styleUrl thành styleUrls
 })
 export class HomeAdminComponent implements OnInit {
-  selectedComponent: string = 'dashboard'; // Mặc định hiển thị trang dashboard
-  selectedNav: string = 'dashboard'; // Điều khiển mục active trên sidebar
+  selectedComponent: string = 'invoice'; // Mặc định hiển thị trang dashboard
+  selectedNav: string = 'invoice'; // Điều khiển mục active trên sidebar
   userRole: string | null = null; // Lưu vai trò người dùng
 
   constructor(private tokenService: TokenService, private router: Router) {}
@@ -43,7 +43,7 @@ export class HomeAdminComponent implements OnInit {
       this.router.navigate(['/']); // Chuyển hướng nếu không phải admin
     } else {
       console.log('Người dùng là admin, tiếp tục.');
-      this.selectedComponent = 'dashboard'; // Mặc định là dashboard
+      this.selectedComponent = 'invoice'; // Mặc định là dashboard
     }
   }
 

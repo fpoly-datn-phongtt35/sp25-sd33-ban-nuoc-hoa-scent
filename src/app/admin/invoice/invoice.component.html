@@ -15,10 +15,10 @@
           <th>Ngày Vận Chuyển</th>
           <th>Phương Thức Vận Chuyển</th>
          <th>Tên tài khoản</th>
-         <th>ID tài khoản </th>
+         
           <th>Phiếu Giảm Giá</th>
           <th class="status-column">Trạng Thái</th>
-          <th>Hành động</th>
+          <th>Sản phẩm</th>
         </tr>
       </thead>
       <tbody>
@@ -32,8 +32,8 @@
           <td>{{ order.ngayTao | date: 'yyyy-MM-dd HH:mm' }}</td>
           <td>{{ order.ngayVanChuyen | date: 'yyyy-MM-dd HH:mm' }}</td>
           <td>{{ order.phuongThucVanChuyen }}</td>
-         <td>{{order.taiKhoan.tenDangNhap}}</td>
-         <td>{{order.taiKhoan.id}}</td>
+         <td (click)="xemChiTietTaiKhoan(order)">{{order.taiKhoan.tenDangNhap}}</td>
+         
           <td>{{ order.phieuGiamGia ? order.phieuGiamGia : 'không' }}</td>
           <td style="min-width: 150px; white-space: nowrap;">
             <select 
@@ -53,7 +53,11 @@
           
           <td><button class="btn btn-primary btn-sm"  (click)="openDetailModal(order)">
             <i class="bi bi-eye"></i>
-          </button></td>
+          </button>
+         
+         
+        
+        </td>
         </tr>
       </tbody>
     </table>
