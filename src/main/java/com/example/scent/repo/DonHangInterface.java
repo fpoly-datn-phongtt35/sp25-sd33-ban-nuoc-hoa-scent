@@ -44,7 +44,11 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     @Modifying
     @Query("UPDATE DonHang d SET d.trangThai = 2 WHERE d.id = :id")
     void updateStatusToProcessing(@Param("id") Integer id);
-    List<DonHang> findByTrangThai(Integer trangThai);
+    Page<DonHang> findByTrangThai(Pageable pageable, Integer trangThai);
+
+
+
+
 
     @Query("SELECT new com.example.scent.dto.donhangDetailDTO(" +
             "dh.id, dh.tenNguoiNhanHang, dh.diaChiGiaoHang, dh.sdtNguoiNhan, " +
@@ -65,5 +69,8 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
             "LEFT JOIN FETCH spct.sanPham sp " +
             "LEFT JOIN FETCH sp.hinhAnhs")
     Page<DonHang> findAllWithDetails(Pageable pageable);
+
+    @Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai)")
+    Page<DonHang> findByTrangThai(@Param("trangThai") Integer trangThai, Pageable pageable);
 
 }

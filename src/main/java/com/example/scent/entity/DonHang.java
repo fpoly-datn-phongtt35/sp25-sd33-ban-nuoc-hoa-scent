@@ -61,6 +61,10 @@ public class DonHang {
     @Column(name = "ngay_tao")
     private LocalDateTime ngayTao;
 
+    @Column(name = "ly_do_huy")
+    private String lyDoHuy;
+
+
     @NotNull(message = "Ngày vận chuyển không được để trống")
     @Column(name = "ngay_van_chuyen")
     private LocalDateTime ngayVanChuyen;

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,8 +77,8 @@ public class DonHangSv {
         dhi.updateStatusToProcessing(id);
     }
 
-    public List<DonHang> getDonHangByTrangThai(Integer trangThai) {
-        return dhi.findByTrangThai(trangThai);
+    public Page<DonHang> getDonHangByTrangThai(Pageable pageable,Integer trangThai) {
+        return dhi.findByTrangThai(pageable,trangThai);
     }
 
     @Transactional
@@ -166,9 +167,18 @@ public class DonHangSv {
         return imageMap;
     }
 
-    public Page<DonHang> getPageDonHang(int page, int size) {
+    public Page<DonHang> getPageDonHang(int page, int size, int trangThai) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DonHang> donHangPage = dhi.findAll(pageable);
+
+        Page<DonHang> donHangPage;
+
+        // Nếu status không phải là -1 (tức là có lọc trạng thái), sử dụng phương thức findByStatus
+        if (trangThai != -1) {
+            donHangPage = dhi.findByTrangThai(pageable, trangThai);
+        } else {
+            // Nếu không lọc trạng thái, lấy tất cả đơn hàng
+            donHangPage = dhi.findAll(pageable);
+        }
 
         // Lấy các ID sản phẩm từ các đơn hàng trong trang
         List<Integer> sanPhamIds = donHangPage.getContent().stream()
@@ -192,17 +202,19 @@ public class DonHangSv {
         });
 
         return donHangPage;
-        }
+    }
 
     public List<donhangDetailDTO> getDonHangDetailsById(Integer id) {
         return dhi.findDonHangDetailsById(id);
     }
     @Transactional
-    public DonHang capNhatTrangThaiDonHang(Integer id, Integer trangThai) throws Exception {
+    public DonHang capNhatTrangThaiDonHang(Integer id, Integer trangThai, String lyDoHuy) throws Exception {
+        // Tìm đơn hàng từ database
         DonHang donHang = dhi.findById(id)
                 .orElseThrow(() -> new Exception("Không tìm thấy đơn hàng với ID: " + id));
 
-        if (trangThai == 4) {
+        // Nếu trạng thái là "Đã Thanh Toán" (trạng thái 4), kiểm tra và cập nhật tồn kho
+        if (trangThai == 3) {
             System.out.println("⚠️ Đang cập nhật tồn kho...");
 
             for (ChiTietDonHang chiTiet : donHang.getChiTietDonHangs()) {
@@ -225,6 +237,15 @@ public class DonHangSv {
             }
         }
 
+        // Nếu trạng thái là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
+        if (trangThai == 5) {
+            if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+                throw new Exception("Lý do hủy không thể trống!");
+            }
+            donHang.setLyDoHuy(lyDoHuy);  // Lưu lý do hủy vào đối tượng đơn hàng
+        }
+
+        // Cập nhật trạng thái của đơn hàng
         donHang.setTrangThai(trangThai);
         DonHang updatedOrder = dhi.save(donHang);
 
@@ -235,6 +256,11 @@ public class DonHangSv {
 
         return updatedOrder;
     }
+//    public Page<DonHang> getDonHangByTrangThai(Integer trangThai, int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size, Sort.by("ngayTao").descending());
+//        return (trangThai == null) ? dhi.findAll(pageable) : dhi.findByTrangThai(trangThai, pageable);
+//    }
+
 
 
 

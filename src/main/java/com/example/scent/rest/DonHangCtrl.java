@@ -9,6 +9,7 @@ import com.example.scent.entity.TaiKhoan;
 import com.example.scent.service.DonHangSv;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -93,15 +94,17 @@ public class DonHangCtrl {
         return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành 'Đang xử lý' thành công");
     }
     @GetMapping("/get-don-hang-chua-xu-ly")
-    public ResponseEntity<List<DonHang>> getDonHangChoXuLy() {
-        List<DonHang> donHangs = dhs.getDonHangByTrangThai(0);
+    public ResponseEntity<Page<DonHang>> getDonHangChoXuLy(Pageable pageable) {
+        // Truy vấn danh sách đơn hàng theo trạng thái 0 và phân trang
+        Page<DonHang> donHangs = dhs.getDonHangByTrangThai(pageable, 0);
         return ResponseEntity.ok(donHangs);
     }
 
+
     // API lấy danh sách đơn hàng có trạng thái "đang xử lý" (trangThai = 1)
     @GetMapping("/get-don-hang-dang-xu-ly")
-    public ResponseEntity<List<DonHang>> getDonHangDangXuLy() {
-        List<DonHang> donHangs = dhs.getDonHangByTrangThai(1);
+    public ResponseEntity<Page<DonHang>> getDonHangDangXuLy(Pageable pageable) {
+        Page<DonHang> donHangs = dhs.getDonHangByTrangThai(pageable,1);
         return ResponseEntity.ok(donHangs);
     }
 //    @PostMapping
@@ -119,12 +122,14 @@ public class DonHangCtrl {
         DonHang createdOrder = dhs.createOrder(orderRequest);
         return ResponseEntity.ok(createdOrder);
     }
-    @GetMapping("page")
-    public Page<DonHang> getAllTaiKhoan(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return dhs.getPageDonHang(page, size);
+    @GetMapping("/page")
+    public ResponseEntity<Page<DonHang>> getDonHangs(@RequestParam int page,
+                                                     @RequestParam int size,
+                                                     @RequestParam(required = false, defaultValue = "-1") int trangThai) {
+        Page<DonHang> donHangs = dhs.getPageDonHang(page, size, trangThai);
+        return ResponseEntity.ok(donHangs);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<List<donhangDetailDTO>> getDonHangDetails(@PathVariable Integer id) {
@@ -137,9 +142,20 @@ public class DonHangCtrl {
     }
 
     @PutMapping("/capnhat-trangthai/{id}")
-    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id, @RequestParam Integer trangThai) {
+    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id,
+                                                     @RequestParam Integer trangThai,
+                                                     @RequestParam(required = false) String lyDoHuy) {
         try {
-            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai);
+            // Kiểm tra nếu trạng thái là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
+            if (trangThai == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
+                // Nếu lý do hủy không được cung cấp, trả về lỗi
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lý do hủy không thể trống!");
+            }
+
+            // Cập nhật trạng thái đơn hàng
+            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai, lyDoHuy);
+
+            // Trả về phản hồi thành công với dữ liệu đơn hàng đã cập nhật
             return ResponseEntity.ok(donHang);
         } catch (Exception e) {
             e.printStackTrace();
@@ -147,4 +163,6 @@ public class DonHangCtrl {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
         }
     }
+
+
 }
