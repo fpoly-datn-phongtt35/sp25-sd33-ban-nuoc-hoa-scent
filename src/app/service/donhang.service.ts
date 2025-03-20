@@ -13,13 +13,12 @@ export class DonhangService {
 
   currentOrderId = this.orderIdSource.asObservable();
   constructor(private http: HttpClient) {}
- getDonhang(page: number, size: number): Observable<any> {
-    let params = `/page?page=${page}&size=${size}`;
-    // if (searchTerm) {
-    //   params += `&search=${searchTerm}`;
-    // }
+  getDonhang(page: number, size: number, trangThai: number = -1): Observable<any> {
+    let params = `/page?page=${page}&size=${size}&trangThai=${trangThai}`;
+    
     return this.http.get(`${this.apiUrl}${params}`);
-  }
+}
+
   setOrderId(orderId: string) {
     this.orderIdSource.next(orderId);
   }

@@ -1,10 +1,21 @@
 <div class="container mt-4">
   <h2 class="text-center mb-4">Danh sách đơn hàng</h2>
 
+  <!-- Thêm các button lọc trạng thái đơn hàng -->
+  <div class="btn-group mb-4" role="group">
+    <button class="btn btn-info" (click)="filterOrders('pending')">Chờ xử lý</button>
+    <button class="btn btn-success" (click)="filterOrders('processed')">Đã xử lý</button>
+    <button class="btn btn-warning" (click)="filterOrders('shipping')">Đang giao</button>
+    <button class="btn btn-primary" (click)="filterOrders('paid')">Đã thanh toán</button>
+    <button class="btn btn-danger" (click)="filterOrders('cancelled')">Đã hủy</button>
+    <button class="btn btn-secondary" (click)="clearFilter()">Tất cả</button>
+  </div>
+
   <div class="table-responsive">
     <table class="table table-bordered table-hover text-center">
       <thead class="table-primary">
         <tr>
+          <th>Mã đơn hàng</th>
           <th>Tên Người Nhận</th>
           <th>Địa Chỉ Giao Hàng</th>
           <th>SĐT Người Nhận</th>
@@ -14,15 +25,16 @@
           <th>Ngày Tạo</th>
           <th>Ngày Vận Chuyển</th>
           <th>Phương Thức Vận Chuyển</th>
-         <th>Tên tài khoản</th>
-         
+          <th>Tên tài khoản</th>
           <th>Phiếu Giảm Giá</th>
           <th class="status-column">Trạng Thái</th>
           <th>Sản phẩm</th>
+        
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let order of orders">
+        <tr *ngFor="let order of filteredDonhang">
+          <td>{{ order.id }}</td>
           <td>{{ order.tenNguoiNhanHang }}</td>
           <td>{{ order.diaChiGiaoHang }}</td>
           <td>{{ order.sdtNguoiNhan }}</td>
@@ -32,86 +44,75 @@
           <td>{{ order.ngayTao | date: 'yyyy-MM-dd HH:mm' }}</td>
           <td>{{ order.ngayVanChuyen | date: 'yyyy-MM-dd HH:mm' }}</td>
           <td>{{ order.phuongThucVanChuyen }}</td>
-         <td (click)="xemChiTietTaiKhoan(order)">{{order.taiKhoan.tenDangNhap}}</td>
-         
+          <td (click)="xemChiTietTaiKhoan(order)">{{order.taiKhoan.tenDangNhap}}</td>
           <td>{{ order.phieuGiamGia ? order.phieuGiamGia : 'không' }}</td>
+         
           <td style="min-width: 150px; white-space: nowrap;">
-            <select 
-              class="form-control" 
-              id="orderStatus" 
-              [(ngModel)]="order.selectedStatus" 
-              (change)="updateStatus(order.id, order.selectedStatus)"
-              [ngStyle]="getStatusStyle(order.selectedStatus)">
-              
-              <option [ngValue]="1">Chờ Xác Nhận</option>
-              <option [ngValue]="2">Đã Xác Nhận</option>
-              <option [ngValue]="3">Đang Giao</option>
-              <option [ngValue]="4">Đã Thanh Toán</option>
-              <option [ngValue]="5">Đã Hủy</option>
-            </select>
+            <span *ngIf="order.selectedStatus === 1" class="btn btn-dark" (click)="confirmStatusChange(order.id, 2)">
+              ✔ Đã Xác Nhận
+            </span>
+            <span *ngIf="order.selectedStatus === 2" class="btn btn-success" (click)="confirmStatusChange(order.id, 3)">
+              ✔ Đang Giao
+            </span>
+            <span *ngIf="order.selectedStatus === 3" class="btn btn-info" (click)="selectPaymentOption(order.id)">
+              ✔ Chọn hành động tiếp theo
+            </span>
+            <span *ngIf="order.selectedStatus === 4" class="btn btn-primary" (click)="confirmStatusChange(order.id, 5)">
+              Thanh toán thành công
+            </span>
+            <span *ngIf="order.selectedStatus === 5" class="btn btn-danger" (click)="confirmStatusChange(order.id, 1)">
+              Đơn hàng đã huỷ 
+            </span>
+            <span *ngIf="order.selectedStatus === 5 && order.lyDoHuy" class="text-muted ms-2">
+              - Lý do: {{ order.lyDoHuy }}
+            </span>
+            <!-- Hiển thị lý do hủy nếu trạng thái là "Đã Hủy" -->
+             
           </td>
+         
           
-          <td><button class="btn btn-primary btn-sm"  (click)="openDetailModal(order)">
+          
+          
+          
+          
+          <td><button class="btn btn-primary btn-sm" (click)="openDetailModal(order)">
             <i class="bi bi-eye"></i>
-          </button>
-         
-         
-        
-        </td>
+          </button></td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <!-- Phân trang -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="goToPage(0)">«</button>
+      </li>
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="prevPage()">‹</button>
+      </li>
+      <li class="page-item" *ngIf="page > 2">
+        <button class="page-link" (click)="goToPage(0)">1</button>
+      </li>
+      <li class="page-item disabled" *ngIf="page > 3">
+        <span class="page-link">...</span>
+      </li>
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+        <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+      </li>
+      <li class="page-item disabled" *ngIf="page < totalPages - 4">
+        <span class="page-link">...</span>
+      </li>
+      <li class="page-item" *ngIf="page < totalPages - 3">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="nextPage()">›</button>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+      </li>
+    </ul>
+  </nav>
 </div>
-<!-- ✅ Phân trang với Bootstrap -->
-<!-- ✅ Phân trang với Bootstrap -->
-<!-- ✅ Phân trang đẹp với Bootstrap -->
-<nav aria-label="Page navigation">
-  <ul class="pagination justify-content-center">
-
-    <!-- Nút "Trang đầu" -->
-    <li class="page-item" [class.disabled]="page === 0">
-      <button class="page-link" (click)="goToPage(0)">«</button>
-    </li>
-
-    <!-- Nút "Trước" -->
-    <li class="page-item" [class.disabled]="page === 0">
-      <button class="page-link" (click)="prevPage()">‹</button>
-    </li>
-
-    <!-- Hiển thị trang đầu nếu page > 2 -->
-    <li class="page-item" *ngIf="page > 2">
-      <button class="page-link" (click)="goToPage(0)">1</button>
-    </li>
-
-    <!-- Dấu "..." nếu cần -->
-    <li class="page-item disabled" *ngIf="page > 3">
-      <span class="page-link">...</span>
-    </li>
-
-    <!-- Hiển thị các trang gần nhất -->
-    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-    </li>
-
-    <!-- Dấu "..." nếu có nhiều trang -->
-    <li class="page-item disabled" *ngIf="page < totalPages - 4">
-      <span class="page-link">...</span>
-    </li>
-
-    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
-    <li class="page-item" *ngIf="page < totalPages - 3">
-      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-    </li>
-
-    <!-- Nút "Sau" -->
-    <li class="page-item" [class.disabled]="page >= totalPages - 1">
-      <button class="page-link" (click)="nextPage()">›</button>
-    </li>
-
-    <!-- Nút "Trang cuối" -->
-    <li class="page-item" [class.disabled]="page >= totalPages - 1">
-      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-    </li>
-  </ul>
-</nav>
