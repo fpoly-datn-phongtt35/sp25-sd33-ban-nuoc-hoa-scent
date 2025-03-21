@@ -94,17 +94,17 @@ public class DonHangCtrl {
         return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành 'Đang xử lý' thành công");
     }
     @GetMapping("/get-don-hang-chua-xu-ly")
-    public ResponseEntity<Page<DonHang>> getDonHangChoXuLy(Pageable pageable) {
+    public ResponseEntity<List<DonHang>> getDonHangChoXuLy(Pageable pageable) {
         // Truy vấn danh sách đơn hàng theo trạng thái 0 và phân trang
-        Page<DonHang> donHangs = dhs.getDonHangByTrangThai(pageable, 0);
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai( 0);
         return ResponseEntity.ok(donHangs);
     }
 
 
     // API lấy danh sách đơn hàng có trạng thái "đang xử lý" (trangThai = 1)
     @GetMapping("/get-don-hang-dang-xu-ly")
-    public ResponseEntity<Page<DonHang>> getDonHangDangXuLy(Pageable pageable) {
-        Page<DonHang> donHangs = dhs.getDonHangByTrangThai(pageable,1);
+    public ResponseEntity<List<DonHang>> getDonHangDangXuLy() {
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai(1);
         return ResponseEntity.ok(donHangs);
     }
 //    @PostMapping
@@ -123,10 +123,9 @@ public class DonHangCtrl {
         return ResponseEntity.ok(createdOrder);
     }
     @GetMapping("/page")
-    public ResponseEntity<Page<DonHang>> getDonHangs(@RequestParam int page,
-                                                     @RequestParam int size,
+    public ResponseEntity<List<DonHang>> getDonHangs(
                                                      @RequestParam(required = false, defaultValue = "-1") int trangThai) {
-        Page<DonHang> donHangs = dhs.getPageDonHang(page, size, trangThai);
+        List<DonHang> donHangs = dhs.getDonHangByStatus(trangThai);
         return ResponseEntity.ok(donHangs);
     }
 

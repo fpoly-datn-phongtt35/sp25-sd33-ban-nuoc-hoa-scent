@@ -44,7 +44,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     @Modifying
     @Query("UPDATE DonHang d SET d.trangThai = 2 WHERE d.id = :id")
     void updateStatusToProcessing(@Param("id") Integer id);
-    Page<DonHang> findByTrangThai(Pageable pageable, Integer trangThai);
+    List<DonHang> findByTrangThai( Integer trangThai);
 
 
 

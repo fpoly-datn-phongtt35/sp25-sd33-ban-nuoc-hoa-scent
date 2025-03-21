@@ -77,8 +77,8 @@ public class DonHangSv {
         dhi.updateStatusToProcessing(id);
     }
 
-    public Page<DonHang> getDonHangByTrangThai(Pageable pageable,Integer trangThai) {
-        return dhi.findByTrangThai(pageable,trangThai);
+    public List<DonHang> getDonHangByTrangThai(Integer trangThai) {
+        return dhi.findByTrangThai(trangThai);
     }
 
     @Transactional
@@ -167,21 +167,19 @@ public class DonHangSv {
         return imageMap;
     }
 
-    public Page<DonHang> getPageDonHang(int page, int size, int trangThai) {
-        Pageable pageable = PageRequest.of(page, size);
+    public List<DonHang> getDonHangByStatus(int trangThai) {
+        List<DonHang> donHangPage;
 
-        Page<DonHang> donHangPage;
-
-        // Nếu status không phải là -1 (tức là có lọc trạng thái), sử dụng phương thức findByStatus
+        // Nếu có trạng thái lọc
         if (trangThai != -1) {
-            donHangPage = dhi.findByTrangThai(pageable, trangThai);
+            donHangPage = dhi.findByTrangThai(trangThai);
         } else {
             // Nếu không lọc trạng thái, lấy tất cả đơn hàng
-            donHangPage = dhi.findAll(pageable);
+            donHangPage = dhi.findAll();  // Lấy tất cả các đơn hàng
         }
 
-        // Lấy các ID sản phẩm từ các đơn hàng trong trang
-        List<Integer> sanPhamIds = donHangPage.getContent().stream()
+        // Lấy các ID sản phẩm từ các đơn hàng
+        List<Integer> sanPhamIds = donHangPage.stream()
                 .flatMap(dh -> dh.getChiTietDonHangs().stream())
                 .map(ctdh -> ctdh.getSpct().getSanPham().getIdSanPham())
                 .distinct()
@@ -190,8 +188,8 @@ public class DonHangSv {
         // Lấy hình ảnh tương ứng cho mỗi sản phẩm
         Map<Integer, List<String>> imageMap = getHinhAnhBySanPhamIds(sanPhamIds);
 
-        // Gán hình ảnh vào SPCT
-        donHangPage.getContent().forEach(dh -> {
+        // Gán hình ảnh vào SPCT cho mỗi đơn hàng
+        donHangPage.forEach(dh -> {
             dh.getChiTietDonHangs().forEach(ctdh -> {
                 Spct spct = ctdh.getSpct();
                 SanPham sp = spct.getSanPham();
