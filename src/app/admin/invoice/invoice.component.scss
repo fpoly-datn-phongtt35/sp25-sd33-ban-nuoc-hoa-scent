@@ -69,3 +69,29 @@
 }
 
 
+/* Đặt màu nền mặc định cho các nút */
+.btn-custom {
+    background-color: #8c8e90; /* Màu xanh dương */
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Khi một nút được chọn (active) */
+.btn-custom.active {
+    background-color: #94cbdc; /* Màu xanh lá cây khi được chọn */
+    color: white;
+}
+
+/* Thêm hiệu ứng khi di chuột qua nút */
+.btn-custom:hover {
+    background-color: #9fc4ea; /* Thay đổi màu khi di chuột */
+}
+
+/* Thêm hiệu ứng khi di chuột qua nút đã chọn */
+.btn-custom.active:hover {
+    background-color: #a8d8ed; /* Màu khi di chuột vào nút đã chọn */
+}

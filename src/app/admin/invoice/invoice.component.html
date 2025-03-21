@@ -3,13 +3,14 @@
 
   <!-- Thêm các button lọc trạng thái đơn hàng -->
   <div class="btn-group mb-4" role="group">
-    <button class="btn btn-info" (click)="filterOrders('pending')">Chờ xử lý</button>
-    <button class="btn btn-success" (click)="filterOrders('processed')">Đã xử lý</button>
-    <button class="btn btn-warning" (click)="filterOrders('shipping')">Đang giao</button>
-    <button class="btn btn-primary" (click)="filterOrders('paid')">Đã thanh toán</button>
-    <button class="btn btn-danger" (click)="filterOrders('cancelled')">Đã hủy</button>
-    <button class="btn btn-secondary" (click)="clearFilter()">Tất cả</button>
-  </div>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">Chờ xử lý</button>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">Đã xử lý</button>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">Đang giao</button>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('paid')">Đã thanh toán</button>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">Đã hủy</button>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
+</div>
+
 
   <div class="table-responsive">
     <table class="table table-bordered table-hover text-center">
@@ -84,35 +85,6 @@
   </div>
 
   <!-- Phân trang -->
-  <nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-      <li class="page-item" [class.disabled]="page === 0">
-        <button class="page-link" (click)="goToPage(0)">«</button>
-      </li>
-      <li class="page-item" [class.disabled]="page === 0">
-        <button class="page-link" (click)="prevPage()">‹</button>
-      </li>
-      <li class="page-item" *ngIf="page > 2">
-        <button class="page-link" (click)="goToPage(0)">1</button>
-      </li>
-      <li class="page-item disabled" *ngIf="page > 3">
-        <span class="page-link">...</span>
-      </li>
-      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-        <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-      </li>
-      <li class="page-item disabled" *ngIf="page < totalPages - 4">
-        <span class="page-link">...</span>
-      </li>
-      <li class="page-item" *ngIf="page < totalPages - 3">
-        <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-      </li>
-      <li class="page-item" [class.disabled]="page >= totalPages - 1">
-        <button class="page-link" (click)="nextPage()">›</button>
-      </li>
-      <li class="page-item" [class.disabled]="page >= totalPages - 1">
-        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-      </li>
-    </ul>
-  </nav>
+ 
+  
 </div>

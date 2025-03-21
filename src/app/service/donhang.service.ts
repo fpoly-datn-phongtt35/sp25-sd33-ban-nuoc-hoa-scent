@@ -13,10 +13,16 @@ export class DonhangService {
 
   currentOrderId = this.orderIdSource.asObservable();
   constructor(private http: HttpClient) {}
-  getDonhang(page: number, size: number, trangThai: number = -1): Observable<any> {
-    let params = `/page?page=${page}&size=${size}&trangThai=${trangThai}`;
+  getDonhang(trangThai: number = -1): Observable<any> {
+    // Chỉ truyền tham số trangThai vào URL
+    let params = `/page?trangThai=${trangThai}`;
     
     return this.http.get(`${this.apiUrl}${params}`);
+  }
+  
+getDonhangWithoutPagination(): Observable<any> {
+  const url = `http://localhost:8080/rest/don-hang/getAll`;
+  return this.http.get(url);
 }
 
   setOrderId(orderId: string) {

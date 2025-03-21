@@ -26,6 +26,7 @@ export class InvoiceComponent implements OnInit {
   totalPages: number = 20; // Tổng số trang
   cancellationReason: string | null = null;
   cancellationReasons: { [key: number]: string } = {};
+  showPagination: boolean = false; 
   constructor(private http: HttpClient,private donHangService: DonhangService,private modalService: NgbModal) {}
 
   ngOnInit(): void {
@@ -135,44 +136,67 @@ requestCancellationReason(orderId: number): void {
     modalRef.componentInstance.order = order; // Truyền đơn hàng vào component modal
   }
   loadCustomers(): void {
-    this.donHangService.getDonhang(this.page, this.size, this.selectedStatus??undefined).subscribe({
+    // Chỉ cần gọi API với tham số trangThai, không cần truyền page và size
+    this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
       next: (response) => {
         // Nhận danh sách đơn hàng
-        this.orders = response.content.map((order: { trangThai: any; }) => ({
+        this.orders = response.map((order: { trangThai: any; }) => ({
           ...order,
           selectedStatus: order.trangThai, // Lưu trạng thái vào selectedStatus
         }));
-
+  
         // Sau khi nhận được đơn hàng, lọc theo trạng thái đã chọn
         this.filterOrders(this.selectedStatus !== null ? this.selectedStatus.toString() : ''); 
-
-        // Lưu tổng số trang từ response của API
-        this.totalPages = response.page?.totalPages || 1;
+  
+        // Lưu tổng số trang từ response của API nếu có (nếu API hỗ trợ phân trang)
+        // Nếu API không phân trang, bạn có thể bỏ qua phần này
+        // this.totalPages = response.page?.totalPages || 1;
       },
       error: (error: any) => console.error('Error loading orders', error)
     });
   }
+  
 
 
   filterOrders(status: string): void {
     let filteredList: any[] = [];
     switch (status) {
       case 'pending':
+        console.log('A')
         filteredList = this.orders.filter(order => order.selectedStatus === 1);
+        this.showPagination = false;
+        this.selectedStatus = 1;
+        console.log('dữ liệu trang chờ xử lý',filteredList)
         break;
       case 'processed':
+        console.log('b')
         filteredList = this.orders.filter(order => order.selectedStatus === 2);
+        this.showPagination = false;
+        this.selectedStatus = 2;
         break;
       case 'shipping':
+        console.log('c')
         filteredList = this.orders.filter(order => order.selectedStatus === 3);
+        this.showPagination = false;
+        this.selectedStatus = 3;
         break;
       case 'paid':
+        console.log('d')
         filteredList = this.orders.filter(order => order.selectedStatus === 4);
+        this.showPagination = false;
+        this.selectedStatus = 4;
         break;
       case 'cancelled':
+        console.log('e')
         filteredList = this.orders.filter(order => order.selectedStatus === 5);
+        this.showPagination = false;
+        this.selectedStatus = 5;
         break;
+       
       default:
+        console.log('dèault')
+        this.showPagination = true;
+        this.selectedStatus = null;
         filteredList = [...this.orders]; // Hiển thị tất cả nếu không có trạng thái cụ thể
         break;
     }
@@ -183,7 +207,9 @@ requestCancellationReason(orderId: number): void {
     // Đặt lại trang đầu nếu trang hiện tại trống
     if (this.filteredDonhang.length === 0 && this.page > 0) {
       this.page = 0;
-      this.loadCustomers(); // Load lại dữ liệu
+      this.loadCustomers(); // Load data again if no orders match
+    } else if (status === 'default') {
+      this.showPagination = true; // Ensure pagination is enabled when showing all orders
     }
   }
   
@@ -202,7 +228,8 @@ requestCancellationReason(orderId: number): void {
   
     
     clearFilter(): void {
-      this.filteredDonhang = this.orders;
+      // this.filteredDonhang = this.orders;
+      
     }
     getFilterKey(status: number): string {
       switch (status) {
