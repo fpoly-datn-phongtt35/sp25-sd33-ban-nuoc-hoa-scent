@@ -48,7 +48,13 @@
     <input type="text" id="ghichu" [(ngModel)]="orderData.ghichu" name="ghichu"
         #ghichu="ngModel">
 
-
+        <div class="payment-info">
+  <h4>Thông tin thanh toán</h4>
+          <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
+          <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
+          <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
+          <p class="total-amount"><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
+        </div>
     <button type="submit" [disabled]="orderForm.invalid">Đặt hàng</button>
   </form>
 
@@ -86,7 +92,10 @@
       </tbody>
       
     </table>
+    
+    
   </div>
+  
 </div>
 
 <app-footer></app-footer>

@@ -29,9 +29,13 @@
       <p class="volume">
         <strong>Dung tích:</strong> {{ product.dungTich }}ml
       </p>
+      <p class="volume">
+        Số lượng: <strong>{{ product.soLuongTonKho }}</strong> 
+      </p>
       <p class="price">
         Giá: <strong>{{ product.donGia | number }}</strong> VND
       </p>
+     
      <!-- Đoạn HTML này sẽ hiển thị một dropdown để chọn dung tích sản phẩm -->
   <!-- Volume selection buttons -->
   <p *ngFor="let volume of volumes">
@@ -42,9 +46,20 @@
   
 
 <!-- Thêm nút này trong product-detail.component.html -->
+<div class="quantity-container">
+  <label for="quantity" class="quantity-label">Số lượng:</label>
+  <input
+    type="number"
+    id="quantity"
+    [(ngModel)]="quantity"
+    min="1"
+    (ngModelChange)="quantity = $event < 1 ? 1 : $event"
+    class="quantity-input"
+  />
+</div>
 
 
-<button [disabled]="!product || !selectedVolume" class="add-to-cart-btn" (click)="addToCart()">
+<button [disabled]="!product || !selectedVolume"  class="add-to-cart-btn" (click)="addToCart()">
   Thêm vào giỏ hàng
 </button>
 

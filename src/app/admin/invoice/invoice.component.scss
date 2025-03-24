@@ -95,3 +95,53 @@
 .btn-custom.active:hover {
     background-color: #a8d8ed; /* Màu khi di chuột vào nút đã chọn */
 }
+/* Style for the alert box */
+.alert-box {
+    background-color: #f0f8ff; /* Light blue background */
+    border: 1px solid #007bff; /* Blue border */
+    border-radius: 8px; /* Rounded corners */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    max-width: 500px; /* Set a max width */
+    margin: 20px auto; /* Center the alert */
+}
+
+/* Style for the text inside the alert box */
+.alert-box p {
+    font-size: 16px;
+    color: #333; /* Dark text for better readability */
+    margin: 0;
+}
+
+/* Style for the buttons inside the alert box */
+.alert-box button {
+    background-color: #007bff; /* Blue background */
+    color: #fff; /* White text */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px; /* Rounded corners for buttons */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Hover effect for the button */
+.alert-box button:hover {
+    background-color: #0056b3; /* Darker blue when hovered */
+}
+
+/* Style for the close button (optional) */
+.alert-box .close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: #007bff;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.alert-box .close:hover {
+    color: #0056b3;
+}
+

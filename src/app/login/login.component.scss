@@ -127,3 +127,52 @@
   background-color: #fff !important; /* Màu trắng cho thanh tiến trình */
   height: 4px;
 }
+/* Custom styling for SweetAlert2 */
+/* Tùy chỉnh thông báo nhỏ */
+::ng-deep .swal2-popup {
+  display: flex;
+  align-items: center;  /* Căn giữa theo chiều dọc */
+  justify-content: flex-start;  /* Căn trái nội dung và icon */
+  padding: 15px 25px;  /* Thêm padding cho thông báo */
+  width: 400px !important;  /* Chiều rộng của thông báo */
+  height: auto;
+  border-radius: 12px !important;  /* Bo tròn góc đẹp */
+  background-color: #fff !important;  /* Màu nền trắng */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);  /* Đổ bóng nhẹ */
+}
+
+::ng-deep .swal2-icon {
+  font-size: 30px !important;  /* Kích thước icon lớn hơn */
+  margin-right: 20px;  /* Khoảng cách giữa icon và nội dung */
+  order: -1;  /* Đảm bảo icon "X" nằm bên trái */
+  color: #e74c3c;  /* Màu đỏ dễ nhận diện */
+}
+
+::ng-deep .swal2-title {
+  font-size: 18px !important;  /* Kích thước tiêu đề */
+  font-weight: bold !important;
+  color: #333 !important;  /* Màu tiêu đề dễ nhìn */
+  margin-bottom: 10px;  /* Khoảng cách dưới tiêu đề */
+}
+
+::ng-deep .swal2-content {
+  font-size: 14px !important;  /* Kích thước văn bản */
+  color: #555 !important;  /* Màu sắc văn bản */
+  margin-bottom: 15px;  /* Khoảng cách dưới văn bản */
+}
+
+::ng-deep .swal2-footer {
+  display: none;  /* Ẩn footer nếu không cần */
+}
+
+::ng-deep .swal2-confirm {
+  background-color: #3498db !important;  /* Màu nút Thử lại */
+  color: white !important;  /* Màu chữ trên nút */
+  border-radius: 5px !important;  /* Bo tròn nút */
+  padding: 10px 20px !important;  /* Thêm padding cho nút */
+  font-size: 14px !important;  /* Kích thước chữ trong nút */
+}
+
+::ng-deep .swal2-confirm:hover {
+  background-color: #2980b9 !important;  /* Nút khi hover màu tối hơn */
+}

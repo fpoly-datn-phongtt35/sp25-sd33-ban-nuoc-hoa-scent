@@ -16,6 +16,7 @@ import { FooterComponent } from '../footer/footer.component';
 })
 export class OrderDetailComponent implements OnInit {
   orderDetails: any; // Adjust the type based on your data model
+  
   constructor(private donHangService: DonhangService, private route: ActivatedRoute) {}
 
   ngOnInit() {
@@ -23,8 +24,9 @@ export class OrderDetailComponent implements OnInit {
       const orderId = +params['id'];
       this.loadOrderDetails(orderId);
     });
+    
   }
-
+  
   loadOrderDetails(orderId: number) {
     this.donHangService.getOrderDetails(orderId).subscribe(
       (      data: any) => {

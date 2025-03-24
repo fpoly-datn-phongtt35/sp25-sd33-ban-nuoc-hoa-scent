@@ -154,3 +154,64 @@ button:hover {
     max-width: none;
   }
 }
+.payment-info {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+
+.payment-info h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.payment-info p {
+  font-size: 16px;
+  margin: 5px 0;
+}
+
+.payment-info .total-amount {
+  font-size: 18px;
+  font-weight: 600;
+  color: #d9534f;
+  margin-top: 15px;
+}
+
+.payment-info strong {
+  font-weight: 500;
+}
+
+.payment-info .total-amount strong {
+  color: #d9534f;
+}
+
+.payment-info input[type="text"], 
+.payment-info input[type="number"], 
+.payment-info select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.payment-info button {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.payment-info button:hover {
+  background-color: #0056b3;
+}
+

@@ -62,7 +62,7 @@ export class CartService {
         return;
     }
 
-    const productKey = `${product.idSanPham}_${product.dungTich}`;
+    const productKey = this.createProductKey(product.idSanPham, product.dungTich);
     console.log(`🛒 Đang thêm vào giỏ hàng - Key: ${productKey}`);
 
     if (this.cart.has(productKey)) {
@@ -77,7 +77,7 @@ export class CartService {
         this.cart.set(productKey, {
             product: { ...product }, // Lưu bản sao của sản phẩm
             quantity,
-            volume: product.dungTich
+            volume: String(product.dungTich).trim(),
         });
     }
 
@@ -132,19 +132,39 @@ export class CartService {
       console.log(`Product ${productKey} not found in cart.`);
     }
   }
-  updateCart(productKey: string, quantity: number, volume: string): void {
+  private createProductKey(productId: number, volume: string | number): string {
+    return `${productId}_${String(volume).trim()}`; // Chuẩn hóa volume thành chuỗi và loại bỏ khoảng trắng
+  }
+  updateCartItem(productId: number, volume: string, quantity: number): void {
+    if (!productId || !volume) {
+      console.error('🔴 productId hoặc volume không hợp lệ:', { productId, volume });
+      return;
+    }
+
+    const productKey = this.createProductKey(productId, volume);
+    console.log(`🛒 Đang cập nhật số lượng - Key: ${productKey}, Số lượng mới: ${quantity}`);
+    console.log('🔔 Trạng thái giỏ hàng trước khi cập nhật:', Array.from(this.cart.entries()));
+    console.log(`🔔 Kiểm tra productKey có trong cart không: ${this.cart.has(productKey)}`);
+
     if (this.cart.has(productKey)) {
       const existingProduct = this.cart.get(productKey);
-      if (existingProduct) {
-        // Update the existing product with the new quantity
-        this.cart.set(productKey, { ...existingProduct, quantity: quantity });
-        this.updateCartInLocalStorage();
-        this.cartSubject.next(new Map(this.cart));
+      console.log(`🔔 Giá trị của existingProduct:`, existingProduct);
+      if (existingProduct && typeof existingProduct === 'object' && 'quantity' in existingProduct) {
+        console.log(`🔔 Trước khi cập nhật - Sản phẩm: ${existingProduct.product.tenSanPham}, Số lượng cũ: ${existingProduct.quantity}`);
+        existingProduct.quantity = quantity;
+        this.cart.set(productKey, existingProduct);
+        console.log(`🔔 Sau khi cập nhật - Sản phẩm: ${existingProduct.product.tenSanPham}, Số lượng mới: ${existingProduct.quantity}`);
+      } else {
+        console.error(`❌ existingProduct không hợp lệ hoặc không có thuộc tính quantity:`, existingProduct);
+        return;
       }
     } else {
-      // Optionally handle the case where product is not found in the cart
-      console.log('Product not found in cart, could not update.');
+      console.warn(`⚠️ Không tìm thấy sản phẩm với key ${productKey} để cập nhật!`);
+      return;
     }
+
+    this.updateCartInLocalStorage();
+    this.cartSubject.next(new Map(this.cart));
   }
   
   
@@ -155,14 +175,43 @@ export class CartService {
       localStorage.setItem(`cart-${userId}`, JSON.stringify(Array.from(this.cart.entries())));
     }
   }
-  loadCartFromLocalStorage(): void {
-    const storedCart = localStorage.getItem(`cart-${this.userId}`);
-    if (storedCart) {
-      this.cart = new Map(JSON.parse(storedCart));
+  private loadCartFromLocalStorage(): void {
+    
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      console.warn('⚠️ Không có userId, không thể tải giỏ hàng từ localStorage!');
+      return;
+    }
+
+    const storedCart = localStorage.getItem(`cart-${userId}`);
+    if (!storedCart) {
+      console.log('📭 Không có giỏ hàng nào trong localStorage.');
+      return;
+    }
+
+    try {
+      const parsedCart = JSON.parse(storedCart);
+      console.log('📥 Dữ liệu giỏ hàng từ localStorage:', parsedCart);
+
+      this.cart = new Map();
+      parsedCart.forEach((item: any) => {
+        if (item && item.product && item.product.idSanPham && item.volume) {
+          const productKey = this.createProductKey(item.product.idSanPham, item.volume);
+          this.cart.set(productKey, {
+            product: item.product,
+            quantity: item.quantity,
+            volume: String(item.volume).trim(), // Chuẩn hóa volume
+          });
+        } else {
+          console.warn('🔴 Mục giỏ hàng không hợp lệ:', item);
+        }
+      });
+
+      console.log('✅ Giỏ hàng sau khi load:', Array.from(this.cart.entries()));
       this.cartSubject.next(new Map(this.cart));
-      console.log('Cart loaded from localStorage:', this.cart);
-    } else {
-      console.log('No cart found in localStorage.');
+    } catch (error) {
+      console.error('❌ Lỗi khi parse JSON giỏ hàng từ localStorage:', error);
+      this.cart = new Map();
     }
   }
   

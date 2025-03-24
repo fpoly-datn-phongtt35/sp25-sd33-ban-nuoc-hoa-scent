@@ -32,8 +32,9 @@
               <td>{{ item.product.dungTich }}</td>
               <td>{{ item.product?.donGia | currency:'VND' }}</td>
               <td>
-                <input type="number" class="quantity-input" [(ngModel)]="item.quantity" min="1">
+                <input type="number" class="quantity-input" (ngModelChange)="logQuantityChange(item, $event); updateQuantity(item,$event)" [(ngModel)]="item.quantity" min="1">
               </td>
+              
               <td>
                 <button class="remove-btn" (click)="removeItem(item.product.idSanPham, item.product.dungTich)">Xóa</button>
             </td>

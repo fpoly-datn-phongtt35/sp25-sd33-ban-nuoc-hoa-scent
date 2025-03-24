@@ -43,7 +43,10 @@ export class OrderComponent {
   };
 
   selectedProducts: any[] = []; // Danh sách sản phẩm để hiển thị
-
+  totalProductPrice: number = 0;
+  discount: number = 0;
+  shippingFee: number = 0;
+  finalAmount: number = 0;
   constructor(
     private cartService: CartService,
     private orderService: OrderService,
@@ -82,6 +85,7 @@ export class OrderComponent {
         donGia: item.product.donGia,
         imageUrl:item.product.imageURL
       }));
+      this.calculateTotals();
     }
   }
 
@@ -112,7 +116,8 @@ export class OrderComponent {
         spctId: Number(item.spctId),
         quantity: Number(item.quantity)
       })),
-      ghichu:this.orderData.ghichu
+      ghichu:this.orderData.ghichu,
+      totalAmount: this.finalAmount
     };
   
     console.log("📤 Dữ liệu gửi đi:", formattedOrderData);
@@ -142,7 +147,19 @@ this.router.navigate(['/order-success', response.id]);
       this.router.navigate(['/']); // Chuyển về trang chủ nếu không còn sản phẩm
     }
   }
- 
+  calculateTotals() {
+    if (!this.selectedProducts || this.selectedProducts.length === 0) return;
+
+    // Tính tổng giá sản phẩm
+    this.totalProductPrice = this.selectedProducts.reduce((total, item) => {
+      return total + (item.quantity * item.donGia);
+    }, 0);
+
+    // Giảm giá và phí vận chuyển (ví dụ bạn có thể thêm logic tính giảm giá và phí vận chuyển)
+    this.discount = 0; // Giảm giá (có thể lấy từ API hoặc tính logic)
+    this.shippingFee = 0; // Phí vận chuyển cố định hoặc có thể tính tùy theo điều kiện
+    this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
+  }
   updateQuantity(index: number, change: number) {
     let newQuantity = this.selectedProducts[index].quantity + change;
 
@@ -158,7 +175,7 @@ this.router.navigate(['/order-success', response.id]);
         // 🔥 Lưu vào localStorage
         localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
         localStorage.setItem('orderData', JSON.stringify(this.orderData));
-
+        this.calculateTotals();
         console.log("🔄 Cập nhật số lượng trong chiTietDonHangs:", this.orderData.chiTietDonHangs);
     }
 }

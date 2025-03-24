@@ -105,6 +105,7 @@ export class ShoppingCartComponent implements OnInit{
 
         console.log("✅ Giỏ hàng sau khi load:", this.cartItems);
         this.cdr.detectChanges(); // Cập nhật giao diện
+        
     } catch (error) {
         console.error("❌ Lỗi khi parse JSON giỏ hàng từ localStorage:", error);
         this.cartItems = [];
@@ -157,6 +158,22 @@ calculateTotal() {
       return sum + (Number(item.quantity) * Number(item.product.donGia)); 
   }, 0);
 }
-
-
+updateQuantity(item: any, newQuantity: number) {
+  if (newQuantity < 1) {
+    newQuantity = 1;
+    item.quantity = 1; // Đồng bộ item.quantity với giá trị mới
+  } else {
+    item.quantity = newQuantity; // Đồng bộ item.quantity với giá trị mới
+  }
+  console.log(`🔔 Cập nhật số lượng - Sản phẩm: ${item.product.tenSanPham}, Số lượng: ${newQuantity}`);
+  this.cartService.updateCartItem(item.product.idSanPham, item.volume, newQuantity);
+  console.log(`🔔 Đã gọi updateCartItem - Sản phẩm: ${item.product.tenSanPham}, Số lượng: ${newQuantity}`);
+  if (this.selectedProducts.includes(item)) {
+    this.calculateTotal();
+  }
+  this.cdr.detectChanges();
+}
+logQuantityChange(item: any, newValue: number) {
+  console.log(`📝 ngModelChange - Sản phẩm: ${item.product.tenSanPham}, Giá trị mới: ${newValue}`);
+}
 }

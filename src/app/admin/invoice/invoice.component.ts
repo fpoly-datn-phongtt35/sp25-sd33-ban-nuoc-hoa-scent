@@ -8,6 +8,7 @@ import { DonhangService } from '../../service/donhang.service';
 import { OrderDetaiAdminComponent } from '../order-detai-admin/order-detai-admin.component';
 import { HttpClient } from '@angular/common/http';
 import { UserDetailOrderComponent } from '../user-detail-order/user-detail-order.component';
+import Swal from 'sweetalert2';
 @Component({
   selector: 'app-invoice',
   standalone: true,
@@ -98,34 +99,65 @@ updateStatusWithReason(orderId: number, newStatus: number, cancellationReason: s
     }
   );
 }
-
-  
 selectPaymentOption(orderId: number): void {
-  const choice = prompt("Chọn hành động tiếp theo: Nhập 1 để chọn 'Đã Thanh Toán', Nhập 2 để chọn 'Đã Hủy'");
-
-  if (choice === '1') {
-    this.updateStatus(orderId, 4); // Chuyển sang trạng thái "Đã Thanh Toán"
-  } else if (choice === '2') {
-    this.requestCancellationReason(orderId); // Yêu cầu lý do hủy và lưu vào DB
-  } else {
-    alert("Lựa chọn không hợp lệ! Chỉ có thể nhập 1 hoặc 2.");
-  }
-}
-requestCancellationReason(orderId: number): void {
-  let cancellationReason: string | null = null;
-
-  // Yêu cầu lý do hủy cho đến khi người dùng nhập hợp lệ
-  while (!cancellationReason || cancellationReason.trim() === '') {
-    cancellationReason = prompt('Vui lòng nhập lý do hủy đơn hàng:');
-    if (cancellationReason && cancellationReason.trim() !== '') {
-      this.cancellationReasons[orderId] = cancellationReason; // Lưu lý do hủy vào cancellationReasons
-      this.updateStatusWithReason(orderId, 5, cancellationReason); // Gọi API với trạng thái "Đã Hủy" và lý do hủy
-      break;
-    } else {
-      alert('Lý do hủy không được để trống! Vui lòng nhập lại.');
+  Swal.fire({
+    title: 'Chọn hành động tiếp theo',
+    input: 'select',
+    inputOptions: {
+      '1': 'Đã Thanh Toán', 
+      '2': 'Đã Hủy'
+    },
+    inputPlaceholder: 'Chọn hành động',
+    showCancelButton: true,
+    confirmButtonText: 'OK',
+    cancelButtonText: 'Hủy',
+  }).then(result => {
+    if (result.isConfirmed) {
+      const choice = result.value;
+      if (!choice) {
+        // If no option is selected, show an error message
+        this.showErrorMessage("Bạn chưa chọn trạng thái đơn hàng. Vui lòng chọn 1 hoặc 2.");
+      } else if (choice === '1') {
+        this.updateStatus(orderId, 4); // Chuyển sang trạng thái "Đã Thanh Toán"
+      } else if (choice === '2') {
+        this.requestCancellationReason(orderId); // Yêu cầu lý do hủy và lưu vào DB
+      }
     }
-  }
+  });
 }
+
+requestCancellationReason(orderId: number): void {
+  Swal.fire({
+    title: 'Vui lòng nhập lý do hủy đơn hàng:',
+    input: 'text',
+    inputPlaceholder: 'Nhập lý do...',
+    showCancelButton: true,
+    confirmButtonText: 'OK',
+    cancelButtonText: 'Hủy',
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim() !== '') {
+      const cancellationReason = result.value;
+      this.cancellationReasons[orderId] = cancellationReason;
+      this.updateStatusWithReason(orderId, 5, cancellationReason);
+    } else if (result.isConfirmed) {
+      // If the input is empty and user clicks "OK"
+      this.showErrorMessage('Lý do hủy không được để trống! Vui lòng nhập lại.');
+    }
+  });
+}
+
+// Thông báo lỗi sử dụng SweetAlert2
+showErrorMessage(message: string): void {
+  Swal.fire({
+    icon: 'error',
+    title: 'Oops...',
+    text: message,
+    position: 'bottom-end', // Đặt vị trí thông báo ở góc dưới bên phải
+    showConfirmButton: false,
+    timer: 3000
+  });
+}
+
 
   xemChiTietTaiKhoan(order: any) {
     const modalRef = this.modalService.open(UserDetailOrderComponent);

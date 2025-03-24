@@ -11,7 +11,7 @@ import { SanPhamService } from '../service/product.service';
 import { FormsModule } from '@angular/forms'; 
 import { AuthGuard } from '../Guard/authguard';
 import { TokenService } from '../service/token.service';
-
+import Swal from 'sweetalert2';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
@@ -24,6 +24,7 @@ export class ProductDetailComponent implements OnInit {
   recommendedProducts: any[] | undefined; // Danh sách các sản phẩm liên quan
   selectedVolume: any;
   volumes: any[] = [];
+  quantity: number = 1;
   isLoading = true;
   constructor(
     private route: ActivatedRoute,
@@ -105,6 +106,7 @@ export class ProductDetailComponent implements OnInit {
   this.product.dungTich = volume.dungTich;
   this.product.donGia = volume.donGia; // Update the product price based on selected volume
   this.product.idSpct=volume.idSpct;
+  this.product.soLuongTonKho=volume.soLuongTonKho;
   console.log(`Giá được cập nhật là: ${this.product.donGia} VND cho dung tích ${this.selectedVolume.dungTich}ml với idSpct mới : ${this.product.idSpct}`);
 }
 
@@ -145,15 +147,25 @@ export class ProductDetailComponent implements OnInit {
   addToCart(): void {
     const token = this.tokenService.getToken();
     if (!token || this.tokenService.isTokenExpired()) {
-        alert('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!');
-        // Chuyển hướng đến trang đăng nhập
-        this.router.navigate(['/login']);
-        return;
-    }
-    if (!this.selectedVolume) {
-        alert('Vui lòng chọn dung tích trước khi thêm vào giỏ hàng!');
-        return;
-    }
+      Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          position: 'bottom-end',
+          text: 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!',
+      });
+      // Chuyển hướng đến trang đăng nhập
+      this.router.navigate(['/login']);
+      return;
+  }
+  if (!this.selectedVolume) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn dung tích',
+        position: 'bottom-end',
+        text: 'Vui lòng chọn dung tích trước khi thêm vào giỏ hàng!',
+    });
+    return;
+}
 
     console.log('🛒 Sản phẩm được thêm vào giỏ hàng:', this.product);
 
@@ -161,7 +173,25 @@ export class ProductDetailComponent implements OnInit {
         console.error("❌ Lỗi: Thông tin sản phẩm bị thiếu!", this.product);
         return;
     }
-
+    if (this.quantity > this.product.soLuongTonKho) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Số lượng vượt quá tồn kho',
+        position: 'bottom-end',
+        text: `Số lượng bạn nhập vượt quá số lượng tồn kho (${this.product.soLuongTonKho})!`,
+      });
+      return; // Stop execution if quantity is too high
+    }
+    if (this.quantity < 1) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Số lượng không hợp lệ',
+        position: 'bottom-end',
+        text: 'Số lượng phải lớn hơn 0!',
+      });
+      this.quantity = 1; // Đặt lại số lượng về 1 nếu người dùng nhập số lượng không hợp lệ
+      return;
+    }
     // Tạo bản sao của sản phẩm để tránh lỗi khi lưu vào giỏ hàng
     const productCopy = {
         ...this.product,
@@ -169,8 +199,15 @@ export class ProductDetailComponent implements OnInit {
         donGia: this.selectedVolume.donGia
     };
 
-    this.cartService.addToCart(productCopy, 1);
-    alert('✅ Sản phẩm đã được thêm vào giỏ hàng!');
+    this.cartService.addToCart(productCopy, this.quantity);
+    Swal.fire({
+      icon: 'success',
+      title: 'Thêm vào giỏ hàng thành công',
+      position: 'bottom-end',
+      text: `✅ Đã thêm ${this.quantity} sản phẩm vào giỏ hàng!`,
+  });
+    this.quantity = 1;
+   
 }
 
   
