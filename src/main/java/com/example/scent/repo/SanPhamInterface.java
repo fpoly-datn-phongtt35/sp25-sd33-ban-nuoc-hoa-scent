@@ -102,7 +102,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     List<SanPham> searchByName(@Param("tenSanPham") String tenSanPham);
 
 
-    @Query("SELECT new com.example.scent.dto.SanPhamDungTich(p.idSanPham, spct.idSpct, spct.donGia,spct.dungTich) FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1")
+    @Query("SELECT new com.example.scent.dto.SanPhamDungTich(p.idSanPham, spct.idSpct, spct.donGia,spct.dungTich,spct.soLuongTonKho) FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1")
     List<SanPhamDungTich> findByIdSanPham(Integer productId);
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
