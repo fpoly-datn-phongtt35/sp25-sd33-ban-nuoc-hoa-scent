@@ -2,8 +2,12 @@ package com.example.scent.service;
 
 
 import com.example.scent.entity.KhachHang;
+import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.repo.KhachHangInterface;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 
@@ -38,6 +42,10 @@ public class KhachHangSv {
 
     public KhachHang detail(Integer id) {
         return khi.findById(id).get();
+    }
+    public Page<KhachHang> getPageKhachHang(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return khi.findAll(pageable);
     }
 }
 

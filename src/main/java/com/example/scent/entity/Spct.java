@@ -1,15 +1,7 @@
 package com.example.scent.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -34,23 +26,21 @@ public class Spct {
     @Column(name = "id")
     private Integer idSpct;
 
-    @NotNull(message = "Đơn giá không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Đơn giá phải là số dương")
-    @Pattern(regexp = "^[0-9]+(\\.[0-9]{1,4})?$", message = "Đơn giá phải là số và không chứa ký tự hoặc chữ cái")
+
+    @Transient // ✅ Không lưu vào database
+    private List<String> imageUrl;
     @Column(name = "don_gia", precision = 19, scale = 4)
     private BigDecimal donGia;
 
-    @NotNull(message = "Số lượng tồn kho không được để trống")
-    @Positive(message = "Số lượng tồn kho phải là số dương")
-    @Pattern(regexp = "^[0-9]+$", message = "Số lượng tồn kho phải là số và không chứa ký tự hoặc chữ cái")
+
+
     @Column(name = "so_luong_ton_kho")
     private Integer soLuongTonKho;
 
 
 
     @NotNull(message = "Dung tích không được để trống")
-    @Positive(message = "Dung tích phải là số dương")
-    @Pattern(regexp = "^[0-9]+$", message = "Dung tích phải là số và không chứa ký tự hoặc chữ cái")
+
     @Column(name = "dung_tich")
     private Integer dungTich;
 
@@ -96,5 +86,12 @@ public class Spct {
 
     public void setDungTich(Integer dungTich) {
         this.dungTich = dungTich;
+    }
+    public List<String> getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(List<String> imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

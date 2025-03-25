@@ -2,10 +2,14 @@ package com.example.scent.service;
 
 
 import com.example.scent.entity.AccountDetail;
+import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -103,5 +107,10 @@ public class TaiKhoanSv implements UserDetailsService {
 
         // Lưu tài khoản mới
         return tki.save(taiKhoan);
+    }public Page<TaiKhoan> getPageTaiKhoan(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return tki.findAll(pageable);
+    }public Page<TaiKhoan> searchByTerm(String searchTerm, Pageable pageable) {
+        return tki.findBySearchTerm(searchTerm, pageable);
     }
 }

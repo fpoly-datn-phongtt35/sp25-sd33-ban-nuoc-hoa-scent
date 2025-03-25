@@ -1,8 +1,14 @@
 package com.example.scent.repo;
 
+import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
+import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
+import com.example.scent.entity.SanPham;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,5 +40,37 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
                 GROUP BY YEAR(dh.ngay_van_chuyen), MONTH(dh.ngay_van_chuyen), sp.ten
                 ORDER BY nam DESC, thang DESC, soLuong DESC """, nativeQuery = true)
     List<SanPhamThongKeDto> getProductStatistics(@Param("year") Integer year, @Param("month") Integer month, @Param("status") Integer status);
+
+    @Modifying
+    @Query("UPDATE DonHang d SET d.trangThai = 2 WHERE d.id = :id")
+    void updateStatusToProcessing(@Param("id") Integer id);
+    List<DonHang> findByTrangThai( Integer trangThai);
+
+
+
+
+
+    @Query("SELECT new com.example.scent.dto.donhangDetailDTO(" +
+            "dh.id, dh.tenNguoiNhanHang, dh.diaChiGiaoHang, dh.sdtNguoiNhan, " +
+            " dh.tongTien, dh.ngayTao, dh.ngayVanChuyen, " +
+            "dh.phuongThucVanChuyen, dh.phuongThucThanhToan, sp.tenSanPham, sp.moTaSanPham, " +
+            "spct.dungTich, spct.donGia, ctdh.soLuong, ha.link) " +
+            "FROM DonHang dh " +
+            "JOIN dh.chiTietDonHangs ctdh " +
+            "JOIN ctdh.spct spct " +
+            "JOIN spct.sanPham sp " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "WHERE dh.id = :id")
+    List<donhangDetailDTO> findDonHangDetailsById(@Param("id") Integer id);
+
+    @Query("SELECT dh FROM DonHang dh " +
+            "LEFT JOIN FETCH dh.chiTietDonHangs ctdh " +
+            "LEFT JOIN FETCH ctdh.spct spct " +
+            "LEFT JOIN FETCH spct.sanPham sp " +
+            "LEFT JOIN FETCH sp.hinhAnhs")
+    Page<DonHang> findAllWithDetails(Pageable pageable);
+
+    @Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai)")
+    Page<DonHang> findByTrangThai(@Param("trangThai") Integer trangThai, Pageable pageable);
 
 }

@@ -1,10 +1,16 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
+import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
 
+import com.example.scent.entity.TaiKhoan;
 import com.example.scent.service.DonHangSv;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -81,4 +87,81 @@ public class DonHangCtrl {
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { dhs.delete(id);
     }
+
+    @PutMapping("/update-trang-thai-dh/{id}")
+    public ResponseEntity<String> updateStatusToProcessing(@PathVariable Integer id) {
+        dhs.updateTrangThaiDonHang(id);
+        return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành 'Đang xử lý' thành công");
+    }
+    @GetMapping("/get-don-hang-chua-xu-ly")
+    public ResponseEntity<List<DonHang>> getDonHangChoXuLy(Pageable pageable) {
+        // Truy vấn danh sách đơn hàng theo trạng thái 0 và phân trang
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai( 0);
+        return ResponseEntity.ok(donHangs);
+    }
+
+
+    // API lấy danh sách đơn hàng có trạng thái "đang xử lý" (trangThai = 1)
+    @GetMapping("/get-don-hang-dang-xu-ly")
+    public ResponseEntity<List<DonHang>> getDonHangDangXuLy() {
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai(1);
+        return ResponseEntity.ok(donHangs);
+    }
+//    @PostMapping
+//    public ResponseEntity<DonHangDTO> createOrder(@RequestBody DonHangDTO orderRequest) {
+//        DonHang createdOrder = dhs.createOrder(orderRequest);
+//
+//        // 🔥 DEBUG: Kiểm tra có hình ảnh không
+//
+//
+//        return ResponseEntity.ok(orderRequest); // ✅ Trả về DonHangDTO (chứa imageURL)
+//    }
+
+    @PostMapping
+    public ResponseEntity<DonHang> createOrder(@RequestBody DonHangDTO orderRequest) {
+        DonHang createdOrder = dhs.createOrder(orderRequest);
+        return ResponseEntity.ok(createdOrder);
+    }
+    @GetMapping("/page")
+    public ResponseEntity<List<DonHang>> getDonHangs(
+                                                     @RequestParam(required = false, defaultValue = "-1") int trangThai) {
+        List<DonHang> donHangs = dhs.getDonHangByStatus(trangThai);
+        return ResponseEntity.ok(donHangs);
+    }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<List<donhangDetailDTO>> getDonHangDetails(@PathVariable Integer id) {
+        List<donhangDetailDTO> details = dhs.getDonHangDetailsById(id);
+        if (details != null && !details.isEmpty()) {
+            return ResponseEntity.ok(details);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/capnhat-trangthai/{id}")
+    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id,
+                                                     @RequestParam Integer trangThai,
+                                                     @RequestParam(required = false) String lyDoHuy) {
+        try {
+            // Kiểm tra nếu trạng thái là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
+            if (trangThai == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
+                // Nếu lý do hủy không được cung cấp, trả về lỗi
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lý do hủy không thể trống!");
+            }
+
+            // Cập nhật trạng thái đơn hàng
+            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai, lyDoHuy);
+
+            // Trả về phản hồi thành công với dữ liệu đơn hàng đã cập nhật
+            return ResponseEntity.ok(donHang);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Lỗi cập nhật trạng thái: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
+        }
+    }
+
+
 }

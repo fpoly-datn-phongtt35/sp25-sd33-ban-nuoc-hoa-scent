@@ -36,8 +36,9 @@ public class PhieuGiamGia {
     private String maGiamGia;
 
     @NotNull(message = "Giá trị giảm không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Giá trị giảm phải lớn hơn 0")
-    @Column(name = "gia_tri_giam", precision = 3, scale = 2)
+    @DecimalMin(value = "0.01", message = "Giá trị giảm phải lớn hơn 0")
+    @DecimalMax(value = "9999.99", message = "Giá trị giảm không được vượt quá 9999.99")
+    @Column(name = "gia_tri_giam")
     private BigDecimal giaTriGiam;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")

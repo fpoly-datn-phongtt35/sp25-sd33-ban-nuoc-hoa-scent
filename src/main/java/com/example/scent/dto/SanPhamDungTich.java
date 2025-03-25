@@ -12,6 +12,24 @@ public class SanPhamDungTich {
     private Integer IdSanPham;
     private Integer dungTich ;
     private BigDecimal DonGia;
+    private Integer idSpct;
+private Integer soLuongTonKho;
+
+    public Integer getSoLuongTonKho() {
+        return soLuongTonKho;
+    }
+
+    public void setSoLuongTonKho(Integer soLuongTonKho) {
+        this.soLuongTonKho = soLuongTonKho;
+    }
+
+    public Integer getIdSpct() {
+        return idSpct;
+    }
+
+    public void setIdSpct(Integer idSpct) {
+        this.idSpct = idSpct;
+    }
 
     public Integer getIdSanPham() {
         return IdSanPham;
@@ -37,10 +55,12 @@ public class SanPhamDungTich {
         DonGia = donGia;
     }
 
-    public SanPhamDungTich(Integer idSanPham, Integer dungTich, BigDecimal donGia) {
+    public SanPhamDungTich(Integer idSanPham, Integer dungTich, BigDecimal donGia, Integer idSpct, Integer soLuongTonKho) {
         IdSanPham = idSanPham;
         this.dungTich = dungTich;
         DonGia = donGia;
+        this.idSpct = idSpct;
+        this.soLuongTonKho = soLuongTonKho;
     }
 
     public SanPhamDungTich() {

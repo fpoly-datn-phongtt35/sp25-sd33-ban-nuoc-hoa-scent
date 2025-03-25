@@ -5,18 +5,11 @@ import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.SanPham;
 import com.example.scent.service.PhieuGiamGiaSv;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +44,7 @@ public class PhieuGiamGiaCtrl {
         }
 
         pggs.add(pgg);
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.ok(pgg);
     }
 
     @PutMapping("/update")
@@ -67,10 +60,16 @@ public class PhieuGiamGiaCtrl {
         }
 
         pggs.update(pgg);
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.ok(pgg);
     }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { pggs.delete(id);
+    }
+    @GetMapping("page")
+    public Page<PhieuGiamGia> getAllPhieuGiamGia(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return pggs.getPagePhieuGiamGia(page, size);
     }
 }
 
