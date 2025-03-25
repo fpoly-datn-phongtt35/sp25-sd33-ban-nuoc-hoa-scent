@@ -223,5 +223,13 @@ public class DonHang {
     public void setPhieuGiamGia(PhieuGiamGia phieuGiamGia) {
         this.phieuGiamGia = phieuGiamGia;
     }
+
+    public String getLyDoHuy() {
+        return lyDoHuy;
+    }
+
+    public void setLyDoHuy(String lyDoHuy) {
+        this.lyDoHuy = lyDoHuy;
+    }
 }
 

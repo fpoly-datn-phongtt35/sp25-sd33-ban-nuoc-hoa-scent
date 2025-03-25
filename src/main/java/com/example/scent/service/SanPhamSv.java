@@ -8,6 +8,11 @@ import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.repo.HinhAnhInterface;
 import com.example.scent.repo.SanPhamInterface;
+import com.example.scent.repo.DanhMucInterface;
+import com.example.scent.repo.HuongDauInterface;
+import com.example.scent.repo.HuongGiuaInterface;
+import com.example.scent.repo.HuongCuoiInterface;
+import com.example.scent.repo.ThuongHieuInterface;
 import com.example.scent.spec.SanPhamSpec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -33,6 +38,22 @@ public class SanPhamSv {
 
     @Autowired
     HinhAnhInterface hai;
+
+    @Autowired
+    private ThuongHieuInterface thuongHieuRepo;
+
+    @Autowired
+    private DanhMucInterface danhMucRepo;
+
+    @Autowired
+    private HuongDauInterface huongDauRepo;
+
+    @Autowired
+    private HuongGiuaInterface huongGiuaRepo;
+
+    @Autowired
+    private HuongCuoiInterface huongCuoiRepo;
+
 
     public List<SanPham> getAll() {
         return spi.findAll();
@@ -98,19 +119,30 @@ public class SanPhamSv {
         return null;
     }
 
-    public SanPham addProductWithImage(String tenSanPham, String moTaSanPham, MultipartFile image) {
+    public SanPham addProductWithDetails(
+            String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
+            Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile image) {
+
         SanPham sanPham = new SanPham();
         sanPham.setTenSanPham(tenSanPham);
         sanPham.setMoTaSanPham(moTaSanPham);
 
-        SanPham savedSanPham = spi.save(sanPham);
-        String imageUrl = uploadImageToPostimages(image);
+        sanPham.setThuongHieu(thuongHieuRepo.findById(idThuongHieu).orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại")));
+        sanPham.setDanhMuc(danhMucRepo.findById(idDanhMuc).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
+        sanPham.setHuongDau(huongDauRepo.findById(idHuongDau).orElse(null));
+        sanPham.setHuongGiua(huongGiuaRepo.findById(idHuongGiua).orElse(null));
+        sanPham.setHuongCuoi(huongCuoiRepo.findById(idHuongCuoi).orElse(null));
 
-        if (imageUrl != null) {
-            HinhAnh hinhAnh = new HinhAnh();
-            hinhAnh.setLink(imageUrl);
-            hinhAnh.setSanPham(savedSanPham);
-            hai.save(hinhAnh);
+        SanPham savedSanPham = spi.save(sanPham);
+
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = uploadImageToPostimages(image);
+            if (imageUrl != null) {
+                HinhAnh hinhAnh = new HinhAnh();
+                hinhAnh.setLink(imageUrl);
+                hinhAnh.setSanPham(savedSanPham);
+                hai.save(hinhAnh);
+            }
         }
         return savedSanPham;
     }
