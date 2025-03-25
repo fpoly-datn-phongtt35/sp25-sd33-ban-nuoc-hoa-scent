@@ -3,6 +3,7 @@ package com.example.scent.rest;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
+
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.service.SanPhamSv;
@@ -118,7 +119,7 @@ public class SanPhamCtrl {
         return ResponseEntity.ok(productDetails);
     }
     @GetMapping("/sorted")
-    public List<SanPhamInfoDTO> getSortedProducts() {
+    public List<SanPhamDto> getSortedProducts() {
         return sps.getSortedProducts();
     }
 

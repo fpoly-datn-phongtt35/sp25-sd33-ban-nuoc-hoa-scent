@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
+
 import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.repo.HinhAnhInterface;
@@ -95,7 +96,7 @@ public class SanPhamSv {
         return spi.findAllProductsWithImages(pageable);
     }
 
-    public List<SanPhamInfoDTO> getSortedProducts() {
+    public List<SanPhamDto> getSortedProducts() {
         return spi.findAllProductsWithImagesSorted();
     }
 
