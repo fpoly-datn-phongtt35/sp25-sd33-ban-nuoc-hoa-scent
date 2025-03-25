@@ -57,9 +57,9 @@
     deleteProduct(id:number){
       alert('Chưa làm nha\n idSP:'+id);
     }
-    viewProduct(id:number){
-      alert('Chưa làm nha\n idSP:'+id);
-    }
+    // viewProduct(id:number){
+    //   alert('Chưa làm nha\n idSP:'+id);
+    // }
   // 🔄 Phân trang
   goToPage(p: number) {
     if (p >= 0 && p < this.totalPages && p !== this.page) {

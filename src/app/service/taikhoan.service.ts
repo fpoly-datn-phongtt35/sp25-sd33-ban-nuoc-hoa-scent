@@ -10,12 +10,11 @@ export class AccountService {
   private apiUrl = 'http://localhost:8080/rest/tai-khoan'; // API URL từ backend
 
   constructor(private http: HttpClient) {}
-
-  getAccounts(page: number, size: number): Observable<any> {
-    let params = `/page?page=${page}&size=${size}`;
-    // if (searchTerm) {
-    //   params += `&search=${searchTerm}`;
-    // }
-    return this.http.get(`${this.apiUrl}${params}`);
+  getAccounts(searchTerm: string, page: number, size: number): Observable<any> {
+    // Cấu hình các tham số cần thiết cho URL
+    let params = `?searchTerm=${searchTerm}&page=${page}&size=${size}`;
+    // Gửi yêu cầu GET với các tham số đã chuẩn bị
+    return this.http.get(`${this.apiUrl}/page${params}`);
   }
+
 }
