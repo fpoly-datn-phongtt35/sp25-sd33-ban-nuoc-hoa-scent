@@ -1,0 +1,60 @@
+<div class="modal-dialog modal-xl"> <!-- hoặc modal-fullscreen -->
+  <div class="modal-content">
+<div class="modal-header">
+  <h5 class="modal-title">Thêm Sản Phẩm</h5>
+  <button type="button" class="btn-close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+  <form [formGroup]="productForm">
+    <div class="row">
+      <!-- Tên sản phẩm -->
+      <div class="col-md-6 mb-3">
+        <label class="form-label fw-semibold">Tên sản phẩm</label>
+        <input type="text" class="form-control" formControlName="ten">
+      </div>
+
+      <!-- Thương hiệu & danh mục -->
+      <div class="col-md-6 mb-3 d-flex gap-2">
+        <div class="w-50">
+          <label class="form-label fw-semibold">Thương hiệu</label>
+          <input type="text" class="form-control" formControlName="idThuongHieu">
+        </div>
+        <div class="w-50">
+          <label class="form-label fw-semibold">Danh mục</label>
+          <input type="text" class="form-control" formControlName="idDanhMuc">
+        </div>
+      </div>
+
+      <!-- Ba tầng hương: dọc -->
+      <div class="col-md-12 mb-3">
+        <label class="form-label fw-semibold">Hương đầu</label>
+        <input type="text" class="form-control mb-2" formControlName="idHuongDau">
+
+        <label class="form-label fw-semibold">Hương giữa</label>
+        <input type="text" class="form-control mb-2" formControlName="idHuongGiua">
+
+        <label class="form-label fw-semibold">Hương cuối</label>
+        <input type="text" class="form-control" formControlName="idHuongCuoi">
+      </div>
+
+      <!-- Mô tả -->
+      <div class="col-md-12 mb-3">
+        <label class="form-label fw-semibold">Mô tả</label>
+        <textarea class="form-control" formControlName="moTa" rows="3"></textarea>
+      </div>
+
+      <!-- Hình ảnh -->
+      <div class="col-md-12 mb-3">
+        <label class="form-label fw-semibold">Hình ảnh (chọn nhiều)</label>
+        <input type="file" class="form-control" (change)="onFileChange($event)" multiple>
+      </div>
+    </div>
+  </form>
+
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="button" class="btn btn-primary" (click)="addProduct()">Lưu</button>
+</div>
+</div>
+</div>
