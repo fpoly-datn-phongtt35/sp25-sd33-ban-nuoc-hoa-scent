@@ -3,6 +3,8 @@ package com.example.scent.rest;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.service.TaiKhoanSv;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,9 +49,13 @@ public class TaiKhoanCtrl {
     }
     @GetMapping("page")
     public Page<TaiKhoan> getAllTaiKhoan(
+            @RequestParam(required = false) String searchTerm,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return tks.getPageTaiKhoan(page, size);
+            @RequestParam(defaultValue = "10") int size
+           ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return tks.searchByTerm(searchTerm,pageable);
     }
+
 }
 
