@@ -62,7 +62,7 @@ public class SanPhamCtrl {
             @RequestParam("idHuongDau") Integer idHuongDau,
             @RequestParam("idHuongGiua") Integer idHuongGiua,
             @RequestParam("idHuongCuoi") Integer idHuongCuoi,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
+            @RequestParam(value = "image", required = false) MultipartFile[] image) {
         try {
             SanPham savedSanPham = sps.addProductWithDetails(
                     tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, image
