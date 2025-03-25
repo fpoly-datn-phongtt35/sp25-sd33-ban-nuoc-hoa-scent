@@ -3,6 +3,7 @@ package com.example.scent.repo;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
+import com.example.scent.dto.SanPhammDTO;
 import com.example.scent.entity.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -83,6 +84,37 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.huongCuoi hc " +
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi")
     Page<SanPhamInfoDTO> findAllProductsWithImages(Pageable pageable);
+    //
+    @Query("""
+    SELECT new com.example.scent.dto.SanPhammDTO(
+        sp.idSanPham,
+        sp.tenSanPham,
+        MIN(ha.link),
+        th.tenThuongHieu,
+        dm.tenDanhMuc,
+        hd.moTaHuongDau,
+        hg.moTaHuongGiua,
+        hc.moTaHuongCuoi
+    )
+    FROM SanPham sp
+    JOIN sp.hinhAnhs ha
+    JOIN sp.thuongHieu th
+    JOIN sp.huongDau hd
+    JOIN sp.huongGiua hg
+    JOIN sp.danhMuc dm
+    JOIN sp.huongCuoi hc
+    WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc,
+             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi
+""")
+    Page<SanPhammDTO> searchAllFields(@Param("keyword") String keyword, Pageable pageable);
+
+
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
             "FROM SanPham sp " +

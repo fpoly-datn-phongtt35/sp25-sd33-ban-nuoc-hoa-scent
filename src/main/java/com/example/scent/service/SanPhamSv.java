@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
+import com.example.scent.dto.SanPhammDTO;
 import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.repo.HinhAnhInterface;
@@ -82,6 +83,7 @@ public class SanPhamSv {
 //        return spi.getAllSpctByIdSp(id);
 //    }
 
+
     public List<SanPham> searchByName(String tenSanPham) {
         return spi.searchByName(tenSanPham);
     }
@@ -153,6 +155,9 @@ public class SanPhamSv {
 
     public Page<SanPhamInfoDTO> findBySearchQuery(String searchQuery, Pageable pageable) {
         return spi.findBySearchQuery(searchQuery, pageable);
+    }
+    public Page<SanPhammDTO> detailOnAdmin(String searchQuery, Pageable pageable) {
+        return spi.searchAllFields(searchQuery,pageable);
     }
 
     public Page<SanPhamInfoDTO> searchSanPham( BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {

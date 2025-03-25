@@ -3,6 +3,7 @@ package com.example.scent.rest;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
+import com.example.scent.dto.SanPhammDTO;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.service.SanPhamSv;
@@ -139,6 +140,10 @@ public class SanPhamCtrl {
     @GetMapping("/search-danhmuc")
     public Page<SanPhamInfoDTO> getSanPhamByDanhMuc(@RequestParam String tenDanhMuc,@PageableDefault(size = 12) Pageable pageable) {
         return sps.findSanPhamByDanhMuc(tenDanhMuc,pageable);
+    }
+    @GetMapping("/search-product-on-admin")
+    public Page<SanPhammDTO> getSanPhamonAdmin(@RequestParam String keyword, @PageableDefault(size = 12) Pageable pageable) {
+        return sps.detailOnAdmin(keyword,pageable);
     }
 }
 
