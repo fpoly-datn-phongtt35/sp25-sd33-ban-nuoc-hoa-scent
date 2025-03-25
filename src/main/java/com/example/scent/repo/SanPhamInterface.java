@@ -97,6 +97,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
         hc.moTaHuongCuoi
     )
     FROM SanPham sp
+   
     JOIN sp.hinhAnhs ha
     JOIN sp.thuongHieu th
     JOIN sp.huongDau hd

@@ -46,6 +46,8 @@ public class DonHang {
 
     @Column(name = "ghi_chu")
     private String ghiChu;
+//    @Column(name = "loai_don_hang")
+//    private String loaiDonHang;
 
     @NotNull(message = "Tổng tiền không được để trống")
 

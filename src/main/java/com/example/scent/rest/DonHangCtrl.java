@@ -2,6 +2,7 @@ package com.example.scent.rest;
 
 import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
+import com.example.scent.dto.donhangDTOID;
 import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
 
@@ -162,6 +163,14 @@ public class DonHangCtrl {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
         }
     }
+    @GetMapping("/user/{idTaiKhoan}")
+    public ResponseEntity<List<donhangDTOID>> getDonHangsByTaiKhoan(@PathVariable Integer idTaiKhoan) {
+        List<donhangDTOID> donHangs = dhs.getDonHangsByTaiKhoan(idTaiKhoan);
 
+        if (donHangs.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(donHangs);
+    }
 
 }
