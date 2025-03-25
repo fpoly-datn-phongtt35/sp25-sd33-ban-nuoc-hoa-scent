@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -43,5 +44,8 @@ public class PhieuGiamGiaSv {
     public Page<PhieuGiamGia> getPagePhieuGiamGia(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return pggi.findAll(pageable);
+    }
+    public Page<PhieuGiamGia> searchByMaGiamGiaAndGiaTriGiam(String maGiamGia, BigDecimal giaTriGiam, Pageable pageable) {
+        return pggi.findByMaGiamGiaContainingAndGiaTriGiam(maGiamGia, giaTriGiam, pageable);
     }
 }

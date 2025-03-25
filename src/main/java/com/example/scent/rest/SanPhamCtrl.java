@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -53,21 +54,27 @@ public class SanPhamCtrl {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> create(@Valid @RequestBody SanPham sp, BindingResult result) {
-
-        if (result.hasErrors()) {
-
-            Map<String, String> errorsMap = new HashMap<>();
-
-            for (FieldError error : result.getFieldErrors()) {
-                errorsMap.put(error.getField(), error.getDefaultMessage());
-            }
-            return ResponseEntity.badRequest().body(errorsMap);
+    public ResponseEntity<?> createSanPham(
+            @RequestParam("ten") String tenSanPham,
+            @RequestParam("moTa") String moTaSanPham,
+            @RequestParam("idThuongHieu") Integer idThuongHieu,
+            @RequestParam("idDanhMuc") Integer idDanhMuc,
+            @RequestParam("idHuongDau") Integer idHuongDau,
+            @RequestParam("idHuongGiua") Integer idHuongGiua,
+            @RequestParam("idHuongCuoi") Integer idHuongCuoi,
+            @RequestParam(value = "image", required = false) MultipartFile[] image) {
+        try {
+            SanPham savedSanPham = sps.addProductWithDetails(
+                    tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, image
+            );
+            return ResponseEntity.ok(savedSanPham);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi thêm sản phẩm: " + e.getMessage());
         }
-
-        sps.add(sp);
-        return ResponseEntity.ok("ok");
     }
+
+
 
     @PutMapping("/update")
     public ResponseEntity<?> update(@Valid @RequestBody SanPham sp,BindingResult result) {
@@ -115,19 +122,6 @@ public class SanPhamCtrl {
         return sps.getSortedProducts();
     }
 
-    @PostMapping("/add-with-image")
-    public ResponseEntity<?> createWithImage(
-            @RequestParam("ten") String tenSanPham,
-            @RequestParam("moTa") String moTaSanPham,
-            @RequestParam("image") MultipartFile image) {
-
-        try {
-            SanPham savedSanPham = sps.addProductWithImage(tenSanPham, moTaSanPham, image);
-            return ResponseEntity.ok(savedSanPham);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi thêm sản phẩm!");
-        }
-    }
 
     @GetMapping("/search")
     public Page<SanPhamInfoDTO> searchSanPham(@RequestParam("searchQuery") String searchQuery,@PageableDefault(size = 12) Pageable pageable) {

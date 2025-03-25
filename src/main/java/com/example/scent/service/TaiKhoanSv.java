@@ -110,5 +110,7 @@ public class TaiKhoanSv implements UserDetailsService {
     }public Page<TaiKhoan> getPageTaiKhoan(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return tki.findAll(pageable);
+    }public Page<TaiKhoan> searchByTerm(String searchTerm, Pageable pageable) {
+        return tki.findBySearchTerm(searchTerm, pageable);
     }
 }

@@ -1,6 +1,8 @@
 package com.example.scent.repo;
 
 import com.example.scent.entity.TaiKhoan;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,5 +22,11 @@ public interface TaiKhoanInterface extends JpaRepository<TaiKhoan, Integer>{
     String getRole(@Param("tenDangNhap") String tenDangNhap);
 
     Optional<TaiKhoan> findByTenDangNhap(String tenDangNhap);
+    @Query("SELECT u FROM TaiKhoan u " +
+            "WHERE u.hoTen LIKE %:searchTerm% " +
+            "OR u.email LIKE %:searchTerm% " +
+            "OR u.sdt LIKE %:searchTerm% " +
+            "OR u.tenDangNhap LIKE %:searchTerm%")
+    Page<TaiKhoan> findBySearchTerm(@Param("searchTerm") String searchTerm, Pageable pageable);
 
 }
