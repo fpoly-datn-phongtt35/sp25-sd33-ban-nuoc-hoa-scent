@@ -73,4 +73,11 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     @Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai)")
     Page<DonHang> findByTrangThai(@Param("trangThai") Integer trangThai, Pageable pageable);
 
+
+    @Query(value = "select * from don_hang where loai_don_hang like 'online'", nativeQuery = true)
+    List<DonHang> getAllOnline();
+    @Query(value = "select * from don_hang where loai_don_hang like 'offline' and trang_thai like 'đang xử lý'", nativeQuery = true)
+    List<DonHang> getAllOffline();
+
+
 }
