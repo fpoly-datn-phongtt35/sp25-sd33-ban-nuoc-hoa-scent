@@ -1,10 +1,7 @@
 package com.example.scent.service;
 
 
-import com.example.scent.dto.DonHangDTO;
-import com.example.scent.dto.OrderItemDto;
-import com.example.scent.dto.SanPhamThongKeDto;
-import com.example.scent.dto.donhangDetailDTO;
+import com.example.scent.dto.*;
 import com.example.scent.entity.*;
 import com.example.scent.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -258,8 +255,51 @@ public class DonHangSv {
 //        Pageable pageable = PageRequest.of(page, size, Sort.by("ngayTao").descending());
 //        return (trangThai == null) ? dhi.findAll(pageable) : dhi.findByTrangThai(trangThai, pageable);
 //    }
+public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
+    // Truy vấn danh sách đơn hàng của người dùng
+    List<DonHang> donHangs = dhi.findByTaiKhoanId(idTaiKhoan);
 
+    // Chuyển đổi sang DonHangDTO
+    return donHangs.stream().map(donHang -> {
+        donhangDTOID donHangDTO = new donhangDTOID();
+        donHangDTO.setIdTaiKhoan(donHang.getTaiKhoan().getId());
+        donHangDTO.setTenNguoiNhanHang(donHang.getTenNguoiNhanHang());
+        donHangDTO.setDiaChiGiaoHang(donHang.getDiaChiGiaoHang());
+        donHangDTO.setSdtNguoiNhan(donHang.getSdtNguoiNhan());
+        donHangDTO.setPhuongThucVanChuyen(donHang.getPhuongThucVanChuyen());
+        donHangDTO.setPhuongThucThanhToan(donHang.getPhuongThucThanhToan());
+        donHangDTO.setNgayTao(donHang.getNgayTao());
+        donHangDTO.setNgayVanChuyen(donHang.getNgayVanChuyen());
+        donHangDTO.setTongTien(donHang.getTongTien());
+        donHangDTO.setTrangThai(donHang.getTrangThai());
+        donHangDTO.setGhichu(donHang.getGhiChu());
 
+        // Chuyển đổi chi tiết đơn hàng
+        List<OrderItemDTOID> chiTietList = cdh.findByDonHangId(donHang.getId())
+                .stream()
+                .map(chiTiet -> {
+                    OrderItemDTOID itemDto = new OrderItemDTOID();
+                    itemDto.setSpctId(chiTiet.getSpct().getIdSpct());
+                    itemDto.setQuantity(chiTiet.getSoLuong());
+                    itemDto.setDonGia(chiTiet.getDonGia());
+                    itemDto.setThanhTien(chiTiet.getThanhTien());
+
+                    // Lấy hình ảnh của sản phẩm
+                    List<String> productImages = hinhAnhInterface.findBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
+                            .stream()
+                            .map(HinhAnh::getLink)
+                            .collect(Collectors.toList());
+
+                    itemDto.setImageURL(productImages);
+                    return itemDto;
+                })
+                .collect(Collectors.toList());
+
+        donHangDTO.setChiTietDonHangs(chiTietList);
+
+        return donHangDTO;
+    }).collect(Collectors.toList());
+}
 
 
 }

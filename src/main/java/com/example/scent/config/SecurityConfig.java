@@ -46,9 +46,9 @@ public class SecurityConfig {
                         .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login","rest/tai-khoan/getAll","rest/tai-khoan/page","rest/tai-khoan/update","rest/tai-khoan/del/**").permitAll()
                         .requestMatchers("/rest/danh-muc/getAll").permitAll()
                         .requestMatchers("/rest/khach-hang/getAll","rest/khach-hang/page","rest/khach-hang/add","rest/khach-hang/update/**","rest/khach-hang/del/**").permitAll()
-                        .requestMatchers("/rest/don-hang/getAll","/rest/don-hang/capnhat-trangthai/**","/rest/don-hang","rest/don-hang/add","rest/don-hang/update","/rest/don-hang/don-hang/page1","/rest/don-hang/**","rest/don-hang/page","rest/don-hang/del/**").permitAll()
+                        .requestMatchers("/rest/don-hang/getAll","/rest/don-hang/capnhat-trangthai/**","/rest/don-hang","rest/don-hang/add","rest/don-hang/update","/rest/don-hang/don-hang/page1","/rest/don-hang/user/**","/rest/don-hang/**","rest/don-hang/page","rest/don-hang/del/**").permitAll()
                         .requestMatchers("rest/phieu-giam-gia/getAll","rest/phieu-giam-gia/add","rest/phieu-giam-gia/del/**","rest/phieu-giam-gia/update","rest/phieu-giam-gia/page").permitAll()
-                        .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
+                        .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/add-with-image/**","rest/san-pham/sorted").permitAll()
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()

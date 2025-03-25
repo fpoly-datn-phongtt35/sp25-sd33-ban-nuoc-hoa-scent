@@ -51,10 +51,10 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    hd.mota as moTaHuongDau,\n" +
             "    hg.mota as moTaHuongGiua,\n" +
             "    hc.mota as moTaHuongCuoi,\n" +
-            "    ha.link as imageURL\n" +
+            "    STRING_AGG(ha.link, ', ') as imageURL\n" +  // Dùng STRING_AGG thay cho GROUP_CONCAT
             "from \n" +
             "    san_pham sp\n" +
-            "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +
+            "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +  // Kết hợp với bảng hình ảnh
             "left join \n" +
             "    spct spct on sp.id = spct.id_san_pham\n" +
             "left join \n" +
@@ -68,8 +68,12 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "left join \n" +
             "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
             "where\n" +
-            "    sp.id = :idSanPham\n ", nativeQuery = true)
+            "    sp.id = :idSanPham\n" +
+            "GROUP BY\n" +
+            "    sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich,\n" +
+            "    th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota\n", nativeQuery = true)
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
+
 
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +

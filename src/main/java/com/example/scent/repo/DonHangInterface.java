@@ -73,4 +73,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     @Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai)")
     Page<DonHang> findByTrangThai(@Param("trangThai") Integer trangThai, Pageable pageable);
 
+
+    List<DonHang> findByTaiKhoanId(Integer taiKhoanId);
 }
