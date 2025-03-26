@@ -1,13 +1,10 @@
-.modal-body {
-  padding: 20px;
+::ng-deep .modal-dialog.custom-modal {
+  max-width: 65vw !important;
+  width: 65vw !important;
+  margin: auto !important;
 }
-
-label.form-label {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-input.form-control, textarea.form-control {
-  font-size: 14px;
-  padding: 8px 12px;
+::ng-deep .modal {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
 }

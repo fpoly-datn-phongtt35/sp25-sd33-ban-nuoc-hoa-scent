@@ -5,21 +5,20 @@ import { catchError } from 'rxjs/operators';
 import { TokenService } from './token.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',  // Đảm bảo rằng service được cung cấp ở cấp độ root
 })
-export class ThuongHieuService {
-  private apiUrl='http://localhost:8080/rest/thuong-hieu';
-  constructor(private http: HttpClient) { }
 
-  getThuonghieu(): Observable<any> {
+export class DanhMucService {
+    constructor(private http: HttpClient) { }
+  private apiUrl = 'http://localhost:8080/rest/danh-muc'; // URL API của bạn
+
+  getAllDanhMucDanhMuc(): Observable<any> {
     return this.http.get(`${this.apiUrl}/getAll`).pipe(
       catchError((error) => {
         console.error('Lỗi khi gọi API danh mục:', error);
         return throwError(() => error);
       })
     );
-    }
-    addThuongHieu(thuonghieu: any): Observable<any> {
-      return this.http.post<any>(`${this.apiUrl}/add`, thuonghieu);
-    }
+  }
+
 }

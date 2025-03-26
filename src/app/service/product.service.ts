@@ -58,6 +58,9 @@ private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-a
 
     return this.http.get<any>(this.apiSearchdm, { params });
 }
-
+addProductOnAdmin(formData: FormData): Observable<any> {
+  const url = `${this.baseUrl}/add`;
+  return this.http.post<any>(url, formData);
+}
 
 }

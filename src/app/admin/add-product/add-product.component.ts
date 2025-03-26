@@ -1,45 +1,177 @@
-import { Component, EventEmitter, Output,ChangeDetectorRef } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { DanhMucService } from './../../service/danhmuc.service';
+import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit } from '@angular/core';
+import { ReactiveFormsModule,FormBuilder, FormGroup, Validators,FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CustomerService } from '../../service/customer.service';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import {SanPhamService} from '../../service/product.service';
+import{ThuongHieuService} from './../../service/thuonghieu.service';
+import{HuongDauService} from './../../service/huongdau.service';
+import{HuongGiuaService} from './../../service/huonggiua.service';
+import{HuongCuoiService} from './../../service/huongcuoi.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule], // ✅ Đã thêm ReactiveFormsModule
+  imports: [CommonModule, ReactiveFormsModule
+    , FormsModule],
   providers: [NgbActiveModal],
   templateUrl: './add-product.component.html',
   styleUrl: './add-product.component.scss'
 })
-export class AddProductComponent {
+export class AddProductComponent implements OnInit{
   @Output() productAdd = new EventEmitter<any>();
   productForm: FormGroup;
   selectedFiles: File[] = [];
-
+  danhMucList: any[] = [];
+  thuongHieuList: any[]=[];
+    previewUrls: string[] = [];
   constructor(
     private fb: FormBuilder,
     private customerService: CustomerService,
+    private danhMucService: DanhMucService,
     public activeModal: NgbActiveModal,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private sanphamService:SanPhamService,
+    private thuonghieuService:ThuongHieuService,
+    private huondauService:HuongDauService,
+    private huonggiuaService:HuongGiuaService,
+    private huongcuoiService:HuongCuoiService,
   ) {
     this.productForm = this.fb.group({
       ten: ['', Validators.required],
       moTa: [''],
       idThuongHieu: ['', Validators.required],
       idDanhMuc: ['', Validators.required],
-      idHuongDau: [''],
-      idHuongGiua: [''],
-      idHuongCuoi: ['']
-    });
+      huongDau: [''], // đổi từ idHuongDau
+      huongGiua: [''],
+      huongCuoi: ['']
+      });
 
+  }ngOnInit() {
+    this.getAllDanhMuc();
+    this.getAllThuongHieu();
   }
-    addProduct(){
-      alert('từ từ từ từ chưa làm');
+    getAllDanhMuc(){
+      this.danhMucService.getAllDanhMucDanhMuc().subscribe({
+        next: (data) => {
+          this.danhMucList = data;
+        },
+        error: (err) => {
+          console.error('Lỗi lấy danh mục:', err);
+        }
+      })
+    }getAllThuongHieu(){
+      this.thuonghieuService.getThuonghieu().subscribe({
+        next: (data) => {
+          this.thuongHieuList = data;
+        },
+        error: (err) => {
+          console.error('Lỗi lấy thương hiệu:', err);
+        }
+      })
     }
+    async addProduct() {
+      if (this.productForm.invalid) {
+        alert('Vui lòng điền đầy đủ thông tin sản phẩm!');
+        return;
+      }
+
+      const formValues = this.productForm.value;
+      const formData = new FormData();
+
+      // Hàm xử lý thêm từng mùi hương (trả về ID nếu thành công)
+      const addHuong = async (
+        service: any,
+        moTaField: string,         // Tên field backend cần (ví dụ: motaHuongDau)
+        moTaValue: string | null   // Giá trị người dùng nhập
+      ): Promise<number | null> => {
+        if (!moTaValue) return null;
+        const body = { [moTaField]: moTaValue };
+
+        console.log(`🚀 Gửi đến ${moTaField}:`, body); // Logging để kiểm tra dữ liệu gửi đi
+
+        try {
+          const response: any = await firstValueFrom(service.add(body));
+          console.log(`✅ Server trả về từ ${moTaField}:`, response);
+          return response?.id || null;
+        } catch (error) {
+          console.error(`❌ Lỗi khi thêm ${moTaField}:`, error);
+          return null;
+        }
+      };
+
+      try {
+        // Gọi đồng thời 3 API thêm mùi hương
+        const [idHuongDau, idHuongGiua, idHuongCuoi] = await Promise.all([
+          addHuong(this.huondauService, 'motaHuongDau', formValues.huongDau),
+          addHuong(this.huonggiuaService, 'moTaHuongGiua', formValues.huongGiua),
+          addHuong(this.huongcuoiService, 'moTaHuongCuoi', formValues.huongCuoi),
+        ]);
+
+        // Gửi thông tin sản phẩm (kèm ID các mùi hương vừa tạo)
+        formData.append('ten', formValues.ten || '');
+        formData.append('moTa', formValues.moTa || '');
+        formData.append('idThuongHieu', String(formValues.idThuongHieu));
+        formData.append('idDanhMuc', String(formValues.idDanhMuc));
+        formData.append('idHuongDau', String(idHuongDau || ''));
+        formData.append('idHuongGiua', String(idHuongGiua || ''));
+        formData.append('idHuongCuoi', String(idHuongCuoi || ''));
+
+        // Thêm hình ảnh
+        for (let file of this.selectedFiles) {
+          formData.append('image', file);
+        }
+
+        console.log('📦 Toàn bộ FormData gửi lên:');
+        formData.forEach((value, key) => {
+          console.log(`➡️ ${key}:`, value instanceof File ? value.name : value);
+        });
+
+        // Gửi lên server
+        this.sanphamService.addProductOnAdmin(formData).subscribe({
+          next: (response) => {
+            alert('✅ Thêm sản phẩm thành công!');
+            this.productAdd.emit(response);
+            this.closeModal();
+          },
+          error: (err) => {
+            console.error('❌ Lỗi khi thêm sản phẩm:', err);
+            alert('❌ Thêm sản phẩm thất bại. Vui lòng kiểm tra dữ liệu!');
+          },
+        });
+      } catch (error) {
+        console.error('❌ Lỗi khi thêm mùi hương:', error);
+        alert('❌ Đã xảy ra lỗi khi thêm mùi hương!');
+      }
+    }
+
+
+
+
     onFileChange(event: any) {
-      this.selectedFiles = Array.from(event.target.files);
+      const file = event.target.files[0];
+      if (file) {
+        this.selectedFiles.push(file);
+
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.previewUrls.push(e.target.result); // base64
+        };
+        reader.readAsDataURL(file);
+      }
+      event.target.value = ''; // Cho phép chọn cùng file lại nếu cần
     }
+
+    removeFile(index: number) {
+      this.selectedFiles.splice(index, 1);
+      this.previewUrls.splice(index, 1);
+    }
+
+
   closeModal() {
     console.log('🛑 Attempting to close modal...', this.activeModal);
 

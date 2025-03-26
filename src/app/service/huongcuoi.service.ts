@@ -14,4 +14,8 @@ export class HuongCuoiService {
   getHuongCuoi(): Observable<any> {
     return this.http.get(`${this.apiUrl}/getAll`);
   }
+  add(data: { moTaHuongCuoi: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/add`, data);
+  }
+
 }

@@ -120,11 +120,14 @@
   }
 
 openAddModal(){
-const modalRef = this.modalService.open(AddProductComponent, { backdrop: 'static', keyboard: false });
+const modalRef = this.modalService.open(AddProductComponent, {
+  centered: true, // ✅ canh giữa
+  backdrop: 'static', keyboard: false });
 
     // Nhận dữ liệu khách hàng mới từ modal
     modalRef.componentInstance.productAdd.subscribe((newproduct: any) => {
       console.log('🎉 Khách hàng mới:', newproduct);
+      this.loadProducts();
       this.products.unshift(newproduct); // ✅ Thêm vào đầu danh sách
     });
   }}
