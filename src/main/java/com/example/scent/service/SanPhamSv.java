@@ -104,46 +104,71 @@ public class SanPhamSv {
         String apiUrl = "https://api.imgbb.com/1/upload?key=af27bc3080c57dc57c61576a2e1cdaff"; // Thay API_KEY của bạn
         RestTemplate restTemplate = new RestTemplate();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("image", file.getResource());
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("image", file.getResource());
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
 
-        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-            return (String) ((Map) response.getBody().get("data")).get("url");
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+                return data != null ? (String) data.get("url") : null;
+            } else {
+                System.err.println("Lỗi tải ảnh lên ImgBB: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi kết nối ImgBB: " + e.getMessage());
         }
         return null;
     }
 
+
     public SanPham addProductWithDetails(
             String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
-            Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile image) {
+            Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images) {
 
         SanPham sanPham = new SanPham();
         sanPham.setTenSanPham(tenSanPham);
         sanPham.setMoTaSanPham(moTaSanPham);
 
-        sanPham.setThuongHieu(thuongHieuRepo.findById(idThuongHieu).orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại")));
-        sanPham.setDanhMuc(danhMucRepo.findById(idDanhMuc).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
+        sanPham.setThuongHieu(thuongHieuRepo.findById(idThuongHieu)
+                .orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại")));
+        sanPham.setDanhMuc(danhMucRepo.findById(idDanhMuc)
+                .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
         sanPham.setHuongDau(huongDauRepo.findById(idHuongDau).orElse(null));
         sanPham.setHuongGiua(huongGiuaRepo.findById(idHuongGiua).orElse(null));
         sanPham.setHuongCuoi(huongCuoiRepo.findById(idHuongCuoi).orElse(null));
 
         SanPham savedSanPham = spi.save(sanPham);
 
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = uploadImageToPostimages(image);
-            if (imageUrl != null) {
-                HinhAnh hinhAnh = new HinhAnh();
-                hinhAnh.setLink(imageUrl);
-                hinhAnh.setSanPham(savedSanPham);
-                hai.save(hinhAnh);
+        // Danh sách để kiểm tra số ảnh thành công
+        int uploadedImages = 0;
+
+        if (images != null && images.length > 0) {
+            for (MultipartFile image : images) {
+                if (!image.isEmpty()) {
+                    String imageUrl = uploadImageToPostimages(image);
+                    if (imageUrl != null) {
+                        HinhAnh hinhAnh = new HinhAnh();
+                        hinhAnh.setLink(imageUrl);
+                        hinhAnh.setSanPham(savedSanPham);
+                        hai.save(hinhAnh);
+                        uploadedImages++;
+                    }
+                }
             }
         }
+
+        // Nếu không có ảnh nào được tải lên thành công, xóa sản phẩm
+        if (uploadedImages == 0) {
+            spi.delete(savedSanPham);
+            throw new RuntimeException("Không thể lưu sản phẩm vì tất cả ảnh tải lên đều thất bại.");
+        }
+
         return savedSanPham;
     }
 

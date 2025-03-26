@@ -3,7 +3,6 @@ package com.example.scent.rest;
 import com.example.scent.entity.HuongDau;
 
 import com.example.scent.entity.HuongGiua;
-import com.example.scent.service.HuongDauSv;
 import com.example.scent.service.HuongGiuaSv;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,6 +34,7 @@ public class HuongGiuaCtrl {
 
     @PostMapping("/add")
     public HuongGiua create(@RequestBody HuongGiua hg) {
+        System.out.println("✅ Nhận được: " + hg.getMoTaHuongGiua());
         return hgs.add(hg);
     }
 
