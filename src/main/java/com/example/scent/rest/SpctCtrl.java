@@ -1,5 +1,7 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.SpctDTO;
+import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 
 import com.example.scent.service.SpctSv;
@@ -38,22 +40,16 @@ public class SpctCtrl {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> create(@Valid @RequestBody Spct spct, BindingResult result) {
-
-        if (result.hasErrors()) {
-
-            Map<String, String> errorsMap = new HashMap<>();
-
-            for (FieldError error : result.getFieldErrors()) {
-                errorsMap.put(error.getField(), error.getDefaultMessage());
-            }
-            return ResponseEntity.badRequest().body(errorsMap);
-        }
-
-        spcts.add(spct);
-        return ResponseEntity.ok("ok");
+    public Spct create( @RequestBody SpctDTO spctDTO) {
+        Spct spct = new Spct();
+        spct.setDonGia(spctDTO.getDonGia());
+        spct.setSoLuongTonKho(spctDTO.getSoLuongTonKho());
+        spct.setDungTich(spctDTO.getDungTich());
+        SanPham sanPham = new SanPham();
+        sanPham.setIdSanPham(spctDTO.getIdSanPham());
+        spct.setSanPham(sanPham);spcts.add(spct);
+        return spcts.add(spct);
     }
-
     @PutMapping("/update")
     public ResponseEntity<?> update(@Valid @RequestBody Spct spct, BindingResult result) {
 
