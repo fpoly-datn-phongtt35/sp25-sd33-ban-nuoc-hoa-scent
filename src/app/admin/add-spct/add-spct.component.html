@@ -1,0 +1,28 @@
+<div class="modal-header">
+  <h5 class="modal-title">Thêm sản phẩm chi tiết</h5>
+  <button type="button" class="btn-close" (click)="closeModal()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="spctForm">
+    <div class="mb-3">
+      <label class="form-label">Đơn giá (VND)</label>
+      <input type="number" class="form-control" formControlName="donGia">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Dung tích (ml)</label>
+      <input type="number" class="form-control" formControlName="dungTich">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Số lượng tồn kho</label>
+      <input type="number" class="form-control" formControlName="soLuongTonKho">
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="button" class="btn btn-primary" (click)="saveProductDetail()">Lưu</button>
+</div>

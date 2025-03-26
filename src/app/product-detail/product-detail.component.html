@@ -9,7 +9,7 @@
 
     <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
     <div class="product-info">
-      
+
       <h1>{{ product['tenSanPham'] || 'Không có tên' }}</h1>
 
       <p class="brand">
@@ -30,12 +30,12 @@
         <strong>Dung tích:</strong> {{ product.dungTich }}ml
       </p>
       <p class="volume">
-        Số lượng: <strong>{{ product.soLuongTonKho }}</strong> 
+        Số lượng: <strong>{{ product.soLuongTonKho }}</strong>
       </p>
       <p class="price">
         Giá: <strong>{{ product.donGia | number }}</strong> VND
       </p>
-     
+
      <!-- Đoạn HTML này sẽ hiển thị một dropdown để chọn dung tích sản phẩm -->
   <!-- Volume selection buttons -->
   <p *ngFor="let volume of volumes">
@@ -43,7 +43,7 @@
       {{ volume.dungTich }}ml - {{ volume.donGia | currency:'VND':'symbol':'1.0-0' }}
     </button>
   </p>
-  
+
 
 <!-- Thêm nút này trong product-detail.component.html -->
 <div class="quantity-container">

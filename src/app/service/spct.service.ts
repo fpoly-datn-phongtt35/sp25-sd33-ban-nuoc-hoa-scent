@@ -9,6 +9,7 @@ import { TokenService } from './token.service';
 })
 export class SpctService {
   private apiUrl='http://localhost:8080/rest/spct';
+  private urlAdd='http://localhost:8080/rest/spct/add';
   constructor(private http: HttpClient) { }
 
   getSpcts(): Observable<any> {
@@ -16,5 +17,9 @@ export class SpctService {
   }
   geSpctByIdProduct(id: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/getByidSanPham/${id}`);
+  }
+  addSpcttOnAdmin(spct: any): Observable<any> {
+    const url = `${this.urlAdd}`;
+    return this.http.post<any>(url, spct);
   }
 }

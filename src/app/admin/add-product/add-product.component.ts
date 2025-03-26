@@ -42,19 +42,55 @@ export class AddProductComponent implements OnInit{
     private huongcuoiService:HuongCuoiService,
   ) {
     this.productForm = this.fb.group({
-      ten: ['', Validators.required],
-      moTa: [''],
+      ten: ['', [Validators.required, Validators.minLength(3)]],
+      moTa: ['', [Validators.maxLength(1000)]],
       idThuongHieu: ['', Validators.required],
       idDanhMuc: ['', Validators.required],
-      huongDau: [''], // đổi từ idHuongDau
-      huongGiua: [''],
-      huongCuoi: ['']
-      });
+      huongDau: ['', [Validators.required, Validators.minLength(2)]],
+      huongGiua: ['', [Validators.required, Validators.minLength(2)]],
+      huongCuoi: ['', [Validators.required, Validators.minLength(2)]]
+    });
+
 
   }ngOnInit() {
     this.getAllDanhMuc();
     this.getAllThuongHieu();
+    this.productForm.get('idThuongHieu')?.valueChanges.subscribe((val) => {
+      if (val === '-1') {
+        this.handleAddThuongHieu();
+      }
+    });
+
   }
+  async handleAddThuongHieu() {
+    const tenThuongHieu = prompt('📝 Nhập tên thương hiệu mới:');
+    if (!tenThuongHieu || tenThuongHieu.trim().length < 2) {
+      alert('⚠️ Tên thương hiệu không hợp lệ!');
+      this.productForm.get('idThuongHieu')?.setValue('');
+      return;
+    }
+
+    const quocGia = prompt('🌍 Nhập quốc gia của thương hiệu:') || '';
+    const moTa = prompt('📄 Nhập mô tả cho thương hiệu (nếu có):') || '';
+
+    const body = {
+      tenThuongHieu: tenThuongHieu.trim(),
+      quocGia: quocGia.trim(),
+      moTa: moTa.trim()
+    };
+
+    try {
+      const response = await firstValueFrom(this.thuonghieuService.addThuongHieu(body));
+      alert('✅ Đã thêm thương hiệu mới!');
+      await this.getAllThuongHieu(); // Làm mới danh sách
+      this.productForm.get('idThuongHieu')?.setValue(response.id); // Gán thương hiệu vừa tạo
+    } catch (err) {
+      console.error('❌ Lỗi khi thêm thương hiệu:', err);
+      alert('❌ Không thể thêm thương hiệu mới. Vui lòng thử lại!');
+      this.productForm.get('idThuongHieu')?.setValue('');
+    }
+  }
+
     getAllDanhMuc(){
       this.danhMucService.getAllDanhMucDanhMuc().subscribe({
         next: (data) => {
@@ -76,7 +112,8 @@ export class AddProductComponent implements OnInit{
     }
     async addProduct() {
       if (this.productForm.invalid) {
-        alert('Vui lòng điền đầy đủ thông tin sản phẩm!');
+        this.productForm.markAllAsTouched(); // Hiển thị tất cả lỗi
+        // alert('Vui lòng điền đầy đủ thông tin sản phẩm!');
         return;
       }
 

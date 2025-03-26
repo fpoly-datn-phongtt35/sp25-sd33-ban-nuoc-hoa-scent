@@ -1,96 +1,115 @@
 <div class="modal d-flex align-items-center justify-content-center show" style="display: flex;" tabindex="-1">
   <div class="modal-dialog custom-modal">
     <div class="modal-content">
-<div class="modal-header">
-  <h5 class="modal-title">Thêm Sản Phẩm</h5>
-  <button type="button" class="btn-close" (click)="closeModal()"></button>
-</div>
-<div class="modal-body">
-  <form [formGroup]="productForm">
-    <div class="row">
-      <!-- Tên sản phẩm -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label fw-semibold">Tên sản phẩm</label>
-        <input type="text" class="form-control" formControlName="ten">
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm Sản Phẩm</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
+      <div class="modal-body">
+        <form [formGroup]="productForm">
+          <div class="row">
 
-      <!-- Thương hiệu & danh mục -->
-      <div class="col-md-6 mb-3 d-flex gap-2">
-        <div class="w-50">
-          <label class="form-label fw-semibold">Thương hiệu</label>
-          <select class="form-select" formControlName="idThuongHieu">
-            <!-- <option value="">-- Chọn danh mục --</option> -->
-            <option *ngFor="let dm of thuongHieuList" [value]="dm.id">{{ dm.tenThuongHieu }}</option>
-          </select>
+            <!-- Tên sản phẩm -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Tên sản phẩm</label>
+              <input type="text" class="form-control" formControlName="ten">
+              <div *ngIf="productForm.get('ten')?.touched && productForm.get('ten')?.invalid" class="text-danger small mt-1">
+                <div *ngIf="productForm.get('ten')?.errors?.['required']">Tên sản phẩm là bắt buộc.</div>
+                <div *ngIf="productForm.get('ten')?.errors?.['minlength']">Tên phải có ít nhất 3 ký tự.</div>
+              </div>
+            </div>
+
+            <!-- Thương hiệu & Danh mục -->
+            <div class="col-md-6 mb-3 d-flex gap-2">
+              <div class="w-50">
+                <label class="form-label fw-semibold">Thương hiệu</label>
+                <select class="form-select" formControlName="idThuongHieu">
+                  <option *ngFor="let dm of thuongHieuList" [value]="dm.id">{{ dm.tenThuongHieu }}</option>
+                  <option value="-1">➕ Thêm thương hiệu mới...</option>
+                </select>
+                <div *ngIf="productForm.get('idThuongHieu')?.touched && productForm.get('idThuongHieu')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn thương hiệu.
                 </div>
-        <div class="w-50">
-          <label class="form-label fw-semibold">Danh mục</label>
-          <select class="form-select" formControlName="idDanhMuc">
-            <!-- <option value="">-- Chọn danh mục --</option> -->
-            <option *ngFor="let dm of danhMucList" [value]="dm.id">{{ dm.tenDanhMuc }}</option>
-          </select>
-        </div>
+              </div>
+              <div class="w-50">
+                <label class="form-label fw-semibold">Danh mục</label>
+                <select class="form-select" formControlName="idDanhMuc">
+                  <option *ngFor="let dm of danhMucList" [value]="dm.id">{{ dm.tenDanhMuc }}</option>
+                </select>
+                <div *ngIf="productForm.get('idDanhMuc')?.touched && productForm.get('idDanhMuc')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn danh mục.
+                </div>
+              </div>
+            </div>
 
+            <!-- Ba tầng hương -->
+            <div class="col-md-12 mb-3">
+              <label class="form-label fw-semibold">Hương đầu</label>
+              <input type="text" class="form-control mb-2" formControlName="huongDau">
+              <div *ngIf="productForm.get('huongDau')?.touched && productForm.get('huongDau')?.invalid" class="text-danger small mb-2">
+                <div *ngIf="productForm.get('huongDau')?.errors?.['required']">Hương đầu là bắt buộc.</div>
+                <div *ngIf="productForm.get('huongDau')?.errors?.['minlength']">Ít nhất 2 ký tự.</div>
+              </div>
+
+              <label class="form-label fw-semibold">Hương giữa</label>
+              <input type="text" class="form-control mb-2" formControlName="huongGiua">
+              <div *ngIf="productForm.get('huongGiua')?.touched && productForm.get('huongGiua')?.invalid" class="text-danger small mb-2">
+                <div *ngIf="productForm.get('huongGiua')?.errors?.['required']">Hương giữa là bắt buộc.</div>
+                <div *ngIf="productForm.get('huongGiua')?.errors?.['minlength']">Ít nhất 2 ký tự.</div>
+              </div>
+
+              <label class="form-label fw-semibold">Hương cuối</label>
+              <input type="text" class="form-control" formControlName="huongCuoi">
+              <div *ngIf="productForm.get('huongCuoi')?.touched && productForm.get('huongCuoi')?.invalid" class="text-danger small mt-1">
+                <div *ngIf="productForm.get('huongCuoi')?.errors?.['required']">Hương cuối là bắt buộc.</div>
+                <div *ngIf="productForm.get('huongCuoi')?.errors?.['minlength']">Ít nhất 2 ký tự.</div>
+              </div>
+            </div>
+
+            <!-- Mô tả -->
+            <div class="col-md-12 mb-3">
+              <label class="form-label fw-semibold">Mô tả</label>
+              <textarea class="form-control" formControlName="moTa" rows="3"></textarea>
+              <div *ngIf="productForm.get('moTa')?.touched && productForm.get('moTa')?.invalid" class="text-danger small mt-1">
+                <div *ngIf="productForm.get('moTa')?.errors?.['maxlength']">Mô tả tối đa 1000 ký tự.</div>
+              </div>
+            </div>
+
+            <!-- Chọn ảnh -->
+            <div class="col-md-12 mb-2">
+              <label class="form-label fw-semibold">Hình ảnh (chọn từng ảnh một)</label>
+              <div class="position-relative">
+                <input
+                  type="file"
+                  class="form-control visually-hidden"
+                  id="fileInput"
+                  (change)="onFileChange($event)"
+                />
+                <label for="fileInput" class="btn btn-outline-primary">
+                  📁 Chọn ảnh
+                </label>
+              </div>
+            </div>
+
+            <!-- Preview ảnh -->
+            <div *ngIf="previewUrls.length > 0" class="d-flex flex-wrap gap-3 mt-2">
+              <div *ngFor="let img of previewUrls; let i = index" class="position-relative border rounded shadow-sm" style="width: 100px; height: 100px;">
+                <img [src]="img" class="w-100 h-100 object-fit-cover rounded" alt="Ảnh">
+                <button type="button" class="btn-close position-absolute top-0 end-0 bg-danger rounded-circle"
+                        style="transform: scale(0.8); color: white;"
+                        (click)="removeFile(i)">
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </form>
       </div>
 
-      <!-- Ba tầng hương: dọc -->
-      <div class="col-md-12 mb-3">
-        <label class="form-label fw-semibold">Hương đầu</label>
-        <input type="text" class="form-control mb-2" formControlName="huongDau">
-
-        <label class="form-label fw-semibold">Hương giữa</label>
-        <input type="text" class="form-control mb-2" formControlName="huongGiua">
-
-        <label class="form-label fw-semibold">Hương cuối</label>
-        <input type="text" class="form-control" formControlName="huongCuoi">
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="addProduct()">Lưu</button>
       </div>
-
-      <!-- Mô tả -->
-      <div class="col-md-12 mb-3">
-        <label class="form-label fw-semibold">Mô tả</label>
-        <textarea class="form-control" formControlName="moTa" rows="3"></textarea>
-      </div>
-
-<!-- Chọn ảnh -->
-<div class="col-md-12 mb-2">
-  <label class="form-label fw-semibold">Hình ảnh (chọn từng ảnh một)</label>
-
-  <!-- Custom input -->
-  <div class="position-relative">
-    <input
-      type="file"
-      class="form-control visually-hidden"
-      id="fileInput"
-      (change)="onFileChange($event)"
-    />
-    <label for="fileInput" class="btn btn-outline-primary">
-      📁 Chọn ảnh
-    </label>
-  </div>
-</div>
-
-
-<!-- Preview ảnh -->
-<!-- Preview ảnh -->
-<div *ngIf="previewUrls.length > 0" class="d-flex flex-wrap gap-3 mt-2">
-  <div *ngFor="let img of previewUrls; let i = index" class="position-relative border rounded shadow-sm" style="width: 100px; height: 100px;">
-    <img [src]="img" class="w-100 h-100 object-fit-cover rounded" alt="Ảnh">
-    <button type="button" class="btn-close position-absolute top-0 end-0 bg-danger rounded-circle"
-            style="transform: scale(0.8); color: white;"
-            (click)="removeFile(i)">
-    </button>
-  </div>
-</div>
-
-
     </div>
-  </form>
-
+  </div>
 </div>
-<div class="modal-footer">
-  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-  <button type="button" class="btn btn-primary" (click)="addProduct()">Lưu</button>
-</div>
-</div>
-</div></div>
-

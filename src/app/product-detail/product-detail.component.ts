@@ -8,7 +8,7 @@ import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
 import { CartService } from '../service/cart.Service';
 import { SanPhamService } from '../service/product.service';
-import { FormsModule } from '@angular/forms'; 
+import { FormsModule } from '@angular/forms';
 import { AuthGuard } from '../Guard/authguard';
 import { TokenService } from '../service/token.service';
 import Swal from 'sweetalert2';
@@ -39,15 +39,15 @@ export class ProductDetailComponent implements OnInit {
     this.loadRecommendedProducts();
     this.loadVolumes();
 
-    
+
   }
 
   loadProductDetail(): void {
     const productId = this.route.snapshot.paramMap.get('id');
-    
+
     if (productId) {
       const numericProductId = parseInt(productId, 10);
-  
+
       // Ensure numericProductId is a valid number
       if (!isNaN(numericProductId)) {
         // Load product volumes first
@@ -58,7 +58,7 @@ export class ProductDetailComponent implements OnInit {
             this.selectedVolume = volumes[0];
           }
         });
-  
+
         // Then load the product details
         this.detailService.getProductDetailById(numericProductId).subscribe({
           next: (data: any) => {
@@ -68,9 +68,9 @@ export class ProductDetailComponent implements OnInit {
               console.log('Sản phẩm được gán:', this.product);
               console.log('Tên sản phẩm:', this.product.tenSanPham);
               console.log('Giá sản phẩm:', this.product.donGia);
-              
+
               console.log('ML sản phẩm:', this.product.dungTich);
-              
+
             } else {
               console.error('Không tìm thấy sản phẩm');
               alert('Không tìm thấy sản phẩm');
@@ -92,7 +92,7 @@ export class ProductDetailComponent implements OnInit {
       alert('Product ID is missing');
     }
   }
-  
+
   updateDisplayedPrice(): void {
     // Sự kiện này được kích hoạt khi người dùng thay đổi lựa chọn dung tích
     // Giả sử rằng dung tích đã bao gồm thông tin giá
@@ -110,13 +110,13 @@ export class ProductDetailComponent implements OnInit {
   console.log(`Giá được cập nhật là: ${this.product.donGia} VND cho dung tích ${this.selectedVolume.dungTich}ml với idSpct mới : ${this.product.idSpct}`);
 }
 
-  
+
   loadVolumes() {
     // Ensure there is a productId available
     const productId = this.route.snapshot.paramMap.get('id');
     if (productId) {
       const numericProductId = parseInt(productId, 10);
-  
+
       // Ensure numericProductId is a valid number before making the call
       if (!isNaN(numericProductId)) {
         this.sanPhamService.getProductVolumes(numericProductId).subscribe(
@@ -136,7 +136,7 @@ export class ProductDetailComponent implements OnInit {
       console.error('Product ID is missing');
     }
   }
-  
+
   loadRecommendedProducts(): void {
     this.detailService.getRecommendedProducts().subscribe({
       next: (data: any[]) => this.recommendedProducts = data,
@@ -207,13 +207,13 @@ export class ProductDetailComponent implements OnInit {
       text: `✅ Đã thêm ${this.quantity} sản phẩm vào giỏ hàng!`,
   });
     this.quantity = 1;
-   
+
 }
 
-  
-  
 
-  
+
+
+
 
   viewRelatedProduct(productId: number): void {
     this.router.navigate(['/product/detail', productId]);
