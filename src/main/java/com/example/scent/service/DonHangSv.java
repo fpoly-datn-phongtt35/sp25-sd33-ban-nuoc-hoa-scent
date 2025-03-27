@@ -4,24 +4,44 @@ package com.example.scent.service;
 import com.example.scent.dto.*;
 import com.example.scent.entity.*;
 import com.example.scent.repo.*;
+import com.example.scent.reques.PhiVanChuyenRequest;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class DonHangSv {
+    private static final Logger log = LoggerFactory.getLogger(DonHangSv.class);
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    TinhInterface tinhInterface;
+    @Autowired
+    QuanInterface quanInterface;
+    @Autowired
+    PhuongInterface phuongInterface;
+
+    @Autowired
+    private DiaChiApi diaChiApi;
     @Autowired
     HinhAnhInterface hinhAnhInterface;
     @Autowired
@@ -79,16 +99,36 @@ public class DonHangSv {
     }
 
     @Transactional
-
-    public DonHang createOrder(DonHangDTO orderRequest) {
+    public DonHang createOrder(DonHangDTO orderRequest) throws Exception {
         if (orderRequest.getIdTaiKhoan() == null) {
             throw new RuntimeException("⚠️ Lỗi: ID tài khoản không được để trống!");
         }
 
         TaiKhoan taiKhoan = tki.findById(orderRequest.getIdTaiKhoan())
-                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
+                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
 
-        LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
+        // Lấy thông tin từ API GHN thay vì cơ sở dữ liệu
+        Map<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
+        if (!tinhList.containsKey(orderRequest.getMaTinh())) {
+            throw new RuntimeException("⚠️ Lỗi: Tỉnh không tồn tại với ID: " + orderRequest.getMaTinh());
+        }
+
+        Map<String, String> quanList = DiaChiApi.callGetQuanHuyenAPI(orderRequest.getMaTinh());
+        if (!quanList.containsKey(String.valueOf(orderRequest.getMaQuan()))) {
+            throw new RuntimeException("⚠️ Lỗi: Quận không tồn tại với ID: " + orderRequest.getMaQuan());
+        }
+
+        Map<String, String> phuongList = DiaChiApi.callGetPhuongXaAPI(orderRequest.getMaQuan());
+        System.out.println("phuongList: " + phuongList);
+        if (!phuongList.containsKey(orderRequest.getMaPhuong())) {
+            throw new RuntimeException("⚠️ Lỗi: Phường không tồn tại với ID: " + orderRequest.getMaPhuong());
+        }
+
+        PhiVanChuyenRequest phiVanChuyenRequest = convertToPhiVanChuyenRequest(orderRequest);
+        BigDecimal phiVanChuyen = DiaChiApi.getFee(phiVanChuyenRequest);
+        if (phiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển không hợp lệ!");
+        }
         BigDecimal tongTien = BigDecimal.ZERO;
 
         List<ChiTietDonHang> chiTietList = new ArrayList<>();
@@ -100,9 +140,9 @@ public class DonHangSv {
             if (itemDTO.getQuantity() > spct.getSoLuongTonKho()) {
                 throw new RuntimeException("Số lượng sản phẩm không đủ. Sản phẩm ID: " + itemDTO.getSpctId() + " chỉ còn " + spct.getSoLuongTonKho() + " sản phẩm.");
             }
-
             BigDecimal thanhTien = spct.getDonGia().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
             tongTien = tongTien.add(thanhTien);
+
 
             ChiTietDonHang chiTiet = new ChiTietDonHang();
             chiTiet.setSpct(spct);
@@ -123,7 +163,8 @@ public class DonHangSv {
             chiTietList.add(chiTiet);
 
         }
-
+        tongTien = tongTien.add(phiVanChuyen);
+        // Tạo đơn hàng mới
         DonHang newOrder = new DonHang();
         newOrder.setTaiKhoan(taiKhoan);
         newOrder.setTenNguoiNhanHang(orderRequest.getTenNguoiNhanHang());
@@ -131,12 +172,18 @@ public class DonHangSv {
         newOrder.setSdtNguoiNhan(orderRequest.getSdtNguoiNhan());
         newOrder.setPhuongThucVanChuyen(orderRequest.getPhuongThucVanChuyen());
         newOrder.setPhuongThucThanhToan(orderRequest.getPhuongThucThanhToan());
-        newOrder.setNgayTao(ngayTao);
+        newOrder.setNgayTao(orderRequest.getNgayTao() != null ? orderRequest.getNgayTao() : LocalDateTime.now());
         newOrder.setNgayVanChuyen(orderRequest.getNgayVanChuyen());
-        newOrder.setTongTien(tongTien);
         newOrder.setTrangThai(1);
         newOrder.setGhiChu(orderRequest.getGhichu());
+        // Tạo và thiết lập đối tượng Tinh
+        newOrder.setPhiVanChuyen(phiVanChuyen);
+        newOrder.setGhiChu(orderRequest.getGhichu());
+        newOrder.setMaTinh(orderRequest.getMaTinh());
+        newOrder.setMaQuan(orderRequest.getMaQuan());
+newOrder.setMaPhuong(orderRequest.getMaPhuong());
 
+        newOrder.setTongTien(tongTien);
         DonHang savedOrder = dhi.save(newOrder);
 
         for (ChiTietDonHang chiTiet : chiTietList) {
@@ -147,8 +194,20 @@ public class DonHangSv {
 
         savedOrder.setChiTietDonHangs(chiTietList);
 
+
         return savedOrder;
     }
+
+    // Phương thức chuyển đổi DonHangDTO thành PhiVanChuyenRequest
+    private PhiVanChuyenRequest convertToPhiVanChuyenRequest(DonHangDTO orderRequest) {
+        PhiVanChuyenRequest request = new PhiVanChuyenRequest();
+        request.setIdQuanHuyen(orderRequest.getMaQuan());
+        request.setIdPhuongXa(orderRequest.getMaPhuong());
+        request.setTrungBinhCacCanh(orderRequest.getTrungBinhCacCanh());
+        request.setSoLuongSanPham(orderRequest.getChiTietDonHangs().size());
+        return request;
+    }
+
     private Map<Integer, List<String>> getHinhAnhBySanPhamIds(List<Integer> sanPhamIds) {
         // Giả sử bạn có một repository là sanPhamRepository và hinhAnhRepository
         Map<Integer, List<String>> imageMap = new HashMap<>();
@@ -300,6 +359,154 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         return donHangDTO;
     }).collect(Collectors.toList());
 }
+    @Transactional
+    public void savePhuongToDB(String maPhuong, String tenPhuong) {
+        // Kiểm tra xem phường đã có trong cơ sở dữ liệu chưa
+        Phuong existingPhuong = phuongInterface.findByMaPhuong(maPhuong).orElse(null);
+
+        if (existingPhuong == null) {
+            // Phường chưa có, lưu mới
+            Phuong newPhuong = new Phuong();
+            newPhuong.setMaPhuong(maPhuong);
+            newPhuong.setTenPhuong(tenPhuong);  // Lấy tên phường từ API GHN
+            phuongInterface.save(newPhuong);  // Lưu vào cơ sở dữ liệu
+        } else {
+            // Nếu phường đã tồn tại, chỉ cần làm mới thông tin nếu cần
+            entityManager.refresh(existingPhuong);  // Làm mới đối tượng phường từ cơ sở dữ liệu
+        }
+    }
+    @Transactional
+    public void saveQuanToDB(Integer maQuan, String tenQuan) {
+        // Kiểm tra xem quận đã có trong cơ sở dữ liệu chưa
+        quan existingQuan = quanInterface.findByMaQuan(maQuan).orElse(null);
+
+        if (existingQuan == null) {
+            // Quận chưa có, lưu mới
+            quan newQuan = new quan();
+            newQuan.setMaQuan(maQuan);
+            newQuan.setTenQuan(tenQuan);  // Lấy tên quận từ API GHN
+            quanInterface.save(newQuan);  // Lưu vào cơ sở dữ liệu
+        } else {
+            // Nếu quận đã tồn tại, chỉ cần làm mới thông tin nếu cần
+            entityManager.refresh(existingQuan);  // Làm mới đối tượng quận từ cơ sở dữ liệu
+        }
+    }
+    @Transactional
+    public void saveTinhToDB(Integer maTinh, String tenTinh) {
+        // Kiểm tra xem tỉnh đã có trong cơ sở dữ liệu chưa
+        tinh existingTinh = tinhInterface.findByMaTinh(maTinh).orElse(null);
+
+        if (existingTinh == null) {
+            // Tỉnh chưa có, lưu mới
+            tinh newTinh = new tinh();
+            newTinh.setMaTinh(maTinh);
+            newTinh.setTenTinh(tenTinh);  // Lấy tên tỉnh từ API GHN
+            tinhInterface.save(newTinh);  // Lưu vào cơ sở dữ liệu
+        } else {
+            // Nếu tỉnh đã tồn tại, chỉ cần làm mới thông tin nếu cần
+            entityManager.refresh(existingTinh);  // Làm mới đối tượng tỉnh từ cơ sở dữ liệu
+        }
+    }
+
+    public BigDecimal calculateShippingFee(int maTinh, int maQuan, String maPhuong, int soLuongSanPham) throws Exception {
+        // Tạo đối tượng request cho API GHN
+        PhiVanChuyenRequest phiRequest = new PhiVanChuyenRequest();
+        phiRequest.setIdQuanHuyen(maQuan); // Mã quận
+        phiRequest.setStringPhuongXa(maPhuong); // Mã phường
+        phiRequest.setSoLuongSanPham(soLuongSanPham); // Số lượng sản phẩm
+        phiRequest.setTrungBinhCacCanh(10);  // Tính toán chiều dài trung bình (nếu cần)
+
+        // Gọi API GHN để lấy phí vận chuyển
+        BigDecimal phiVanChuyen = BigDecimal.ZERO;
+        try {
+            phiVanChuyen = DiaChiApi.getFee(phiRequest); // Lấy phí vận chuyển từ API GHN
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Xử lý lỗi nếu không thể lấy phí vận chuyển từ API
+            phiVanChuyen = BigDecimal.ZERO;  // Hoặc có thể trả về một giá trị mặc định
+        }
+
+        return phiVanChuyen;
+    }
+    @Transactional
+    public void importData() throws Exception {
+        // Lấy danh sách tỉnh từ API GHN
+        HashMap<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
+        System.out.println("DS tinh : " + tinhList); // Log danh sách tỉnh
+        if (tinhList == null || tinhList.isEmpty()) {
+            System.out.println("Dữ liệu Tỉnh không có hoặc bị lỗi!");
+        }
+        for (Map.Entry<Integer, String> entry : tinhList.entrySet()) {
+            tinh tinhEntity = tinhInterface.findById(entry.getKey()).orElse(null);
+            if (tinhEntity == null) { // Nếu tỉnh chưa tồn tại thì lưu vào DB
+                tinhEntity = new tinh();
+                tinhEntity.setMaTinh(entry.getKey());
+                tinhEntity.setTenTinh(entry.getValue());
+                try {
+                    tinhInterface.save(tinhEntity);  // Lưu vào DB
+                    System.out.println("Lưu Tỉnh vào DB: " + entry.getKey() + " - " + entry.getValue());
+                } catch (Exception e) {
+                    log.error("Failed to save Tinh with ID: {}", entry.getKey(), e);
+                }
+            } else {
+                System.out.println("Tỉnh đã tồn tại trong DB: " + entry.getKey() + " - " + entry.getValue());
+            }
+        }
+
+        // Lấy danh sách quận từ API GHN
+        for (Map.Entry<Integer, String> entry : tinhList.entrySet()) {
+            HashMap<String, String> quanList = DiaChiApi.callGetQuanHuyenAPI(entry.getKey());
+            System.out.println("DS QUAN : " + quanList); // Log danh sách quận
+            for (Map.Entry<String, String> quanEntry : quanList.entrySet()) {
+                quan quanEntity = new quan();
+                quanEntity.setMaQuan(Integer.parseInt(quanEntry.getKey())); // Chuyển String thành Integer
+                quanEntity.setTenQuan(quanEntry.getValue());
+
+                // Tìm Tỉnh từ ID
+                tinh tinhEntity = tinhInterface.findById(entry.getKey()).orElse(null);
+                if (tinhEntity != null) {
+                    quanEntity.setTinh(tinhEntity);
+                    try {
+                        quanInterface.save(quanEntity); // Lưu vào DB
+                        System.out.println("Lưu Quận vào DB: " + quanEntry.getKey() + " - " + quanEntry.getValue());
+                    } catch (Exception e) {
+                        log.error("Failed to save Quan with ID: {}", quanEntity.getMaQuan(), e);
+                    }
+                } else {
+                    log.error("Tinh with ID {} not found", entry.getKey());
+                }
+            }
+        }
+
+        // Lấy danh sách phường từ API GHN
+        for (Map.Entry<Integer, String> entry : tinhList.entrySet()) {
+            HashMap<String, String> phuongList = DiaChiApi.callGetPhuongXaAPI(entry.getKey());
+            System.out.println("DS phuong : " + phuongList); // Log danh sách phường
+            if (phuongList != null && !phuongList.isEmpty()) {
+                for (Map.Entry<String, String> phuongEntry : phuongList.entrySet()) {
+                    Phuong phuongEntity = new Phuong();
+                    phuongEntity.setMaPhuong(phuongEntry.getKey());
+                    phuongEntity.setTenPhuong(phuongEntry.getValue());
+
+                    // Tìm Quận từ ID
+                    quan quanEntity = quanInterface.findByMaQuan(Integer.parseInt(phuongEntry.getKey())).orElse(null);
+                    if (quanEntity != null) {
+                        phuongEntity.setQuan(quanEntity);
+                        try {
+                            phuongInterface.save(phuongEntity); // Lưu vào DB
+                            System.out.println("Lưu Phường vào DB: " + phuongEntry.getKey() + " - " + phuongEntry.getValue());
+                        } catch (Exception e) {
+                            log.error("Failed to save Phuong with ID: {}", phuongEntity.getMaPhuong(), e);
+                        }
+                    } else {
+                        log.error("Quan with ID {} not found", phuongEntry.getKey());
+                    }
+                }
+            } else {
+                log.warn("No phuong xa found for district ID: {}", entry.getKey());
+            }
+        }
+    }
 
 
 }

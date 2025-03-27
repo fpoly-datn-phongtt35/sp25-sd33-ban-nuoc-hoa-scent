@@ -95,6 +95,29 @@ public class DonHang {
     @JsonManagedReference
     @BatchSize(size = 10)
     private List<ChiTietDonHang> chiTietDonHangs;
+    @Column(name = "ma_tinh")
+    private Integer maTinh; // Mã tỉnh
+
+    @Column(name = "ma_quan")
+    private Integer maQuan; // Mã quận
+
+    @Column(name = "ma_phuong")
+    private String maPhuong; // Liên kết với bảng Phuong
+    @Column(name = "trong_luong")
+    private Integer trongLuong;  // Trọng lượng của kiện hàng (gram)
+
+    @Column(name = "chieu_dai")
+    private Integer chieuDai;  // Chiều dài (cm)
+
+    @Column(name = "chieu_rong")
+    private Integer chieuRong;  // Chiều rộng (cm)
+
+    @Column(name = "chieu_cao")
+    private Integer chieuCao;  // Chiều cao (cm)
+
+    @Column(name = "phi_van_chuyen", precision = 19, scale = 4)
+    private BigDecimal phiVanChuyen;
+
 
     public Integer getTrangThai() {
         return trangThai;
@@ -114,6 +137,70 @@ public class DonHang {
 
     public Integer getId() {
         return id;
+    }
+
+    public Integer getMaTinh() {
+        return maTinh;
+    }
+
+    public void setMaTinh(Integer maTinh) {
+        this.maTinh = maTinh;
+    }
+
+    public Integer getMaQuan() {
+        return maQuan;
+    }
+
+    public void setMaQuan(Integer maQuan) {
+        this.maQuan = maQuan;
+    }
+
+    public String getMaPhuong() {
+        return maPhuong;
+    }
+
+    public void setMaPhuong(String maPhuong) {
+        this.maPhuong = maPhuong;
+    }
+
+    public Integer getTrongLuong() {
+        return trongLuong;
+    }
+
+    public void setTrongLuong(Integer trongLuong) {
+        this.trongLuong = trongLuong;
+    }
+
+    public Integer getChieuDai() {
+        return chieuDai;
+    }
+
+    public void setChieuDai(Integer chieuDai) {
+        this.chieuDai = chieuDai;
+    }
+
+    public Integer getChieuRong() {
+        return chieuRong;
+    }
+
+    public void setChieuRong(Integer chieuRong) {
+        this.chieuRong = chieuRong;
+    }
+
+    public Integer getChieuCao() {
+        return chieuCao;
+    }
+
+    public void setChieuCao(Integer chieuCao) {
+        this.chieuCao = chieuCao;
+    }
+
+    public BigDecimal getPhiVanChuyen() {
+        return phiVanChuyen;
+    }
+
+    public void setPhiVanChuyen(BigDecimal phiVanChuyen) {
+        this.phiVanChuyen = phiVanChuyen;
     }
 
     public void setId(Integer id) {

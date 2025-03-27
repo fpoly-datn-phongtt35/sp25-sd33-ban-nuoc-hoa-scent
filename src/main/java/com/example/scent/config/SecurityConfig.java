@@ -53,7 +53,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/add","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
 
-                        .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**").permitAll()
+                        .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","/all/dia-chi/get-tinh-thanh","/rest/don-hang/importData").permitAll()
+                        .requestMatchers("/all/dia-chi/get-tinh-thanh","/all/dia-chi/tinh-phi-van-chuyen","/all/dia-chi/get-phuong-xa/**","/all/dia-chi/get-quan-huyen/**").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
 //                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()

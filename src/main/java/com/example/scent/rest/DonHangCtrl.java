@@ -4,11 +4,15 @@ import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.dto.donhangDTOID;
 import com.example.scent.dto.donhangDetailDTO;
-import com.example.scent.entity.DonHang;
+import com.example.scent.entity.*;
 
-import com.example.scent.entity.TaiKhoan;
+import com.example.scent.repo.PhuongInterface;
+import com.example.scent.repo.QuanInterface;
+import com.example.scent.repo.TinhInterface;
+import com.example.scent.service.DiaChiApi;
 import com.example.scent.service.DonHangSv;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,12 @@ import java.util.Map;
 public class DonHangCtrl {
     final
     DonHangSv dhs;
+    @Autowired
+    TinhInterface tinhInterface;
+    @Autowired
+    QuanInterface quanInterface;
+    @Autowired
+    PhuongInterface phuongInterface;
 
     public DonHangCtrl(DonHangSv dhs) {
         this.dhs = dhs;
@@ -120,8 +130,13 @@ public class DonHangCtrl {
 
     @PostMapping
     public ResponseEntity<DonHang> createOrder(@RequestBody DonHangDTO orderRequest) {
-        DonHang createdOrder = dhs.createOrder(orderRequest);
-        return ResponseEntity.ok(createdOrder);
+        try{
+            DonHang createdOrder = dhs.createOrder(orderRequest);
+            return ResponseEntity.ok(createdOrder);
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
     }
     @GetMapping("/page")
     public ResponseEntity<List<DonHang>> getDonHangs(
@@ -172,5 +187,18 @@ public class DonHangCtrl {
         }
         return ResponseEntity.ok(donHangs);
     }
+    @PostMapping("/importData")
+    public ResponseEntity<String> importData() {
+
+            try {
+                // Gọi phương thức importData từ service
+                dhs.importData();
+                return ResponseEntity.ok("Data imported successfully.");
+            } catch (Exception e) {
+                // In lỗi vào log nếu có
+                e.printStackTrace();
+                return ResponseEntity.status(500).body("Failed to import data.");
+            }
+        }
 
 }

@@ -77,6 +77,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.13</version> <!-- Cập nhật phiên bản nếu cần -->
+        </dependency>
+
         <!--api làm việc với jwt, định nghĩa interface và kiểu dữ liệu-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
