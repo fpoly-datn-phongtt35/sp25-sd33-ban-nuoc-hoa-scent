@@ -22,4 +22,7 @@ export class SpctService {
     const url = `${this.urlAdd}`;
     return this.http.post<any>(url, spct);
   }
+  updateSpctOnAdmin(spct:any):Observable<any>{
+    return this.http.put<any>(`${this.apiUrl}/update`,spct);
+  }
 }

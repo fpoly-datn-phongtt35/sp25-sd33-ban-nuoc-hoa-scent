@@ -4,6 +4,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { AddSpctComponent } from '../add-spct/add-spct.component'; // Import modal AddSpctComponent
 import { CommonModule } from '@angular/common';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { EditSpctComponent } from '../edit-spct/edit-spct.component';
 
 @Component({
   selector: 'app-spct',
@@ -17,11 +18,11 @@ export class SpctComponent implements OnInit {
   @Input() productId: number | null = null; // ✅ Nhận ID sản phẩm
   @Output() closeSpct = new EventEmitter<void>(); // ✅ Tạo sự kiện để báo về cha
   spct: any[] = [];
-
+  spctUpdate:any[]=[];
   constructor(
     private spctService: SpctService,
     private modalService: NgbModal // Thêm modalService
-    ,private cdr: ChangeDetectorRef
+    ,private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -56,6 +57,18 @@ export class SpctComponent implements OnInit {
 this.loadSpct();    });
   }
 
+  openUpdateSpctModal(spct:any):void{
+    const modalRef = this.modalService.open(EditSpctComponent, { backdrop: 'static', keyboard: false })
+    modalRef.componentInstance.spctdata = spct; // Truyền productId vào modal
+
+    console.log('🎉 IdSpIdSp:', spct);
+
+    modalRef.componentInstance.customerUpdated.subscribe((newSpct: any) => {
+      console.log('🎉 Spct mới nhận được:', newSpct);
+
+      // ✅ Thêm voucher mới vào đầu danh sách mà không cần load lại trang
+this.loadSpct();    });
+  }
 
   closeDetail() {
     this.closeSpct.emit(); // 📌 Gửi sự kiện về component cha

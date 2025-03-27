@@ -23,6 +23,7 @@
         <th>Dung tích</th>
         <th>Đơn giá</th>
         <th>Số lượng tồn kho</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -32,6 +33,13 @@
         <td>{{ sp.dungTich }} ml</td>
         <td>{{ sp.donGia }} VNĐ</td>
         <td>{{ sp.soLuongTonKho }}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateSpctModal(sp)">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>
