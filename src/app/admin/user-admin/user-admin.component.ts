@@ -30,7 +30,7 @@ export class UserAdminComponent {
   loadAccounts(): void {
     console.log('📌 Gọi API với:', this.page, this.size, this.searchTerm);
 
-    this.accountService.getAccounts(this.searchTerm, this.page, this.size).subscribe({
+    this.accountService.getStaffAccounts(this.searchTerm, this.page, this.size).subscribe({
       next: (response) => {
         console.log('✅ API response:', response);
         this.accounts = response.content || [];

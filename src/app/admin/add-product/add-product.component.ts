@@ -2,7 +2,6 @@ import { DanhMucService } from './../../service/danhmuc.service';
 import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit } from '@angular/core';
 import { ReactiveFormsModule,FormBuilder, FormGroup, Validators,FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { CustomerService } from '../../service/customer.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {SanPhamService} from '../../service/product.service';
@@ -30,7 +29,6 @@ export class AddProductComponent implements OnInit{
     previewUrls: string[] = [];
   constructor(
     private fb: FormBuilder,
-    private customerService: CustomerService,
     private danhMucService: DanhMucService,
     public activeModal: NgbActiveModal,
     private cdr: ChangeDetectorRef,
