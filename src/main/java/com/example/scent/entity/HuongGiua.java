@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,6 +24,7 @@ public class HuongGiua {
     @Column(name = "id")
     private Integer id;
     @Column(name = "mota")
+    @JsonProperty("moTaHuongGiua") // Bắt buộc thêm dòng này
     private String moTaHuongGiua;
 
 
@@ -38,9 +40,10 @@ public class HuongGiua {
         return moTaHuongGiua;
     }
 
-    public void setMoTaHuongGiua(String motaHuongGiua) {
+    public void setMoTaHuongGiua(String moTaHuongGiua) {
         this.moTaHuongGiua = moTaHuongGiua;
     }
+
 
 
 }

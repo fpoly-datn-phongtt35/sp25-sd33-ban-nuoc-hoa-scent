@@ -3,7 +3,7 @@ package com.example.scent.repo;
 import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
-
+import com.example.scent.dto.SanPhammDTO;
 import com.example.scent.entity.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,10 +52,10 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    hd.mota as moTaHuongDau,\n" +
             "    hg.mota as moTaHuongGiua,\n" +
             "    hc.mota as moTaHuongCuoi,\n" +
-            "    STRING_AGG(ha.link, ', ') as imageURL\n" +  // Dùng STRING_AGG thay cho GROUP_CONCAT
+            "    ha.link as imageURL\n" +
             "from \n" +
             "    san_pham sp\n" +
-            "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +  // Kết hợp với bảng hình ảnh
+            "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +
             "left join \n" +
             "    spct spct on sp.id = spct.id_san_pham\n" +
             "left join \n" +
@@ -69,12 +69,8 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "left join \n" +
             "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
             "where\n" +
-            "    sp.id = :idSanPham\n" +
-            "GROUP BY\n" +
-            "    sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich,\n" +
-            "    th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota\n", nativeQuery = true)
+            "    sp.id = :idSanPham\n ", nativeQuery = true)
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
-
 
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
@@ -88,42 +84,51 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.huongCuoi hc " +
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi")
     Page<SanPhamInfoDTO> findAllProductsWithImages(Pageable pageable);
+    //
+    @Query("""
+    SELECT new com.example.scent.dto.SanPhammDTO(
+        sp.idSanPham,
+        sp.tenSanPham,
+        MIN(ha.link),
+        th.tenThuongHieu,
+        dm.tenDanhMuc,
+        hd.moTaHuongDau,
+        hg.moTaHuongGiua,
+        hc.moTaHuongCuoi
+    )
+    FROM SanPham sp
+   
+    JOIN sp.hinhAnhs ha
+    JOIN sp.thuongHieu th
+    JOIN sp.huongDau hd
+    JOIN sp.huongGiua hg
+    JOIN sp.danhMuc dm
+    JOIN sp.huongCuoi hc
+    WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc,
+             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi
+""")
+    Page<SanPhammDTO> searchAllFields(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query(value = "select\n" +
-            "    sp.id as idSanPham,\n" +
-            "    sp.ten as tenSanPham,\n" +
-            "    sp.mo_ta as moTaSanPham,\n" +
-            "    spct.id as idSpct,\n" +
-            "    spct.don_gia as donGia,\n" +
-            "    spct.so_luong_ton_kho as soLuongTonKho,\n" +
-            "    spct.dung_tich as dungTich,\n" +
-            "    th.ten_thuong_hieu as tenThuongHieu,\n" +
-            "    dm.ten_danh_muc as tenDanhMuc,\n" +
-            "    hd.mota as moTaHuongDau,\n" +
-            "    hg.mota as moTaHuongGiua,\n" +
-            "    hc.mota as moTaHuongCuoi,\n" +
-            "    STRING_AGG(ha.link, ', ') as imageURL\n" +  // Dùng STRING_AGG thay cho GROUP_CONCAT
-            "from \n" +
-            "    san_pham sp\n" +
-            "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +  // Kết hợp với bảng hình ảnh
-            "left join \n" +
-            "    spct spct on sp.id = spct.id_san_pham\n" +
-            "left join \n" +
-            "    thuong_hieu th on sp.id_thuong_hieu = th.id\n" +
-            "left join \n" +
-            "    danh_muc dm on sp.id_danh_muc = dm.id\n" +
-            "left join \n" +
-            "    huong_dau hd on sp.id_huong_dau = hd.id\n" +
-            "left join \n" +
-            "    huong_giua hg on sp.id_huong_giua = hg.id\n" +
-            "left join \n" +
-            "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
 
-            "GROUP BY\n" +
-            "    sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich,\n" +
-            "    th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota\n" +
-            "ORDER BY spct.don_gia DESC", nativeQuery = true)
-    List<SanPhamDto> findAllProductsWithImagesSorted();
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.huongDau hd " +
+            "JOIN sp.huongGiua hg " +
+            "JOIN sp.huongCuoi hc " +
+            "JOIN sp.danhMuc dm " +
+            "JOIN sp.hinhAnhs ha " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
+            "ORDER BY MIN(spct.donGia) DESC")
+    List<SanPhamInfoDTO> findAllProductsWithImagesSorted();
 
 
     @Query(value = "select * from san_pham where lower(ten) like lower(CONCAT('%', :tenSanPham, '%'))", nativeQuery = true)

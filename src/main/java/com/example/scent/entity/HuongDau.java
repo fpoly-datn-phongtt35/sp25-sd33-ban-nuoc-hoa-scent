@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,8 +26,6 @@ public class HuongDau {
     private Integer id;
     @Column(name = "mota")
     private String moTaHuongDau;
-
-
     public Integer getId() {
         return id;
     }
