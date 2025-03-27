@@ -43,7 +43,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(r -> r
                         /*ko yêu cầu xác thực cho 2 request này (ko chỉ phục vụ cho mục đích test, mà còn vì trong thực tế
                         yêu cầu xác thực mới cho đăng ký hay đăng nhập là ngu*/
-                        .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login","rest/tai-khoan/getAll","rest/tai-khoan/page","rest/tai-khoan/update","rest/tai-khoan/del/**").permitAll()
+                        .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login","rest/tai-khoan/getAll"
+                                ,"rest/tai-khoan/page","rest/tai-khoan/update","rest/tai-khoan/del/**"
+                        ,"rest/tai-khoan/get-staff-accounts","rest/tai-khoan/get-user-accounts").permitAll()
                         .requestMatchers("/rest/danh-muc/getAll").permitAll()
                         .requestMatchers("rest/thuong-hieu/getAll","rest/thuong-hieu/add").permitAll()
                         .requestMatchers("rest/huong-dau/add","rest/huong-giua/add","rest/huong-cuoi/add").permitAll()
@@ -60,7 +62,11 @@ public class SecurityConfig {
                         .requestMatchers("/all/dia-chi/get-tinh-thanh","/all/dia-chi/tinh-phi-van-chuyen","/all/dia-chi/get-phuong-xa/**","/all/dia-chi/get-quan-huyen/**").permitAll()
 
                         .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","rest/san-pham/search-product-on-admin","/rest/san-pham/add","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
+
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add").permitAll()
+
+
+                        .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
 
 //                         // // // // // // // // // // // // // // // // // // // //
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()

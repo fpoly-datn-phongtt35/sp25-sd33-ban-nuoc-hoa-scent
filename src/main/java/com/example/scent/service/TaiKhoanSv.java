@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -112,5 +113,18 @@ public class TaiKhoanSv implements UserDetailsService {
         return tki.findAll(pageable);
     }public Page<TaiKhoan> searchByTerm(String searchTerm, Pageable pageable) {
         return tki.findBySearchTerm(searchTerm, pageable);
+    }
+
+    public Page<TaiKhoan> getUserAccounts(
+        String keyword, int page, int size) {
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+            return tki.searchByRoleAndKeyword("USER", keyword, pageable);
+    }
+    public Page<TaiKhoan> getStaffAccounts(
+            String keyword, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return tki.searchByRoleAndKeyword("STAFF", keyword, pageable);
     }
 }

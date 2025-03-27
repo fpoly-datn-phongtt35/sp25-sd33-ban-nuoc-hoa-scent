@@ -3,13 +3,20 @@ package com.example.scent.dto;
 import java.math.BigDecimal;
 
 public class SpctDTO {
-
+    private Integer idSpct;
     private BigDecimal donGia;
     private Integer soLuongTonKho;
     private Integer dungTich;
     private Integer idSanPham; // chỉ cần ID sản phẩm
 
     // Getter và Setter cho donGia
+    public Integer getIdSpct() {
+        return idSpct;
+    }
+
+    public void setIdSpct(Integer idSpct) {
+        this.idSpct = idSpct;
+    }
     public BigDecimal getDonGia() {
         return donGia;
     }

@@ -6,14 +6,9 @@ import com.example.scent.dto.donhangDTOID;
 import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.*;
 
-import com.example.scent.repo.PhuongInterface;
-import com.example.scent.repo.QuanInterface;
-import com.example.scent.repo.TinhInterface;
-import com.example.scent.service.DiaChiApi;
 import com.example.scent.service.DonHangSv;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,12 +26,7 @@ import java.util.Map;
 public class DonHangCtrl {
     final
     DonHangSv dhs;
-    @Autowired
-    TinhInterface tinhInterface;
-    @Autowired
-    QuanInterface quanInterface;
-    @Autowired
-    PhuongInterface phuongInterface;
+
 
     public DonHangCtrl(DonHangSv dhs) {
         this.dhs = dhs;
@@ -187,18 +177,7 @@ public class DonHangCtrl {
         }
         return ResponseEntity.ok(donHangs);
     }
-    @PostMapping("/importData")
-    public ResponseEntity<String> importData() {
 
-            try {
-                // Gọi phương thức importData từ service
-                dhs.importData();
-                return ResponseEntity.ok("Data imported successfully.");
-            } catch (Exception e) {
-                // In lỗi vào log nếu có
-                e.printStackTrace();
-                return ResponseEntity.status(500).body("Failed to import data.");
-            }
-        }
+
 
 }

@@ -28,5 +28,15 @@ public interface TaiKhoanInterface extends JpaRepository<TaiKhoan, Integer>{
             "OR u.sdt LIKE %:searchTerm% " +
             "OR u.tenDangNhap LIKE %:searchTerm%")
     Page<TaiKhoan> findBySearchTerm(@Param("searchTerm") String searchTerm, Pageable pageable);
+    @Query("SELECT tk FROM TaiKhoan tk " +
+            "WHERE tk.vaiTro = :role " +
+            "AND (LOWER(tk.hoTen) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR LOWER(tk.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR LOWER(tk.tenDangNhap) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR LOWER(tk.sdt) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<TaiKhoan> searchByRoleAndKeyword(
+            @Param("role") String role,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 
 }

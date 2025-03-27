@@ -5,10 +5,6 @@ import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 
 import com.example.scent.service.SpctSv;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @CrossOrigin("*")
 @RestController
@@ -51,20 +45,17 @@ public class SpctCtrl {
         return spcts.add(spct);
     }
     @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody Spct spct, BindingResult result) {
-
-        if (result.hasErrors()) {
-
-            Map<String, String> errorsMap = new HashMap<>();
-
-            for (FieldError error : result.getFieldErrors()) {
-                errorsMap.put(error.getField(), error.getDefaultMessage());
-            }
-            return ResponseEntity.badRequest().body(errorsMap);
-
-        }
-        spcts.update(spct);
-        return ResponseEntity.ok("ok");
+    public Spct update(@RequestBody SpctDTO spctDTO) {
+        System.out.println(spctDTO);
+        Spct spct = new Spct();
+        spct.setIdSpct(spctDTO.getIdSpct());
+        spct.setDonGia(spctDTO.getDonGia());
+        spct.setSoLuongTonKho(spctDTO.getSoLuongTonKho());
+        spct.setDungTich(spctDTO.getDungTich());
+        SanPham sanPham = new SanPham();
+        sanPham.setIdSanPham(spctDTO.getIdSanPham());
+        spct.setSanPham(sanPham);spcts.add(spct);
+        return spcts.update(spct);
     }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { spcts.delete(id);

@@ -5,6 +5,7 @@ import com.example.scent.service.TaiKhoanSv;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -56,6 +57,23 @@ public class TaiKhoanCtrl {
         Pageable pageable = PageRequest.of(page, size);
         return tks.searchByTerm(searchTerm,pageable);
     }
+    @GetMapping("/get-staff-accounts")
+    public ResponseEntity<Page<TaiKhoan>> getStaffAccounts(
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
 
+        Page<TaiKhoan> result = tks.getStaffAccounts( keyword, page, size);
+        return ResponseEntity.ok(result);
+    }
+    @GetMapping("/get-user-accounts")
+    public ResponseEntity<Page<TaiKhoan>> getUserAccounts(
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+
+        Page<TaiKhoan> result = tks.getUserAccounts( keyword, page, size);
+        return ResponseEntity.ok(result);
+    }
 }
 

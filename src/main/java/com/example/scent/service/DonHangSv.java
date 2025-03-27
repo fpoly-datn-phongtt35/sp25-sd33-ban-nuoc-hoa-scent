@@ -33,12 +33,6 @@ public class DonHangSv {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Autowired
-    TinhInterface tinhInterface;
-    @Autowired
-    QuanInterface quanInterface;
-    @Autowired
-    PhuongInterface phuongInterface;
 
     @Autowired
     private DiaChiApi diaChiApi;
@@ -107,6 +101,7 @@ public class DonHangSv {
         TaiKhoan taiKhoan = tki.findById(orderRequest.getIdTaiKhoan())
                 .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
 
+
         // Lấy thông tin từ API GHN thay vì cơ sở dữ liệu
         Map<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
         if (!tinhList.containsKey(orderRequest.getMaTinh())) {
@@ -129,6 +124,9 @@ public class DonHangSv {
         if (phiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển không hợp lệ!");
         }
+
+            LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
+
         BigDecimal tongTien = BigDecimal.ZERO;
 
         List<ChiTietDonHang> chiTietList = new ArrayList<>();
@@ -359,54 +357,54 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         return donHangDTO;
     }).collect(Collectors.toList());
 }
-    @Transactional
-    public void savePhuongToDB(String maPhuong, String tenPhuong) {
-        // Kiểm tra xem phường đã có trong cơ sở dữ liệu chưa
-        Phuong existingPhuong = phuongInterface.findByMaPhuong(maPhuong).orElse(null);
-
-        if (existingPhuong == null) {
-            // Phường chưa có, lưu mới
-            Phuong newPhuong = new Phuong();
-            newPhuong.setMaPhuong(maPhuong);
-            newPhuong.setTenPhuong(tenPhuong);  // Lấy tên phường từ API GHN
-            phuongInterface.save(newPhuong);  // Lưu vào cơ sở dữ liệu
-        } else {
-            // Nếu phường đã tồn tại, chỉ cần làm mới thông tin nếu cần
-            entityManager.refresh(existingPhuong);  // Làm mới đối tượng phường từ cơ sở dữ liệu
-        }
-    }
-    @Transactional
-    public void saveQuanToDB(Integer maQuan, String tenQuan) {
-        // Kiểm tra xem quận đã có trong cơ sở dữ liệu chưa
-        quan existingQuan = quanInterface.findByMaQuan(maQuan).orElse(null);
-
-        if (existingQuan == null) {
-            // Quận chưa có, lưu mới
-            quan newQuan = new quan();
-            newQuan.setMaQuan(maQuan);
-            newQuan.setTenQuan(tenQuan);  // Lấy tên quận từ API GHN
-            quanInterface.save(newQuan);  // Lưu vào cơ sở dữ liệu
-        } else {
-            // Nếu quận đã tồn tại, chỉ cần làm mới thông tin nếu cần
-            entityManager.refresh(existingQuan);  // Làm mới đối tượng quận từ cơ sở dữ liệu
-        }
-    }
-    @Transactional
-    public void saveTinhToDB(Integer maTinh, String tenTinh) {
-        // Kiểm tra xem tỉnh đã có trong cơ sở dữ liệu chưa
-        tinh existingTinh = tinhInterface.findByMaTinh(maTinh).orElse(null);
-
-        if (existingTinh == null) {
-            // Tỉnh chưa có, lưu mới
-            tinh newTinh = new tinh();
-            newTinh.setMaTinh(maTinh);
-            newTinh.setTenTinh(tenTinh);  // Lấy tên tỉnh từ API GHN
-            tinhInterface.save(newTinh);  // Lưu vào cơ sở dữ liệu
-        } else {
-            // Nếu tỉnh đã tồn tại, chỉ cần làm mới thông tin nếu cần
-            entityManager.refresh(existingTinh);  // Làm mới đối tượng tỉnh từ cơ sở dữ liệu
-        }
-    }
+//    @Transactional
+//    public void savePhuongToDB(String maPhuong, String tenPhuong) {
+//        // Kiểm tra xem phường đã có trong cơ sở dữ liệu chưa
+//        Phuong existingPhuong = phuongInterface.findByMaPhuong(maPhuong).orElse(null);
+//
+//        if (existingPhuong == null) {
+//            // Phường chưa có, lưu mới
+//            Phuong newPhuong = new Phuong();
+//            newPhuong.setMaPhuong(maPhuong);
+//            newPhuong.setTenPhuong(tenPhuong);  // Lấy tên phường từ API GHN
+//            phuongInterface.save(newPhuong);  // Lưu vào cơ sở dữ liệu
+//        } else {
+//            // Nếu phường đã tồn tại, chỉ cần làm mới thông tin nếu cần
+//            entityManager.refresh(existingPhuong);  // Làm mới đối tượng phường từ cơ sở dữ liệu
+//        }
+//    }
+//    @Transactional
+//    public void saveQuanToDB(Integer maQuan, String tenQuan) {
+//        // Kiểm tra xem quận đã có trong cơ sở dữ liệu chưa
+//        quan existingQuan = quanInterface.findByMaQuan(maQuan).orElse(null);
+//
+//        if (existingQuan == null) {
+//            // Quận chưa có, lưu mới
+//            quan newQuan = new quan();
+//            newQuan.setMaQuan(maQuan);
+//            newQuan.setTenQuan(tenQuan);  // Lấy tên quận từ API GHN
+//            quanInterface.save(newQuan);  // Lưu vào cơ sở dữ liệu
+//        } else {
+//            // Nếu quận đã tồn tại, chỉ cần làm mới thông tin nếu cần
+//            entityManager.refresh(existingQuan);  // Làm mới đối tượng quận từ cơ sở dữ liệu
+//        }
+//    }
+//    @Transactional
+//    public void saveTinhToDB(Integer maTinh, String tenTinh) {
+//        // Kiểm tra xem tỉnh đã có trong cơ sở dữ liệu chưa
+//        tinh existingTinh = tinhInterface.findByMaTinh(maTinh).orElse(null);
+//
+//        if (existingTinh == null) {
+//            // Tỉnh chưa có, lưu mới
+//            tinh newTinh = new tinh();
+//            newTinh.setMaTinh(maTinh);
+//            newTinh.setTenTinh(tenTinh);  // Lấy tên tỉnh từ API GHN
+//            tinhInterface.save(newTinh);  // Lưu vào cơ sở dữ liệu
+//        } else {
+//            // Nếu tỉnh đã tồn tại, chỉ cần làm mới thông tin nếu cần
+//            entityManager.refresh(existingTinh);  // Làm mới đối tượng tỉnh từ cơ sở dữ liệu
+//        }
+//    }
 
     public BigDecimal calculateShippingFee(int maTinh, int maQuan, String maPhuong, int soLuongSanPham) throws Exception {
         // Tạo đối tượng request cho API GHN
@@ -427,85 +425,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         }
 
         return phiVanChuyen;
-    }
-    @Transactional
-    public void importData() throws Exception {
-        // Lấy danh sách tỉnh từ API GHN
-        HashMap<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
-        System.out.println("DS tinh : " + tinhList); // Log danh sách tỉnh
-        if (tinhList == null || tinhList.isEmpty()) {
-            System.out.println("Dữ liệu Tỉnh không có hoặc bị lỗi!");
-        }
-        for (Map.Entry<Integer, String> entry : tinhList.entrySet()) {
-            tinh tinhEntity = tinhInterface.findById(entry.getKey()).orElse(null);
-            if (tinhEntity == null) { // Nếu tỉnh chưa tồn tại thì lưu vào DB
-                tinhEntity = new tinh();
-                tinhEntity.setMaTinh(entry.getKey());
-                tinhEntity.setTenTinh(entry.getValue());
-                try {
-                    tinhInterface.save(tinhEntity);  // Lưu vào DB
-                    System.out.println("Lưu Tỉnh vào DB: " + entry.getKey() + " - " + entry.getValue());
-                } catch (Exception e) {
-                    log.error("Failed to save Tinh with ID: {}", entry.getKey(), e);
-                }
-            } else {
-                System.out.println("Tỉnh đã tồn tại trong DB: " + entry.getKey() + " - " + entry.getValue());
-            }
-        }
-
-        // Lấy danh sách quận từ API GHN
-        for (Map.Entry<Integer, String> entry : tinhList.entrySet()) {
-            HashMap<String, String> quanList = DiaChiApi.callGetQuanHuyenAPI(entry.getKey());
-            System.out.println("DS QUAN : " + quanList); // Log danh sách quận
-            for (Map.Entry<String, String> quanEntry : quanList.entrySet()) {
-                quan quanEntity = new quan();
-                quanEntity.setMaQuan(Integer.parseInt(quanEntry.getKey())); // Chuyển String thành Integer
-                quanEntity.setTenQuan(quanEntry.getValue());
-
-                // Tìm Tỉnh từ ID
-                tinh tinhEntity = tinhInterface.findById(entry.getKey()).orElse(null);
-                if (tinhEntity != null) {
-                    quanEntity.setTinh(tinhEntity);
-                    try {
-                        quanInterface.save(quanEntity); // Lưu vào DB
-                        System.out.println("Lưu Quận vào DB: " + quanEntry.getKey() + " - " + quanEntry.getValue());
-                    } catch (Exception e) {
-                        log.error("Failed to save Quan with ID: {}", quanEntity.getMaQuan(), e);
-                    }
-                } else {
-                    log.error("Tinh with ID {} not found", entry.getKey());
-                }
-            }
-        }
-
-        // Lấy danh sách phường từ API GHN
-        for (Map.Entry<Integer, String> entry : tinhList.entrySet()) {
-            HashMap<String, String> phuongList = DiaChiApi.callGetPhuongXaAPI(entry.getKey());
-            System.out.println("DS phuong : " + phuongList); // Log danh sách phường
-            if (phuongList != null && !phuongList.isEmpty()) {
-                for (Map.Entry<String, String> phuongEntry : phuongList.entrySet()) {
-                    Phuong phuongEntity = new Phuong();
-                    phuongEntity.setMaPhuong(phuongEntry.getKey());
-                    phuongEntity.setTenPhuong(phuongEntry.getValue());
-
-                    // Tìm Quận từ ID
-                    quan quanEntity = quanInterface.findByMaQuan(Integer.parseInt(phuongEntry.getKey())).orElse(null);
-                    if (quanEntity != null) {
-                        phuongEntity.setQuan(quanEntity);
-                        try {
-                            phuongInterface.save(phuongEntity); // Lưu vào DB
-                            System.out.println("Lưu Phường vào DB: " + phuongEntry.getKey() + " - " + phuongEntry.getValue());
-                        } catch (Exception e) {
-                            log.error("Failed to save Phuong with ID: {}", phuongEntity.getMaPhuong(), e);
-                        }
-                    } else {
-                        log.error("Quan with ID {} not found", phuongEntry.getKey());
-                    }
-                }
-            } else {
-                log.warn("No phuong xa found for district ID: {}", entry.getKey());
-            }
-        }
     }
 
 
