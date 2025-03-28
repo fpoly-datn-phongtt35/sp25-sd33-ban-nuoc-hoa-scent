@@ -14,11 +14,11 @@ export class DiaChiService {
     return this.http.get<any>('http://localhost:8080/rest/dia-chi/get-tinh-thanh');
   }
 
-  getQuanHuyen(idTinh: number): Observable<any> {
+  getQuanHuyen(idTinh: string): Observable<any> {
     return this.http.get<any>(`http://localhost:8080/rest/dia-chi/get-quan-huyen/${idTinh}`);
   }
 
-  getPhuongXa(idHuyen: number): Observable<any> {
+  getPhuongXa(idHuyen: string): Observable<any> {
     return this.http.get<any>(`http://localhost:8080/rest/dia-chi/get-phuong-xa/${idHuyen}`);
   }
 

@@ -26,9 +26,10 @@ interface Order {
 }
 
 interface DiaChiDonVi {
-  id: number;
+  id: string; // ✅ từ number → string
   name: string;
 }
+
 
 @Component({
   selector: 'app-order',
@@ -67,6 +68,7 @@ export class OrderComponent implements OnInit {
   searchTinh = '';
   searchHuyen = '';
   searchXa = '';
+  shippingDiscount = 0; // Giảm giá ship theo số lượng
 
   constructor(
     private cartService: CartService,
@@ -122,10 +124,11 @@ export class OrderComponent implements OnInit {
 
   private mapDiaChiObjectToArray(resultObj: any): DiaChiDonVi[] {
     return Object.entries(resultObj).map(([id, name]) => ({
-      id: Number(id),
+      id: id, // ❗️Không ép Number!
       name: name as string,
     }));
   }
+
   isSelected(item: DiaChiDonVi): boolean {
     if (this.currentTab === 'tinh') return this.selectedTinh?.id === item.id;
     if (this.currentTab === 'huyen') return this.selectedHuyen?.id === item.id;
@@ -162,22 +165,33 @@ export class OrderComponent implements OnInit {
       this.selectedHuyen = this.selectedXa = null;
       this.fullAddress = item.name;
       this.orderData.diaChiGiaoHang = '';
-      this.layQuanHuyen(item.id);
-      this.selectTab('huyen');
+
+      if (item.id) {
+        this.layQuanHuyen(item.id); // ✅ Chỉ gọi nếu có id tỉnh
+        this.selectTab('huyen');
+      }
+
     } else if (this.currentTab === 'huyen') {
+      if (!this.selectedTinh) return; // ✅ Phòng lỗi chưa chọn tỉnh
       this.selectedHuyen = item;
       this.selectedXa = null;
       this.fullAddress = `${item.name}, ${this.selectedTinh?.name}`;
-      this.layPhuongXa(item.id);
-      this.selectTab('xa');
+
+      if (item.id) {
+        this.layPhuongXa(item.id); // ✅ Chỉ gọi nếu có id huyện
+        this.selectTab('xa');
+      }
+
     } else if (this.currentTab === 'xa') {
+      if (!this.selectedHuyen || !this.selectedTinh) return; // ✅ Chặn nếu thiếu huyện/tỉnh
       this.selectedXa = item;
       this.fullAddress = `${item.name}, ${this.selectedHuyen?.name}, ${this.selectedTinh?.name}`;
       this.orderData.diaChiGiaoHang = this.fullAddress;
-      this.showAddressPicker = false; // ✅ Tự động ẩn sau khi chọn xã
+      this.showAddressPicker = false;
       this.tinhPhiVanChuyen();
     }
   }
+
 
   toggleAddressPicker() {
     this.showAddressPicker = !this.showAddressPicker;
@@ -191,39 +205,122 @@ export class OrderComponent implements OnInit {
     });
   }
 
-  layQuanHuyen(idTinh: number) {
+  layQuanHuyen(idTinh: string) {
     this.diaChiService.getQuanHuyen(idTinh).subscribe((res) => {
       this.danhSachHuyen = this.mapDiaChiObjectToArray(res.result);
     });
   }
 
-  layPhuongXa(idHuyen: number) {
+  layPhuongXa(idHuyen: string) {
     this.diaChiService.getPhuongXa(idHuyen).subscribe((res) => {
       this.danhSachXa = this.mapDiaChiObjectToArray(res.result);
     });
   }
 
+  getQuyDoiKichThuocVaCanNang(soLuong: number) {
+    const weight = soLuong * 150; // 150g mỗi chai 100ml, đã bao gồm hộp
+
+    let length = 12;
+    let width = 6;
+    let height = 6;
+
+    if (soLuong <= 1) {
+      length = 12;
+      width = 6;
+      height = 6;
+    } else if (soLuong <= 4) {
+      length = 15;
+      width = 10;
+      height = 7;
+    } else if (soLuong <= 8) {
+      length = 20;
+      width = 12;
+      height = 8;
+    } else if (soLuong <= 12) {
+      length = 22;
+      width = 14;
+      height = 10;
+    } else if (soLuong <= 20) {
+      length = 26;
+      width = 18;
+      height = 12;
+    } else {
+      const multiplier = Math.ceil(soLuong / 20);
+      length = 26 * multiplier;
+      width = 18 * multiplier;
+      height = 12 * multiplier;
+    }
+
+    const volWeight = (length * width * height) / 5;
+    const usedWeight = Math.max(weight, volWeight);
+
+    // ✅ Giảm phí ship theo số lượng
+    let discountRate = 0;
+    if (soLuong >= 10) discountRate = 0.2;
+    else if (soLuong >= 6) discountRate = 0.15;
+    else if (soLuong >= 3) discountRate = 0.1;
+
+    console.log(`📦 ${soLuong} chai | Thực: ${weight}g | Quy đổi: ${volWeight.toFixed(0)}g → Dùng: ${usedWeight.toFixed(0)}g`);
+    console.log(`📐 Kích thước: ${length} x ${width} x ${height} cm`);
+    console.log(`🎁 Giảm phí ship: ${discountRate * 100}%`);
+
+    return {
+      weight: Math.ceil(usedWeight),
+      length,
+      width,
+      height,
+      discountRate // ✅ Trả thêm giá trị này ra
+    };
+  }
+
+
+
+
   tinhPhiVanChuyen() {
     const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
+    console.log('📦 Số lượng sản phẩm:', soLuong);
+    const { weight, length, width, height, discountRate } = this.getQuyDoiKichThuocVaCanNang(soLuong);
+
+    // ✅ Kiểm tra địa chỉ đầy đủ
+    if (!this.selectedTinh || !this.selectedHuyen || !this.selectedXa) {
+      console.warn('⚠️ Chưa chọn đầy đủ Tỉnh, Huyện, Xã => Không tính phí vận chuyển.');
+      this.shippingFee = 0;
+      this.calculateTotals();
+      return;
+    }
+
+    // ✅ Tính kích thước & trọng lượng gói hàng
+
     const body = {
       from_district_id: 1482,
-      to_ward_code: this.selectedXa?.id || 0,
-      weight: 1482,
-      length: 1482,
-      width: 1482,
-      height: 1482,
+      to_ward_code: String(this.selectedXa?.id || ''), // ✅ dùng động
+      weight,
+      length,
+      width,
+      height,
       idMaTinh: this.selectedTinh?.id || 0,
       idQuanHuyen: this.selectedHuyen?.id || 0,
       idPhuongXa: this.selectedXa?.id || 0,
       soLuongSanPham: soLuong,
-      trungBinhCacCanh: 1482,
+      trungBinhCacCanh: Math.round((length + width + height) / 3),
     };
 
-    this.diaChiService.tinhPhiVanChuyen(body).subscribe((fee) => {
-      this.shippingFee = fee;
-      this.calculateTotals();
+
+    console.log('🚀 Gửi yêu cầu tính phí:', body);
+
+    this.diaChiService.tinhPhiVanChuyen(body).subscribe({
+      next: (fee) => {
+        const giamPhi = Math.round(fee * discountRate);
+        const finalFee = fee - giamPhi;
+
+        this.shippingDiscount = giamPhi;
+        this.shippingFee = finalFee;
+        this.calculateTotals();
+      }
     });
   }
+
+
 
   // ====================== ĐƠN HÀNG ======================
 
@@ -247,6 +344,8 @@ export class OrderComponent implements OnInit {
 
     localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
     this.calculateTotals();
+    this.tinhPhiVanChuyen(); // ✅ Gọi lại để cập nhật kích thước/khối lượng
+
   }
 
   removeProduct(index: number) {
@@ -254,7 +353,7 @@ export class OrderComponent implements OnInit {
     this.orderData.chiTietDonHangs.splice(index, 1);
     localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
     this.calculateTotals();
-
+    this.tinhPhiVanChuyen();
     if (this.selectedProducts.length === 0) {
       this.router.navigate(['/']);
     }
@@ -281,8 +380,8 @@ export class OrderComponent implements OnInit {
         quantity: Number(item.quantity),
       })),
       totalAmount: this.finalAmount,
-      maTinh: this.selectedTinh?.id || 0,
-      maQuan: this.selectedHuyen?.id || 0,
+      maTinh: String(this.selectedTinh?.id || ''),
+      maQuan: String(this.selectedHuyen?.id || ''),
       maPhuong: String(this.selectedXa?.id || ''),
     };
 

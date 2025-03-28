@@ -106,10 +106,18 @@ name="searchBox"
     <!-- Tổng tiền -->
     <div class="payment-info mb-4">
       <h5>Thông tin thanh toán</h5>
-      <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
-      <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
-      <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
-      <p class="fw-bold"><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
+      <div class="checkout-summary">
+        <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
+        <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
+        <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
+        <small *ngIf="shippingDiscount > 0" class="shipping-discount-note">
+          🔥 Bạn nhận ưu đãi giảm {{ shippingDiscount | number }}₫ phí ship!
+        </small>
+
+
+        <p><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
+      </div>
+
     </div>
 
     <button type="submit" class="btn btn-primary" [disabled]="orderForm.invalid">Đặt hàng</button>
