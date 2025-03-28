@@ -29,4 +29,5 @@ public class donhangDTOID {
         private String ghichu;
         private BigDecimal tongTien;
     private Integer trangThai;
+        private BigDecimal phiVanChuyen;
 }

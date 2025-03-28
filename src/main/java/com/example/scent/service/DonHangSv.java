@@ -330,7 +330,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         donHangDTO.setTongTien(donHang.getTongTien());
         donHangDTO.setTrangThai(donHang.getTrangThai());
         donHangDTO.setGhichu(donHang.getGhiChu());
-
+donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
         // Chuyển đổi chi tiết đơn hàng
         List<OrderItemDTOID> chiTietList = cdh.findByDonHangId(donHang.getId())
                 .stream()
