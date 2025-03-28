@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/all/dia-chi")
+@RequestMapping("/rest/dia-chi")
 public class DiaChiCtrl {
 
     @GetMapping("/get-tinh-thanh")
