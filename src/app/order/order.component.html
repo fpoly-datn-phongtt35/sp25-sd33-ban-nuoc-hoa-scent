@@ -6,62 +6,119 @@
     <h2>Thông tin giao hàng</h2>
 
     <!-- Tên người nhận -->
-    <label for="tenNguoiNhanHang">Tên người nhận:</label>
-    <input type="text" id="tenNguoiNhanHang" [(ngModel)]="orderData.tenNguoiNhanHang" name="tenNguoiNhanHang"
-      required minlength="3" #tenNguoiNhanHang="ngModel">
-    <div class="error" *ngIf="tenNguoiNhanHang.invalid && tenNguoiNhanHang.touched">
-      <span *ngIf="tenNguoiNhanHang.errors?.['required']">⚠️ Tên không được để trống!</span>
-      <span *ngIf="tenNguoiNhanHang.errors?.['minlength']">⚠️ Tên phải có ít nhất 3 ký tự!</span>
+    <div class="mb-3">
+      <label for="tenNguoiNhanHang" class="form-label">Tên người nhận:</label>
+      <input type="text" id="tenNguoiNhanHang" class="form-control" [(ngModel)]="orderData.tenNguoiNhanHang" name="tenNguoiNhanHang"
+        required minlength="3" #tenNguoiNhanHang="ngModel">
+      <div class="text-danger" *ngIf="tenNguoiNhanHang.invalid && tenNguoiNhanHang.touched">
+        <span *ngIf="tenNguoiNhanHang.errors?.['required']">⚠️ Tên không được để trống!</span>
+        <span *ngIf="tenNguoiNhanHang.errors?.['minlength']">⚠️ Tên phải có ít nhất 3 ký tự!</span>
+      </div>
     </div>
 
-    <!-- Địa chỉ giao hàng -->
-    <label for="diaChiGiaoHang">Địa chỉ giao hàng:</label>
-    <input type="text" id="diaChiGiaoHang" [(ngModel)]="orderData.diaChiGiaoHang" name="diaChiGiaoHang"
-      required minlength="5" #diaChiGiaoHang="ngModel">
-    <div class="error" *ngIf="diaChiGiaoHang.invalid && diaChiGiaoHang.touched">
-      <span *ngIf="diaChiGiaoHang.errors?.['required']">⚠️ Địa chỉ không được để trống!</span>
-      <span *ngIf="diaChiGiaoHang.errors?.['minlength']">⚠️ Địa chỉ phải có ít nhất 5 ký tự!</span>
+    <!-- Địa chỉ chi tiết -->
+    <div class="mb-3">
+      <label for="diaChiChiTiet" class="form-label">Địa chỉ chi tiết:</label>
+      <input type="text" id="diaChiChiTiet" class="form-control" [(ngModel)]="orderData.diachiChiTiet" name="diaChiChiTiet"
+        placeholder="Số nhà, ngõ, đường..." required #diaChiChiTiet="ngModel">
+      <div class="text-danger" *ngIf="diaChiChiTiet.invalid && diaChiChiTiet.touched">
+        ⚠️ Địa chỉ chi tiết không được để trống!
+      </div>
+    </div>
+
+    <!-- Thanh chọn Tỉnh / Huyện / Xã -->
+    <div class="d-flex justify-content-between align-items-center border rounded px-3 py-2 bg-light mb-2"
+    style="cursor: pointer; color: #212529;" (click)="toggleAddressPicker()">
+ <span>{{ fullAddress || 'Chọn Tỉnh/Thành phố, Quận/Huyện, Phường/Xã' }}</span>
+ <i class="fa" [ngClass]="showAddressPicker ? 'fa-eye-slash' : 'fa-eye'"></i>
+</div>
+
+
+
+
+    <!-- Khu vực chọn Tỉnh / Huyện / Xã -->
+
+    <div *ngIf="showAddressPicker" class="border rounded p-3 mb-3">
+      <!-- Thanh tìm kiếm -->
+<input
+type="text"
+class="form-control"
+placeholder="🔍 Tìm kiếm..."
+[(ngModel)]="searchValue"
+name="searchBox"
+/>
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="currentTab === 'tinh'" (click)="selectTab('tinh')">Tỉnh/Thành phố</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="currentTab === 'huyen'" [class.disabled]="!selectedTinh" (click)="selectTab('huyen')">Quận/Huyện</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="currentTab === 'xa'" [class.disabled]="!selectedHuyen" (click)="selectTab('xa')">Phường/Xã</a>
+        </li>
+      </ul>
+
+     <!-- Danh sách -->
+<div class="list-group" style="max-height: 250px; overflow-y: auto;">
+  <div
+    class="list-group-item"
+    *ngFor="let item of currentList"
+    (click)="onSelect(item)"
+    [ngClass]="{ 'active': isSelected(item) }">
+    {{ item.name }}
+  </div>
+</div>
+
     </div>
 
     <!-- Số điện thoại -->
-    <label for="sdtNguoiNhan">Số điện thoại:</label>
-    <input type="text" id="sdtNguoiNhan" [(ngModel)]="orderData.sdtNguoiNhan" name="sdtNguoiNhan"
-      required pattern="^0[0-9]{9}$" #sdtNguoiNhan="ngModel">
-    <div class="error" *ngIf="sdtNguoiNhan.invalid && sdtNguoiNhan.touched">
-      <span *ngIf="sdtNguoiNhan.errors?.['required']">⚠️ Số điện thoại không được để trống!</span>
-      <span *ngIf="sdtNguoiNhan.errors?.['pattern']">⚠️ Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0!</span>
+    <div class="mb-3">
+      <label for="sdtNguoiNhan" class="form-label">Số điện thoại:</label>
+      <input type="text" id="sdtNguoiNhan" class="form-control" [(ngModel)]="orderData.sdtNguoiNhan" name="sdtNguoiNhan"
+        required pattern="^0[0-9]{9}$" #sdtNguoiNhan="ngModel">
+      <div class="text-danger" *ngIf="sdtNguoiNhan.invalid && sdtNguoiNhan.touched">
+        <span *ngIf="sdtNguoiNhan.errors?.['required']">⚠️ Số điện thoại không được để trống!</span>
+        <span *ngIf="sdtNguoiNhan.errors?.['pattern']">⚠️ Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0!</span>
+      </div>
     </div>
 
     <!-- Phương thức thanh toán -->
-    <label for="phuongThucThanhToan">Phương thức thanh toán:</label>
-    <select id="phuongThucThanhToan" [(ngModel)]="orderData.phuongThucThanhToan" name="phuongThucThanhToan"
-      required #phuongThucThanhToan="ngModel">
-      <option value="" disabled selected>-- Chọn phương thức thanh toán --</option>
-      <option value="ck">Chuyển khoản</option>
-      <option value="tienMat">Tiền mặt</option>
-    </select>
-    <div class="error" *ngIf="phuongThucThanhToan.invalid && phuongThucThanhToan.touched">
-      <span *ngIf="phuongThucThanhToan.errors?.['required']">⚠️ Hãy chọn phương thức thanh toán!</span>
+    <div class="mb-3">
+      <label for="phuongThucThanhToan" class="form-label">Phương thức thanh toán:</label>
+      <select id="phuongThucThanhToan" class="form-select" [(ngModel)]="orderData.phuongThucThanhToan"
+              name="phuongThucThanhToan" required #phuongThucThanhToan="ngModel">
+        <option value="" disabled selected>-- Chọn phương thức thanh toán --</option>
+        <option value="ck">Chuyển khoản</option>
+        <option value="tienMat">Tiền mặt</option>
+      </select>
+      <div class="text-danger" *ngIf="phuongThucThanhToan.invalid && phuongThucThanhToan.touched">
+        ⚠️ Hãy chọn phương thức thanh toán!
+      </div>
     </div>
 
-    <label for="ghichu">Ghi chú:</label>
-    <input type="text" id="ghichu" [(ngModel)]="orderData.ghichu" name="ghichu"
-        #ghichu="ngModel">
+    <!-- Ghi chú -->
+    <div class="mb-3">
+      <label for="ghichu" class="form-label">Ghi chú:</label>
+      <input type="text" id="ghichu" class="form-control" [(ngModel)]="orderData.ghichu" name="ghichu" #ghichu="ngModel">
+    </div>
 
-        <div class="payment-info">
-  <h4>Thông tin thanh toán</h4>
-          <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
-          <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
-          <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
-          <p class="total-amount"><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
-        </div>
-    <button type="submit" [disabled]="orderForm.invalid">Đặt hàng</button>
+    <!-- Tổng tiền -->
+    <div class="payment-info mb-4">
+      <h5>Thông tin thanh toán</h5>
+      <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
+      <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
+      <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
+      <p class="fw-bold"><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
+    </div>
+
+    <button type="submit" class="btn btn-primary" [disabled]="orderForm.invalid">Đặt hàng</button>
   </form>
 
   <!-- Danh Sách Sản Phẩm Đã Chọn -->
-  <div class="order-summary">
-    <h3>Sản phẩm đã chọn</h3>
-    <table class="table">
+  <div class="order-summary mt-5">
+    <h4>Sản phẩm đã chọn</h4>
+    <table class="table table-bordered">
       <thead>
         <tr>
           <th>Ảnh</th>
@@ -77,25 +134,21 @@
           <td><img [src]="item.imageUrl" alt="Ảnh sản phẩm" width="80"></td>
           <td>{{ item.tenSanPham }}</td>
           <td>
-            <div class="quantity-buttons">
-              <button style="color: black;" (click)="updateQuantity(i, -1)">-</button>
-              <span>{{ item.quantity }}</span>
-              <button style="color: black;" (click)="updateQuantity(i, 1)">+</button>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-secondary" (click)="updateQuantity(i, -1)">-</button>
+              <button class="btn btn-sm btn-light" disabled>{{ item.quantity }}</button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="updateQuantity(i, 1)">+</button>
             </div>
           </td>
           <td>{{ item.volume }}</td>
           <td>{{ item.donGia | number }} VND</td>
           <td>
-            <button class="delete-button" (click)="removeProduct(i)">X</button>
+            <button class="btn btn-sm btn-danger" (click)="removeProduct(i)">X</button>
           </td>
         </tr>
       </tbody>
-      
     </table>
-    
-    
   </div>
-  
 </div>
 
 <app-footer></app-footer>
