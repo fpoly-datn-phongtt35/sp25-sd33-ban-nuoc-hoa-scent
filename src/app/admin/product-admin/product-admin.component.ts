@@ -4,10 +4,11 @@
   import { Component } from '@angular/core';
   import { SpctService } from '../../service/spct.service';
   import { SanPhamService } from '../../service/product.service';
-  import { ReactiveFormsModule,FormBuilder, FormGroup, Validators } from '@angular/forms';
+  import { ReactiveFormsModule,FormBuilder, FormGroup, Validators,FormsModule } from '@angular/forms';
   import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
   import { CommonModule } from '@angular/common';
   import { Router } from '@angular/router';
+  import {AddProductComponent} from '../add-product/add-product.component'
 
   @Component({
     selector: 'app-product-admin',
@@ -15,7 +16,8 @@
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    SpctComponent // ✅ Đảm bảo đã import SpctComponent vào đây
+    SpctComponent, // ✅ Đảm bảo đã import SpctComponent vào đây
+    FormsModule // Thêm FormsModule ở đây
   ],
   templateUrl: './product-admin.component.html',
   styleUrls: ['./product-admin.component.scss'],
@@ -30,7 +32,9 @@
     page: number = 0; // Trang hiện tại
     size: number = 5; // Số bản ghi mỗi trang
     totalPages: number = 20; // Tổng số trang
-    constructor(private sanPhamService: SanPhamService, private router: Router) {}
+    searchTerm: string = ''; // Từ khóa tìm kiếm
+
+    constructor(private sanPhamService: SanPhamService, private router: Router,private modalService: NgbModal) {}
 
 
     ngOnInit(): void {
@@ -39,7 +43,7 @@
 
     loadProducts() {
       console.log('📌 Gọi API với:', this.page, this.size);
-      this.sanPhamService.getSanPhamDetails(this.page, this.size).subscribe({
+      this.sanPhamService.getSanPhamDetailonAdmin(this.searchTerm,this.page, this.size).subscribe({
         next: (response) => {
           console.log('✅ API response:', response);
           this.products = response.content || [];
@@ -69,6 +73,12 @@
     }
   }
 
+  onSearch(): void {
+    // Khi người dùng thay đổi giá trị trong ô input, gọi lại loadAccounts để tìm kiếm theo từ khóa mới
+    console.log('Tìm kiếm với từ khóa:', this.searchTerm);
+    this.page = 0;  // Khi tìm kiếm, reset về trang đầu tiên
+    this.loadProducts();
+  }
 
   prevPage() {
     if (this.page > 0) {
@@ -109,7 +119,16 @@
     console.log("🔄 Đã đóng chi tiết sản phẩm.");
   }
 
+openAddModal(){
+const modalRef = this.modalService.open(AddProductComponent, {
+  centered: true, // ✅ canh giữa
+  backdrop: 'static', keyboard: false });
 
-
-  }
+    // Nhận dữ liệu khách hàng mới từ modal
+    modalRef.componentInstance.productAdd.subscribe((newproduct: any) => {
+      console.log('🎉 Khách hàng mới:', newproduct);
+      this.loadProducts();
+      this.products.unshift(newproduct); // ✅ Thêm vào đầu danh sách
+    });
+  }}
 

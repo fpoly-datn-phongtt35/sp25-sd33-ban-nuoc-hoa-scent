@@ -8,10 +8,10 @@
     <nav class="menu">
       <!-- Thống kê -->
       <li class="nav-item mb-3">
-        <a 
-         
-          class="nav-link" 
-          [ngClass]="{'active': selectedComponent === 'dashboard'}" 
+        <a
+
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'dashboard'}"
           (click)="showComponent('dashboard')">
           <i class="bi bi-house"></i> Thống kê
         </a>
@@ -19,10 +19,10 @@
 
       <!-- Voucher -->
       <li class="nav-item mb-3">
-        <a 
-          
-          class="nav-link" 
-          [ngClass]="{'active': selectedComponent === 'voucher'}" 
+        <a
+
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'voucher'}"
           (click)="showComponent('voucher')">
           <i class="bi bi-gift"></i> Voucher
         </a>
@@ -30,10 +30,10 @@
 
       <!-- Hóa đơn -->
       <li class="nav-item mb-3">
-        <a 
-          
-          class="nav-link" 
-          [ngClass]="{'active': selectedComponent === 'invoice'}" 
+        <a
+
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'invoice'}"
           (click)="showComponent('invoice')">
           <i class="bi bi-receipt"></i> Hóa đơn
         </a>
@@ -41,10 +41,10 @@
 
       <!-- Sản phẩm -->
       <li class="nav-item mb-3">
-        <a 
-         
-          class="nav-link" 
-          [ngClass]="{'active': selectedComponent === 'products'}" 
+        <a
+
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'products'}"
           (click)="showComponent('products')">
           <i class="bi bi-bag icon"></i> Sản phẩm
         </a>
@@ -52,10 +52,10 @@
 
       <!-- Nhân viên -->
       <li class="nav-item mb-3">
-        <a 
-         
-          class="nav-link" 
-          [ngClass]="{'active': selectedComponent === 'staff'}" 
+        <a
+
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'staff'}"
           (click)="showComponent('staff')">
           <i class="bi bi-person"></i> Nhân viên
         </a>
@@ -63,10 +63,10 @@
 
       <!-- Khách hàng -->
       <li class="nav-item mb-3">
-        <a 
-         
-          class="nav-link" 
-          [ngClass]="{'active': selectedComponent === 'customer'}" 
+        <a
+
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'customer'}"
           (click)="showComponent('customer')">
           <i class="bi bi-people"></i> Khách hàng
         </a>
@@ -74,9 +74,9 @@
 
       <!-- Đăng xuất -->
       <li class="nav-item mb-3">
-        <a 
-         
-          class="nav-link logout" 
+        <a
+
+          class="nav-link logout"
           (click)="logout()">
           <i class="bi bi-box-arrow-right"></i> Đăng xuất
         </a>
@@ -93,6 +93,7 @@
       <app-product-admin *ngSwitchCase="'products'"></app-product-admin>
       <app-user-admin *ngSwitchCase="'staff'"></app-user-admin>
       <app-customer *ngSwitchCase="'customer'"></app-customer>
+
     </ng-container>
   </div>
 </div>

@@ -8,7 +8,7 @@ import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
 import { CartService } from '../service/cart.Service';
 import { SanPhamService } from '../service/product.service';
-import { FormsModule } from '@angular/forms'; 
+import { FormsModule } from '@angular/forms';
 import { AuthGuard } from '../Guard/authguard';
 import { TokenService } from '../service/token.service';
 import Swal from 'sweetalert2';
@@ -41,25 +41,54 @@ export class ProductDetailComponent implements OnInit {
     this.loadRecommendedProducts();
     this.loadVolumes();
 
-    
+
   }
   setMainImage(index: number): void {
     this.selectedImageIndex = index;
   }
   loadProductDetail(): void {
     const productId = this.route.snapshot.paramMap.get('id');
+<<<<<<< HEAD
     if (productId) {
       const numericProductId = parseInt(productId, 10);
       if (!isNaN(numericProductId)) {
+=======
+
+    if (productId) {
+      const numericProductId = parseInt(productId, 10);
+
+      // Ensure numericProductId is a valid number
+      if (!isNaN(numericProductId)) {
+        // Load product volumes first
+        this.sanPhamService.getProductVolumes(numericProductId).subscribe((volumes: any[]) => {
+          this.volumes = volumes;
+          // Check and assign the first volume as selected
+          if (volumes && volumes.length > 0) {
+            this.selectedVolume = volumes[0];
+          }
+        });
+
+        // Then load the product details
+>>>>>>> 800c5f061ffae5d36f2d3c3a3d998177d4cc8d40
         this.detailService.getProductDetailById(numericProductId).subscribe({
           next: (data: any) => {
             if (data && data.length > 0) {
+<<<<<<< HEAD
               this.product = { ...data[0] };
 
               // Chuyển đổi chuỗi thành mảng imageURLs
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }
+=======
+              this.product = { ...data[0] }; // ✅ Chỉ lấy phần tử đầu tiên của mảng
+              console.log('Sản phẩm được gán:', this.product);
+              console.log('Tên sản phẩm:', this.product.tenSanPham);
+              console.log('Giá sản phẩm:', this.product.donGia);
+
+              console.log('ML sản phẩm:', this.product.dungTich);
+
+>>>>>>> 800c5f061ffae5d36f2d3c3a3d998177d4cc8d40
             } else {
               console.error('Không tìm thấy sản phẩm');
               alert('Không tìm thấy sản phẩm');
@@ -75,6 +104,7 @@ export class ProductDetailComponent implements OnInit {
       }
     }
   }
+<<<<<<< HEAD
   scrollImages(direction: string): void {
     if (direction === 'up' && this.selectedImageIndex > 0) {
       this.selectedImageIndex--;
@@ -82,6 +112,9 @@ export class ProductDetailComponent implements OnInit {
       this.selectedImageIndex++;
     }
   }
+=======
+
+>>>>>>> 800c5f061ffae5d36f2d3c3a3d998177d4cc8d40
   updateDisplayedPrice(): void {
     // Sự kiện này được kích hoạt khi người dùng thay đổi lựa chọn dung tích
     // Giả sử rằng dung tích đã bao gồm thông tin giá
@@ -99,13 +132,13 @@ export class ProductDetailComponent implements OnInit {
   console.log(`Giá được cập nhật là: ${this.product.donGia} VND cho dung tích ${this.selectedVolume.dungTich}ml với idSpct mới : ${this.product.idSpct}`);
 }
 
-  
+
   loadVolumes() {
     // Ensure there is a productId available
     const productId = this.route.snapshot.paramMap.get('id');
     if (productId) {
       const numericProductId = parseInt(productId, 10);
-  
+
       // Ensure numericProductId is a valid number before making the call
       if (!isNaN(numericProductId)) {
         this.sanPhamService.getProductVolumes(numericProductId).subscribe(
@@ -125,7 +158,7 @@ export class ProductDetailComponent implements OnInit {
       console.error('Product ID is missing');
     }
   }
-  
+
   loadRecommendedProducts(): void {
     this.detailService.getRecommendedProducts().subscribe({
       next: (data: any[]) => this.recommendedProducts = data,
@@ -196,13 +229,13 @@ export class ProductDetailComponent implements OnInit {
       text: `✅ Đã thêm ${this.quantity} sản phẩm vào giỏ hàng!`,
   });
     this.quantity = 1;
-   
+
 }
 
-  
-  
 
-  
+
+
+
 
 viewRelatedProduct(): void {
   const productId = this.route.snapshot.paramMap.get('id');

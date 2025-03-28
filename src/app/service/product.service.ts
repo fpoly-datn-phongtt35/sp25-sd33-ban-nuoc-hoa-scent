@@ -11,6 +11,7 @@ export class SanPhamService {
   private apiSearch = 'http://localhost:8080/rest/san-pham/search';
   private apiSearchdm = 'http://localhost:8080/rest/san-pham/search-danhmuc';
 private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll'
+private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-admin'
   constructor(private http: HttpClient) {
     console.log('SanPhamService đã được khởi tạo.');
   }
@@ -20,7 +21,11 @@ private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll'
     console.log(`Requesting API: ${this.apiURL}?page=${page}&size=${size}`);
     return this.http.get<any>(`${this.apiURL}?page=${page}&size=${size}`);
   }
- 
+  getSanPhamDetailonAdmin(query: string,page: number = 0, size: number = 12): Observable<any> {
+    console.log(`Requesting API: ${this.apiSearchonAmin}?keyword=${query}&page=${page}&size=${size}`);
+    return this.http.get<any>(`${this.apiSearchonAmin}?keyword=${query}&page=${page}&size=${size}`);
+  }
+
   getProductVolumes(productId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/volums/${productId}`);
   }
@@ -53,6 +58,9 @@ private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll'
 
     return this.http.get<any>(this.apiSearchdm, { params });
 }
-
+addProductOnAdmin(formData: FormData): Observable<any> {
+  const url = `${this.baseUrl}/add`;
+  return this.http.post<any>(url, formData);
+}
 
 }
