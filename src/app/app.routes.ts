@@ -4,6 +4,7 @@ import { ProductAdminComponent } from './admin/product-admin/product-admin.compo
 import { AdminGuard } from './Guard/adminGuard';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
+import { OrderDetailUserIDComponent } from './order-detail-user-id/order-detail-user-id.component';
 import { OrderDetailComponent } from './order-detail/order-detail.component';
 import { OrderSuccessComponent } from './order-success/order-success.component';
 import { OrderComponent } from './order/order.component';
@@ -18,6 +19,8 @@ export const routes: Routes = [
   { path: '', component: HomeComponent }, // Trang chủ
   { path: 'product', component: ProductComponent }, // Trang sản phẩm
   { path: 'app-order', component: OrderComponent },
+  { path: 'product/detail/:id', component: ProductDetailComponent },
+  { path: 'app-order-id', component: OrderDetailUserIDComponent },
   { path: 'register', component: RegisterComponent }, // Trang sản phẩm
   { path: 'product_detail', component: ProductDetailComponent }, // Chi tiết sản phẩm
   { path: 'register', component: RegisterComponent }, // Đăng ký

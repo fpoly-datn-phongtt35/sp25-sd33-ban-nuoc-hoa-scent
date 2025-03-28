@@ -280,4 +280,83 @@ body {
       margin-bottom: 10px; /* Extra space for stacking */
     }
   }
+  .product-images {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 30%;
+    padding: 20px;
+  }
   
+  .main-image {
+    width: 100%; /* Chiếm 80% bề rộng */
+    margin-bottom: 30px;
+    overflow: hidden;
+    border-radius: 10px;
+  }
+  
+  .main-img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+  
+  .image-thumbnails {
+    display: flex;
+    overflow-x: auto;
+    gap: 1px;
+    width: 80%;
+    padding: 10px 0;
+    justify-content: center;
+  }
+  
+  .thumbnail {
+    width: 90px;  /* Kích thước của thumbnail */
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .thumbnail:hover {
+    transform: scale(1.1);
+  }
+  
+  .thumb-img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 5px;
+  }
+  
+  /* Add a simple slider effect */
+  .image-thumbnails::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .image-thumbnails::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px;
+  }
+  
+  .image-thumbnails::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  .arrow-button {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .arrow-button button {
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px 10px;
+    background-color: #f1f1f1;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .arrow-button button:hover {
+    background-color: #ddd;
+  }

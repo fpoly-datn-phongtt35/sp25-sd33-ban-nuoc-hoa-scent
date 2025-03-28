@@ -25,7 +25,7 @@
 
               <td class="product-info">
                 <!-- Kiểm tra lại item.product.imageURL có phải là đường dẫn hợp lệ và item.product có tồn tại -->
-                <img [src]="item.product.imageURL" alt="">
+                <img [src]="item.product.imageURL[0]" alt="Product Image" />
               </td>
               <!-- Đảm bảo rằng các thuộc tính productName, price của product được truy cập đúng -->
               <td>{{ item.product.tenSanPham }}</td>

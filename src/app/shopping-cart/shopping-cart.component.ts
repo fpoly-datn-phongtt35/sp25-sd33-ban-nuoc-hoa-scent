@@ -95,6 +95,9 @@ export class ShoppingCartComponent implements OnInit{
                     console.warn("⚠️ Mục giỏ hàng không hợp lệ:", item);
                     return null;
                 }
+                if (item[1].product.imageURL) {
+                  item[1].product.imageURL = item[1].product.imageURL.split(',').map((url: string) => url.trim());
+                }
                 return {
                     product: item[1].product,
                     quantity: item[1].quantity,

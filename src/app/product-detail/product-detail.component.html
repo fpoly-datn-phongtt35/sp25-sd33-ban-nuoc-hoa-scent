@@ -2,9 +2,20 @@
 <div class="container" *ngIf="product">
   <div class="product-detail">
     <!-- Cột trái: Hình ảnh sản phẩm -->
-    <div class="product-image">
-      <img [src]="product.imageURL" [alt]="product.tenSanPham" />
-      <ng-template #noImage><p>Không có hình ảnh</p></ng-template>
+   
+    <div class="product-images">
+      <div class="main-image">
+        <img [src]="imageUrls[selectedImageIndex]" [alt]="product.tenSanPham" class="main-img"/>
+      </div>
+
+      <!-- Mũi tên cuộn ảnh -->
+     
+
+      <div class="image-thumbnails">
+        <div *ngFor="let image of imageUrls; let i = index" class="thumbnail" (click)="setMainImage(i)">
+          <img [src]="image" [alt]="product.tenSanPham" class="thumb-img"/>
+        </div>
+      </div>
     </div>
 
     <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
@@ -75,7 +86,7 @@
     <div class="related-products">
       <h3>Có thể bạn quan tâm</h3>
       <div class="related-products-scroll">
-        <div class="related-product-item" *ngFor="let relatedProduct of recommendedProducts" (click)="viewRelatedProduct(relatedProduct.productId)">
+        <div class="related-product-item" *ngFor="let relatedProduct of recommendedProducts" (click)="updateProductDetails(relatedProduct)">
           <img [src]="relatedProduct.imageURL" [alt]="relatedProduct.tenSanPham" />
           <div>
             <p>{{ relatedProduct.tenSanPham }}</p>
@@ -84,6 +95,7 @@
         </div>
       </div>
     </div>
+    
   </div>
 
   <!-- Phần mô tả sản phẩm -->

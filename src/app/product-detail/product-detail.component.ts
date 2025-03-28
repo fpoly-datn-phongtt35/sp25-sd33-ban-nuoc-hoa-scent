@@ -23,8 +23,10 @@ export class ProductDetailComponent implements OnInit {
   product: any; // Giả sử đây là đối tượng sản phẩm hiện tại
   recommendedProducts: any[] | undefined; // Danh sách các sản phẩm liên quan
   selectedVolume: any;
+  imageUrls: string[] = [];
   volumes: any[] = [];
   quantity: number = 1;
+  selectedImageIndex: number = 0;
   isLoading = true;
   constructor(
     private route: ActivatedRoute,
@@ -41,36 +43,23 @@ export class ProductDetailComponent implements OnInit {
 
     
   }
-
+  setMainImage(index: number): void {
+    this.selectedImageIndex = index;
+  }
   loadProductDetail(): void {
     const productId = this.route.snapshot.paramMap.get('id');
-    
     if (productId) {
       const numericProductId = parseInt(productId, 10);
-  
-      // Ensure numericProductId is a valid number
       if (!isNaN(numericProductId)) {
-        // Load product volumes first
-        this.sanPhamService.getProductVolumes(numericProductId).subscribe((volumes: any[]) => {
-          this.volumes = volumes;
-          // Check and assign the first volume as selected
-          if (volumes && volumes.length > 0) {
-            this.selectedVolume = volumes[0];
-          }
-        });
-  
-        // Then load the product details
         this.detailService.getProductDetailById(numericProductId).subscribe({
           next: (data: any) => {
-            console.log('Dữ liệu API trả về:', data); // Debug API
             if (data && data.length > 0) {
-              this.product = { ...data[0] }; // ✅ Chỉ lấy phần tử đầu tiên của mảng
-              console.log('Sản phẩm được gán:', this.product);
-              console.log('Tên sản phẩm:', this.product.tenSanPham);
-              console.log('Giá sản phẩm:', this.product.donGia);
-              
-              console.log('ML sản phẩm:', this.product.dungTich);
-              
+              this.product = { ...data[0] };
+
+              // Chuyển đổi chuỗi thành mảng imageURLs
+              if (this.product.imageURL) {
+                this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
+              }
             } else {
               console.error('Không tìm thấy sản phẩm');
               alert('Không tìm thấy sản phẩm');
@@ -83,16 +72,16 @@ export class ProductDetailComponent implements OnInit {
             alert('Lỗi khi tải sản phẩm');
           }
         });
-      } else {
-        console.error('Invalid product ID');
-        alert('Invalid product ID');
       }
-    } else {
-      console.error('Product ID is missing');
-      alert('Product ID is missing');
     }
   }
-  
+  scrollImages(direction: string): void {
+    if (direction === 'up' && this.selectedImageIndex > 0) {
+      this.selectedImageIndex--;
+    } else if (direction === 'down' && this.selectedImageIndex < this.imageUrls.length - 1) {
+      this.selectedImageIndex++;
+    }
+  }
   updateDisplayedPrice(): void {
     // Sự kiện này được kích hoạt khi người dùng thay đổi lựa chọn dung tích
     // Giả sử rằng dung tích đã bao gồm thông tin giá
@@ -215,7 +204,44 @@ export class ProductDetailComponent implements OnInit {
 
   
 
-  viewRelatedProduct(productId: number): void {
-    this.router.navigate(['/product/detail', productId]);
+viewRelatedProduct(): void {
+  const productId = this.route.snapshot.paramMap.get('id');
+  console.log('Navigating to product with ID:', productId);
+  if (productId) {
+    this.router.navigate(['/product/detail', productId]).then(() => {
+      // Sau khi điều hướng, bạn có thể gọi API để tải lại dữ liệu sản phẩm
+      this.loadProductDetail();
+    });
+  } else {
+      console.error('Product ID is undefined');
   }
+}
+updateProductDetails(product: any): void {
+  // Cập nhật thông tin của sản phẩm hiện tại
+  this.product = product;
+  
+  // Cập nhật ảnh của sản phẩm mới
+  if (product.imageURL) {
+    this.imageUrls = product.imageURL.split(',').map((url: string) => url.trim());
+  }
+
+  // Đảm bảo rằng sản phẩm có thông tin về dung tích để hiển thị
+  if (!product.volumes || product.volumes.length === 0) {
+    // Nếu không có dữ liệu volumes được cung cấp, tạo ra một mục mặc định dựa trên dung tích có sẵn
+    this.volumes = [{
+      dungTich: product.dungTich,
+      donGia: this.product.donGia, // Sử dụng đơn giá hiện tại của sản phẩm nếu không có thông tin cụ thể
+      soLuongTonKho: this.product.soLuongTonKho // Sử dụng số lượng tồn kho hiện tại
+    }];
+  } else {
+    // Nếu có dữ liệu volumes, sử dụng như bình thường
+    this.volumes = product.volumes;
+  }
+
+  // Chọn dung tích đầu tiên làm mặc định nếu có
+  this.selectedVolume = this.volumes.length > 0 ? this.volumes[0] : null;
+  console.log(`Thông tin sản phẩm đã được cập nhật:`, this.product);
+}
+
+
 }
