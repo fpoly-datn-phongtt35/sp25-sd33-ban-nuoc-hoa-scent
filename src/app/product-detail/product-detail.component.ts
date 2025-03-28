@@ -225,4 +225,7 @@ export class ProductDetailComponent implements OnInit {
     this.selectedVolume = this.volumes.length > 0 ? this.volumes[0] : null;
     console.log('Thông tin sản phẩm đã được cập nhật:', this.product);
   }
+
+
 }
+

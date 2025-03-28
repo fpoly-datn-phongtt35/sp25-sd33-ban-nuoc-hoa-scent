@@ -20,14 +20,17 @@ export class OrderDetailUserIDComponent implements OnInit{
   }
 
   ngOnInit(): void {
-    // Lấy userId từ TokenService
-    this.userId = this.tokenService.getUserId(); 
+    this.userId = this.tokenService.getUserId();
 
     if (this.userId) {
       this.userService.getOrders(this.userId).subscribe({
         next: (data) => {
-          this.orders = data;
-          console.log('UserID là : ',this.userId);
+          this.orders = data.map((order: { trangThai: number; }) => ({
+            ...order,
+            statusLabel: this.getStatusLabel(order.trangThai) // Thêm nhãn trạng thái vào mỗi đơn hàng
+             
+          }));
+          console.log('Dữ liệu đơn hàng:', this.orders);
         },
         error: (error) => {
           console.error('Lỗi khi lấy đơn hàng', error);
@@ -35,6 +38,16 @@ export class OrderDetailUserIDComponent implements OnInit{
       });
     } else {
       console.error('Không tìm thấy userId từ token');
+    }
+  }
+  getStatusLabel(statusCode: number): string {
+    switch (statusCode) {
+      case 1: return 'Chờ xác nhận';
+      case 2: return 'Đã xác nhận';
+      case 3: return 'Đang giao';
+      case 4: return 'Đã thanh toán';
+      case 5: return 'Đã hủy';
+      default: return 'Trạng thái không xác định';
     }
   }
 }

@@ -1,77 +1,42 @@
-/* CSS cho phần chứa đơn hàng */
 .order-container {
-    max-width: 1200px;
-    margin: 50px auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Tiêu đề trang */
-  .order-container h2 {
-    text-align: center;
-    font-size: 28px;
-    color: #333;
-    margin-bottom: 30px;
-  }
-  
-  /* CSS cho mỗi đơn hàng */
-  .order {
-    padding: 20px;
-    margin-bottom: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-  
-  .order h3 {
-    font-size: 22px;
-    color: #2c3e50;
-    margin-bottom: 10px;
-  }
-  
-  .order p {
-    font-size: 16px;
-    color: #7f8c8d;
-    margin: 5px 0;
-  }
-  
-  /* CSS cho phần chi tiết sản phẩm */
-  .order div {
-    margin-top: 20px;
-  }
-  
-  .order img {
-    max-width: 100px;
-    margin: 10px 0;
-    border-radius: 5px;
-  }
-  
-  .product-image {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 5px;
-  }
-  
-  /* CSS cho thanh cuộn trong đơn hàng */
-  .order .product-image {
-    margin-right: 10px;
-    float: left;
-  }
-  
-  /* Thông báo khi không có đơn hàng */
-  .order-container p {
-    text-align: center;
-    font-size: 18px;
-    color: #e74c3c;
-  }
-  
-  /* Hover hiệu ứng cho đơn hàng */
-  .order:hover {
-    background-color: #ecf0f1;
-    transform: scale(1.02);
-    transition: all 0.3s ease-in-out;
-  }
-  
+  width: 90%;
+  margin: auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.order {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 20px;
+}
+
+.product-details {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+.product-details th,
+.product-details td {
+  text-align: left;
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.product-image {
+  width: 100px; /* Adjust based on your preference */
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
