@@ -36,7 +36,7 @@ export class InvoiceComponent implements OnInit {
     paid: 4,
     cancelled: 5,
   };
-  constructor(private http: HttpClient,private donHangService: DonhangService,private modalService: NgbModal) {}
+  constructor(private http: HttpClient,private donHangService: DonhangService,private modalService: NgbModal,) {}
 
   ngOnInit(): void {
     this.loadCustomers();

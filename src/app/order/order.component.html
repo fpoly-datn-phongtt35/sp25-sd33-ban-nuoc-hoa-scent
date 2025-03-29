@@ -84,18 +84,28 @@ name="searchBox"
     </div>
 
     <!-- Phương thức thanh toán -->
-    <div class="mb-3">
-      <label for="phuongThucThanhToan" class="form-label">Phương thức thanh toán:</label>
-      <select id="phuongThucThanhToan" class="form-select" [(ngModel)]="orderData.phuongThucThanhToan"
-              name="phuongThucThanhToan" required #phuongThucThanhToan="ngModel">
-        <option value="" disabled selected>-- Chọn phương thức thanh toán --</option>
-        <option value="ck">Chuyển khoản</option>
-        <option value="tienMat">Tiền mặt</option>
-      </select>
-      <div class="text-danger" *ngIf="phuongThucThanhToan.invalid && phuongThucThanhToan.touched">
-        ⚠️ Hãy chọn phương thức thanh toán!
-      </div>
-    </div>
+   <!-- Phương thức thanh toán -->
+<!-- Phương thức thanh toán -->
+<div class="mb-3">
+  <label class="form-label">Phương thức thanh toán:</label>
+  <div class="d-flex gap-4 flex-wrap">
+    <!-- MoMo -->
+    <label class="payment-option d-flex align-items-center gap-2">
+      <input type="radio" name="phuongThucThanhToan" [(ngModel)]="orderData.phuongThucThanhToan" value="ck" required />
+      <img src="momo.png" alt="MoMo" width="20" height="20" />
+      <span>Chuyển khoản MoMo</span>
+    </label>
+
+    <!-- Tiền mặt -->
+    <label class="payment-option d-flex align-items-center gap-2">
+      <input type="radio" name="phuongThucThanhToan" [(ngModel)]="orderData.phuongThucThanhToan" value="tienMat" required />
+      <span>💵 Thanh toán tiền mặt</span>
+    </label>
+  </div>
+</div>
+
+
+
 
     <!-- Ghi chú -->
     <div class="mb-3">

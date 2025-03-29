@@ -241,6 +241,16 @@ button:hover {
   font-weight: 500;
   font-style: italic;
 }
+.payment-option {
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.payment-option input[type='radio'] {
+  margin-top: 0;
+}
 
 
 

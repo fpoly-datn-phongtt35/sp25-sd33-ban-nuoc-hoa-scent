@@ -1,3 +1,4 @@
+import { MomoPaymentService } from './../service/momoPayment.service';
 import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -76,12 +77,12 @@ export class OrderComponent implements OnInit {
     private router: Router,
     private tokenService: TokenService,
     private cdr: ChangeDetectorRef,
-    private diaChiService: DiaChiService
+    private diaChiService: DiaChiService,
+    private momoPaymentService:MomoPaymentService
   ) {}
 
   ngOnInit() {
     this.layTinhThanh();
-
     const idTaiKhoan = this.tokenService.getUserId() || Number(localStorage.getItem('idTaiKhoan'));
     if (!idTaiKhoan) {
       console.error('Token không tồn tại hoặc rỗng.');
@@ -359,32 +360,37 @@ export class OrderComponent implements OnInit {
     }
   }
 
-  onSubmit() {
-    if (
-      !this.orderData.tenNguoiNhanHang ||
-      !this.orderData.diachiChiTiet ||  // Kiểm tra luôn địa chỉ chi tiết
-      !this.orderData.sdtNguoiNhan ||
-      !this.orderData.phuongThucThanhToan
-    ) {
-      alert('Vui lòng nhập đầy đủ thông tin giao hàng!');
-      return;
-    }
+  // 🔧 GIẢI PHÁP: Xử lý thanh toán bằng tiền mặt và MoMo (CK)
 
-    const payload = {
-      ...this.orderData,
-      diaChiGiaoHang: `${this.orderData.diachiChiTiet}, ${this.fullAddress}`, // 👈 Gộp địa chỉ chi tiết + tỉnh/huyện/xã
-      phuongThucVanChuyen: 'Giao hàng nhanh',
-      ngayVanChuyen: new Date().toISOString(),
-      chiTietDonHangs: this.orderData.chiTietDonHangs.map((item) => ({
-        spctId: Number(item.spctId),
-        quantity: Number(item.quantity),
-      })),
-      totalAmount: this.finalAmount,
-      maTinh: String(this.selectedTinh?.id || ''),
-      maQuan: String(this.selectedHuyen?.id || ''),
-      maPhuong: String(this.selectedXa?.id || ''),
-    };
+// 🔧 GIẢI PHÁP: Xử lý thanh toán bằng tiền mặt và MoMo (CK)
 
+onSubmit() {
+  if (
+    !this.orderData.tenNguoiNhanHang ||
+    !this.orderData.diachiChiTiet ||
+    !this.orderData.sdtNguoiNhan ||
+    !this.orderData.phuongThucThanhToan
+  ) {
+    alert('Vui lòng nhập đầy đủ thông tin giao hàng!');
+    return;
+  }
+
+  const payload = {
+    ...this.orderData,
+    diaChiGiaoHang: `${this.orderData.diachiChiTiet}, ${this.fullAddress}`,
+    phuongThucVanChuyen: 'Giao hàng nhanh',
+    ngayVanChuyen: new Date().toISOString(),
+    chiTietDonHangs: this.orderData.chiTietDonHangs.map((item) => ({
+      spctId: Number(item.spctId),
+      quantity: Number(item.quantity),
+    })),
+    totalAmount: this.finalAmount,
+    maTinh: String(this.selectedTinh?.id || ''),
+    maQuan: String(this.selectedHuyen?.id || ''),
+    maPhuong: String(this.selectedXa?.id || ''),
+  };
+
+  if (this.orderData.phuongThucThanhToan === 'tienMat') {
     this.orderService.createOrder(payload).subscribe({
       next: (res) => {
         this.cartService.clearCartOnClient();
@@ -395,6 +401,43 @@ export class OrderComponent implements OnInit {
         console.error('❌ Lỗi khi tạo đơn hàng:', err);
       },
     });
+    return;
   }
+
+  if (this.orderData.phuongThucThanhToan === 'ck') {
+    this.orderService.createOrder(payload).subscribe({
+      next: (orderRes) => {
+        const momoRequest = {
+          orderId: 'ORDER_' + orderRes.id,
+          requestId: 'REQ_' + new Date().getTime(),
+          orderInfo: `Thanh toán đơn hàng ${orderRes.id} từ SCENT`,
+          amount: this.finalAmount.toString(),
+          returnUrl: `http://localhost:4200/order-success/${orderRes.id}`,
+          notifyUrl: 'http://localhost:8080/api/momo/callback',
+          requestType: 'captureWallet',
+          extraData: '',
+        };
+
+        this.momoPaymentService.createPayment(momoRequest).subscribe({
+          next: (res: any) => {
+            if (res.payUrl) {
+              window.location.href = res.payUrl; // 🔁 Chuyển hướng ngay trong trang
+            } else {
+              console.error('❌ Không nhận được payUrl từ MoMo');
+            }
+          },
+          error: (err) => {
+            console.error('❌ Lỗi khi gọi API MoMo:', err);
+          },
+        });
+      },
+      error: (err) => {
+        console.error('❌ Lỗi khi tạo đơn hàng (trước khi gọi MoMo):', err);
+      },
+    });
+  }
+}
+
+
 
 }

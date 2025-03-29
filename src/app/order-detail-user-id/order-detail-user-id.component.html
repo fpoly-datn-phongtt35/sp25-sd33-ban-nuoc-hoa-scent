@@ -5,7 +5,8 @@
     <p>Ngày tạo: {{ order.ngayTao | date: 'shortDate' }}</p>
     <p>Trạng thái đơn hàng: {{ order.statusLabel }}</p>
     <p>Phương thức thanh toán: {{ order.phuongThucThanhToan }}</p>
-    <p>Tổng tiền: {{ order.phiVanChuyen }}</p>
+    <p>Địa chỉ giao hàng:{{order.diaChiGiaoHang}}</p>
+    <p>Phí vận chuyển: {{ order.phiVanChuyen|currency}}</p>
     <p>Tổng tiền: {{ order.tongTien | currency }}</p>
 
     <table class="product-details">
