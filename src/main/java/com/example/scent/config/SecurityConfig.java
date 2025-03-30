@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("rest/thuong-hieu/getAll","rest/thuong-hieu/add").permitAll()
                         .requestMatchers("rest/huong-dau/add","rest/huong-giua/add","rest/huong-cuoi/add").permitAll()
                         .requestMatchers("/rest/khach-hang/getAll","rest/khach-hang/page","rest/khach-hang/add","rest/khach-hang/update/**","rest/khach-hang/del/**").permitAll()
+                        .requestMatchers(("rest/momo/pay"),"rest/momo/check-status","rest/momo/callback").permitAll()
                         .requestMatchers("/rest/don-hang/getAll","/rest/don-hang/capnhat-trangthai/**","/rest/don-hang","rest/don-hang/add","rest/don-hang/update","/rest/don-hang/don-hang/page1","/rest/don-hang/**","rest/don-hang/page","rest/don-hang/del/**").permitAll()
                         .requestMatchers("rest/phieu-giam-gia/getAll","rest/phieu-giam-gia/add","rest/phieu-giam-gia/del/**","rest/phieu-giam-gia/update","rest/phieu-giam-gia/page").permitAll()
 

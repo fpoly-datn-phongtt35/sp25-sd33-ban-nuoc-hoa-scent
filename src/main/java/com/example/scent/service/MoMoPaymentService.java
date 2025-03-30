@@ -39,8 +39,12 @@ public class MoMoPaymentService {
 
     public Map<String, Object> createPayment(MomoRequest dto) {
         try {
-            String orderId = partnerCode + System.currentTimeMillis();
+            String orderId = dto.getOrderId();
+            if (orderId == null || orderId.isEmpty()) {
+                orderId = partnerCode + System.currentTimeMillis(); // fallback nếu không có
+            }
             String requestId = orderId;
+
 
             String rawSignature = "accessKey=" + accessKey +
                     "&amount=" + dto.getAmount() +
@@ -68,6 +72,7 @@ public class MoMoPaymentService {
             body.put("lang", "vi");
             body.put("requestType", dto.getRequestType());
             body.put("autoCapture", true);
+            body.put("expireTime", String.valueOf(System.currentTimeMillis() + 15 * 60 * 1000));
             body.put("extraData", dto.getExtraData());
             body.put("orderGroupId", "");
             body.put("signature", signature);
