@@ -78,20 +78,25 @@ public class SanPhamCtrl {
 
 
     @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody SanPham sp,BindingResult result) {
-
-        if (result.hasErrors()) {
-
-            Map<String, String> errorsMap = new HashMap<>();
-
-            for (FieldError error : result.getFieldErrors()) {
-                errorsMap.put(error.getField(), error.getDefaultMessage());
-            }
-            return ResponseEntity.badRequest().body(errorsMap);
-
+    public ResponseEntity<?> updateSanPham(
+            @RequestParam("idSanPham") Integer idSanPham,
+            @RequestParam("ten") String tenSanPham,
+            @RequestParam("moTa") String moTaSanPham,
+            @RequestParam("idThuongHieu") Integer idThuongHieu,
+            @RequestParam("idDanhMuc") Integer idDanhMuc,
+            @RequestParam("idHuongDau") Integer idHuongDau,
+            @RequestParam("idHuongGiua") Integer idHuongGiua,
+            @RequestParam("idHuongCuoi") Integer idHuongCuoi,
+            @RequestParam(value = "image", required = false) MultipartFile[] images) {
+        try {
+            SanPham updatedSanPham = sps.updateProductWithDetails(
+                    idSanPham, tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, images
+            );
+            return ResponseEntity.ok(updatedSanPham);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi cập nhật sản phẩm: " + e.getMessage());
         }
-        sps.update(sp);
-        return ResponseEntity.ok("ok");
     }
 
     @GetMapping("/volums/{productId}")

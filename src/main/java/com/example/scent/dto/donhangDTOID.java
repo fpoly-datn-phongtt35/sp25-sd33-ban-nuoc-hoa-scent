@@ -12,12 +12,12 @@ import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+
 public class donhangDTOID {
 
         private Integer idTaiKhoan;
         private String tenNguoiNhanHang;
+    private Integer maDonHang;
         private String diaChiGiaoHang;
         private String sdtNguoiNhan;
         private String phuongThucVanChuyen;
@@ -30,4 +30,5 @@ public class donhangDTOID {
         private BigDecimal tongTien;
     private Integer trangThai;
         private BigDecimal phiVanChuyen;
+
 }

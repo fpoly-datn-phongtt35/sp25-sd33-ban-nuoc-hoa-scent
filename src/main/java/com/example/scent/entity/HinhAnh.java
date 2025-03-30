@@ -27,7 +27,7 @@ public class HinhAnh {
     @Column(name = "link")
     private String link;
     @ManyToOne
-    @JoinColumn(name = "id_san_pham")
+    @JoinColumn(name = "id_san_pham",referencedColumnName = "id")
     private SanPham sanPham;
 
     public Integer getId() {

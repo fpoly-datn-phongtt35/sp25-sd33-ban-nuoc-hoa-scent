@@ -1,4 +1,4 @@
-    package com.example.scent.service;
+ package com.example.scent.service;
     
     
     
@@ -49,6 +49,7 @@
                 System.out.println("Error: Unable to fetch Tinh data. Status code: " + statusCode);
                 return new HashMap<>();  // Trả về danh sách rỗng khi lỗi xảy ra
             } else {
+
                 HttpEntity entity = response.getEntity();
                 String responseBody = EntityUtils.toString(entity);
                 System.out.println("Response from GHN API for Tinh: " + responseBody);

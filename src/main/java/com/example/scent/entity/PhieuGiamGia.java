@@ -1,13 +1,7 @@
 package com.example.scent.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -52,8 +47,8 @@ public class PhieuGiamGia {
     private LocalDateTime ngayHetHan;
 
     @JsonIgnore
-    @OneToOne(mappedBy = "phieuGiamGia")
-    private DonHang donHang;
+    @OneToMany(mappedBy = "phieuGiamGia")
+    private List<DonHang> donHang;
 
     public Integer getId() {
         return id;
@@ -95,11 +90,11 @@ public class PhieuGiamGia {
         this.ngayHetHan = ngayHetHan;
     }
 
-    public DonHang getDonHang() {
+    public List<DonHang> getDonHang() {
         return donHang;
     }
 
-    public void setDonHang(DonHang donHang) {
+    public void setDonHang(List<DonHang> donHang) {
         this.donHang = donHang;
     }
 }

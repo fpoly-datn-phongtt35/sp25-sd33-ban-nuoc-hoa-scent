@@ -53,6 +53,8 @@ public class DonHang {
 
     @Column(name = "tong_tien", precision = 19, scale = 4)
     private BigDecimal tongTien;
+    @Transient
+    private BigDecimal soTienGiam;
 
     @NotEmpty(message = "Phương thức vận chuyển không được để trống")
     @Column(name = "phuong_thuc_van_chuyen")
@@ -83,8 +85,8 @@ public class DonHang {
     @JoinColumn(name = "id_tai_khoan")
     private TaiKhoan taiKhoan;
 
-    @OneToOne
-    @JoinColumn(name = "id_phieu_giam_gia", unique = true)
+    @ManyToOne
+    @JoinColumn(name = "id_phieu_giam_gia",unique = true)
     private PhieuGiamGia phieuGiamGia;
 
     @Column(name = "trang_thai")

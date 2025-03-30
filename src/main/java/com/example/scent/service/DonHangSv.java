@@ -8,15 +8,8 @@ import com.example.scent.reques.PhiVanChuyenRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,7 +26,8 @@ public class DonHangSv {
     @PersistenceContext
     private EntityManager entityManager;
 
-
+@Autowired
+    PhieuGiamGiaInterface phieuGiamGiaInterface;
     @Autowired
     private DiaChiApi diaChiApi;
     @Autowired
@@ -125,9 +119,9 @@ public class DonHangSv {
             throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển không hợp lệ!");
         }
 
-            LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
+        LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
 
-        BigDecimal tongTien = BigDecimal.ZERO;
+        BigDecimal thanhTienGoc = BigDecimal.ZERO;
 
         List<ChiTietDonHang> chiTietList = new ArrayList<>();
 
@@ -139,7 +133,7 @@ public class DonHangSv {
                 throw new RuntimeException("Số lượng sản phẩm không đủ. Sản phẩm ID: " + itemDTO.getSpctId() + " chỉ còn " + spct.getSoLuongTonKho() + " sản phẩm.");
             }
             BigDecimal thanhTien = spct.getDonGia().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
-            tongTien = tongTien.add(thanhTien);
+            thanhTienGoc = thanhTienGoc.add(thanhTien);
 
 
             ChiTietDonHang chiTiet = new ChiTietDonHang();
@@ -149,7 +143,7 @@ public class DonHangSv {
             chiTiet.setThanhTien(thanhTien);
 
             // 🔥 Lấy danh sách hình ảnh từ `HinhAnhRepository`
-            List<String> productImages = hinhAnhInterface.findBySanPhamId(spct.getSanPham().getIdSanPham())
+            List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(spct.getSanPham().getIdSanPham())
                     .stream()
                     .map(HinhAnh::getLink)
                     .collect(Collectors.toList());
@@ -161,7 +155,31 @@ public class DonHangSv {
             chiTietList.add(chiTiet);
 
         }
-        tongTien = tongTien.add(phiVanChuyen);
+        BigDecimal thanhTienSauGiam = thanhTienGoc;
+        PhieuGiamGia phieuGiamGia = null;
+        BigDecimal soTienGiam = null;
+        if (orderRequest.getMaGiamGia() != null && !orderRequest.getMaGiamGia().isEmpty()) {
+            phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
+                    .orElseThrow(() -> new RuntimeException("⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
+
+            LocalDateTime now = LocalDateTime.now();
+            if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
+                throw new RuntimeException("⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
+            }
+            List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
+            if (!donHangs.isEmpty()) {
+                throw new RuntimeException("⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
+            }
+            BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
+            soTienGiam = thanhTienGoc.multiply(phanTramGiam);
+            thanhTienSauGiam = thanhTienGoc.subtract(soTienGiam);
+
+            if (thanhTienSauGiam.compareTo(BigDecimal.ZERO) < 0) {
+                thanhTienSauGiam = BigDecimal.ZERO;
+            }
+        }
+
+        BigDecimal tongTien = thanhTienSauGiam.add(phiVanChuyen);
         // Tạo đơn hàng mới
         DonHang newOrder = new DonHang();
         newOrder.setTaiKhoan(taiKhoan);
@@ -179,9 +197,13 @@ public class DonHangSv {
         newOrder.setGhiChu(orderRequest.getGhichu());
         newOrder.setMaTinh(orderRequest.getMaTinh());
         newOrder.setMaQuan(orderRequest.getMaQuan());
-newOrder.setMaPhuong(orderRequest.getMaPhuong());
-
+        newOrder.setMaPhuong(orderRequest.getMaPhuong());
+        newOrder.setSoTienGiam(soTienGiam);
         newOrder.setTongTien(tongTien);
+
+        if (phieuGiamGia != null) {
+            newOrder.setPhieuGiamGia(phieuGiamGia);
+        }
         DonHang savedOrder = dhi.save(newOrder);
 
         for (ChiTietDonHang chiTiet : chiTietList) {
@@ -211,7 +233,7 @@ newOrder.setMaPhuong(orderRequest.getMaPhuong());
         Map<Integer, List<String>> imageMap = new HashMap<>();
 
         for (Integer id : sanPhamIds) {
-            List<HinhAnh> hinhAnhs = hinhAnhInterface.findBySanPhamId(id);
+            List<HinhAnh> hinhAnhs = hinhAnhInterface.findHinhAnhBySanPhamId(id);
             List<String> imageUrls = hinhAnhs.stream()
                     .map(HinhAnh::getLink)  // Giả sử HinhAnh có phương thức getUrl
                     .collect(Collectors.toList());
@@ -322,6 +344,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         donHangDTO.setIdTaiKhoan(donHang.getTaiKhoan().getId());
         donHangDTO.setTenNguoiNhanHang(donHang.getTenNguoiNhanHang());
         donHangDTO.setDiaChiGiaoHang(donHang.getDiaChiGiaoHang());
+        donHangDTO.setMaDonHang(donHang.getId());
         donHangDTO.setSdtNguoiNhan(donHang.getSdtNguoiNhan());
         donHangDTO.setPhuongThucVanChuyen(donHang.getPhuongThucVanChuyen());
         donHangDTO.setPhuongThucThanhToan(donHang.getPhuongThucThanhToan());
@@ -342,7 +365,7 @@ donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
                     itemDto.setThanhTien(chiTiet.getThanhTien());
 
                     // Lấy hình ảnh của sản phẩm
-                    List<String> productImages = hinhAnhInterface.findBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
+                    List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
                             .stream()
                             .map(HinhAnh::getLink)
                             .collect(Collectors.toList());
