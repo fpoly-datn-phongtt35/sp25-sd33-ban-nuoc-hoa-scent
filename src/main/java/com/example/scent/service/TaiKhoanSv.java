@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class TaiKhoanSv implements UserDetailsService {
@@ -127,4 +128,25 @@ public class TaiKhoanSv implements UserDetailsService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return tki.searchByRoleAndKeyword("STAFF", keyword, pageable);
     }
+    public Optional<TaiKhoan> findByEmail(String email) {
+        return tki.findAll().stream().filter(t -> t.getEmail().equalsIgnoreCase(email)).findFirst();
+    }
+
+    public TaiKhoan findByUsername(String username) {
+        return tki.findByUsername(username);
+    }
+
+    public void resetPassword(TaiKhoan tk, String newPassword) {
+        tk.setMatKhau(new BCryptPasswordEncoder().encode(newPassword));
+        tki.save(tk);
+    }
+
+    public boolean passwordMatches(String rawPassword, String encodedPassword) {
+        return new BCryptPasswordEncoder().matches(rawPassword, encodedPassword);
+    }
+
+    public String generateRandomPassword() {
+        return UUID.randomUUID().toString().substring(0, 8); // 8 ký tự ngẫu nhiên
+    }
+
 }
