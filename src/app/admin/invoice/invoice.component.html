@@ -12,8 +12,11 @@
     <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">
       Đang giao
     </button>
-    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('paid')">
-      Đã thanh toán
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">
+      Đã thanh toán (CK)
+    </button>
+    <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">
+      Đã hoàn thành
     </button>
     <button class="btn btn-custom" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">
       Đã hủy
@@ -22,6 +25,7 @@
       Tất cả
     </button>
   </div>
+
 
 
 
@@ -63,37 +67,43 @@
 
           <td style="min-width: 150px; white-space: nowrap;">
             <ng-container [ngSwitch]="order.selectedStatus">
-              <!-- Chờ xác nhận -->
-              <span *ngSwitchCase="1" class="btn btn-warning" (click)="confirmStatusChange(order.id, 2)">
-                Chờ Xác Nhận
-              </span>
+              <!-- Trạng thái = 1 -->
+<span *ngSwitchCase="1" class="btn btn-warning" (click)="confirmStatusChange(order)">
+  {{ order.phuongThucThanhToan?.toLowerCase().includes('ck') ? '💳 Chờ Thanh Toán' : '🕒 Chờ Xác Nhận' }}
+</span>
 
               <!-- Đã xác nhận -->
-              <span *ngSwitchCase="2" class="btn btn-success" (click)="confirmStatusChange(order.id, 3)">
+              <span *ngSwitchCase="2" class="btn btn-success" (click)="confirmStatusChange(order)">
                 Đã Xác Nhận
               </span>
 
-              <!-- Đang giao, phải chọn hành động -->
-              <span *ngSwitchCase="3" class="btn btn-info" (click)="selectPaymentOption(order.id)">
+              <!-- Đang giao -->
+              <span *ngSwitchCase="3" class="btn btn-info" (click)="confirmStatusChange(order)">
                 Đang Giao
               </span>
 
-              <!-- Đã thanh toán, khóa lại -->
+              <!-- Đã hoàn thành -->
               <span *ngSwitchCase="4" class="btn btn-secondary disabled">
-                ✅ Đã Thanh Toán
+                ✅ Đã Hoàn Thành
               </span>
 
-              <!-- Đã huỷ, khóa lại -->
+              <!-- Đã huỷ -->
               <span *ngSwitchCase="5" class="btn btn-danger disabled">
                 ❌ Đã Hủy
               </span>
 
-              <!-- Hiển thị lý do huỷ -->
+              <!-- Đã thanh toán (CK) -->
+              <span *ngSwitchCase="6" class="btn btn-dark" (click)="confirmStatusChange(order)">
+                💰 Đã Thanh Toán
+              </span>
+
+              <!-- Lý do hủy (nếu có) -->
               <span *ngIf="order.selectedStatus === 5 && order.lyDoHuy" class="text-muted ms-2">
                 - Lý do: {{ order.lyDoHuy }}
               </span>
             </ng-container>
           </td>
+
 
 
 

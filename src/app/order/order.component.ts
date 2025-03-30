@@ -375,6 +375,8 @@ onSubmit() {
     return;
   }
 
+  const isCk = this.orderData.phuongThucThanhToan === 'ck';
+
   const payload = {
     ...this.orderData,
     diaChiGiaoHang: `${this.orderData.diachiChiTiet}, ${this.fullAddress}`,
@@ -388,9 +390,11 @@ onSubmit() {
     maTinh: String(this.selectedTinh?.id || ''),
     maQuan: String(this.selectedHuyen?.id || ''),
     maPhuong: String(this.selectedXa?.id || ''),
+    trangThai: 1 // ✅ Gán trạng thái ban đầu tùy theo phương thức thanh toán//6🟡 Chờ thanh toán//
   };
 
-  if (this.orderData.phuongThucThanhToan === 'tienMat') {
+  if (!isCk) {
+    // ✅ Tiền mặt → tạo đơn hàng rồi chuyển trang luôn
     this.orderService.createOrder(payload).subscribe({
       next: (res) => {
         this.cartService.clearCartOnClient();
@@ -404,38 +408,47 @@ onSubmit() {
     return;
   }
 
-  if (this.orderData.phuongThucThanhToan === 'ck') {
-    this.orderService.createOrder(payload).subscribe({
-      next: (orderRes) => {
-        const momoRequest = {
-          orderId: 'ORDER_' + orderRes.id,
-          requestId: 'REQ_' + new Date().getTime(),
-          orderInfo: `Thanh toán đơn hàng ${orderRes.id} từ SCENT`,
-          amount: this.finalAmount.toString(),
-          returnUrl: `http://localhost:4200/order-success/${orderRes.id}`,
-          notifyUrl: 'http://localhost:8080/api/momo/callback',
-          requestType: 'captureWallet',
-          extraData: '',
-        };
+  // ✅ Chuyển khoản → tạo đơn xong rồi gọi MoMo
+  this.orderService.createOrder(payload).subscribe({
+    next: (orderRes) => {
+      const utf8ToBase64 = (str: string) => btoa(unescape(encodeURIComponent(str)));
 
-        this.momoPaymentService.createPayment(momoRequest).subscribe({
-          next: (res: any) => {
-            if (res.payUrl) {
-              window.location.href = res.payUrl; // 🔁 Chuyển hướng ngay trong trang
-            } else {
-              console.error('❌ Không nhận được payUrl từ MoMo');
-            }
-          },
-          error: (err) => {
-            console.error('❌ Lỗi khi gọi API MoMo:', err);
-          },
-        });
-      },
-      error: (err) => {
-        console.error('❌ Lỗi khi tạo đơn hàng (trước khi gọi MoMo):', err);
-      },
-    });
-  }
+      const extraDataObj = {
+        amount: this.finalAmount,
+        orderInfo: `Thanh toán đơn hàng ${orderRes.id} từ SCENT`,
+        orderId: 'ORDER_' + orderRes.id,
+      };
+
+      const extraData = utf8ToBase64(JSON.stringify(extraDataObj));
+
+      const momoRequest = {
+        orderId: extraDataObj.orderId,
+        requestId: 'REQ_' + new Date().getTime(),
+        orderInfo: extraDataObj.orderInfo,
+        amount: this.finalAmount.toString(),
+        returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
+        notifyUrl: 'http://localhost:8080/api/momo/callback',
+        requestType: 'payWithMethod',
+        extraData: extraData,
+      };
+
+      this.momoPaymentService.createPayment(momoRequest).subscribe({
+        next: (res: any) => {
+          if (res.payUrl) {
+            window.location.href = res.payUrl;
+          } else {
+            console.error('❌ Không nhận được payUrl từ MoMo');
+          }
+        },
+        error: (err) => {
+          console.error('❌ Lỗi khi gọi API MoMo:', err);
+        },
+      });
+    },
+    error: (err) => {
+      console.error('❌ Lỗi khi tạo đơn hàng (trước khi gọi MoMo):', err);
+    },
+  });
 }
 
 

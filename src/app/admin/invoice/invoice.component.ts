@@ -31,70 +31,83 @@ export class InvoiceComponent implements OnInit {
 
   keyToStatus: Record<string, number> = {
     pending: 1,
+    unPaid: 1,
     processed: 2,
     shipping: 3,
-    paid: 4,
+    prepaid: 6,
+    completed: 4,
     cancelled: 5,
   };
-  constructor(private http: HttpClient,private donHangService: DonhangService,private modalService: NgbModal,) {}
+
+  constructor(private http: HttpClient, private donHangService: DonhangService, private modalService: NgbModal) {}
 
   ngOnInit(): void {
     this.loadCustomers();
     this.filteredDonhang = this.orders;
   }
-  confirmStatusChange(orderId: number, newStatus: number) {
-    const nextStatusText = this.getStatusText(newStatus);
-    let actionMessage = '';
 
-    switch (newStatus) {
-      case 2:
-        actionMessage = 'Xác nhận đơn hàng để chuẩn bị giao hàng?';
-        break;
-      case 3:
-        actionMessage = 'Bắt đầu giao hàng cho khách?';
-        break;
-      case 4:
-        actionMessage = 'Xác nhận khách đã thanh toán đơn hàng?';
-        break;
-      case 5:
-        actionMessage = 'Bạn có chắc muốn huỷ đơn hàng này?';
-        break;
-      case 1:
-        actionMessage = 'Khôi phục đơn hàng về trạng thái chờ xác nhận?';
-        break;
-      default:
-        actionMessage = `Chuyển trạng thái sang "${nextStatusText}"?`;
-        break;
+  confirmStatusChange(order: any) {
+    const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
+
+    if (order.selectedStatus === 3) {
+      this.selectShippingOption(order.id);
+      return;
     }
 
+    const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
+    const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
+
     Swal.fire({
-      title: 'Xác nhận thay đổi trạng thái',
-      text: actionMessage,
+      title: 'Xác nhận chuyển trạng thái',
+      text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'OK',
       cancelButtonText: 'Hủy'
     }).then(result => {
       if (result.isConfirmed) {
-        this.updateStatus(orderId, newStatus);
+        this.updateStatus(order.id, nextStatus);
+      }
+    });
+  }
+  requestCancellationReason(orderId: number): void {
+    Swal.fire({
+      title: 'Vui lòng nhập lý do hủy đơn hàng:',
+      input: 'text',
+      inputPlaceholder: 'Nhập lý do...',
+      showCancelButton: true,
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Hủy',
+    }).then(result => {
+      if (result.isConfirmed && result.value.trim() !== '') {
+        this.updateStatusWithReason(orderId, 5, result.value);
+      } else if (result.isConfirmed) {
+        this.showErrorMessage('Lý do hủy không được để trống! Vui lòng nhập lại.');
       }
     });
   }
 
-  getStatusText(status: number): string {
-    switch (status) {
-      case 1: return 'Chờ Xác Nhận';
-      case 2: return 'Đã Xác Nhận';
-      case 3: return 'Đang Giao';
-      case 4: return 'Đã Thanh Toán';
-      case 5: return 'Đã Hủy';
-      default: return 'Không xác định';
-    }
+  selectShippingOption(orderId: number): void {
+    Swal.fire({
+      title: 'Chọn hành động tiếp theo',
+      input: 'select',
+      inputOptions: {
+        '1': '✅ Đã Nhận Hàng (Hoàn thành)',
+        '2': '❌ Hủy Đơn (Khách không nhận)'
+      },
+      inputPlaceholder: 'Chọn hành động',
+      showCancelButton: true,
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Hủy',
+    }).then(result => {
+      if (result.isConfirmed) {
+        const choice = result.value;
+        if (choice === '1') this.updateStatus(orderId, 4);
+        else if (choice === '2') this.requestCancellationReason(orderId);
+        else this.showErrorMessage("Vui lòng chọn một hành động hợp lệ.");
+      }
+    });
   }
-
-
-
-
 
   updateStatus(orderId: number, newStatus: number) {
     const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}?trangThai=${newStatus}`;
@@ -133,96 +146,39 @@ export class InvoiceComponent implements OnInit {
     );
   }
 
-  selectPaymentOption(orderId: number): void {
-    const order = this.orders.find(o => o.id === orderId);
-    if (!order || [4, 5].includes(order.selectedStatus)) {
-      this.showErrorMessage("Đơn hàng đã hoàn tất hoặc đã hủy. Không thể thay đổi trạng thái.");
-      return;
-    }
-
+  showErrorMessage(message: string): void {
     Swal.fire({
-      title: 'Chọn hành động tiếp theo',
-      input: 'select',
-      inputOptions: {
-        '1': '✅ Đã Thanh Toán',
-        '2': '❌ Đã Hủy'
-      },
-      inputPlaceholder: 'Chọn hành động',
-      showCancelButton: true,
-      confirmButtonText: 'OK',
-      cancelButtonText: 'Hủy',
-    }).then(result => {
-      if (result.isConfirmed) {
-        const choice = result.value;
-        if (choice === '1') this.updateStatus(orderId, 4);
-        else if (choice === '2') this.requestCancellationReason(orderId);
-        else this.showErrorMessage("Vui lòng chọn một hành động hợp lệ.");
-      }
+      icon: 'error',
+      title: 'Oops...',
+      text: message,
+      position: 'bottom-end',
+      showConfirmButton: false,
+      timer: 3000
     });
   }
-
-
-
-  requestCancellationReason(orderId: number): void {
-    Swal.fire({
-      title: 'Vui lòng nhập lý do hủy đơn hàng:',
-      input: 'text',
-      inputPlaceholder: 'Nhập lý do...',
-      showCancelButton: true,
-      confirmButtonText: 'OK',
-      cancelButtonText: 'Hủy',
-    }).then(result => {
-      if (result.isConfirmed && result.value.trim() !== '') {
-        this.updateStatusWithReason(orderId, 5, result.value);
-      } else if (result.isConfirmed) {
-        this.showErrorMessage('Lý do hủy không được để trống! Vui lòng nhập lại.');
-      }
-    });
-  }
-
-// Thông báo lỗi sử dụng SweetAlert2
-showErrorMessage(message: string): void {
-  Swal.fire({
-    icon: 'error',
-    title: 'Oops...',
-    text: message,
-    position: 'bottom-end',
-    showConfirmButton: false,
-    timer: 3000
-  });
-}
-
 
   xemChiTietTaiKhoan(order: any) {
     const modalRef = this.modalService.open(UserDetailOrderComponent);
-    modalRef.componentInstance.taiKhoan = order.taiKhoan; // Truyền dữ liệu vào modal
+    modalRef.componentInstance.taiKhoan = order.taiKhoan;
   }
+
   openDetailModal(order: any) {
     const modalRef = this.modalService.open(OrderDetaiAdminComponent, { size: 'lg' });
-    modalRef.componentInstance.order = order; // Truyền đơn hàng vào component modal
+    modalRef.componentInstance.order = order;
   }
+
   loadCustomers(): void {
-    // Chỉ cần gọi API với tham số trangThai, không cần truyền page và size
     this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
       next: (response) => {
-        // Nhận danh sách đơn hàng
-        this.orders = response.map((order: { trangThai: any; }) => ({
+        this.orders = response.map((order: any) => ({
           ...order,
-          selectedStatus: order.trangThai, // Lưu trạng thái vào selectedStatus
+          selectedStatus: order.trangThai,
         }));
-
-        // Sau khi nhận được đơn hàng, lọc theo trạng thái đã chọn
         this.filterOrders(this.selectedStatus !== null ? this.selectedStatus.toString() : '');
-
-        // Lưu tổng số trang từ response của API nếu có (nếu API hỗ trợ phân trang)
-        // Nếu API không phân trang, bạn có thể bỏ qua phần này
-        // this.totalPages = response.page?.totalPages || 1;
       },
       error: (error: any) => console.error('Error loading orders', error)
     });
   }
-
-
 
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? null;
@@ -237,87 +193,56 @@ showErrorMessage(message: string): void {
     }
   }
 
-  rearrangeOrders(orderList: any[]): any[] {
-    let newOrderList = [];
-
-    // 🚀 Dồn dữ liệu từ trang sau lên trang đầu
-    for (let i = 0; i < orderList.length; i++) {
-        newOrderList.push(orderList[i]);
+  getFilterKey(status: number): string {
+    switch (status) {
+      case 1: return 'pending';
+      case 2: return 'processed';
+      case 3: return 'shipping';
+      case 4: return 'completed';
+      case 5: return 'cancelled';
+      case 6: return 'prepaid';
+      default: return '';
     }
-
-    return newOrderList;
-}
-
-
-
-
-    clearFilter(): void {
-      // this.filteredDonhang = this.orders;
-
-    }
-    getFilterKey(status: number): string {
-      switch (status) {
-        case 1: return 'pending';
-        case 2: return 'processed';
-        case 3: return 'shipping';
-        case 4: return 'paid';
-        case 5: return 'cancelled';
-        default: return '';
-      }
-    }
-
-
-    getStatusStyle(status: number) {
-      switch (status) {
-        case 1: return { 'color': 'red', 'font-weight': 'bold' };  // Chờ Xác Nhận
-        case 2: return { 'color': 'blue', 'font-weight': 'bold' }; // Đã Xác Nhận
-        case 3: return { 'color': 'rgb(159, 159, 6)', 'font-weight': 'bold' }; // Đang Giao
-        case 4: return { 'color': 'white', 'background-color': 'grey', 'font-weight': 'bold' }; // Đã Thanh Toán
-        case 5: return { 'color': 'black', 'background-color': 'lightgray', 'font-weight': 'bold' }; // Đã Hủy
-        default: return {}; // Trạng thái không xác định
-      }
-    }
-    // Trả về tên trạng thái tiếp theo của đơn hàng
-    getNextStatusText(currentStatus: number): string {
-      switch (currentStatus) {
-          case 1: return 'Đã Xác Nhận'; // Chờ Xác Nhận -> Đã Xác Nhận
-          case 2: return 'Đang Giao'; // Đã Xác Nhận -> Đang Giao
-          case 3: return 'Đã Thanh Toán hoặc Đã Hủy'; // Đang Giao -> Phải chọn 1 trong 2
-          case 4: return 'Đã Hủy'; // Đã Thanh Toán -> Đã Hủy (nếu rollback)
-          case 5: return 'Chờ Xác Nhận'; // Đã Hủy -> Chờ Xác Nhận (nếu cần phục hồi)
-          default: return 'Không xác định';
-      }
   }
 
-
-
-
-// Trả về mã trạng thái tiếp theo của đơn hàng
-getNextStatusCode(currentStatus: number): number {
-  switch (currentStatus) {
-      case 1: return 2; // Chờ Xác Nhận -> Đã Xác Nhận
-      case 2: return 3; // Đã Xác Nhận -> Đang Giao
-      case 3: return 4; // Đang Giao -> Đã Thanh Toán (hoặc có thể chọn Đã Hủy)
-      case 4: return 5; // Đã Thanh Toán -> Đã Hủy (nếu có rollback)
-      case 5: return 1; // Đã Hủy -> Chờ Xác Nhận (nếu có phục hồi)
-      default: return currentStatus; // Giữ nguyên nếu trạng thái không xác định
+  getStatusStyle(status: number) {
+    switch (status) {
+      case 1: return { 'color': 'red', 'font-weight': 'bold' };
+      case 2: return { 'color': 'blue', 'font-weight': 'bold' };
+      case 3: return { 'color': 'rgb(159, 159, 6)', 'font-weight': 'bold' };
+      case 4: return { 'color': 'white', 'background-color': 'green', 'font-weight': 'bold' };
+      case 5: return { 'color': 'black', 'background-color': 'lightgray', 'font-weight': 'bold' };
+      case 6: return { 'color': 'white', 'background-color': 'grey', 'font-weight': 'bold' };
+      default: return {};
+    }
   }
-}
 
+  getNextStatusText(currentStatus: number, isCK: boolean): string {
+    switch (currentStatus) {
+      case 1: return 'Đã Xác Nhận';
+      case 2: return 'Đang Giao';
+      case 3: return 'Đã Hoàn Thành';
+      case 6: return 'Đang Giao';
+      default: return 'Không xác định';
+    }
+  }
 
+  getNextStatusCode(currentStatus: number, isCK: boolean): number {
+    switch (currentStatus) {
+      case 1: return isCK ? 6 : 2;
+      case 2: return 3;
+      case 3: return 4;
+      case 6: return 3;
+      default: return currentStatus;
+    }
+  }
 
-
-
-
-   // 🔄 Phân trang
-   goToPage(p: number) {
+  goToPage(p: number) {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
-      console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
       this.loadCustomers();
     }
   }
-
 
   prevPage() {
     if (this.page > 0) {
@@ -333,7 +258,6 @@ getNextStatusCode(currentStatus: number): number {
     }
   }
 
-  // 🔢 Cập nhật cách lấy danh sách số trang hiển thị
   getPaginationRange(): number[] {
     let range: number[] = [];
     let start = Math.max(0, this.page - 2);
@@ -343,9 +267,6 @@ getNextStatusCode(currentStatus: number): number {
       range.push(i);
     }
 
-    console.log('📌 Pagination range:', range); // Debug
     return range;
   }
 }
-
-

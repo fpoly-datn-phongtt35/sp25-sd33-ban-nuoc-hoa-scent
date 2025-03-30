@@ -12,8 +12,8 @@ export class MomoPaymentService {
     return this.http.post(`${this.baseUrl}/pay`, payload);
   }
 
-  checkStatus(orderId: string, requestId: string): Observable<any> {
-    const payload = { orderId, requestId };
-    return this.http.post(`${this.baseUrl}/check-status`, payload);
+  checkStatus(orderId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/check-status`, { orderId });
   }
+
 }

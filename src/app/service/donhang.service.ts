@@ -9,7 +9,7 @@ import { TokenService } from './token.service';
 })
 export class DonhangService {
   private apiUrl = 'http://localhost:8080/rest/don-hang';
-  
+
   private orderIdSource = new BehaviorSubject<string | null>(null);
 
   currentOrderId = this.orderIdSource.asObservable();
@@ -17,10 +17,10 @@ export class DonhangService {
   getDonhang(trangThai: number = -1): Observable<any> {
     // Chỉ truyền tham số trangThai vào URL
     let params = `/page?trangThai=${trangThai}`;
-    
+
     return this.http.get(`${this.apiUrl}${params}`);
   }
-  
+
 getDonhangWithoutPagination(): Observable<any> {
   const url = `http://localhost:8080/rest/don-hang/getAll`;
   return this.http.get(url);
@@ -37,9 +37,12 @@ getDonhangWithoutPagination(): Observable<any> {
         })
       );
   }
-  
+
   getOrderDetails(orderId: number): Observable<any> {
     return this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`);
+  }
+  capNhatTrangThaiTuDong(orderId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/capnhat-tu-dong/${orderId}`, {});
   }
 }
 
