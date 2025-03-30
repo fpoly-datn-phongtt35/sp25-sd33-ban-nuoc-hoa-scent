@@ -178,6 +178,35 @@ public class DonHangCtrl {
         return ResponseEntity.ok(donHangs);
     }
 
+    @PutMapping("/capnhat-tu-dong/{id}")
+    public ResponseEntity<?> capNhatTuDongTheoPhuongThuc(@PathVariable Integer id) {
+        try {
+            DonHang donHang = dhs.detail(id);
+            String ptThanhToan = donHang.getPhuongThucThanhToan();
+            int trangThaiHienTai = donHang.getTrangThai();
+            int trangThaiMoi = trangThaiHienTai;
+
+            boolean isChuyenKhoan = ptThanhToan != null && ptThanhToan.toLowerCase().contains("ck");
+
+            if (trangThaiHienTai == 1 && isChuyenKhoan) {
+                trangThaiMoi = 6; // Chuyển khoản → sang "Đã thanh toán"
+            } else if (trangThaiHienTai == 1 && !isChuyenKhoan) {
+                trangThaiMoi = 2; // Tiền mặt → sang "Đã xác nhận"
+            } else if (trangThaiHienTai == 2) {
+                trangThaiMoi = 3; // → "Đang giao"
+            } else if (trangThaiHienTai == 3) {
+                trangThaiMoi = 4; // → "Đã hoàn thành"
+            } else if (trangThaiHienTai == 6) {
+                trangThaiMoi = 3; // CK: từ "Đã thanh toán" → "Đang giao"
+            }
+
+            DonHang updated = dhs.capNhatTrangThaiDonHang(id, trangThaiMoi, null);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi cập nhật tự động: " + e.getMessage());
+        }
+    }
 
 
 }
