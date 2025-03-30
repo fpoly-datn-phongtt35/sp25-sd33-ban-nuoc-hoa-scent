@@ -8,15 +8,8 @@ import com.example.scent.reques.PhiVanChuyenRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -149,7 +142,7 @@ public class DonHangSv {
             chiTiet.setThanhTien(thanhTien);
 
             // 🔥 Lấy danh sách hình ảnh từ `HinhAnhRepository`
-            List<String> productImages = hinhAnhInterface.findBySanPhamId(spct.getSanPham().getIdSanPham())
+            List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(spct.getSanPham().getIdSanPham())
                     .stream()
                     .map(HinhAnh::getLink)
                     .collect(Collectors.toList());
@@ -211,7 +204,7 @@ newOrder.setMaPhuong(orderRequest.getMaPhuong());
         Map<Integer, List<String>> imageMap = new HashMap<>();
 
         for (Integer id : sanPhamIds) {
-            List<HinhAnh> hinhAnhs = hinhAnhInterface.findBySanPhamId(id);
+            List<HinhAnh> hinhAnhs = hinhAnhInterface.findHinhAnhBySanPhamId(id);
             List<String> imageUrls = hinhAnhs.stream()
                     .map(HinhAnh::getLink)  // Giả sử HinhAnh có phương thức getUrl
                     .collect(Collectors.toList());
@@ -342,7 +335,7 @@ donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
                     itemDto.setThanhTien(chiTiet.getThanhTien());
 
                     // Lấy hình ảnh của sản phẩm
-                    List<String> productImages = hinhAnhInterface.findBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
+                    List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
                             .stream()
                             .map(HinhAnh::getLink)
                             .collect(Collectors.toList());

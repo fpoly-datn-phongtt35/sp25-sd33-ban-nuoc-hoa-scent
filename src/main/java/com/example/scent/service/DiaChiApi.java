@@ -21,6 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -28,14 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 
 @Service
-@Slf4j
+
 public class DiaChiApi {
 
     private static final String apiTinhThanh = "https://online-gateway.ghn.vn/shiip/public-api/master-data/province";
     private static final String apiQuanHuyen = "https://online-gateway.ghn.vn/shiip/public-api/master-data/district";
     private static final String apiPhuongXa = "https://online-gateway.ghn.vn/shiip/public-api/master-data/ward";
     private static final String FeeAPI = "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee";
-
+    private static final Logger log = LoggerFactory.getLogger(DiaChiApi.class);
     // Lấy danh sách tỉnh
     public static HashMap<Integer, String> callGetTinhThanhAPI() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();

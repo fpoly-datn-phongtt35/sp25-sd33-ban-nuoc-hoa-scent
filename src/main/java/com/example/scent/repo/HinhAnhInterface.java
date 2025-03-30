@@ -15,6 +15,6 @@ public interface HinhAnhInterface extends JpaRepository<HinhAnh, Integer>{
 
 
         @Query("SELECT h FROM HinhAnh h WHERE h.sanPham.idSanPham = :sanPhamId")
-        List<HinhAnh> findBySanPhamId(@Param("sanPhamId") Integer sanPhamId);
+        List<HinhAnh> findHinhAnhBySanPhamId(@Param("sanPhamId") Integer sanPhamId);
 
 }

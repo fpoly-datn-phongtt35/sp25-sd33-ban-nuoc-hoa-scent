@@ -11,12 +11,62 @@ import java.util.List;
 
     @Getter
     @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
+
     public class OrderItemDTOID {
         private Integer spctId;  // ID của sản phẩm cụ thể
         private Integer quantity;  // Số lượng đặt mua
         private List<String> imageURL;
         private BigDecimal donGia;
         private BigDecimal thanhTien;
-}
+
+        public OrderItemDTOID(Integer spctId, Integer quantity, List<String> imageURL, BigDecimal donGia, BigDecimal thanhTien) {
+            this.spctId = spctId;
+            this.quantity = quantity;
+            this.imageURL = imageURL;
+            this.donGia = donGia;
+            this.thanhTien = thanhTien;
+        }
+
+        public OrderItemDTOID() {
+        }
+
+        public Integer getSpctId() {
+            return spctId;
+        }
+
+        public void setSpctId(Integer spctId) {
+            this.spctId = spctId;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
+
+        public List<String> getImageURL() {
+            return imageURL;
+        }
+
+        public void setImageURL(List<String> imageURL) {
+            this.imageURL = imageURL;
+        }
+
+        public BigDecimal getDonGia() {
+            return donGia;
+        }
+
+        public void setDonGia(BigDecimal donGia) {
+            this.donGia = donGia;
+        }
+
+        public BigDecimal getThanhTien() {
+            return thanhTien;
+        }
+
+        public void setThanhTien(BigDecimal thanhTien) {
+            this.thanhTien = thanhTien;
+        }
+    }

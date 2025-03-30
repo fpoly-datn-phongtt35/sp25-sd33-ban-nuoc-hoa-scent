@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+
 public class ApiResponseSingle<T> {
     @JsonProperty("code")
     private String code;
@@ -18,4 +17,37 @@ public class ApiResponseSingle<T> {
     private String message;
     @JsonProperty("data")
     private T data;
+
+    public ApiResponseSingle() {
+    }
+
+    public ApiResponseSingle(String code, String message, T data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
 }
