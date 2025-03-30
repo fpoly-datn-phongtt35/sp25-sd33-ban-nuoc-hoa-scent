@@ -315,6 +315,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         donHangDTO.setIdTaiKhoan(donHang.getTaiKhoan().getId());
         donHangDTO.setTenNguoiNhanHang(donHang.getTenNguoiNhanHang());
         donHangDTO.setDiaChiGiaoHang(donHang.getDiaChiGiaoHang());
+        donHangDTO.setMaDonHang(donHang.getId());
         donHangDTO.setSdtNguoiNhan(donHang.getSdtNguoiNhan());
         donHangDTO.setPhuongThucVanChuyen(donHang.getPhuongThucVanChuyen());
         donHangDTO.setPhuongThucThanhToan(donHang.getPhuongThucThanhToan());

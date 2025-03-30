@@ -50,18 +50,37 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
 
 
 
-    @Query("SELECT new com.example.scent.dto.donhangDetailDTO(" +
-            "dh.id, dh.tenNguoiNhanHang, dh.diaChiGiaoHang, dh.sdtNguoiNhan, " +
-            " dh.tongTien, dh.ngayTao, dh.ngayVanChuyen, " +
-            "dh.phuongThucVanChuyen, dh.phuongThucThanhToan, sp.tenSanPham, sp.moTaSanPham, " +
-            "spct.dungTich, spct.donGia, ctdh.soLuong, ha.link) " +
-            "FROM DonHang dh " +
-            "JOIN dh.chiTietDonHangs ctdh " +
-            "JOIN ctdh.spct spct " +
-            "JOIN spct.sanPham sp " +
-            "LEFT JOIN sp.hinhAnhs ha " +
-            "WHERE dh.id = :id")
+    @Query(value = """
+    SELECT 
+        dh.id AS donHangId,
+        dh.ten_nguoi_nhan_hang AS tenNguoiNhan,
+        dh.dia_chi_giao_hang AS diaChiGiaoHang,
+        dh.sdt_nguoi_nhan AS sdtNguoiNhan,
+        dh.tong_tien AS tongTien,
+        dh.ngay_tao AS ngayTao,
+        dh.ngay_van_chuyen AS ngayVanChuyen,
+        dh.phuong_thuc_van_chuyen AS phuongThucVanChuyen,
+        dh.phuong_thuc_thanh_toan AS phuongThucThanhToan,
+        sp.ten AS tenSanPham,
+        sp.mo_ta AS moTaSanPham,
+        spct.dung_tich AS dungTich,
+        spct.don_gia AS donGiaSPCT,
+        ctdh.so_luong AS soLuong,
+        STRING_AGG(ha.link, ', ') AS hinhAnh
+    FROM don_hang dh
+    JOIN chi_tiet_don_hang ctdh ON dh.id = ctdh.id_don_hang
+    JOIN spct spct ON ctdh.id_spct = spct.id
+    JOIN san_pham sp ON spct.id_san_pham = sp.id
+    LEFT JOIN hinh_anh ha ON ha.id_san_pham = sp.id
+    WHERE dh.id = :id
+    GROUP BY 
+        dh.id, dh.ten_nguoi_nhan_hang, dh.dia_chi_giao_hang, dh.sdt_nguoi_nhan,
+        dh.tong_tien, dh.ngay_tao, dh.ngay_van_chuyen,
+        dh.phuong_thuc_van_chuyen, dh.phuong_thuc_thanh_toan,
+        sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, ctdh.so_luong
+""", nativeQuery = true)
     List<donhangDetailDTO> findDonHangDetailsById(@Param("id") Integer id);
+
 
     @Query("SELECT dh FROM DonHang dh " +
             "LEFT JOIN FETCH dh.chiTietDonHangs ctdh " +
