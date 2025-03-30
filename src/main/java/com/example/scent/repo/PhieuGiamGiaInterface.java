@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Repository
 
@@ -20,4 +21,5 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
                                                               @Param("giaTriGiam") BigDecimal giaTriGiam,
                                                               Pageable pageable);
 
+    Optional<PhieuGiamGia> findByMaGiamGia(String maGiamGia);
 }

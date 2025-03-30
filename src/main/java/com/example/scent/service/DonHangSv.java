@@ -26,7 +26,8 @@ public class DonHangSv {
     @PersistenceContext
     private EntityManager entityManager;
 
-
+@Autowired
+    PhieuGiamGiaInterface phieuGiamGiaInterface;
     @Autowired
     private DiaChiApi diaChiApi;
     @Autowired
@@ -118,9 +119,9 @@ public class DonHangSv {
             throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển không hợp lệ!");
         }
 
-            LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
+        LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
 
-        BigDecimal tongTien = BigDecimal.ZERO;
+        BigDecimal thanhTienGoc = BigDecimal.ZERO;
 
         List<ChiTietDonHang> chiTietList = new ArrayList<>();
 
@@ -132,7 +133,7 @@ public class DonHangSv {
                 throw new RuntimeException("Số lượng sản phẩm không đủ. Sản phẩm ID: " + itemDTO.getSpctId() + " chỉ còn " + spct.getSoLuongTonKho() + " sản phẩm.");
             }
             BigDecimal thanhTien = spct.getDonGia().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
-            tongTien = tongTien.add(thanhTien);
+            thanhTienGoc = thanhTienGoc.add(thanhTien);
 
 
             ChiTietDonHang chiTiet = new ChiTietDonHang();
@@ -154,7 +155,31 @@ public class DonHangSv {
             chiTietList.add(chiTiet);
 
         }
-        tongTien = tongTien.add(phiVanChuyen);
+        BigDecimal thanhTienSauGiam = thanhTienGoc;
+        PhieuGiamGia phieuGiamGia = null;
+        BigDecimal soTienGiam = null;
+        if (orderRequest.getMaGiamGia() != null && !orderRequest.getMaGiamGia().isEmpty()) {
+            phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
+                    .orElseThrow(() -> new RuntimeException("⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
+
+            LocalDateTime now = LocalDateTime.now();
+            if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
+                throw new RuntimeException("⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
+            }
+            List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
+            if (!donHangs.isEmpty()) {
+                throw new RuntimeException("⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
+            }
+            BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
+            soTienGiam = thanhTienGoc.multiply(phanTramGiam);
+            thanhTienSauGiam = thanhTienGoc.subtract(soTienGiam);
+
+            if (thanhTienSauGiam.compareTo(BigDecimal.ZERO) < 0) {
+                thanhTienSauGiam = BigDecimal.ZERO;
+            }
+        }
+
+        BigDecimal tongTien = thanhTienSauGiam.add(phiVanChuyen);
         // Tạo đơn hàng mới
         DonHang newOrder = new DonHang();
         newOrder.setTaiKhoan(taiKhoan);
@@ -172,9 +197,13 @@ public class DonHangSv {
         newOrder.setGhiChu(orderRequest.getGhichu());
         newOrder.setMaTinh(orderRequest.getMaTinh());
         newOrder.setMaQuan(orderRequest.getMaQuan());
-newOrder.setMaPhuong(orderRequest.getMaPhuong());
-
+        newOrder.setMaPhuong(orderRequest.getMaPhuong());
+        newOrder.setSoTienGiam(soTienGiam);
         newOrder.setTongTien(tongTien);
+
+        if (phieuGiamGia != null) {
+            newOrder.setPhieuGiamGia(phieuGiamGia);
+        }
         DonHang savedOrder = dhi.save(newOrder);
 
         for (ChiTietDonHang chiTiet : chiTietList) {

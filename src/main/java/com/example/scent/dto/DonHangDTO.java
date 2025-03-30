@@ -34,8 +34,35 @@ public class DonHangDTO {
     private String maPhuong;  // Mã phường xã
     private BigDecimal phiVanChuyen;
     private Integer trungBinhCacCanh =10;
+    private String maGiamGia;
+    private BigDecimal tongTien;
+    private BigDecimal soTienGiam;
+
+    public BigDecimal getTongTien() {
+        return tongTien;
+    }
+
+    public void setTongTien(BigDecimal tongTien) {
+        this.tongTien = tongTien;
+    }
+
+    public BigDecimal getSoTienGiam() {
+        return soTienGiam;
+    }
+
+    public void setSoTienGiam(BigDecimal soTienGiam) {
+        this.soTienGiam = soTienGiam;
+    }
 
     public DonHangDTO() {
+    }
+
+    public String getMaGiamGia() {
+        return maGiamGia;
+    }
+
+    public void setMaGiamGia(String maGiamGia) {
+        this.maGiamGia = maGiamGia;
     }
 
     public Integer getIdTaiKhoan() {
@@ -166,7 +193,7 @@ public class DonHangDTO {
         this.trungBinhCacCanh = trungBinhCacCanh;
     }
 
-    public DonHangDTO(Integer idTaiKhoan, String tenNguoiNhanHang, String diaChiGiaoHang, String sdtNguoiNhan, String phuongThucVanChuyen, String phuongThucThanhToan, LocalDateTime ngayTao, LocalDateTime ngayVanChuyen, List<OrderItemDto> chiTietDonHangs, List<String> imageURL, String ghichu, Integer maTinh, Integer maQuan, String maPhuong, BigDecimal phiVanChuyen, Integer trungBinhCacCanh) {
+    public DonHangDTO(Integer idTaiKhoan, String tenNguoiNhanHang, String diaChiGiaoHang, String sdtNguoiNhan, String phuongThucVanChuyen, String phuongThucThanhToan, LocalDateTime ngayTao, LocalDateTime ngayVanChuyen, List<OrderItemDto> chiTietDonHangs, List<String> imageURL, String ghichu, Integer maTinh, Integer maQuan, String maPhuong, BigDecimal phiVanChuyen, Integer trungBinhCacCanh, String maGiamGia, BigDecimal tongTien, BigDecimal soTienGiam) {
         this.idTaiKhoan = idTaiKhoan;
         this.tenNguoiNhanHang = tenNguoiNhanHang;
         this.diaChiGiaoHang = diaChiGiaoHang;
@@ -183,5 +210,8 @@ public class DonHangDTO {
         this.maPhuong = maPhuong;
         this.phiVanChuyen = phiVanChuyen;
         this.trungBinhCacCanh = trungBinhCacCanh;
+        this.maGiamGia = maGiamGia;
+        this.tongTien = tongTien;
+        this.soTienGiam = soTienGiam;
     }
 }

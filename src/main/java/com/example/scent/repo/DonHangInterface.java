@@ -4,7 +4,9 @@ import com.example.scent.dto.DonHangDTO;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
+import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.SanPham;
+import com.example.scent.entity.TaiKhoan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -101,6 +103,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     @Query(value = "select * from don_hang where loai_don_hang like 'offline' and trang_thai like 'đang xử lý'", nativeQuery = true)
     List<DonHang> getAllOffline();
 
+    List<DonHang> findByTaiKhoanAndPhieuGiamGia(TaiKhoan taiKhoan, PhieuGiamGia phieuGiamGia);
 
 
 }
