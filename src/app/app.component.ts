@@ -11,5 +11,5 @@ import { HomeComponent } from './home/home.component';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'DATN_FE';
+  title = 'Scent';
 }

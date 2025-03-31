@@ -1,0 +1,75 @@
+<div class="container mt-4">
+  <!-- 🔙 Quay lại -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="javascript:void(0)" (click)="close()" class="text-decoration-none text-muted fw-medium">
+      <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng
+    </a>
+    <h4 class="fw-semibold mb-0"><i class="bi bi-receipt-cutoff me-2"></i>Chi tiết đơn hàng #{{ order?.id }}</h4>
+    <div></div>
+  </div>
+
+  <!-- 👤 Thông tin người nhận và người đặt -->
+  <div class="row g-3 mb-4">
+    <!-- Người nhận hàng -->
+    <div class="col-md-6">
+      <div class="border rounded p-3 bg-white shadow-sm h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-box-seam me-2"></i>Người nhận hàng</h6>
+        <p class="mb-1"><i class="bi bi-person-circle me-1"></i> {{ order?.tenNguoiNhanHang }}</p>
+        <p class="mb-1"><i class="bi bi-geo-alt me-1"></i> {{ order?.diaChiGiaoHang }}</p>
+        <p class="mb-1"><i class="bi bi-telephone me-1"></i> {{ order?.sdtNguoiNhan }}</p>
+        <p class="mb-1"><i class="bi bi-wallet2 me-1"></i> {{ getPaymentMethod(order?.phuongThucThanhToan) }}</p>
+        <p class="mb-1">
+          <i class="bi bi-truck me-1"></i> {{ getOrderStatus(order?.selectedStatus) }}
+          <br *ngIf="order?.selectedStatus === 5 && order?.lyDoHuy">
+          <span class="text-danger" *ngIf="order?.selectedStatus === 5 && order?.lyDoHuy">
+            <i class="bi bi-exclamation-circle me-1"></i>Lý do hủy: {{ order?.lyDoHuy }}
+          </span>
+        </p>
+                <p class="mb-0"><i class="bi bi-calendar me-1"></i> {{ order?.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+    </div>
+
+    <!-- Người đặt hàng -->
+    <div class="col-md-6">
+      <div class="border rounded p-3 bg-white shadow-sm h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-person-badge me-2"></i>Người đặt hàng</h6>
+        <p class="mb-1"><i class="bi bi-person me-1"></i> {{ order?.taiKhoan?.hoTen }}</p>
+        <p class="mb-1"><i class="bi bi-envelope me-1"></i> {{ order?.taiKhoan?.email }}</p>
+        <p class="mb-1"><i class="bi bi-phone me-1"></i> {{ order?.taiKhoan?.sdt }}</p>
+        <p class="mb-1"><i class="bi bi-person-lines-fill me-1"></i> {{ order?.taiKhoan?.tenDangNhap }}</p>
+        <p class="mb-0"><i class="bi bi-shield-lock me-1"></i> {{ order?.taiKhoan?.vaiTro }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧾 Sản phẩm -->
+  <h6 class="fw-bold mb-3"><i class="bi bi-box2-heart me-2"></i>Sản phẩm trong đơn</h6>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light text-center">
+        <tr>
+          <th>Ảnh</th>
+          <th>Sản phẩm</th>
+          <th>Giá</th>
+          <th>Số lượng</th>
+          <th>Tổng</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of order?.chiTietDonHangs" class="text-center">
+          <td><img [src]="item.spct.imageUrl" alt="Ảnh sản phẩm" width="60" class="rounded"></td>
+          <td class="text-start">{{ item.spct?.sanPham?.tenSanPham }}</td>
+          <td>{{ item.spct?.donGia | number }} đ</td>
+          <td>{{ item.soLuong }}</td>
+          <td>{{ item.spct?.donGia * item.soLuong | number }} đ</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 💰 Tổng -->
+  <div class="text-end mt-3">
+    <p class="mb-1"><strong>Phí vận chuyển:</strong> {{ order?.phiVanChuyen | number }} đ</p>
+    <p class="fs-5 fw-semibold"><strong>Tổng tiền:</strong> {{ order?.tongTien | number }} đ</p>
+  </div>
+</div>

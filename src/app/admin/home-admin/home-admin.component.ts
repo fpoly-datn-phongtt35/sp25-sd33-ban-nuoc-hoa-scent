@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { ProductAdminComponent } from '../product-admin/product-admin.component';
 import { CommonModule } from '@angular/common';
-import { UserAdminComponent } from '../user-admin/user-admin.component';
-import { CustomerComponent } from '../customer/customer.component';
-import { VourcherComponent } from '../vourcher/vourcher.component';
 import { StatisticsComponent } from '../statistics/statistics.component';
-import { InvoiceComponent } from '../invoice/invoice.component';
 
 import { TokenService } from '../../service/token.service';
 import { Router } from '@angular/router';
+import { CustomerComponent } from '../account/account-customer-list/customer.component';
+import { UserAdminComponent } from '../account/account-staff-list/user-admin.component';
+import { ProductAdminComponent } from '../product/product-list/product-admin.component';
+import { VourcherComponent } from '../voucher/vourcher-list/vourcher.component';
+import { InvoiceComponent } from '../order/order-list/invoice.component';
 
 @Component({
   selector: 'app-home-admin',

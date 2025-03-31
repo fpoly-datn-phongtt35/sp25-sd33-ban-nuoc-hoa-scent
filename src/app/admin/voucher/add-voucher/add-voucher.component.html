@@ -1,0 +1,38 @@
+<div class="modal-header">
+  <h5 class="modal-title">Thêm Voucher</h5>
+  <button type="button" class="btn-close" (click)="closeModal()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="voucherForm">
+      <div class="mb-3">
+          <label class="form-label">Mã giảm giá</label>
+          <input type="text" class="form-control" formControlName="maGiamGia">
+      </div>
+      <div class="mb-3">
+          <label class="form-label">Giá trị</label>
+          <input type="number" class="form-control" formControlName="giaTriGiam">
+      </div>
+      <div class="mb-3">
+          <label class="form-label">Ngày bắt đầu</label>
+          <input type="date" class="form-control" formControlName="ngayBatDau">
+      </div>
+      <div class="mb-3">
+          <label class="form-label">Thời gian bắt đầu</label>
+          <input type="time" class="form-control" formControlName="gioPhutBatDau" min="00:00" max="23:59">
+      </div>
+      <div class="mb-3">
+          <label class="form-label">Ngày hết hạn</label>
+          <input type="date" class="form-control" formControlName="ngayHetHan">
+      </div>
+      <div class="mb-3">
+          <label class="form-label">Thời gian hết hạn</label>
+          <input type="time" class="form-control" formControlName="gioPhutHetHan" min="00:00" max="23:59">
+      </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="button" class="btn btn-primary" (click)="saveVoucher()">Lưu</button>
+</div>

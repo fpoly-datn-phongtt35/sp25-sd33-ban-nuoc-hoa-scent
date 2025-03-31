@@ -1,0 +1,174 @@
+/* ==================== TABLE ==================== */
+.table th, .table td {
+  min-width: 100px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.table th.ten-nguoi-nhan, .table td.ten-nguoi-nhan {
+  width: 15%;
+}
+.table th.dia-chi, .table td.dia-chi {
+  width: 20%;
+}
+.table th.sdt, .table td.sdt {
+  width: 10%;
+}
+.table th.tong-tien, .table td.tong-tien {
+  width: 10%;
+}
+.table th.ngay-tao, .table td.ngay-tao,
+.table th.ngay-van-chuyen, .table td.ngay-van-chuyen,
+.table td.trang-thai {
+  width: 12%;
+}
+.table th.phuong-thuc, .table td.phuong-thuc {
+  width: 10%;
+}
+.table th.hanh-dong, .table td.hanh-dong {
+  width: 5%;
+}
+.status-column {
+  min-width: 150px;
+  white-space: nowrap;
+}
+
+/* ==================== BUTTON ==================== */
+button.btn-sm {
+  transition: all 0.2s ease;
+}
+button.btn-sm:hover {
+  transform: scale(1.03);
+  opacity: 0.95;
+  cursor: pointer;
+}
+
+/* ==================== LỌC ĐƠN HÀNG ==================== */
+.btn-custom {
+  background-color: #8c8e90;
+  color: white;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.btn-custom.active {
+  background-color: #94cbdc;
+  color: white;
+}
+.btn-custom:hover {
+  background-color: #9fc4ea;
+}
+.btn-custom.active:hover {
+  background-color: #a8d8ed;
+}
+
+/* ==================== ALERT BOX ==================== */
+.alert-box {
+  background-color: #f0f8ff;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 20px auto;
+}
+.alert-box p {
+  font-size: 16px;
+  color: #333;
+  margin: 0;
+}
+.alert-box button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.alert-box button:hover {
+  background-color: #0056b3;
+}
+.alert-box .close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #007bff;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.alert-box .close:hover {
+  color: #0056b3;
+}
+
+/* ==================== BADGE TRẠNG THÁI ==================== */
+.badge-status {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 20px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid transparent;
+  user-select: none;
+}
+.badge-status:hover {
+  transform: scale(1.01);
+  opacity: 0.95;
+}
+
+/* === Tooltip cho badge === */
+.badge-status[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: -35px;
+  left: 0;
+  padding: 4px 8px;
+  background-color: #000000cc;
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 999;
+}
+
+/* === Màu trạng thái cụ thể === */
+.status-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border-color: #ffeeba;
+}
+.status-success {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+.status-info {
+  background-color: #cce5ff;
+  color: #004085;
+  border-color: #b8daff;
+}
+.status-secondary {
+  background-color: #e2e3e5;
+  color: #383d41;
+  border-color: #d6d8db;
+}
+.status-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+.status-dark {
+  background-color: #343a40;
+  color: #fff;
+  border-color: #1d2124;
+}
