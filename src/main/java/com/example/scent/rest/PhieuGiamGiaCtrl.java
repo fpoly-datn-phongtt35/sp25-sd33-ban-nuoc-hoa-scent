@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -70,6 +71,13 @@ public class PhieuGiamGiaCtrl {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return pggs.getPagePhieuGiamGia(page, size);
+    }
+    @GetMapping("/{code}")
+    public ResponseEntity<?> getDiscountCodeDetails(@PathVariable String code) {
+        Optional<PhieuGiamGia> phieuGiamGia = pggs.getDiscountCodeByCode(code);
+        return phieuGiamGia
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
 

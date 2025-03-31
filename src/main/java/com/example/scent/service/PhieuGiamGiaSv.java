@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PhieuGiamGiaSv {
@@ -36,7 +37,9 @@ public class PhieuGiamGiaSv {
     public void delete(Integer id) {
         pggi.deleteById(id);
     }
-
+    public Optional<PhieuGiamGia> getDiscountCodeByCode(String code) {
+        return pggi.findByMaGiamGia(code);
+    }
 
     public PhieuGiamGia detail(Integer id) {
         return pggi.findById(id).get();

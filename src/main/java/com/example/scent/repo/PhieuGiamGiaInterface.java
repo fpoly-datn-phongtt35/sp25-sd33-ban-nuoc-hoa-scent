@@ -22,4 +22,5 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
                                                               Pageable pageable);
 
     Optional<PhieuGiamGia> findByMaGiamGia(String maGiamGia);
+
 }
