@@ -8,6 +8,7 @@ import com.example.scent.reques.PhiVanChuyenRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ResponseStatusException;
 
 
 @Service
@@ -160,15 +162,15 @@ public class DonHangSv {
         BigDecimal soTienGiam = null;
         if (orderRequest.getMaGiamGia() != null && !orderRequest.getMaGiamGia().isEmpty()) {
             phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
-                    .orElseThrow(() -> new RuntimeException("⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
 
             LocalDateTime now = LocalDateTime.now();
             if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
-                throw new RuntimeException("⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
             }
             List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
             if (!donHangs.isEmpty()) {
-                throw new RuntimeException("⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
             }
             BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
             soTienGiam = thanhTienGoc.multiply(phanTramGiam);
