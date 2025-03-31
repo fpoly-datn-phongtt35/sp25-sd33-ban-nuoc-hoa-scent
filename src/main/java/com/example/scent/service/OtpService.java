@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class OtpService {
     private final Map<String, OtpEntry> otpCache = new ConcurrentHashMap<>();
-    private static final long EXPIRATION = 30 * 1000; // 30 giây
+    private static final long EXPIRATION = 90 * 1000; // 30 giây
 
     public String generateOtp(String email) {
         String otp = String.valueOf((int)(Math.random() * 900000) + 100000); // OTP 6 chữ số
