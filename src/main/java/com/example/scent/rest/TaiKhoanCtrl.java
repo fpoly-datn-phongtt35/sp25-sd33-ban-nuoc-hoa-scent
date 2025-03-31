@@ -1,6 +1,8 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.TaiKhoanUpdateRequestDTO;
 import com.example.scent.entity.TaiKhoan;
+import com.example.scent.repo.TaiKhoanInterface;
 import com.example.scent.service.TaiKhoanSv;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,8 @@ public class TaiKhoanCtrl {
 
     @Autowired
     private com.example.scent.service.MailService mailService;
+    @Autowired
+    private TaiKhoanInterface taiKhoanInterface;
 
     public TaiKhoanCtrl(TaiKhoanSv tks) {
         this.tks = tks;
@@ -48,8 +52,9 @@ public class TaiKhoanCtrl {
     }
 
     @PutMapping("/update")
-    public TaiKhoan update(@RequestBody TaiKhoan tk) {
-        return tks.update(tk);
+    public ResponseEntity<TaiKhoan> update(@RequestBody TaiKhoanUpdateRequestDTO dto) {
+        TaiKhoan updated = tks.updateTaiKhoan(dto);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/del/{id}")
@@ -82,6 +87,8 @@ public class TaiKhoanCtrl {
         Page<TaiKhoan> result = tks.getUserAccounts( keyword, page, size);
         return ResponseEntity.ok(result);
     }
+    //Update Tài khoản
+
    //OTPEMAIL Mật Khẩu
     //API Gửi OTP cho USER (Chỉ dành cho USER)
    @PostMapping("/forgot-password/sendOTP")

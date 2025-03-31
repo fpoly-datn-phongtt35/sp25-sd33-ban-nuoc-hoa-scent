@@ -135,6 +135,22 @@
             // Tìm sản phẩm cần cập nhật
             SanPham sanPham = spi.findById(idSanPham)
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+            // 🧼 Xóa tầng hương cũ
+            // Gỡ liên kết cũ
+            sanPham.setHuongDau(null);
+            sanPham.setHuongGiua(null);
+            sanPham.setHuongCuoi(null);
+            spi.save(sanPham); // Gỡ khóa ngoại trong DB
+
+            if (sanPham.getHuongDau() != null) {
+                huongDauRepo.deleteById(sanPham.getHuongDau().getId());
+            }
+            if (sanPham.getHuongGiua() != null) {
+                huongGiuaRepo.deleteById(sanPham.getHuongGiua().getId());
+            }
+            if (sanPham.getHuongCuoi() != null) {
+                huongCuoiRepo.deleteById(sanPham.getHuongCuoi().getId());
+            }
             //Xóa hình ảnh
             if (idHinhAnhDelete != null && idHinhAnhDelete.length > 0) {
                 hai.deleteAllById(Arrays.asList(idHinhAnhDelete));

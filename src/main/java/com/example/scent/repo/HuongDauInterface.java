@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 
 public interface HuongDauInterface extends JpaRepository<HuongDau, Integer>{
+    void removeById(Integer id);
 }

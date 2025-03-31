@@ -1,8 +1,8 @@
 package com.example.scent.service;
 
 
+import com.example.scent.dto.TaiKhoanUpdateRequestDTO;
 import com.example.scent.entity.AccountDetail;
-import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,5 +148,12 @@ public class TaiKhoanSv implements UserDetailsService {
     public String generateRandomPassword() {
         return UUID.randomUUID().toString().substring(0, 8); // 8 ký tự ngẫu nhiên
     }
-
+    public TaiKhoan updateTaiKhoan(TaiKhoanUpdateRequestDTO updatedTaiKhoan) {
+        TaiKhoan tk = tki.findById(updatedTaiKhoan.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với id: " + updatedTaiKhoan.getId()));
+        tk.setHoTen(updatedTaiKhoan.getHoTen());
+        tk.setEmail(updatedTaiKhoan.getEmail());
+        tk.setSdt(updatedTaiKhoan.getSdt());
+        return tki.save(tk);
+    }
 }
