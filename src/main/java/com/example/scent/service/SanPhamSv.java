@@ -25,9 +25,10 @@
 
 
     import java.math.BigDecimal;
+    import java.util.Arrays;
     import java.util.Map;
     import java.util.List;
-
+    import java.util.Optional;
 
 
     @Service
@@ -127,12 +128,17 @@
         public SanPham updateProductWithDetails(
                 Integer idSanPham,
                 String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
-                Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images) {
+                Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images,
+                Integer[] idHinhAnhDelete
+        ) {
 
             // Tìm sản phẩm cần cập nhật
             SanPham sanPham = spi.findById(idSanPham)
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
-
+            //Xóa hình ảnh
+            if (idHinhAnhDelete != null && idHinhAnhDelete.length > 0) {
+                hai.deleteAllById(Arrays.asList(idHinhAnhDelete));
+            }
             // Cập nhật thông tin sản phẩm
             sanPham.setTenSanPham(tenSanPham);
             sanPham.setMoTaSanPham(moTaSanPham);
@@ -227,5 +233,9 @@
         }
         public List<HinhAnh> findAllImageBySanPhamId(Integer idSanPham) {
             return hai.findHinhAnhBySanPhamId(idSanPham);
+        }
+
+        public Optional<SanPham> findById(Integer id) {
+             return spi.findById(id);
         }
     }

@@ -4,6 +4,7 @@ import com.example.scent.dto.SanPhamDto;
 import com.example.scent.dto.SanPhamDungTich;
 import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.dto.SanPhammDTO;
+import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.service.SanPhamSv;
@@ -33,6 +34,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CrossOrigin("*")
 @RestController
@@ -87,11 +89,13 @@ public class SanPhamCtrl {
             @RequestParam("idHuongDau") Integer idHuongDau,
             @RequestParam("idHuongGiua") Integer idHuongGiua,
             @RequestParam("idHuongCuoi") Integer idHuongCuoi,
-            @RequestParam(value = "image", required = false) MultipartFile[] images) {
+            @RequestParam(value = "image", required = false) MultipartFile[] images,
+            @RequestParam(value = "idHinhAnhDelete",required = false) Integer[] idHinhAnhDelete)
+    {
         try {
             SanPham updatedSanPham = sps.updateProductWithDetails(
                     idSanPham, tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, images
-            );
+            ,idHinhAnhDelete);
             return ResponseEntity.ok(updatedSanPham);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -150,6 +154,19 @@ public class SanPhamCtrl {
     public Page<SanPhammDTO> getSanPhamonAdmin(@RequestParam String keyword, @PageableDefault(size = 12) Pageable pageable) {
         return sps.detailOnAdmin(keyword,pageable);
     }
+    @GetMapping("findAllHinhAnhById")
+    public List<HinhAnh> findAllHinhAnhById(@RequestParam Integer id) {
+        return sps.findAllImageBySanPhamId(id);
+    }
+    @GetMapping("/findById")
+    public ResponseEntity<?> findById(@RequestParam("id") Integer id) {
+        Optional<SanPham> sanPham = sps.findById(id);
+        if (sanPham.isPresent()) {
+            return ResponseEntity.ok(sanPham.get());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
+    }
+
 }
 
 
