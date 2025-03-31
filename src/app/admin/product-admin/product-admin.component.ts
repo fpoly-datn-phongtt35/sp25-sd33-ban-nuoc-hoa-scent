@@ -9,6 +9,7 @@
   import { CommonModule } from '@angular/common';
   import { Router } from '@angular/router';
   import {AddProductComponent} from '../add-product/add-product.component'
+import { UpdateProductComponent } from '../update-product/update-product.component';
 
   @Component({
     selector: 'app-product-admin',
@@ -55,9 +56,22 @@
       });
     }
 
-    openUpdateProductModal(product:any){
-      alert('Chưa làm nha\n Product:'+product);
+    openUpdateProductModal(productId: number) {
+      const modalRef = this.modalService.open(UpdateProductComponent, {
+        centered: true,
+        backdrop: 'static',
+        keyboard: false
+      });
+
+      // ✅ Gán trực tiếp ID
+      modalRef.componentInstance.productId = productId;
+
+      modalRef.componentInstance.productUpdate.subscribe((updatedProduct: any) => {
+        this.loadProducts();
+      });
     }
+
+
     deleteProduct(id:number){
       alert('Chưa làm nha\n idSP:'+id);
     }

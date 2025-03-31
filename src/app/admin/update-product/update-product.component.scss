@@ -1,0 +1,10 @@
+::ng-deep .modal-dialog.custom-modal {
+  max-width: 65vw !important;
+  width: 65vw !important;
+  margin: auto !important;
+}
+::ng-deep .modal {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}

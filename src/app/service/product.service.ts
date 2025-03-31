@@ -62,5 +62,15 @@ addProductOnAdmin(formData: FormData): Observable<any> {
   const url = `${this.baseUrl}/add`;
   return this.http.post<any>(url, formData);
 }
+updateSanPham(formData: FormData) {
+  return this.http.put<any>('http://localhost:8080/rest/san-pham/update', formData);
+}
+getSanPhamById(id: number) {
+  return this.http.get<any>(`http://localhost:8080/rest/san-pham/findById?id=${id}`);
+}
+
+getImagesByProductId(id: number) {
+  return this.http.get<any[]>(`http://localhost:8080/rest/san-pham/findAllHinhAnhById?id=${id}`);
+}
 
 }
