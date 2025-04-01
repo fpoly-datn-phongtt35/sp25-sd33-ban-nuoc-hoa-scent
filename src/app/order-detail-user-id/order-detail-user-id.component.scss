@@ -1,42 +1,322 @@
 .order-container {
-  width: 90%;
-  margin: auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-.order {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 20px;
-}
-
-.product-details {
-  width: 100%;
   margin-top: 20px;
-  border-collapse: collapse;
 }
 
-.product-details th,
-.product-details td {
-  text-align: left;
-  padding: 8px;
-  border: 1px solid #ccc;
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.order-status {
+  color: #666;
+}
+
+.order-products {
+  margin-top: 15px;
+}
+
+.product-item {
+  display: flex;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
 }
 
 .product-image {
-  width: 100px; /* Adjust based on your preference */
+  width: 100px;
+  height: auto;
+  margin-right: 15px;
 }
 
-table {
-  border-collapse: collapse;
-  width: 100%;
+.product-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+.product-info h4 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.product-info p {
+  font-size: 14px;
+}
+
+.order-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.order-price div {
+  width: 60%;
+}
+
+.order-actions {
+  width: 35%;
+  text-align: right;
+}
+
+.contact-seller, .cancel-order {
+  background-color: #ff6347;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.contact-seller:hover, .cancel-order:hover {
+  background-color: #e5533f;
+}
+
+.order-detail {
+  margin-top: 30px;
+}
+
+.go-back-button {
+  background-color: #ff6347;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.go-back-button:hover {
+  background-color: #e5533f;
+}
+
+.order-summary {
+  margin-bottom: 20px;
+}
+
+.order-info p {
+  font-size: 14px;
+  margin: 5px 0;
+}
+.order-payment {
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.order-payment h4 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.payment-detail p {
+  font-size: 16px;
+  margin: 8px 0;
+  color: #555;
+}
+
+.payment-detail p strong {
+  font-weight: 600;
+  color: #333;
+}
+
+.payment-detail p:nth-child(odd) {
+  color: #000;  /* Make odd rows bolder for better visual distinction */
+}
+
+.payment-detail p:last-child {
+  font-size: 18px;
+  font-weight: bold;
+  color: #d32f2f; /* Red for the final total to draw attention */
+}
+
+.payment-detail p strong {
+  color: #333;
+}
+
+.payment-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-detail p {
+  margin: 5px 0;
+}
+
+.payment-detail p:last-child {
+  color: #1976D2;
+}
+
+
+.edit-address-button {
+  background: none;
+  border: none;
+  color: #007bff; /* Blue color for the button */
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.edit-address-button i {
+  margin-left: 5px; /* Space between icon and text */
+}
+
+.edit-address-button:hover {
+  text-decoration: underline;
+}
+/* Styling for the address container */
+.address-container {
+  display: flex;
+  justify-content: space-between; /* Aligns the address text to the left and the edit button to the right */
+  align-items: center; /* Centers the items vertically */
+  margin-bottom: 20px;
+}
+
+.address-container p {
+  font-size: 16px;
+  color: #333;
+  margin: 0; /* Ensures no unwanted margin around the text */
+}
+
+.address {
+  font-style: italic;
+  color: #555;
+  margin-bottom: 0;
+}
+
+.edit-address-button {
+  background: none;
+  border: none;
+  color: #007bff; /* Blue color for the button */
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.edit-address-button i {
+  margin-left: 5px; /* Space between icon and text */
+}
+
+.edit-address-button:hover {
+  text-decoration: underline;
+}
+
+/* Styling for the product items */
+.order-products {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.product-item {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.product-image {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.product-info {
+  flex-grow: 1;
+}
+
+.product-info h4 {
+  font-size: 18px;
+  color: #333;
+}
+
+.product-info p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.order-summary {
+  margin-bottom: 25px;
+}
+
+.order-info p {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.order-status {
+  display: flex;
+  justify-content: space-between; /* Các bước trong thanh trạng thái được phân bổ đều */
+  align-items: center;
+  margin-top: 20px;
+}
+
+.status-step {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #ddd;  /* Màu xám cho các bước chưa hoàn thành */
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.status-step i {
+  font-size: 24px; /* Kích thước icon */
+  margin-right: 8px; /* Khoảng cách giữa icon và văn bản */
+}
+
+/* Màu xanh dương cho các bước đã hoàn thành */
+.status-step.active {
+  color: #21ea7f;
+}
+
+.status-step i.fa-check-circle {
+  color: #21ea7f; /* Màu xanh dương cho "check-circle" */
+}
+
+.status-step i.fa-truck {
+  color: #38df8b; /* Màu xanh dương cho "truck" */
+}
+
+/* Màu đỏ cho "times-circle" */
+.status-step i.fa-times-circle {
+  color: #f44336; 
+}
+
+.status-step:not(.active) {
+  color: #ddd; /* Màu xám cho các bước chưa hoàn thành */
+}
+
+.status-step:not(:last-child)::after {
+  content: "→"; /* Mũi tên nối các trạng thái */
+  font-size: 24px;
+  margin-left: 10px;
+  color: #ddd;
+}
+
+/* Khi bước đã hoàn thành, mũi tên sẽ chuyển sang màu xanh dương */
+.status-step.active::after {
+  color: #63efc5;
+}
+
+/* Đảm bảo không có mũi tên sau phần tử cuối cùng */
+.status-step:last-child::after {
+  content: "";
 }
