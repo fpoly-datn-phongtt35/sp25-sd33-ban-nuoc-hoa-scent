@@ -13,8 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+
 
 @Table(name = "don_hang")
 @Entity
@@ -122,6 +121,9 @@ public class DonHang {
     @Column(name = "phi_van_chuyen", precision = 19, scale = 4)
     private BigDecimal phiVanChuyen;
 
+    @Column(name = "email_nguoi_nhan")
+    private String emailNguoiNhan;
+
 
     public Integer getTrangThai() {
         return trangThai;
@@ -138,6 +140,39 @@ public class DonHang {
 //    public void setMaVanDon(String maVanDon) {
 //        this.maVanDon = maVanDon;
 //    }
+
+    public DonHang() {
+    }
+
+    public DonHang(Integer id,String emailNguoiNhan, String tenNguoiNhanHang, String diaChiGiaoHang, String sdtNguoiNhan, String ghiChu, BigDecimal tongTien, BigDecimal soTienGiam, String phuongThucVanChuyen, LocalDateTime ngayTao, String lyDoHuy, Integer luongBan, LocalDateTime ngayVanChuyen, String phuongThucThanhToan, KhachHang khachHang, TaiKhoan taiKhoan, PhieuGiamGia phieuGiamGia, Integer trangThai, List<ChiTietDonHang> chiTietDonHangs, Integer maTinh, Integer maQuan, String maPhuong, Integer trongLuong, Integer chieuDai, Integer chieuRong, Integer chieuCao, BigDecimal phiVanChuyen) {
+        this.id = id;
+        this.emailNguoiNhan = emailNguoiNhan;
+        this.tenNguoiNhanHang = tenNguoiNhanHang;
+        this.diaChiGiaoHang = diaChiGiaoHang;
+        this.sdtNguoiNhan = sdtNguoiNhan;
+        this.ghiChu = ghiChu;
+        this.tongTien = tongTien;
+        this.soTienGiam = soTienGiam;
+        this.phuongThucVanChuyen = phuongThucVanChuyen;
+        this.ngayTao = ngayTao;
+        this.lyDoHuy = lyDoHuy;
+        this.luongBan = luongBan;
+        this.ngayVanChuyen = ngayVanChuyen;
+        this.phuongThucThanhToan = phuongThucThanhToan;
+        this.khachHang = khachHang;
+        this.taiKhoan = taiKhoan;
+        this.phieuGiamGia = phieuGiamGia;
+        this.trangThai = trangThai;
+        this.chiTietDonHangs = chiTietDonHangs;
+        this.maTinh = maTinh;
+        this.maQuan = maQuan;
+        this.maPhuong = maPhuong;
+        this.trongLuong = trongLuong;
+        this.chieuDai = chieuDai;
+        this.chieuRong = chieuRong;
+        this.chieuCao = chieuCao;
+        this.phiVanChuyen = phiVanChuyen;
+    }
 
     public Integer getId() {
         return id;
@@ -323,6 +358,22 @@ public class DonHang {
 
     public void setLyDoHuy(String lyDoHuy) {
         this.lyDoHuy = lyDoHuy;
+    }
+
+    public BigDecimal getSoTienGiam() {
+        return soTienGiam;
+    }
+
+    public void setSoTienGiam(BigDecimal soTienGiam) {
+        this.soTienGiam = soTienGiam;
+    }
+
+    public Integer getLuongBan() {
+        return luongBan;
+    }
+
+    public void setLuongBan(Integer luongBan) {
+        this.luongBan = luongBan;
     }
 }
 

@@ -7,9 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+
+
 @Builder
 public class MomoRequest {
     @NotBlank(message = "orderId không được để trống")
@@ -36,4 +35,82 @@ public class MomoRequest {
 
     // extraData có thể để trống nếu không cần truyền thêm dữ liệu
     private String extraData;
+
+    public MomoRequest() {
+    }
+
+    public MomoRequest(String orderId, String requestId, String orderInfo, String amount, String returnUrl, String notifyUrl, String requestType, String extraData) {
+        this.orderId = orderId;
+        this.requestId = requestId;
+        this.orderInfo = orderInfo;
+        this.amount = amount;
+        this.returnUrl = returnUrl;
+        this.notifyUrl = notifyUrl;
+        this.requestType = requestType;
+        this.extraData = extraData;
+    }
+
+    public @NotBlank(message = "orderId không được để trống") String getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(@NotBlank(message = "orderId không được để trống") String orderId) {
+        this.orderId = orderId;
+    }
+
+    public @NotBlank(message = "requestId không được để trống") String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(@NotBlank(message = "requestId không được để trống") String requestId) {
+        this.requestId = requestId;
+    }
+
+    public @NotBlank(message = "orderInfo không được để trống") String getOrderInfo() {
+        return orderInfo;
+    }
+
+    public void setOrderInfo(@NotBlank(message = "orderInfo không được để trống") String orderInfo) {
+        this.orderInfo = orderInfo;
+    }
+
+    public @NotBlank(message = "amount không được để trống") @Pattern(regexp = "^[0-9]+$", message = "amount phải là số") String getAmount() {
+        return amount;
+    }
+
+    public void setAmount(@NotBlank(message = "amount không được để trống") @Pattern(regexp = "^[0-9]+$", message = "amount phải là số") String amount) {
+        this.amount = amount;
+    }
+
+    public @NotBlank(message = "returnUrl không được để trống") String getReturnUrl() {
+        return returnUrl;
+    }
+
+    public void setReturnUrl(@NotBlank(message = "returnUrl không được để trống") String returnUrl) {
+        this.returnUrl = returnUrl;
+    }
+
+    public @NotBlank(message = "notifyUrl không được để trống") String getNotifyUrl() {
+        return notifyUrl;
+    }
+
+    public void setNotifyUrl(@NotBlank(message = "notifyUrl không được để trống") String notifyUrl) {
+        this.notifyUrl = notifyUrl;
+    }
+
+    public @NotBlank(message = "requestType không được để trống") String getRequestType() {
+        return requestType;
+    }
+
+    public void setRequestType(@NotBlank(message = "requestType không được để trống") String requestType) {
+        this.requestType = requestType;
+    }
+
+    public String getExtraData() {
+        return extraData;
+    }
+
+    public void setExtraData(String extraData) {
+        this.extraData = extraData;
+    }
 }

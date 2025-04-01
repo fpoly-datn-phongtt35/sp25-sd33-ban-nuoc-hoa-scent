@@ -27,10 +27,33 @@ public class OtpService {
         return entry.getOtp().equals(otp);  // Kiểm tra sự khớp của OTP
     }
 
-    @Data
-    @AllArgsConstructor
+
     private static class OtpEntry {
         private String otp;
         private long expiryTime;
+
+        public OtpEntry() {
+        }
+
+        public OtpEntry(String otp, long expiryTime) {
+            this.otp = otp;
+            this.expiryTime = expiryTime;
+        }
+
+        public String getOtp() {
+            return otp;
+        }
+
+        public void setOtp(String otp) {
+            this.otp = otp;
+        }
+
+        public long getExpiryTime() {
+            return expiryTime;
+        }
+
+        public void setExpiryTime(long expiryTime) {
+            this.expiryTime = expiryTime;
+        }
     }
 }

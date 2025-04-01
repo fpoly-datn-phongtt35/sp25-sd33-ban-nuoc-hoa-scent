@@ -16,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -205,6 +206,28 @@ public class DonHangCtrl {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi cập nhật tự động: " + e.getMessage());
+        }
+    }
+
+
+    @PutMapping("/update-trangthai-choxuli/{id}")
+    public ResponseEntity<?> updateDonHangInfo(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String tenNguoiNhanHang,
+            @RequestParam(required = false) String diaChiGiaoHang,
+            @RequestParam(required = false) String sdtNguoiNhan,
+            @RequestParam(required = false) String emailNguoiNhan,
+            @RequestParam(required = false) BigDecimal tongTien,
+            @RequestParam(required = false) Integer maTinh,
+            @RequestParam(required = false) Integer maQuan,
+            @RequestParam(required = false) String maPhuong,
+            @RequestParam(required = false) BigDecimal phiVanChuyen) {
+        try {
+            DonHang updatedDonHang = dhs.updateDonHang(id, tenNguoiNhanHang, diaChiGiaoHang, sdtNguoiNhan,
+                    emailNguoiNhan, tongTien, maTinh, maQuan, maPhuong, phiVanChuyen);
+            return ResponseEntity.ok(updatedDonHang);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }
     }
 

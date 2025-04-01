@@ -452,5 +452,50 @@ donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
         return phiVanChuyen;
     }
 
+    @Transactional
+    public DonHang updateDonHang(Integer id, String tenNguoiNhanHang, String diaChiGiaoHang, String sdtNguoiNhan,
+                                 String emailNguoiNhan, BigDecimal tongTien, Integer maTinh, Integer maQuan,
+                                 String maPhuong, BigDecimal phiVanChuyen) throws Exception {
+        // Tìm đơn hàng theo ID
+        DonHang donHang = dhi.findById(id)
+                .orElseThrow(() -> new Exception("Không tìm thấy đơn hàng với ID: " + id));
+
+        // Kiểm tra trạng thái đơn hàng (giả sử 0 là "Chờ xử lý")
+        if (donHang.getTrangThai() != 0) {
+            throw new Exception("Chỉ có thể sửa đơn hàng khi trạng thái là 'Chờ xử lý'!");
+        }
+
+        // Cập nhật các trường được yêu cầu
+        if (tenNguoiNhanHang != null && !tenNguoiNhanHang.trim().isEmpty()) {
+            donHang.setTenNguoiNhanHang(tenNguoiNhanHang);
+        }
+        if (diaChiGiaoHang != null && !diaChiGiaoHang.trim().isEmpty()) {
+            donHang.setDiaChiGiaoHang(diaChiGiaoHang);
+        }
+        if (sdtNguoiNhan != null && !sdtNguoiNhan.trim().isEmpty()) {
+            donHang.setSdtNguoiNhan(sdtNguoiNhan);
+        }
+        // Giả sử cần thêm trường emailNguoiNhan vào entity DonHang
+        // Nếu entity chưa có, bạn cần thêm vào trước
+        // donHang.setEmailNguoiNhan(emailNguoiNhan);
+        if (tongTien != null && tongTien.compareTo(BigDecimal.ZERO) >= 0) {
+            donHang.setTongTien(tongTien);
+        }
+        if (maTinh != null) {
+            donHang.setMaTinh(maTinh);
+        }
+        if (maQuan != null) {
+            donHang.setMaQuan(maQuan);
+        }
+        if (maPhuong != null && !maPhuong.trim().isEmpty()) {
+            donHang.setMaPhuong(maPhuong);
+        }
+        if (phiVanChuyen != null && phiVanChuyen.compareTo(BigDecimal.ZERO) >= 0) {
+            donHang.setPhiVanChuyen(phiVanChuyen);
+        }
+
+        // Lưu đơn hàng đã cập nhật vào database
+        return dhi.save(donHang);
+    }
 
 }
