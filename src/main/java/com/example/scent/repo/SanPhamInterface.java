@@ -97,15 +97,17 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
         dm.tenDanhMuc,
         hd.moTaHuongDau,
         hg.moTaHuongGiua,
-        hc.moTaHuongCuoi
+        hc.moTaHuongCuoi,
+        nh.tenNhomHuong
     )
     FROM SanPham sp
-   
+    JOIN sp.nhomHuong nh 
     JOIN sp.hinhAnhs ha
     JOIN sp.thuongHieu th
     JOIN sp.huongDau hd
     JOIN sp.huongGiua hg
     JOIN sp.danhMuc dm
+   
     JOIN sp.huongCuoi hc
     WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -113,8 +115,9 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
        OR LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :keyword, '%'))
     GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc,
-             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi
+             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.tenNhomHuong
 """)
     Page<SanPhammDTO> searchAllFields(@Param("keyword") String keyword, Pageable pageable);
 

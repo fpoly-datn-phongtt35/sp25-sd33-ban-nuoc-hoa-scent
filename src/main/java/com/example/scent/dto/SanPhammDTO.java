@@ -11,6 +11,15 @@ public class SanPhammDTO {
     private String moTaHuongDau;
     private String moTaHuongGiua;
     private String moTaHuongCuoi;
+    private String tenNhomHuong;
+
+    public String getTenNhomHuong() {
+        return tenNhomHuong;
+    }
+
+    public void setTenNhomHuong(String tenNhomHuong) {
+        this.tenNhomHuong = tenNhomHuong;
+    }
 
     public Integer getIdSanPham() {
         return IdSanPham;
@@ -76,7 +85,7 @@ public class SanPhammDTO {
         this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
-    public SanPhammDTO(Integer idSanPham, String tenSanPham, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi) {
+    public SanPhammDTO(Integer idSanPham, String tenSanPham, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, String tenNhomHuong) {
         IdSanPham = idSanPham;
         TenSanPham = tenSanPham;
         this.imageURL = imageURL;
@@ -85,6 +94,7 @@ public class SanPhammDTO {
         this.moTaHuongDau = moTaHuongDau;
         this.moTaHuongGiua = moTaHuongGiua;
         this.moTaHuongCuoi = moTaHuongCuoi;
+        this.tenNhomHuong = tenNhomHuong;
     }
 
     public SanPhammDTO() {

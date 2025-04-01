@@ -4,6 +4,7 @@ import com.example.scent.reques.PhiVanChuyenRequest;
 import com.example.scent.respone.DiaChiCache;
 import com.example.scent.respone.PhiVanChuyenResponse;
 import com.example.scent.service.DiaChiApi;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/rest/dia-chi")
+
 public class DiaChiCtrl {
 
     @GetMapping("/get-tinh-thanh")

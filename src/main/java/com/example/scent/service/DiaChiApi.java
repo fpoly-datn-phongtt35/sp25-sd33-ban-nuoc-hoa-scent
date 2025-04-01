@@ -28,11 +28,11 @@
     import java.util.List;
     import org.slf4j.Logger;
     import org.slf4j.LoggerFactory;
-    
+
     @Service
+    @Slf4j
     public class DiaChiApi {
 
-        private static final Logger log = LoggerFactory.getLogger(DiaChiApi.class);
         private static final String apiTinhThanh = "https://online-gateway.ghn.vn/shiip/public-api/master-data/province";
         private static final String apiQuanHuyen = "https://online-gateway.ghn.vn/shiip/public-api/master-data/district";
         private static final String apiPhuongXa = "https://online-gateway.ghn.vn/shiip/public-api/master-data/ward";

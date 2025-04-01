@@ -24,10 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-
+@Slf4j
 @RequiredArgsConstructor
 public class MoMoPaymentService {
-    private static final Logger log = LoggerFactory.getLogger(MoMoPaymentService.class);
     @Value("${momo.partnerCode}")
     private String partnerCode;
 

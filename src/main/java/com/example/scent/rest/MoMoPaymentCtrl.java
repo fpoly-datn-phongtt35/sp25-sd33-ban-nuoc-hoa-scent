@@ -15,10 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/rest/momo")
 @RequiredArgsConstructor
-
+@Slf4j
 public class MoMoPaymentCtrl {
-    private MoMoPaymentService moMoPaymentService = new MoMoPaymentService();
-    private static final Logger log = LoggerFactory.getLogger(MoMoPaymentCtrl.class);
+    private final MoMoPaymentService moMoPaymentService;
     @PostMapping("/pay")
     public ResponseEntity<?> createPayment(@RequestBody MomoRequest dto) {
         return ResponseEntity.ok(moMoPaymentService.createPayment(dto));
