@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders,HttpErrorResponse } from '@angular/common/http';
 import { Observable,throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TokenService } from './token.service';
@@ -19,7 +19,14 @@ export class PhieugiamgiaService {
     // }
     return this.http.get(`${this.apiUrl}${params}`);
   }
-
+  getDiscountCodeDetails(code: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${code}`).pipe(
+      catchError((error: string) => {
+        // Xử lý lỗi ở đây nếu cần
+        throw 'Error in getting discount details: ' + error;
+      })
+    );
+  }
   addVoucher(voucher: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/add`, voucher);
   }
@@ -30,4 +37,17 @@ export class PhieugiamgiaService {
     return this.http.put<any>(`${this.apiUrl}/update`, voucher);
   }
 
+
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'Unknown error!';
+    if (error.error instanceof ErrorEvent) {
+      // Client-side errors
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Server-side errors
+      errorMessage = `Error Code: ${error.status}\nMessage: ${error.error.message}`;
+    }
+    console.error(errorMessage);
+    return throwError(errorMessage);
+  }
 }

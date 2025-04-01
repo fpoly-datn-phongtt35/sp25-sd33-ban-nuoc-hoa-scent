@@ -25,6 +25,7 @@
         <th>Thanh toán</th>
         <th>Ngày tạo</th>
         <th>Trạng thái</th>
+        <th>Luồng bán</th>
         <th>Xem chi tiết</th>
       </tr>
     </thead>
@@ -74,8 +75,8 @@
             <div *ngSwitchCase="5"
                  class="badge-status status-danger disabled"
                  title="Đơn hàng đã bị hủy">
-              ❌ Hủy
-            </div>
+              ❌ Hủy 
+            </div>  {{ order.lyDoHuy }}
 
             <!-- 6. Đã thanh toán (CK) -->
             <div *ngSwitchCase="6"
@@ -87,7 +88,7 @@
 
           </ng-container>
         </td>
-
+        <td>{{ order.luongBan === 0 ? 'Offline' : 'Online' }}</td>
 
 
 

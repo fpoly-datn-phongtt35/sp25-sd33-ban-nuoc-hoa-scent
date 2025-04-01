@@ -37,6 +37,9 @@
             <th>Giá trị</th>
             <th>Ngày bắt đầu</th>
             <th>Ngày hết hạn</th>
+            
+            <th>Số lượng</th>
+            <th>Giá trị giảm</th>
             <th>Chức năng</th>
           </tr>
         </thead>
@@ -47,6 +50,9 @@
             <td>{{ item.giaTriGiam }}</td>
             <td>{{ item.ngayBatDau }}</td>
             <td>{{ item.ngayHetHan }}</td>
+            <td>{{ item.soLuong }}</td>
+            <td>{{ item.gia_tri_toi_da }}</td>
+            
             <td>
               <button class="btn btn-warning btn-sm" (click)="openEditVoucherModal(item)">✏️ Sửa</button>
               <button class="btn btn-danger btn-sm" aria-label="Delete selected vouchers" (click)="deleteVoucher(item.id)">Xóa</button>

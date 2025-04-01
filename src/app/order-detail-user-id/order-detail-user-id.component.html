@@ -1,7 +1,7 @@
 <div class="order-container">
   <h2>Danh sách đơn hàng</h2>
   <div *ngFor="let order of orders" class="order">
-    <h3>Mã đơn hàng: {{ order.idTaiKhoan }}</h3>
+    <h3>Mã đơn hàng: {{ order.maDonHang }}</h3>
     <p>Ngày tạo: {{ order.ngayTao | date: 'shortDate' }}</p>
     <p>Trạng thái đơn hàng: {{ order.statusLabel }}</p>
     <p>Phương thức thanh toán: {{ order.phuongThucThanhToan }}</p>

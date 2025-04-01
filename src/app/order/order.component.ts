@@ -9,6 +9,7 @@ import { TokenService } from '../service/token.service';
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { DiaChiService } from '../service/diachi.service';
+import { PhieugiamgiaService } from '../service/phieugiamgia.service';
 
 interface OrderDetail {
   spctId: number;
@@ -24,6 +25,7 @@ interface Order {
   phuongThucThanhToan: string;
   chiTietDonHangs: OrderDetail[];
   ghichu: string;
+  maGiamGia?: string;
 }
 
 interface DiaChiDonVi {
@@ -49,11 +51,16 @@ export class OrderComponent implements OnInit {
     phuongThucThanhToan: '',
     chiTietDonHangs: [],
     ghichu: '',
+    maGiamGia: '',
   };
-
+  discountCodes = {
+  
+  };
+  discountErrorMessage: string = '';
+  discountAmount: number = 0;
   selectedProducts: any[] = [];
   totalProductPrice = 0;
-  discount = 0;
+  discount: number = 0;
   shippingFee = 0;
   finalAmount = 0;
   currentTab: 'tinh' | 'huyen' | 'xa' = 'tinh';
@@ -78,7 +85,8 @@ export class OrderComponent implements OnInit {
     private tokenService: TokenService,
     private cdr: ChangeDetectorRef,
     private diaChiService: DiaChiService,
-    private momoPaymentService:MomoPaymentService
+    private momoPaymentService:MomoPaymentService,
+    private phieugiamgiaService :PhieugiamgiaService
   ) {}
 
   ngOnInit() {
@@ -273,8 +281,64 @@ export class OrderComponent implements OnInit {
       discountRate // ✅ Trả thêm giá trị này ra
     };
   }
-
-
+ 
+  onDiscountCodeEntered(code: string | null) {
+    this.discountErrorMessage = ''; // Clear previous error message
+  
+    if (!code) {
+      this.discount = 0;
+      this.calculateTotals();
+      return;
+    }
+  
+    this.phieugiamgiaService.getDiscountCodeDetails(code).subscribe({
+      next: (response) => {
+        const now = new Date();
+        const expired = new Date(response.ngayHetHan) < now;
+        const notStarted = new Date(response.ngayBatDau) > now;
+  
+        if (expired || notStarted) {
+          this.discountErrorMessage = '⚠️ Mã giảm giá không còn hiệu lực.';
+          this.discount = 0;
+          this.calculateTotals();
+          return;
+        }
+  
+        // ✅ Tính số tiền được giảm
+        this.discountAmount = this.totalProductPrice * response.giaTriGiam;
+        this.discount = this.discountAmount;
+        this.calculateTotals();
+      },
+  
+      error: (err) => {
+        console.error('❌ Lỗi khi áp dụng mã:', err);  
+        if (err.status === 404) {
+          this.discountErrorMessage = '⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!';
+        } else if (err.error && err.error.message) {
+          this.discountErrorMessage = err.error.message;
+        } else {
+          this.discountErrorMessage = '⚠️ Có lỗi xảy ra khi áp dụng mã giảm giá.';
+        }
+        this.discount = 0;
+        this.calculateTotals();
+      }
+      
+    });
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  updateUI() {
+    this.calculateTotals();
+    this.cdr.markForCheck(); // Đảm bảo Angular kiểm tra lại thay đổi để cập nhật UI
+  }
+  
 
 
   tinhPhiVanChuyen() {
@@ -332,8 +396,9 @@ export class OrderComponent implements OnInit {
       return total + (item.quantity || 0) * (item.donGia || 0);
     }, 0);
 
-    this.discount = 0;
-    this.finalAmount = this.totalProductPrice + this.shippingFee - this.discount;
+    
+    this.finalAmount = this.totalProductPrice  - this.discount + this.shippingFee;
+    this.cdr.markForCheck();
   }
 
   updateQuantity(index: number, change: number) {

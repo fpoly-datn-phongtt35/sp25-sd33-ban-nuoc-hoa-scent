@@ -112,6 +112,36 @@ name="searchBox"
       <label for="ghichu" class="form-label">Ghi chú:</label>
       <input type="text" id="ghichu" class="form-control" [(ngModel)]="orderData.ghichu" name="ghichu" #ghichu="ngModel">
     </div>
+<!-- Mã Giảm Giá -->
+<div class="mb-3">
+  <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
+  <div class="input-group">
+    <input
+      type="text"
+      id="maGiamGia"
+      class="form-control"
+      [(ngModel)]="orderData.maGiamGia"
+      name="maGiamGia"
+    >
+    <button class="btn btn-primary" type="button" (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')">
+      Áp dụng
+    </button>
+  </div>
+
+  <!-- ✅ Thông báo lỗi -->
+  <div *ngIf="discountErrorMessage" class="text-danger mt-1">
+    {{ discountErrorMessage }}
+  </div>
+
+  <!-- ✅ Thông báo số tiền được giảm -->
+  <div *ngIf="discountAmount > 0" class="text-success mt-1">
+    ✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!
+  </div>
+</div>
+
+
+
+
 
     <!-- Tổng tiền -->
     <div class="payment-info mb-4">
