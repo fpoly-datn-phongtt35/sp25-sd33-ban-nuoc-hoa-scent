@@ -202,7 +202,7 @@ public class DonHangSv {
         newOrder.setMaPhuong(orderRequest.getMaPhuong());
         newOrder.setSoTienGiam(soTienGiam);
         newOrder.setTongTien(tongTien);
-
+newOrder.setLuongBan(orderRequest.getLuongBan());
         if (phieuGiamGia != null) {
             newOrder.setPhieuGiamGia(phieuGiamGia);
         }

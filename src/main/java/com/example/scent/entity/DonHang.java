@@ -67,6 +67,8 @@ public class DonHang {
 
     @Column(name = "ly_do_huy")
     private String lyDoHuy;
+    @Column(name = "luong_ban")
+    private Integer luongBan;
 
 
     @NotNull(message = "Ngày vận chuyển không được để trống")

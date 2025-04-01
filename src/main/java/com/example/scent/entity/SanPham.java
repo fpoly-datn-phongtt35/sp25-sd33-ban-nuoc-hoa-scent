@@ -33,6 +33,8 @@ public class SanPham {
     @Column(name = "id")
     private Integer idSanPham;
 
+    @Column(name = "trang_thai")
+    private Integer trangThai;
     @NotEmpty(message = "Tên sản phẩm không được để trống")
     @Size(max = 100, message = "Tên sản phẩm không được vượt quá 100 ký tự")
     @Column(name = "ten")
@@ -45,6 +47,10 @@ public class SanPham {
     @ManyToOne
     @JoinColumn(name = "id_thuong_hieu")
     private ThuongHieu thuongHieu;
+
+    @ManyToOne
+    @JoinColumn(name = "id_nhom_huong")
+    private NhomHuong nhomHuong;
     @ManyToOne
     @JoinColumn(name = "id_danh_muc")
     private DanhMuc danhMuc;

@@ -41,6 +41,11 @@ public class PhieuGiamGia {
     @Column(name = "ngay_bat_dau")
     private LocalDateTime ngayBatDau;
 
+    @Column(name = "gia_tri_toi_da")
+    private BigDecimal gia_tri_toi_da;
+    @Column(name = "so_luong")
+    private Integer soLuong;
+
     @NotNull(message = "Ngày hết hạn không được để trống")
     @FutureOrPresent(message = "Ngày hết hạn phải là ngày hiện tại hoặc trong tương lai")
     @Column(name = "ngay_het_han")
