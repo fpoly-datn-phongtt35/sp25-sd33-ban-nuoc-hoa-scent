@@ -30,6 +30,7 @@ public class donhangDTOID {
         private BigDecimal tongTien;
     private Integer trangThai;
         private BigDecimal phiVanChuyen;
+private String phieuGiamGia;
 
     public donhangDTOID() {
     }

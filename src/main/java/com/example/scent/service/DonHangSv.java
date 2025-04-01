@@ -356,6 +356,8 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         donHangDTO.setTrangThai(donHang.getTrangThai());
         donHangDTO.setGhichu(donHang.getGhiChu());
 donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
+         // Assuming getMaPhieu() returns a String
+
         // Chuyển đổi chi tiết đơn hàng
         List<OrderItemDTOID> chiTietList = cdh.findByDonHangId(donHang.getId())
                 .stream()
@@ -365,7 +367,20 @@ donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
                     itemDto.setQuantity(chiTiet.getSoLuong());
                     itemDto.setDonGia(chiTiet.getDonGia());
                     itemDto.setThanhTien(chiTiet.getThanhTien());
+                    String tenSanPham = chiTiet.getSpct().getSanPham().getTenSanPham();
+                    itemDto.setTenSanPham(tenSanPham);
+                    BigDecimal quantity = new BigDecimal(chiTiet.getSoLuong());  // Số lượng
+                    BigDecimal unitPrice = new BigDecimal(String.valueOf(chiTiet.getDonGia()));  // Đơn giá
 
+                    // Calculate the total price before discount
+                    BigDecimal totalPriceBeforeDiscount = quantity.multiply(unitPrice);
+
+                    // Assuming the discount is a percentage (for example, 10% = 0.10)
+                    BigDecimal phanTramGiam = donHang.getPhieuGiamGia() != null ? donHang.getPhieuGiamGia().getGiaTriGiam() : BigDecimal.ZERO;  // Get the discount percentage from PhieuGiamGia
+                    BigDecimal soTienGiam = totalPriceBeforeDiscount.multiply(phanTramGiam);  // Calculate the discount amount
+
+                    // Set the discount amount in the DTO
+                    itemDto.setSoTienGiamGia(soTienGiam);
                     // Lấy hình ảnh của sản phẩm
                     List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
                             .stream()

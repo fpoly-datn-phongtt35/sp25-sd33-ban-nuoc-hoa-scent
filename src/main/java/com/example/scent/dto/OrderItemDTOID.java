@@ -18,13 +18,33 @@ import java.util.List;
         private List<String> imageURL;
         private BigDecimal donGia;
         private BigDecimal thanhTien;
+        private String tenSanPham;
+private BigDecimal soTienGiamGia;
 
-        public OrderItemDTOID(Integer spctId, Integer quantity, List<String> imageURL, BigDecimal donGia, BigDecimal thanhTien) {
+        public BigDecimal getSoTienGiamGia() {
+            return soTienGiamGia;
+        }
+
+        public void setSoTienGiamGia(BigDecimal soTienGiamGia) {
+            this.soTienGiamGia = soTienGiamGia;
+        }
+
+        public String getTenSanPham() {
+            return tenSanPham;
+        }
+
+        public void setTenSanPham(String tenSanPham) {
+            this.tenSanPham = tenSanPham;
+        }
+
+        public OrderItemDTOID(Integer spctId, Integer quantity, List<String> imageURL, BigDecimal donGia, BigDecimal thanhTien, String tenSanPham, BigDecimal soTienGiamGia) {
             this.spctId = spctId;
             this.quantity = quantity;
             this.imageURL = imageURL;
             this.donGia = donGia;
             this.thanhTien = thanhTien;
+            this.tenSanPham = tenSanPham;
+            this.soTienGiamGia = soTienGiamGia;
         }
 
         public OrderItemDTOID() {
