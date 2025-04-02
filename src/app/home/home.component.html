@@ -7,50 +7,7 @@
 <div class="main-container row">
 
   <!-- 📌 Danh mục sản phẩm bên trái -->
-  <div class="category-container col-md-3">
-    <!-- Bộ lọc theo danh mục -->
-    <select class="form-select" (change)="applyFilter('category', $event.target.value)">
-      <option value="">Tất cả</option>
-      <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
-    </select>
-
-    <!-- Bộ lọc theo thương hiệu -->
-    <select class="form-select" (change)="applyFilter('brand', $event.target.value)">
-      <option value="">Tất cả</option>
-      <option *ngFor="let brand of tenThuonghieu" [value]="brand">{{ brand }}</option>
-    </select>
-
-    <!-- Bộ lọc theo hương -->
-    <select class="form-select" (change)="applyFilter('scent', $event.target.value)">
-      <option value="">Tất cả</option>
-      <option *ngFor="let scent of tennhomhuongs" [value]="scent">{{ scent }}</option>
-    </select>
-
-    <!-- Bộ lọc theo quốc gia -->
-    <select class="form-select" (change)="applyFilter('country', $event.target.value)">
-      <option value="">Tất cả</option>
-      <option *ngFor="let country of quocGia" [value]="country">{{ country }}</option>
-    </select>
-
-    <hr class="divider">
-
-    <!-- Bộ lọc giá với thanh trượt có mũi tên -->
-    <div class="filter-container">
-      <h4>LỌC THEO GIÁ</h4>
-      <mat-slider class="price-slider"
-        [min]="minPrice"
-        [max]="maxPrice"
-        [step]="50000">
-        <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
-        <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
-      </mat-slider>
-      <div class="price-range">
-        Giá <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
-      </div>
-      <button class="filter-button btn btn-primary" (click)="filterByPrice()">LỌC</button>
-    </div>
-    <hr class="divider">
-  </div>
+ 
 
   <!-- 🛍️ Danh sách sản phẩm bên phải -->
   <div class="product-container col-md-9">

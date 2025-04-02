@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { DonhangService } from '../../../service/donhang.service';
 import { OrderDetaiComponent } from '../order-detail/order-detail.component';
+import { HoadonComponent } from '../../../hoadon/hoadon.component';
 
 
 @Component({
@@ -55,11 +56,14 @@ export class InvoiceComponent implements OnInit {
     cancelled: 5,
   };
 
-  constructor(private http: HttpClient, private donHangService: DonhangService, private modalService: NgbModal,private router: Router) {}
+  constructor(private http: HttpClient, private donHangService: DonhangService, private modalService: NgbModal,private router: Router) {
+    
+  }
   closeDetail() {
     this.selectedOrder = null;
   }
   ngOnInit(): void {
+    
     this.loadCustomers();
     this.filteredDonhang = this.orders;
   }
@@ -91,28 +95,49 @@ export class InvoiceComponent implements OnInit {
 
   confirmStatusChange(order: any) {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
-
-    if (order.selectedStatus === 3) {
-      this.selectShippingOption(order.id);
-      return;
-    }
-
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
-
-    Swal.fire({
-      title: 'Xác nhận chuyển trạng thái',
-      text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'OK',
-      cancelButtonText: 'Hủy'
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.updateStatus(order.id, nextStatus);
-      }
-    });
+  
+    if (order.selectedStatus === 2 && nextStatus === 3) {
+      // Mở modal để hiển thị hóa đơn khi chuyển từ "Đã xác nhận" sang "Đang giao"
+      const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
+      modalRef.componentInstance.orderData = order; // Truyền dữ liệu đơn hàng vào modal
+      modalRef.result.then((result) => {
+        if (result === 'confirm') {
+          // Người dùng xác nhận xuất hóa đơn và chuyển trạng thái
+          this.updateStatus(order.id, nextStatus);
+        }
+      }, (reason) => {
+        console.error('Dismissed or error in modal');
+      });
+    } else {
+      // Đối với các trạng thái khác, hiển thị thông báo xác nhận trước khi chuyển trạng thái
+      Swal.fire({
+        title: 'Xác nhận chuyển trạng thái',
+        text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Hủy'
+      }).then(result => {
+        if (result.isConfirmed) {
+          this.updateStatus(order.id, nextStatus);
+        }
+      });
+    }
   }
+  openInvoiceModal(order: any) {
+    const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
+    modalRef.componentInstance.order = order; // Truyền dữ liệu đơn hàng vào modal
+    modalRef.result.then((result) => {
+      if (result === 'printed') {
+        this.updateStatus(order.id, 3); // Cập nhật trạng thái sang "Đang giao"
+      }
+    }, (reason) => {
+      // Xử lý nếu không in được hóa đơn
+    });
+}
+
   requestCancellationReason(orderId: number): void {
     Swal.fire({
       title: 'Vui lòng nhập lý do hủy đơn hàng:',
@@ -211,12 +236,15 @@ export class InvoiceComponent implements OnInit {
   // }
 
   loadCustomers(): void {
+   
     this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
       next: (response) => {
         this.orders = response.map((order: any) => ({
           ...order,
           selectedStatus: order.trangThai,
+          
         }));
+        console.log(this.orders);
         this.filterOrders(this.selectedStatus !== null ? this.selectedStatus.toString() : '');
         // ❌ Không cần dòng này nữa: this.filteredDonhang = this.orders;
       },
@@ -309,4 +337,5 @@ export class InvoiceComponent implements OnInit {
 
     return range;
   }
+  
 }

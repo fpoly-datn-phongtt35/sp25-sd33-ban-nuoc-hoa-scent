@@ -1,0 +1,74 @@
+<div class="modal-header">
+    <h4 class="modal-title">🧾 HÓA ĐƠN BÁN HÀNG</h4>
+    <button type="button" class="btn-close" (click)="close()"></button>
+  </div>
+  
+  <p style="color: red; font-weight: bold; font-size: 1.2rem;">
+    <strong>Mã đơn hàng:</strong> #{{ orderData.id }}
+  </p>
+  
+  <div class="modal-body">
+    <!-- Thông tin người gửi và người nhận -->
+    <div class="row mb-2">
+      <div class="col-6">
+        <h5 class="text-primary">📦 Người gửi</h5>
+        <p><strong>Từ:</strong> {{ orderData.tenNguoiNhanHang }}</p>
+        <p><strong>SĐT:</strong> {{ orderData.sdtNguoiNhan }}</p>
+        <p><strong>Địa chỉ:</strong> {{ orderData.diaChiGiaoHang }}</p>
+        <h5 class="text-primary">👤 Người đặt hàng</h5>
+        <p><strong>Họ tên:</strong> {{ orderData.taiKhoan.hoTen }}</p>
+        <p><strong>Email:</strong> {{ orderData.taiKhoan.email }}</p>
+   
+      </div>
+      <div class="col-6">
+        <h5 class="text-primary">📦 Người nhận</h5>
+        <p><strong>Đến:</strong> {{ orderData.tenNguoiNhan }}</p>
+        <p><strong>SĐT:</strong> {{ orderData.sdtNguoiNhan }}</p>
+        <p><strong>Địa chỉ:</strong> {{ orderData.diaChiGiaoHang }}</p>
+        <p><strong>Ngày đặt:</strong> {{ orderData.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</p>
+        <p><strong>Phương thức thanh toán:</strong> {{ orderData.phuongThucThanhToan }}</p>
+        <p><strong>Phương thức vận chuyển:</strong> {{ orderData.phuongThucVanChuyen }}</p>
+      </div>
+    </div>
+  
+    <!-- Thông tin đơn hàng -->
+   
+    <h5 class="mt-4 text-primary">🧾 Sản phẩm</h5>
+    <table class="table table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Sản phẩm</th>
+          <th>Giá</th>
+          <th>Số lượng</th>
+          <th>Tổng</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of orderData.chiTietDonHangs">
+          <td>{{ item.spct.sanPham?.tenSanPham }}</td>
+          <td>{{ item.donGia| number: '1.0-0' }} VNĐ</td>
+          <td>{{ item.soLuong }}</td>
+          <td>{{ item.donGia * item.soLuong | number: '1.0-0' }} VNĐ</td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <!-- Tổng kết -->
+   
+  
+    <!-- Ngày và Ký tên -->
+   <div class="row mb-2">
+    <div class="text-end col-6">
+        <p><strong>Số tiền giảm:</strong> - {{ orderData.soTienGiam | number: '1.0-0' }} VNĐ</p>
+      <p><strong>Phí vận chuyển:</strong> + {{ orderData.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
+      <p><strong>Tổng tiền:</strong> <span class="fs-5 fw-bold">{{ orderData.tongTien | number: '1.0-0' }} VNĐ</span></p>
+    </div>
+    <div  class="col-6">
+        <p class="text-end">Ngày {{ orderData.ngayTao | date: 'dd' }} tháng {{ orderData.ngayTao | date: 'MM' }} năm {{ orderData.ngayTao | date: 'yyyy' }}</p>
+        <p class="text-end"><em>(Ký tên)</em></p>
+         <!-- Space for signature -->
+      </div>
+      
+   </div>
+  </div>
+  
