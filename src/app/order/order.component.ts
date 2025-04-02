@@ -10,7 +10,7 @@ import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { DiaChiService } from '../service/diachi.service';
 import { PhieugiamgiaService } from '../service/phieugiamgia.service';
-
+import Swal from 'sweetalert2';
 interface OrderDetail {
   spctId: number;
   quantity: number;
@@ -284,47 +284,77 @@ export class OrderComponent implements OnInit {
  
   onDiscountCodeEntered(code: string | null) {
     this.discountErrorMessage = ''; // Clear previous error message
-  
+
     if (!code) {
-      this.discount = 0;
-      this.calculateTotals();
-      return;
-    }
-  
-    this.phieugiamgiaService.getDiscountCodeDetails(code).subscribe({
-      next: (response) => {
-        const now = new Date();
-        const expired = new Date(response.ngayHetHan) < now;
-        const notStarted = new Date(response.ngayBatDau) > now;
-  
-        if (expired || notStarted) {
-          this.discountErrorMessage = '⚠️ Mã giảm giá không còn hiệu lực.';
-          this.discount = 0;
-          this.calculateTotals();
-          return;
-        }
-  
-        // ✅ Tính số tiền được giảm
-        this.discountAmount = this.totalProductPrice * response.giaTriGiam;
-        this.discount = this.discountAmount;
-        this.calculateTotals();
-      },
-  
-      error: (err) => {
-        console.error('❌ Lỗi khi áp dụng mã:', err);  
-        if (err.status === 404) {
-          this.discountErrorMessage = '⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!';
-        } else if (err.error && err.error.message) {
-          this.discountErrorMessage = err.error.message;
-        } else {
-          this.discountErrorMessage = '⚠️ Có lỗi xảy ra khi áp dụng mã giảm giá.';
-        }
         this.discount = 0;
         this.calculateTotals();
-      }
-      
+        return;
+    }
+
+    // Hiển thị loading indicator
+    Swal.fire({
+        title: 'Đang kiểm tra mã giảm giá...',
+        text: 'Vui lòng chờ trong giây lát!',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
     });
-  }
+
+    // Gọi API để kiểm tra mã giảm giá
+    this.phieugiamgiaService.getDiscountCodeDetails(code).subscribe({
+        next: (response) => {
+            Swal.close();
+
+            // ✅ Tính số tiền được giảm
+            this.discountAmount = this.totalProductPrice * response.giaTriGiam;
+
+            // Kiểm tra giá trị tối đa của mã giảm giá (nếu có)
+            if (response.gia_tri_toi_da && this.discountAmount > response.gia_tri_toi_da) {
+                this.discountAmount = response.gia_tri_toi_da;
+            }
+
+            this.discount = this.discountAmount;
+            this.calculateTotals();
+
+            // Lưu vào localStorage để tránh sử dụng lại mã giảm giá cho tài khoản này
+            const userId = this.tokenService.getUserId();
+            localStorage.setItem(`discountUsed_${code}_${userId}`, 'true');
+
+            // Hiển thị thông báo thành công
+            Swal.fire({
+                title: 'Thành công!',
+                text: 'Mã giảm giá đã được áp dụng.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        },
+        error: (err) => {
+            Swal.close();
+            console.error('❌ Lỗi khi áp dụng mã:', err);
+
+            // Lấy thông điệp lỗi từ backend
+            let errorMessage = '⚠️ Có lỗi xảy ra khi áp dụng mã giảm giá.';
+            if (err.error && err.error.message) {
+                errorMessage = err.error.message; // Lấy thông điệp lỗi từ backend
+            }
+
+            this.discountErrorMessage = errorMessage;
+            this.discount = 0;
+            this.calculateTotals();
+
+            // Hiển thị thông báo lỗi
+            Swal.fire({
+                title: 'Lỗi',
+                text: this.discountErrorMessage,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+}
+  
   
   
   
@@ -434,14 +464,26 @@ onSubmit() {
     !this.orderData.tenNguoiNhanHang ||
     !this.orderData.diachiChiTiet ||
     !this.orderData.sdtNguoiNhan ||
-    !this.orderData.phuongThucThanhToan
+    !this.orderData.phuongThucThanhToan ||
+    !this.orderData.diaChiGiaoHang
   ) {
-    alert('Vui lòng nhập đầy đủ thông tin giao hàng!');
+    Swal.fire({
+      title: 'Lỗi',
+      text: 'Vui lòng nhập đầy đủ thông tin giao hàng!',
+      icon: 'error',
+      confirmButtonText: 'OK',
+    });
     return;
   }
 
-  const isCk = this.orderData.phuongThucThanhToan === 'ck';
+  Swal.fire({
+    title: 'Đang xử lý đơn hàng...',
+    text: 'Vui lòng chờ trong giây lát!',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
 
+  const isCk = this.orderData.phuongThucThanhToan === 'ck';
   const payload = {
     ...this.orderData,
     diaChiGiaoHang: `${this.orderData.diachiChiTiet}, ${this.fullAddress}`,
@@ -455,36 +497,33 @@ onSubmit() {
     maTinh: String(this.selectedTinh?.id || ''),
     maQuan: String(this.selectedHuyen?.id || ''),
     maPhuong: String(this.selectedXa?.id || ''),
-    trangThai: 1 // ✅ Gán trạng thái ban đầu tùy theo phương thức thanh toán//6🟡 Chờ thanh toán//
+    trangThai: isCk ? 0 : 1, // 0: Chưa thanh toán (MoMo), 1: Đã xác nhận (Tiền mặt)
   };
 
-  if (!isCk) {
-    // ✅ Tiền mặt → tạo đơn hàng rồi chuyển trang luôn
-    this.orderService.createOrder(payload).subscribe({
-      next: (res) => {
-        this.cartService.clearCartOnClient();
-        localStorage.removeItem('selectedProducts');
-        this.router.navigate(['/order-success', res.id]);
-      },
-      error: (err) => {
-        console.error('❌ Lỗi khi tạo đơn hàng:', err);
-      },
-    });
-    return;
-  }
-
-  // ✅ Chuyển khoản → tạo đơn xong rồi gọi MoMo
   this.orderService.createOrder(payload).subscribe({
     next: (orderRes) => {
-      const utf8ToBase64 = (str: string) => btoa(unescape(encodeURIComponent(str)));
+      Swal.close();
+      this.cartService.clearCartOnClient();
+      localStorage.removeItem('selectedProducts');
+
+      if (!isCk) {
+        Swal.fire({
+          title: 'Thành công!',
+          text: 'Đơn hàng đã được đặt thành công.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        this.router.navigate(['/order-success', orderRes.id]);
+        return;
+      }
 
       const extraDataObj = {
         amount: this.finalAmount,
         orderInfo: `Thanh toán đơn hàng ${orderRes.id} từ SCENT`,
         orderId: 'ORDER_' + orderRes.id,
       };
-
-      const extraData = utf8ToBase64(JSON.stringify(extraDataObj));
+      const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
 
       const momoRequest = {
         orderId: extraDataObj.orderId,
@@ -494,7 +533,7 @@ onSubmit() {
         returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
         notifyUrl: 'http://localhost:8080/api/momo/callback',
         requestType: 'payWithMethod',
-        extraData: extraData,
+        extraData,
       };
 
       this.momoPaymentService.createPayment(momoRequest).subscribe({
@@ -502,16 +541,52 @@ onSubmit() {
           if (res.payUrl) {
             window.location.href = res.payUrl;
           } else {
-            console.error('❌ Không nhận được payUrl từ MoMo');
+            Swal.fire({
+              title: 'Lỗi',
+              text: 'Không nhận được payUrl từ MoMo.',
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
           }
         },
         error: (err) => {
-          console.error('❌ Lỗi khi gọi API MoMo:', err);
+          Swal.close();
+          const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gọi API MoMo.';
+          Swal.fire({
+            title: 'Lỗi',
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
         },
       });
     },
     error: (err) => {
-      console.error('❌ Lỗi khi tạo đơn hàng (trước khi gọi MoMo):', err);
+      Swal.close();
+
+      if (err.status === 401) {
+        this.discount = 0;
+        this.discountAmount = 0;
+        this.orderData.maGiamGia = '';
+        this.calculateTotals();
+
+       
+        Swal.fire({
+          icon: 'warning',
+          title: 'Mã giảm giá không hợp lệ',
+          text: 'Bạn đã sử dụng mã giảm giá này quá số lần cho phép. Mã đã được xóa, bạn có thể tiếp tục đặt hàng.',
+          confirmButtonText: 'OK',
+        });
+        return;
+      }
+
+      const errorMessage = err.error?.message || 'Có lỗi xảy ra khi đặt đơn hàng.';
+      Swal.fire({
+        title: 'Lỗi',
+        text: errorMessage,
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
     },
   });
 }

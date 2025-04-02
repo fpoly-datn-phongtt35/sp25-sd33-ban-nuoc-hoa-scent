@@ -36,7 +36,7 @@
         <div>
         </div>
         <div class="order-actions">
-          <p><strong>Giảm giá:</strong> - {{ order.chiTietDonHangs.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
+          <p><strong>Giảm giá:</strong> - {{ order.soTienGiam | number: '1.0-0' }} VNĐ</p>
           <p><strong>Thành tiền:</strong> {{ order.tongTien | number: '1.0-0' }} VNĐ</p>
           <button class="contact-seller">Liên Hệ Người Bán</button>
           
@@ -115,7 +115,7 @@
       <h4>Thanh toán</h4>
       <div class="payment-detail">
         <p><strong>Thành tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
-        <p><strong>Số tiền giảm:</strong> - {{ selectedOrder.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
+        <p><strong>Số tiền giảm:</strong> - {{ selectedOrder.soTienGiam | number: '1.0-0' }} VNĐ</p>
         <p><strong>Phí vận chuyển:</strong> {{ selectedOrder.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
         <p><strong>Tổng tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
       </div>
