@@ -99,19 +99,23 @@ export class InvoiceComponent implements OnInit {
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
   
     if (order.selectedStatus === 2 && nextStatus === 3) {
-      // Mở modal để hiển thị hóa đơn khi chuyển từ "Đã xác nhận" sang "Đang giao"
       const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
-      modalRef.componentInstance.orderData = order; // Truyền dữ liệu đơn hàng vào modal
-      modalRef.result.then((result) => {
-        if (result === 'confirm') {
-          // Người dùng xác nhận xuất hóa đơn và chuyển trạng thái
-          this.updateStatus(order.id, nextStatus);
+      modalRef.componentInstance.orderData = order;
+      modalRef.result.then(
+        (result) => {
+          console.log('Modal result:', result);
+          if (result === 'confirm') {
+            this.updateStatus(order.id, nextStatus);
+            console.log(`Updated status to ${nextStatus} for order ${order.id}`);
+          } else {
+            console.log('Modal did not return "confirm", status not updated');
+          }
+        },
+        (reason) => {
+          console.error('Modal dismissed or error:', reason);
         }
-      }, (reason) => {
-        console.error('Dismissed or error in modal');
-      });
+      );
     } else {
-      // Đối với các trạng thái khác, hiển thị thông báo xác nhận trước khi chuyển trạng thái
       Swal.fire({
         title: 'Xác nhận chuyển trạng thái',
         text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
@@ -119,11 +123,16 @@ export class InvoiceComponent implements OnInit {
         showCancelButton: true,
         confirmButtonText: 'OK',
         cancelButtonText: 'Hủy'
-      }).then(result => {
+      }).then((result) => {
         if (result.isConfirmed) {
           this.updateStatus(order.id, nextStatus);
+          console.log(`Updated status to ${nextStatus} for order ${order.id}`);
         }
       });
+    }
+    if (order.selectedStatus === 3) {
+      this.selectShippingOption(order.id);
+      return;
     }
   }
   openInvoiceModal(order: any) {
@@ -183,6 +192,8 @@ export class InvoiceComponent implements OnInit {
       response => {
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
+          console.log(`Successfully updated status for order ${orderId} to ${status}`, response);
+      // Cập nhật giao diện nếu cần
           order.selectedStatus = newStatus;
         }
         this.filterOrders(this.getFilterKey(newStatus));

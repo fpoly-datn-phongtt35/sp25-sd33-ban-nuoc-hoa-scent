@@ -1,14 +1,17 @@
-<div class="modal-header">
-    <h4 class="modal-title">🧾 HÓA ĐƠN BÁN HÀNG</h4>
-    <button type="button" class="btn-close" (click)="close()"></button>
-  </div>
+
   
-  <p style="color: red; font-weight: bold; font-size: 1.2rem;">
-    <strong>Mã đơn hàng:</strong> #{{ orderData.id }}
-  </p>
-  
-  <div class="modal-body">
+ 
+  <button class="btn btn-success" (click)="exportToPDF()">Tải Hóa Đơn (PDF)</button>
+  <div class="modal-body" id="invoice-content">
     <!-- Thông tin người gửi và người nhận -->
+    <div class="modal-header">
+        <h4 class="modal-title">🧾 HÓA ĐƠN BÁN HÀNG</h4>
+        
+        <button type="button" class="btn-close" (click)="close()"></button>
+      </div>
+    <p style="color: red; font-weight: bold; font-size: 1.2rem;">
+        <strong>Mã đơn hàng:</strong> #{{ orderData.id }}
+      </p>
     <div class="row mb-2">
       <div class="col-6">
         <h5 class="text-primary">📦 Người gửi</h5>
