@@ -5,37 +5,28 @@
   max-width: 1200px;
   margin: auto;
   align-items: flex-start;
-}
-.banner {
-  width: 100%;  /* Đảm bảo banner chiếm toàn bộ chiều rộng */
-  height: 500px;  /* Điều chỉnh chiều cao banner, có thể thay đổi giá trị này */
-  overflow: hidden;
-  position: relative;
-}
-
-.banner-image {
-  width: 100%;  /* Ảnh sẽ tự động chiếm toàn bộ chiều rộng của phần tử */
-  height: 100%;  /* Ảnh sẽ tự động có chiều cao 100% so với phần tử chứa */
-  object-fit: contain;  /* Giữ tỷ lệ ảnh, làm cho ảnh lấp đầy phần tử mà không bị méo */
- 
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 /* 📌 Danh mục bên trái */
 .category-container {
-  width: 250px;
+  width: 100%;
+  max-width: 300px; /* Tăng chiều rộng của danh mục */
   background: #fff;
-  padding: 15px;
+  padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-top: 65px;
+  margin-top: 20px;
+  transition: all 0.3s ease;
 }
 
 .category-container h3 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .category-container ul {
@@ -49,19 +40,15 @@
   border-bottom: 1px solid #eee;
 }
 
-.category-container ul li:last-child {
-  border-bottom: none;
-}
-
 .category-container ul li a {
   text-decoration: none;
   color: #333;
   font-size: 14px;
-  transition: color 0.3s;
+  transition: color 0.3s ease;
 }
 
 .category-container ul li a:hover {
-  color: #d4a017;
+  color: #ff7a00;
 }
 
 /* 🛍️ Container sản phẩm bên phải */
@@ -69,123 +56,112 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-/* 🔎 Tìm kiếm & Bộ lọc giá */
-.search-filter-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-/* 🔎 Ô tìm kiếm */
-.search-box {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  max-width: 400px;
-  margin-top: 15px;
-  
-}
-
-.search-box input {
-  flex: 1;
-  padding: 6px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 18px;
-  width: 40px;
-}
-
-.search-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  margin-left: 8px;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 13px;
-  font-weight: bold;
-  transition: background 0.3s;
-}
-
-.search-button:hover {
-  background-color: #0056b3;
+  padding-right: 20px;
 }
 
 /* 🎚️ Bộ lọc giá */
 .filter-container {
   padding: 15px;
-  border: 2px solid #b9b9b7;
+  border: 2px solid #ff7a00;
   border-radius: 10px;
-  text-align: center;
   background-color: #fff;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease-in-out;
-  width: 220px;
+  width: 100%; /* Giảm chiều rộng để vừa với không gian */
+  max-width: 250px; /* Giới hạn chiều rộng của bộ lọc */
+  margin-bottom: 20px;
+  box-sizing: border-box; /* Đảm bảo chiều rộng được tính toán bao gồm padding */
 }
 
-mat-slider .mdc-slider__thumb {
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-bottom: 14px solid #d4a017; /* Màu vàng giống theme */
-  transform: translateY(-5px); /* Điều chỉnh vị trí */
-}
-mat-slider .mdc-slider__thumb:hover {
-  border-bottom-color: #b68910 !important; /* Đổi màu khi hover */
-  transform: scale(1.2) translateY(-5px);
-}
-mat-slider .mdc-slider__track {
-  background-color: #d4a017 !important; /* Màu nền của thanh trượt */
-  height: 4px;
-}
-.pagination {
-  display: flex;
-  justify-content: center;
-  list-style-type: none;
-  padding: 0;
-  margin-top: 20px;
-}
-
-.page-item {
-  margin: 0 5px;
-}
-.pagination-container {
-  min-height: 50px; /* Đảm bảo có đủ chỗ để hiển thị */
-  padding: 10px;
-  background-color: white; /* Kiểm tra nếu bị che */
-}
-
-
-.page-link {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  color: #007bff;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.page-item.active .page-link {
-  background-color: #007bff;
-  color: #fff;
+.filter-container h4 {
+  font-size: 16px;
   font-weight: bold;
-}
-.divider {
-  margin: 15px 0;
-  border: none;
-  height: 1px;
-  background: linear-gradient(to right, transparent, #ccc, transparent);
-}
-.page-link:hover {
-  background-color: #f1f1f1;
+  color: #333;
+  margin-bottom: 10px;
 }
 
+mat-slider {
+  width: 100%; /* Đảm bảo thanh trượt lấp đầy chiều rộng của container */
+}
+
+/* 🎚️ Thanh trượt */
+.price-slider {
+  width: 100%;
+  margin: 5px 0;
+}
+
+.price-range {
+  font-size: 14px;
+  font-weight: bold;
+  color: #43413d;
+  margin: 10px 0;
+}
+
+.filter-button {
+  background-color: #ff7a00;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+/* 🛍️ Các checkbox và nhãn trong bộ lọc */
+.filter-container label {
+  display: block;
+  font-size: 14px;
+  margin: 5px 0;
+  padding-left: 25px;
+  position: relative;
+}
+
+.filter-container input[type="checkbox"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  transform: scale(1.2); /* Tăng kích thước checkbox */
+}
+.filter-button:hover {
+  background-color: #d36900;
+}
+/* 🛍️ Danh sách sản phẩm */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Tự động điều chỉnh số cột */
+  gap: 20px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  background: #fff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+.product-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.product-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 📷 Ảnh sản phẩm */
+.product-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
 
 /* 📌 Tiêu đề bộ lọc */
 .filter-container h4 {
@@ -201,68 +177,89 @@ mat-slider .mdc-slider__track {
   margin: 5px 0;
 }
 
-/* 💰 Hiển thị giá trị */
-.price-range {
-  font-size: 12px;
-  font-weight: bold;
-  color: #333;
-  margin: 3px 0;
+.page-item {
+  margin: 0 5px;
 }
 
-.price-range strong {
-  color: #43413d;
-}
-
-/* 🔘 Nút lọc */
-.filter-button {
-  background-color: #4e4e4c;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  transition: background 0.3s;
-}
-
-.filter-button:hover {
-  background-color: #b68910;
-}
-
-/* 🛍️ Danh sách sản phẩm */
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
-  justify-content: center;
-  max-width: 900px;
-  margin: auto;
-}
-
-/* 🏷️ Thẻ sản phẩm */
-.product-card {
+.page-link {
+  padding: 8px 12px;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-  background: #fff;
-  transition: all 0.3s ease-in-out;
+  border-radius: 5px;
+  color: #007bff;
   cursor: pointer;
-  max-width: 200px; /* Giảm kích thước ô sản phẩm */
-}
-.product-card:hover {
-  transform: scale(1.05);
+  text-decoration: none;
 }
 
-/* 📷 Ảnh sản phẩm */
-.product-card img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
-.product-title {
-  font-size: 14px; /* Giảm kích thước chữ tiêu đề */
+.page-item.active .page-link {
+  background-color: #007bff;
+  color: #fff;
   font-weight: bold;
+}
+
+.page-link:hover {
+  background-color: #f1f1f1;
+}
+
+/* ** Media Queries for responsiveness */
+@media (max-width: 768px) {
+  .category-container, .product-container {
+    width: 100%;
+    max-width: none;
+  }
+
+  .main-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Điều chỉnh số cột cho màn hình nhỏ */
+  }
+}
+/* Style for collapsible sections */
+.collapsible {
+  background-color: #ff7a00;
+  color: white;
+  cursor: pointer;
+  padding: 10px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.collapsible:hover {
+  background-color: #d36900;
+}
+
+.content {
+  padding: 0 15px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+
+.content a {
+  display: block;
+  padding: 8px 0;
   color: #333;
+  text-decoration: none;
+}
+
+.content a:hover {
+  color: #ff7a00;
+}
+
+/* Add a transition for smooth opening/closing */
+.collapsible:after {
+  content: '▼';
+  font-size: 12px;
+  float: right;
+}
+
+.collapsible.active:after {
+  content: '▲';
 }

@@ -27,6 +27,7 @@
           <th>Tên</th>
           <th>Thương hiệu</th>
           <th>Danh mục</th>
+          <th>Nhóm hương</th>
           <th>Mùi hương</th>
           <th>Action</th>
         </tr>
@@ -43,6 +44,7 @@
           <td (click)="onRowClick(product.idSanPham)">{{ product.tenSanPham }}</td>
           <td (click)="onRowClick(product.idSanPham)">{{ product.tenThuongHieu }}</td>
           <td (click)="onRowClick(product.idSanPham)">{{ product.tenDanhMuc }}</td>
+          <td (click)="onRowClick(product.idSanPham)">{{ product.tenNhomHuong }}</td>
           <td (click)="onRowClick(product.idSanPham)">
             <ul class="text-start">
               <li><strong>Tầng đầu:</strong> {{ product.moTaHuongDau }}</li>

@@ -28,4 +28,7 @@ export class AccountService {
     // Gửi yêu cầu GET với các tham số đã chuẩn bị
     return this.http.get(`${this.apiUrl}/get-user-accounts${params}`);
   }
+  register(user: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/register`, user);
+  }
 }

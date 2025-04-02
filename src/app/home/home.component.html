@@ -2,71 +2,89 @@
 <div class="banner">
   <img src="banner1.jpg" alt="Banner Sản Phẩm" class="banner-image" />
 </div>
+
 <!-- 🌟 Container chính chia làm 2 cột -->
 <div class="main-container">
-  
+
   <!-- 📌 Danh mục sản phẩm bên trái -->
   <div class="category-container">
     <h3>DANH MỤC</h3>
-    <ul>
-      <li *ngFor="let category of categories">
-        <a href="#" (click)="loadProductsByCategory(category.tenDanhMuc)">{{ category.tenDanhMuc }}</a>
-      </li>
-    </ul>
+    <button class="collapsible" (click)="toggleCollapsible($event)">Danh Mục</button>
+    <div class="content">
+      <ul>
+        <li *ngFor="let category of categories">
+          <a href="#" (click)="applyFilter('category', category)">{{ category }}</a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Bộ lọc thương hiệu -->
+    <h4>Thương hiệu</h4>
+    <button class="collapsible" (click)="toggleCollapsible($event)">Thương Hiệu</button>
+    <div class="content">
+      <ul>
+        <li *ngFor="let brand of tenThuonghieu">
+          <a href="#" (click)="applyFilter('brand', brand)">{{ brand }}</a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Bộ lọc nhóm hương -->
+    <h4>Nhóm hương</h4>
+    <button class="collapsible" (click)="toggleCollapsible($event)">Nhóm Hương</button>
+    <div class="content">
+      <ul>
+        <li *ngFor="let scent of tennhomhuongs">
+          <a href="#" (click)="applyFilter('scent', scent)">{{ scent }}</a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Bộ lọc xuất xứ -->
+    <h4>Xuất xứ</h4>
+    <button class="collapsible" (click)="toggleCollapsible($event)">Xuất Xứ</button>
+    <div class="content">
+      <ul>
+        <li *ngFor="let country of quocGia">
+          <a href="#" (click)="applyFilter('country', country)">{{ country }}</a>
+        </li>
+      </ul>
+    </div>
+
     <hr class="divider">
+
     <!-- Bộ lọc giá với thanh trượt có mũi tên -->
-<!-- Bộ lọc giá với thanh trượt có mũi tên -->
-<!-- Bộ lọc giá với 1 thanh trượt 2 đầu -->
-<div class="filter-container">
-  <h4>LỌC THEO GIÁ</h4>
-
-  <mat-slider class="price-slider" 
-    [min]="minPrice" 
-    [max]="maxPrice" 
-    [step]="50000">
-    <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
-    <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
-  </mat-slider>
-
-  <div class="price-range">
-    Giá <strong>{{ selectedMinPrice | number }} đ</strong> — 
-    <strong>{{ selectedMaxPrice | number }} đ</strong>
-  </div>
-
-  <button class="filter-button" (click)="filterByPrice()">LỌC</button>
-</div>
-
-<hr class="divider">
-
-
-
-    
+    <div class="filter-container">
+      <h4>LỌC THEO GIÁ</h4>
+      <mat-slider class="price-slider"
+        [min]="minPrice"
+        [max]="maxPrice"
+        [step]="50000">
+        <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
+        <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
+      </mat-slider>
+      <div class="price-range">
+        Giá <strong>{{ selectedMinPrice | number }} đ</strong> —
+        <strong>{{ selectedMaxPrice | number }} đ</strong>
+      </div>
+      <button class="filter-button" (click)="filterByPrice()">LỌC</button>
+    </div>
+    <hr class="divider">
   </div>
 
   <!-- 🛍️ Danh sách sản phẩm bên phải -->
   <div class="product-container">
-    
     <!-- 🔎 Ô tìm kiếm + Bộ lọc giá -->
     <div class="search-filter-container">
-      
-      <!-- Ô tìm kiếm -->
       <div class="search-box">
         <input type="text" [(ngModel)]="query" placeholder="🔍 Nhập từ khóa tìm kiếm...">
         <button class="search-button" (click)="onSearch()">Tìm kiếm</button>
       </div>
-
-      <!-- Bộ lọc giá -->
-     
-
     </div>
 
     <!-- 🛍️ Danh sách sản phẩm -->
     <div class="product-grid">
-      <div 
-        *ngFor="let product of sanPhams" 
-        class="product-card" 
-        (click)="viewProductDetail(product.idSanPham)"
-      >
+      <div *ngFor="let product of sanPhams" class="product-card" (click)="viewProductDetail(product.idSanPham)">
         <div class="product-image-container">
           <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
         </div>
@@ -76,6 +94,7 @@
         </div>
       </div>
     </div>
+
     <nav class="pagination-container">
       <ul class="pagination">
         <li class="page-item" *ngIf="currentPage > 1">
@@ -98,7 +117,5 @@
       </ul>
     </nav>
   </div>
-
-</div>
 
 <app-footer></app-footer>

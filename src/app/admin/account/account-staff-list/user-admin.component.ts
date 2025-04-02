@@ -2,6 +2,9 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Đảm bảo import FormsModule
 import { AccountService } from '../../../service/taikhoan.service';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Router } from '@angular/router';
+import { AddStaffAccountComponent } from '../add-staff-account/add-staff-account.component';
 
 @Component({
   selector: 'app-user-admin',
@@ -21,7 +24,7 @@ export class UserAdminComponent {
   totalPages: number = 10; // Tổng số trang
   searchTerm: string = ''; // Từ khóa tìm kiếm
 
-  constructor(private accountService: AccountService) {}
+  constructor(private accountService: AccountService,private router: Router,private modalService: NgbModal) {}
 
   ngOnInit(): void {
     this.loadAccounts();
@@ -85,4 +88,16 @@ export class UserAdminComponent {
     console.log('📌 Pagination range:', range); // Debug
     return range;
   }
+  openAddModal(){
+    const modalRef = this.modalService.open(AddStaffAccountComponent, {
+      centered: true, // ✅ canh giữa
+      backdrop: 'static', keyboard: false });
+
+        // Nhận dữ liệu khách hàng mới từ modal
+        modalRef.componentInstance.accountAdded.subscribe((newproduct: any) => {
+          console.log('🎉 Khách hàng mới:', newproduct);
+          this.loadAccounts();
+          this.accounts.unshift(newproduct); // ✅ Thêm vào đầu danh sách
+        });
+      }
 }

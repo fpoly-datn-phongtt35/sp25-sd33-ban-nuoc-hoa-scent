@@ -1,39 +1,38 @@
 <app-header></app-header>
+
 <div class="order-container" *ngIf="selectedOrder === null">
   <h2>Danh sách đơn hàng</h2>
 
   <!-- Hiển thị đơn hàng -->
-  <div *ngFor="let order of orders" class="order" (click)="toggleOrderDetail(order)">
-    <div class="order-header">
-      
-      <h3>Mã đơn hàng: {{ order.maDonHang }}</h3>
-      <p class="order-status">Trạng thái: {{ order.statusLabel }}</p>
-    </div>
+  <div class="order-list" style="border: 1p;">
+    <div *ngFor="let order of orders" class="order" (click)="toggleOrderDetail(order)">
+      <div class="order-header">
+        <h3>Mã đơn hàng: {{ order.maDonHang }}</h3>
+        <p class="order-status">Trạng thái: {{ order.statusLabel }}</p>
+      </div>
 
-    <!-- Hiển thị sản phẩm ngoài table -->
-    <div class="order-products">
-      <div *ngFor="let item of order.chiTietDonHangs" class="product-item">
-        <img [src]="item.imageURL[0]" alt="product image" class="product-image" />
-        <div class="product-info">
-          <h4>{{ item.tenSanPham }}</h4>
-          <p>Số lượng: {{ item.quantity }}</p>
-          <p>Giá: {{ item.donGia | number: '1.0-0' }} VNĐ</p>
-
-         
+      <!-- Hiển thị sản phẩm ngoài table -->
+      <div class="order-products">
+        <div *ngFor="let item of order.chiTietDonHangs" class="product-item">
+          <img [src]="item.imageURL[0]" alt="product image" class="product-image" />
+          <div class="product-info">
+            
+            <h4>{{ item.tenSanPham }}</h4>
+            <p>Số lượng: {{ item.quantity }}</p>
+            <p>Giá: {{ item.donGia | number: '1.0-0' }} VNĐ</p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="order-price">
-      <div >
-        
-        
-      </div>
-      <div class="order-actions" *ngFor="let item of order.chiTietDonHangs">
-        <p><strong>Giảm giá:</strong> - {{ item.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
-        <p><strong>Thành tiền:</strong> {{ order.tongTien | number: '1.0-0' }} VNĐ</p>
-        <button class="contact-seller">Liên Hệ Người Bán</button>
-        <button class="cancel-order">Hủy Đơn Hàng</button>
+      <div class="order-price">
+        <div>
+        </div>
+        <div class="order-actions">
+          <p><strong>Giảm giá:</strong> - {{ order.chiTietDonHangs.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
+          <p><strong>Thành tiền:</strong> {{ order.tongTien | number: '1.0-0' }} VNĐ</p>
+          <button class="contact-seller">Liên Hệ Người Bán</button>
+          <button class="cancel-order">Hủy Đơn Hàng</button>
+        </div>
       </div>
     </div>
   </div>
@@ -41,80 +40,84 @@
 
 <div *ngIf="selectedOrder !== null" class="order-detail">
   <button class="go-back-button" (click)="goBack()">Quay lại</button>
-  
-  <h3>Chi tiết đơn hàng</h3>
-  <div class="order-summary">
-    <div class="order-info">
-      <div class="order-status">
-        <!-- Thanh trạng thái cho phương thức thanh toán TM -->
-        <div *ngIf="selectedOrder.phuongThucThanhToan === 'tm'" class="order-status">
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 1}" class="status-step">
-            <i class="fas fa-check-circle"></i> Chờ xác nhận
-          </div>
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 2}" class="status-step">
-            <i class="fas fa-check-circle"></i> Đã xác nhận
-          </div>
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 3}" class="status-step">
-            <i class="fas fa-truck"></i> Đang giao
-          </div>
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 4}" class="status-step">
-            <i class="fas fa-check-circle"></i> Hoàn thành
-          </div>
-          <div *ngIf="selectedOrder.trangThai === 5" [ngClass]="{'active': selectedOrder.trangThai === 5}" class="status-step">
-            <i class="fas fa-times-circle"></i> Đã hủy
-          </div>
-        </div>
-      
-        <!-- Thanh trạng thái cho phương thức thanh toán CK -->
-        <div *ngIf="selectedOrder.phuongThucThanhToan === 'ck'" class="order-status">
-          <div [ngClass]="{'active': selectedOrder.trangThai === 6}" class="status-step">
-            <i class="fas fa-check-circle"></i> Đã thanh toán (Chuyển khoản)
-          </div>
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 2}" class="status-step">
-            <i class="fas fa-check-circle"></i> Đã xác nhận
-          </div>
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 3}" class="status-step">
-            <i class="fas fa-truck"></i> Đang giao
-          </div>
-          <div [ngClass]="{'active': selectedOrder.trangThai >= 4}" class="status-step">
-            <i class="fas fa-check-circle"></i> Hoàn thành
-          </div>
-          <div *ngIf="selectedOrder.trangThai === 5" [ngClass]="{'active': selectedOrder.trangThai === 5}" class="status-step">
-            <i class="fas fa-times-circle"></i> Đã hủy
-          </div>
-        </div>
-      </div>
-      
-      
-      <p><strong>Mã đơn hàng:</strong> {{ selectedOrder.maDonHang }}</p>
-      <p><strong>Tên gười nhận:</strong> {{ selectedOrder.tenNguoiNhanHang }}</p>
-      <p><strong>SĐT người nhận:</strong> {{ selectedOrder.sdtNguoiNhan }}</p>
-      <p><strong>Mã đơn hàng:</strong> {{ selectedOrder.maDonHang }}</p>
-      <p><strong>Ngày tạo:</strong> {{ selectedOrder.ngayTao | date: 'shortDate' }}</p>
-      <p><strong>Trạng thái:</strong> {{ selectedOrder.statusLabel }}</p>
-     
-      <p><strong>Phương thức thanh toán:</strong> {{ selectedOrder.phuongThucThanhToan }}</p>
-      <p class="address-line">
-        <strong>Địa chỉ giao hàng:</strong>
-        {{ selectedOrder.diaChiGiaoHang }}
-        <!-- Font Awesome edit icon -->
-        <button class="edit-address-button" >
-          <i class="fa fa-edit"></i> Sửa
-        </button>
-        <!-- Alternatively, you can use Bootstrap Icons -->
-        <!-- <button class="edit-address-button" (click)="editAddress()">
-          <i class="bi bi-pencil"></i> Sửa
-        </button> -->
-      </p>
-     
-      <p><strong>Tổng tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
-    </div>
-  </div>
 
+  <div class="order-detail-content">
+    <!-- Thông tin đơn hàng -->
+    <div class="order-summary">
+      <div class="order-header">
+        <h3>Chi tiết đơn hàng</h3>
+        <!-- Biểu tượng bút để cập nhật, nằm ngang với tiêu đề -->
+        <button class="edit-order-button" >
+          <i class="fa fa-pencil-alt"></i> Cập nhật
+        </button>
+      </div>
+      <div class="order-info">
+        <div class="order-status">
+          <!-- Thanh trạng thái cho phương thức thanh toán TM -->
+          <div *ngIf="selectedOrder.phuongThucThanhToan === 'tm'" class="order-status">
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 1}" class="status-step">
+              <i class="fas fa-check-circle"></i> Chờ xác nhận
+            </div>
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 2}" class="status-step">
+              <i class="fas fa-check-circle"></i> Đã xác nhận
+            </div>
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 3}" class="status-step">
+              <i class="fas fa-truck"></i> Đang giao
+            </div>
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 4}" class="status-step">
+              <i class="fas fa-check-circle"></i> Hoàn thành
+            </div>
+            <div *ngIf="selectedOrder.trangThai === 5" [ngClass]="{'active': selectedOrder.trangThai === 5}" class="status-step">
+              <i class="fas fa-times-circle"></i> Đã hủy
+            </div>
+          </div>
+
+          <!-- Thanh trạng thái cho phương thức thanh toán CK -->
+          <div *ngIf="selectedOrder.phuongThucThanhToan === 'ck'" class="order-status">
+            <div [ngClass]="{'active': selectedOrder.trangThai === 6}" class="status-step">
+              <i class="fas fa-check-circle"></i> Đã thanh toán (Chuyển khoản)
+            </div>
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 2}" class="status-step">
+              <i class="fas fa-check-circle"></i> Đã xác nhận
+            </div>
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 3}" class="status-step">
+              <i class="fas fa-truck"></i> Đang giao
+            </div>
+            <div [ngClass]="{'active': selectedOrder.trangThai >= 4}" class="status-step">
+              <i class="fas fa-check-circle"></i> Hoàn thành
+            </div>
+            <div *ngIf="selectedOrder.trangThai === 5" [ngClass]="{'active': selectedOrder.trangThai === 5}" class="status-step">
+              <i class="fas fa-times-circle"></i> Đã hủy
+            </div>
+          </div>
+        </div>
+        <p><strong>Mã đơn hàng:</strong> {{ selectedOrder.maDonHang }}</p>
+        <p><strong>Tên người nhận:</strong> {{ selectedOrder.tenNguoiNhanHang }}</p>
+        <p><strong>SĐT người nhận:</strong> {{ selectedOrder.sdtNguoiNhan }}</p>
+        <p><strong>Ngày tạo:</strong> {{ selectedOrder.ngayTao | date: 'shortDate' }}</p>
+        <p><strong>Trạng thái:</strong> {{ selectedOrder.statusLabel }}</p>
+        <p><strong>Phương thức thanh toán:</strong> {{ selectedOrder.phuongThucThanhToan }}</p>
+        <p><strong>Địa chỉ giao hàng:</strong> {{ selectedOrder.diaChiGiaoHang }}</p>
+        <p><strong>Tổng tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
+      </div>
+    </div>
+
+    <!-- Thanh toán nằm bên phải thông tin đơn hàng -->
+    <div class="order-payment">
+      <h4>Thanh toán</h4>
+      <div class="payment-detail">
+        <p><strong>Thành tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
+        <p><strong>Số tiền giảm:</strong> - {{ selectedOrder.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
+        <p><strong>Phí vận chuyển:</strong> {{ selectedOrder.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
+        <p><strong>Tổng tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
+      </div>
+    </div>
+
+  </div>
   <h3>Chi tiết sản phẩm</h3>
   <div class="order-products">
     <div *ngFor="let item of selectedOrder.chiTietDonHangs" class="product-item">
-      <img [src]="item.imageURL[0]" alt="product image" class="product-image" />
+      <img [src]="item.imageURL?.[0] || 'path/to/default-image.jpg'" alt="product image" class="product-image" />
       <div class="product-info">
         <h4>{{ item.tenSanPham }}</h4>
         <p>Số lượng: {{ item.quantity }}</p>
@@ -123,19 +126,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Payment and discount details section below products -->
-  <div class="order-payment" *ngFor="let item of selectedOrder.chiTietDonHangs">
-    <h4>Thanh toán</h4>
-    <div class="payment-detail">
-      <p><strong>Thành tiền:</strong> {{ item.thanhTien | number: '1.0-0' }} VNĐ</p>
-      <p><strong>Số tiền giảm:</strong> - {{ item.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
-      <p><strong>Phí vận chuyển:</strong> {{ selectedOrder.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
-      <p><strong>Tổng tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
-    </div>
-</div>
-
-
 </div>
 
 <app-footer></app-footer>

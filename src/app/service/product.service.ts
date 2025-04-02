@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient,HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+
 @Injectable({
   providedIn: 'root', // Đảm bảo service này có thể sử dụng ở mọi nơi
 })
@@ -50,14 +51,33 @@ private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-a
   getCategories(): Observable<any> {
     return this.http.get<any>(this.apiDanhMuc);
   }
-  public getProductsByCategory(category: string, page: number = 0, pageSize: number = 12): Observable<any> {
+  getProductsByAllField(
+    category: string,
+    scent: string,
+    brand: string,
+    country: string,
+    page: number = 0,
+    pageSize: number = 12
+  ): Observable<any> {
     let params = new HttpParams()
-        .set('tenDanhMuc', category)
-        .set('page', page.toString())
-        .set('pageSize', pageSize.toString());
+      .set('page', page.toString()) // Truyền tham số trang
+      .set('pageSize', pageSize.toString()); // Truyền tham số số lượng sản phẩm mỗi trang
 
+    // Chỉ thêm các tham số khi có giá trị
+    if (category) params = params.set('tenDanhMuc', category);
+    if (scent) params = params.set('tenNhomHuong', scent);
+    if (brand) params = params.set('tenThuongHieu', brand);
+    if (country) params = params.set('quocGia', country);
+
+    // Thực hiện gọi API
+    console.log('Gọi API với tham số: ', params);
     return this.http.get<any>(this.apiSearchdm, { params });
-}
+  }
+
+
+
+
+
 addProductOnAdmin(formData: FormData): Observable<any> {
   const url = `${this.baseUrl}/add`;
   return this.http.post<any>(url, formData);

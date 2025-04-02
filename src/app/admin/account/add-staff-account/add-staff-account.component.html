@@ -1,0 +1,66 @@
+<div class="modal-header">
+  <h5 class="modal-title">Thêm Tài Khoản</h5>
+  <button type="button" class="btn-close" (click)="closeModal()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
+    <!-- Họ và tên -->
+    <div class="mb-3">
+      <label class="form-label">Họ và Tên</label>
+      <input type="text" class="form-control" formControlName="hoTen">
+      <div *ngIf="accountForm.get('hoTen')?.invalid && (accountForm.get('hoTen')?.touched || accountForm.get('hoTen')?.dirty)" class="text-danger">
+        <div *ngIf="accountForm.get('hoTen')?.errors?.['required']">Họ và tên là bắt buộc.</div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" formControlName="email">
+      <div *ngIf="accountForm.get('email')?.invalid && (accountForm.get('email')?.touched || accountForm.get('email')?.dirty)" class="text-danger">
+        <div *ngIf="accountForm.get('email')?.errors?.['required']">Email là bắt buộc.</div>
+        <div *ngIf="accountForm.get('email')?.errors?.['email']">Email không hợp lệ.</div>
+      </div>
+    </div>
+
+    <!-- Số điện thoại -->
+    <div class="mb-3">
+      <label class="form-label">Số Điện Thoại</label>
+      <input type="text" class="form-control" formControlName="sdt">
+      <div *ngIf="accountForm.get('sdt')?.invalid && (accountForm.get('sdt')?.touched || accountForm.get('sdt')?.dirty)" class="text-danger">
+        <div *ngIf="accountForm.get('sdt')?.errors?.['required']">Số điện thoại là bắt buộc.</div>
+        <div *ngIf="accountForm.get('sdt')?.errors?.['pattern']">Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.</div>
+      </div>
+    </div>
+
+    <!-- Tên đăng nhập -->
+    <div class="mb-3">
+      <label class="form-label">Tên Đăng Nhập</label>
+      <input type="text" class="form-control" formControlName="tenDangNhap">
+      <div *ngIf="accountForm.get('tenDangNhap')?.invalid && (accountForm.get('tenDangNhap')?.touched || accountForm.get('tenDangNhap')?.dirty)" class="text-danger">
+        <div *ngIf="accountForm.get('tenDangNhap')?.errors?.['required']">Tên đăng nhập là bắt buộc.</div>
+      </div>
+    </div>
+
+    <!-- Mật khẩu -->
+    <div class="mb-3">
+      <label class="form-label">Mật Khẩu</label>
+      <input type="password" class="form-control" formControlName="matKhau">
+      <div *ngIf="accountForm.get('matKhau')?.invalid && (accountForm.get('matKhau')?.touched || accountForm.get('matKhau')?.dirty)" class="text-danger">
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['required']">Mật khẩu là bắt buộc.</div>
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['minlength']">Mật khẩu phải có ít nhất 6 ký tự.</div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary" [disabled]="!accountForm.valid">Lưu</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="submit" class="btn btn-primary" [disabled]="!accountForm.valid" (click)="saveAccount()">Lưu</button>
+</div>

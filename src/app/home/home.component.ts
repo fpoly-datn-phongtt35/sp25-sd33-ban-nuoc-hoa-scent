@@ -1,21 +1,26 @@
+import { ThuongHieuService } from './../service/thuonghieu.service';
 import { Component, OnInit } from '@angular/core';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
 import { SanPhamService } from '../service/product.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms'; 
-
+import { FormsModule } from '@angular/forms';
 import { MatSliderModule } from '@angular/material/slider';
+import { NhomHuongService } from '../service/nhomhuong.service';
+import { ReactiveFormsModule } from '@angular/forms';  // Thêm dòng này vào
+
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [HeaderComponent, FooterComponent, CommonModule,FormsModule,MatSliderModule],
+  imports: [HeaderComponent, FooterComponent, CommonModule,FormsModule,MatSliderModule,ReactiveFormsModule],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'], // Sửa từ styleUrl thành styleUrls
 })
 export class HomeComponent implements OnInit {
   sanPhams: any[] = [];
+  ThuongHieus: any[]=[];
+  filteredSanPhams: any[] = [];
   currentPage: number = 1; // Trang hiện tại (1-based index)
   totalPages: number = 0; // Tổng số trang
   pageSize: number = 12; // Số sản phẩm mỗi trang
@@ -29,29 +34,67 @@ export class HomeComponent implements OnInit {
   currentCategory: string = '';
 
   categories: any[] = [];
-  constructor(private sanPhamService: SanPhamService,private router: Router) {}
+  tennhomhuongs: any[]=[];
+  tenThuonghieu:any[]=[];
+  quocGia:any[]=[];
+  selectedFilters: any = {
+    category: [],
+    brand: [],
+    scent: [],
+    country: [],
+  };
+  constructor(private sanPhamService: SanPhamService,private router: Router,private nhomHuongService:NhomHuongService,private thuongHieuService:ThuongHieuService) {}
 
   ngOnInit(): void {
     this.fetchSanPhamDetails();
-    this.fetDanhMuc();
+    this.fetNhomHuong();
+    this.fetThuongHieu();
     this.onPageChange(1);
   }
-
-  fetDanhMuc():void{
-    this.sanPhamService.getCategories().subscribe({
-      next: (data: any[]) => {
-        this.categories = data;
+fetThuongHieu(): void {
+  this.thuongHieuService.getThuonghieu().subscribe({
+    next: (data: any) => {
+      // Kiểm tra nếu data là mảng và xử lý đúng
+      if (Array.isArray(data)) {
+        this.tenThuonghieu = Array.from(new Set(data.map((item: any) => item.tenThuongHieu)));
+        this.quocGia = Array.from(new Set(data.map((item: any) => item.quocGia)));
+        console.log('Thương hiệu:',this.tenThuonghieu)
+        console.log('QuocGia',this.quocGia)
+      } else {
+        console.error('Unexpected data structure:', data);
+      }
+    },
+    error: (err: any) => {
+      console.error('Failed to get categories:', err);
+    }
+  });
+}
+  fetNhomHuong(): void {
+    this.nhomHuongService.getnhomHuong().subscribe({
+      next: (data: any) => {
+        // Kiểm tra nếu data là mảng và xử lý đúng
+        if (Array.isArray(data)) {
+          this.tennhomhuongs = Array.from(new Set(data.map((item: any) => item.tenNhomHuong)));
+          console.log('Nhóm hương:',this.tennhomhuongs)
+        } else {
+          console.error('Unexpected data structure:', data);
+        }
       },
       error: (err: any) => {
         console.error('Failed to get categories:', err);
       }
     });
-  
   }
-  // Lấy danh sách sản phẩm từ API
+
+
+
   fetchSanPhamDetails(): void {
     this.sanPhamService.getSanPhamDetails(this.currentPage - 1, this.pageSize).subscribe(
         (data: any) => {
+          this.categories = Array.from(new Set(data.content.map((item: any) => item.tenDanhMuc)));
+this.ThuongHieus = Array.from(new Set(data.content.map((item: any) => item.tenThuongHieu)));
+          console.log(this.categories)
+          console.log(this.ThuongHieus)
             console.log("📥 API Response:", data); // Kiểm tra dữ liệu API trả về
             this.sanPhams = data.content;
             this.totalPages = data.page?.totalPages ?? 1;  // Sửa lỗi lấy totalPages
@@ -64,47 +107,41 @@ export class HomeComponent implements OnInit {
     );
 }
 
-  
+
 
   // Chuyển đến trang mới
-  onPageChange(page: number): void {
-    console.log("🔄 Chuyển sang trang:", page);
-    console.log("📌 Tổng số trang:", this.totalPages);
-    
-    if (page >= 1 && page <= this.totalPages) {
-        this.currentPage = page;
-        console.log("📌 Trang hiện tại sau cập nhật:", this.currentPage);
-        
-        if (this.query) {
-            console.log("🔍 Đang tìm kiếm theo query:", this.query);
-            this.loadSearchResults();  // Tìm kiếm theo query
-        } else if (this.selectedMinPrice !== this.minPrice || this.selectedMaxPrice !== this.maxPrice) {
-            console.log("💰 Đang lọc theo giá:", this.selectedMinPrice, "-", this.selectedMaxPrice);
-            this.fetchSanPhamDetailsPrice();  // Tìm kiếm theo khoảng giá
-        } else if (this.currentCategory) {
-            console.log("📂 Đang lọc theo danh mục:", this.currentCategory);
-            this.loadProductsByCategory(this.currentCategory);  // Tải sản phẩm theo danh mục hiện tại
-        } else {
-            console.log("📦 Đang tải tất cả sản phẩm...");
-            this.fetchSanPhamDetails();  // Lấy toàn bộ sản phẩm
-        }
-    } else {
-        console.warn("⚠️ Trang yêu cầu không hợp lệ:", page);
-    }
-}
 
-  
-  
- 
-  
+
+
+
+
+
   // Cập nhật các trang hiển thị
   updateVisiblePages(): void {
     const pagesToShow = 5; // Hiển thị tối đa 5 trang
     const startPage = Math.max(1, this.currentPage - Math.floor(pagesToShow / 2));
     const endPage = Math.min(this.totalPages, startPage + pagesToShow - 1);
-    this.visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    this.visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i); // Cập nhật visiblePages
   }
-  
+
+
+  onPageChange(page: number): void {
+    console.log("🔄 Chuyển sang trang:", page);
+
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      console.log("📌 Trang hiện tại sau cập nhật:", this.currentPage);
+
+      // Gọi lại API với trang mới và các bộ lọc đã chọn
+      this.filterProducts();
+    } else {
+      console.warn("⚠️ Trang yêu cầu không hợp lệ:", page);
+    }
+  }
+
+
+
+
 
   viewProductDetail(productId: number): void {
     if (productId) {
@@ -113,7 +150,7 @@ export class HomeComponent implements OnInit {
       console.error('Product ID is invalid:', productId); // Log lỗi nếu `productId` không hợp lệ
     }
   }
-  
+
   onSearch(): void {
     if (this.query.trim()) {
       this.currentPage = 1; // Reset to the first page for new search
@@ -122,29 +159,30 @@ export class HomeComponent implements OnInit {
       this.fetchSanPhamDetails(); // Fetch all products when there is no query
     }
   }
-  
+
   loadSearchResults(): void {
     this.sanPhamService.searchProducts(this.query.trim(), this.currentPage - 1, this.pageSize).subscribe({
       next: (data: any) => {
-        console.log('text:',data);
-        this.sanPhams = data.content;
-        this.totalPages = data.totalPages;
-        this.updateVisiblePages();
+        console.log('text:', data);
+        this.sanPhams = data.content; // Cập nhật danh sách sản phẩm
+        this.totalPages = data.totalPages; // Cập nhật tổng số trang
+        this.updateVisiblePages(); // Cập nhật các trang hiển thị
       },
       error: (error: any) => {
         console.error('Search error:', error);
-        this.sanPhams = [];
+        this.sanPhams = []; // Đặt mảng sản phẩm thành rỗng khi có lỗi
       },
       complete: () => console.log('Search completed')
     });
   }
-  
+
+
   fetchSanPhamDetailsPrice(): void {
     this.sanPhamService.searchSanPhamByPrice(this.selectedMinPrice, this.selectedMaxPrice,this.currentPage -1,this.pageSize).subscribe(
       (data: any) => {
         console.log('lọc:',data);
         this.sanPhams = data.content;
-       
+
         this.totalPages = data.totalPages;
         this.updateVisiblePages();
       },
@@ -152,24 +190,100 @@ export class HomeComponent implements OnInit {
     );
   }
 
-  loadProductsByCategory(category: string): void {
-    this.currentPage = 1; // Reset trang về đầu tiên
-    this.sanPhamService.getProductsByCategory(category, this.currentPage - 1, this.pageSize).subscribe({
+  applyFilter(type: string, value: string): void {
+    // Cập nhật bộ lọc tùy theo loại
+    if (type === 'category') {
+      this.selectedFilters.category = value || null;  // Lưu danh mục vào selectedFilters
+    } else if (type === 'brand') {
+      this.selectedFilters.brand = value || null;  // Lưu thương hiệu vào selectedFilters
+      console.log('Brand selected:', value);
+    } else if (type === 'scent') {
+      this.selectedFilters.scent = value || null;  // Lưu hương vào selectedFilters
+      console.log('Scent selected:', value);
+    } else if (type === 'country') {
+      this.selectedFilters.country = value || null;  // Lưu quốc gia vào selectedFilters
+      console.log('Country selected:', value);
+    }
+
+    // Gọi lại hàm lọc sản phẩm để áp dụng các bộ lọc đã cập nhật
+    this.filterProducts();
+  }
+
+  toggleFilter(filterType: string, event: Event): void {
+    const target = event.target as HTMLSelectElement;  // Ép kiểu về HTMLSelectElement
+    const value = target.value;  // Truy cập giá trị của thẻ select
+
+    const index = this.selectedFilters[filterType].indexOf(value);
+    if (index === -1) {
+      this.selectedFilters[filterType].push(value);
+    } else {
+      this.selectedFilters[filterType].splice(index, 1);
+    }
+
+    this.filterProducts();  // Áp dụng bộ lọc sau khi thay đổi
+  }
+
+  filterProducts(): void {
+    const page = 0;  // API có thể sử dụng chỉ số trang bắt đầu từ 0
+    const pageSize = this.pageSize;
+
+    // Kiểm tra và đảm bảo rằng các bộ lọc là giá trị chuỗi hợp lệ
+    const brand = this.selectedFilters.brand || '';
+    const scent = this.selectedFilters.scent || '';
+    const country = this.selectedFilters.country || '';
+    const category = this.selectedFilters.category || '';  // Đảm bảo danh mục luôn là một chuỗi hợp lệ
+
+    console.log('Filtering with:', {
+      category, brand, scent, country, page, pageSize
+    });
+
+    // Gọi API để lấy các sản phẩm đã lọc dựa trên các bộ lọc đã chọn
+    this.sanPhamService.getProductsByAllField(
+      category, // Lọc theo danh mục
+      scent,    // Lọc theo hương
+      brand,    // Lọc theo thương hiệu
+      country,  // Lọc theo quốc gia
+      page,     // Trang hiện tại
+      pageSize  // Số sản phẩm mỗi trang
+    ).subscribe({
       next: (data: any) => {
-        console.log('lọc2:',data);
-        this.sanPhams = data.content;
-        this.totalPages = data.totalPages;
-        this.updateVisiblePages();
+        this.sanPhams = data.content;  // Cập nhật danh sách sản phẩm sau khi lọc
+        this.totalPages = data.page?.totalPages ?? 1;  // Cập nhật tổng số trang
+        this.updateVisiblePages();  // Cập nhật lại các trang hiển thị
+        console.log('Filtered products:', this.sanPhams);
       },
-      error: (err: any) => {
-        console.error('Failed to load products by category:', err);
+      error: (err) => {
+        console.error('Error loading filtered products:', err);
       }
     });
   }
-  
+
+
+
+
+
+  applyCategoryFilter(value: string): void {
+    this.selectedFilters.category = value || null;
+    this.filterProducts(); // Sau khi chọn danh mục, gọi hàm lọc lại
+  }
+
+  // Cập nhật bộ lọc theo thương hiệu
+  applyBrandFilter(value: string): void {
+    // Cập nhật bộ lọc theo thương hiệu
+    this.selectedFilters.brand = value || null;
+    this.filterProducts(); // Sau khi chọn thương hiệu, gọi hàm lọc lại
+  }
+
+
   filterByPrice(): void {
     console.log(`Lọc giá từ: ${this.selectedMinPrice} đ đến ${this.selectedMaxPrice} đ`);
     this.fetchSanPhamDetailsPrice();
   }
-  
+// This method handles the toggling of the collapsible sections
+toggleCollapsible(event: any) {
+  const content = event.target.nextElementSibling;
+  content.style.display = content.style.display === 'block' ? 'none' : 'block';
+  event.target.classList.toggle('active');
+}
+
 }
