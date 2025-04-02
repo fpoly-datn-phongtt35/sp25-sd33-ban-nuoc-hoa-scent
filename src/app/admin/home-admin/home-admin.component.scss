@@ -151,3 +151,8 @@
   color: white;
 }
 
+.disabled-link {
+  pointer-events: none; /* Không cho phép nhấp vào */
+  opacity: 0.5; /* Làm cho mục mờ đi */
+  cursor: not-allowed; /* Đổi con trỏ thành biểu tượng không cho phép */
+}

@@ -9,10 +9,13 @@
       <!-- Thống kê -->
       <li class="nav-item mb-3">
         <a
-
           class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'dashboard'}"
-          (click)="showComponent('dashboard')">
+          [ngClass]="{
+            'active': selectedComponent === 'dashboard',
+            'disabled-link': userRole === 'STAFF'
+          }"
+          (click)="showComponent('dashboard')"
+          [ngClass]="{'disabled-link': userRole === 'STAFF'}">
           <i class="bi bi-house"></i> Thống kê
         </a>
       </li>
@@ -20,9 +23,11 @@
       <!-- Voucher -->
       <li class="nav-item mb-3">
         <a
-
           class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'voucher'}"
+          [ngClass]="{
+            'active': selectedComponent === 'voucher',
+            'disabled-link': userRole === 'STAFF'
+          }"
           (click)="showComponent('voucher')">
           <i class="bi bi-gift"></i> Voucher
         </a>
@@ -64,10 +69,14 @@
       <!-- Khách hàng -->
       <li class="nav-item mb-3">
         <a
-
           class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'customer'}"
-          (click)="showComponent('customer')">
+          [ngClass]="{
+            'active': selectedComponent === 'customer',
+            'disabled-link': userRole === 'STAFF'
+          }"
+          
+          (click)="showComponent('customer')"
+          >
           <i class="bi bi-people"></i> Khách hàng
         </a>
       </li>

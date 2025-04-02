@@ -58,8 +58,11 @@ export class LoginComponent {
             timer: 3000,
           });
 
-          if (role === 'ADMIN') {
+          if (role === 'ADMIN' ) {
             this.router.navigate(['/admin']);
+          }else if (role === 'STAFF') {
+            // Chỉ cho phép STAFF truy cập vào các trang như Hóa đơn, Sản phẩm, Nhân viên
+            this.router.navigate(['/admin']);  // Điều hướng đến trang riêng cho STAFF
           } else {
             this.router.navigate(['/']);
           }

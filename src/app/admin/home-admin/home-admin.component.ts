@@ -35,24 +35,26 @@ export class HomeAdminComponent implements OnInit {
   constructor(private tokenService: TokenService, private router: Router) {}
 
   ngOnInit(): void {
-    const role = this.tokenService.getRole();
-    console.log('Vai trò khi vào HomeAdminComponent:', role);
-
-    if (role !== 'ADMIN') {
-      console.error('Bạn không phải admin, điều hướng về trang chủ.');
-      this.router.navigate(['/']); // Chuyển hướng nếu không phải admin
+    // Lấy vai trò từ TokenService hoặc localStorage
+    const role = this.tokenService.getRole(); // Hoặc lấy từ localStorage
+    console.log('Vai trò người dùng:', role);
+  this.userRole=role;
+  console.log('Vai trò người dùng chính:', this.userRole);
+    // Điều hướng dựa trên vai trò
+    if (role === 'ADMIN' || role === 'STAFF') {
+      this.router.navigate(['/admin']); // Điều hướng tới trang admin
     } else {
-      console.log('Người dùng là admin, tiếp tục.');
-      this.selectedComponent = 'invoice'; // Mặc định là dashboard
+      console.error('Vai trò không hợp lệ, điều hướng về trang chủ.');
+      this.router.navigate(['/']); // Điều hướng về trang chủ nếu không phải ADMIN hoặc STAFF
     }
   }
-
+  
 
   showComponent(component: string): void {
     const role = this.tokenService.getRole();
     console.log('Vai trò hiện tại khi nhấn vào menu11111111:', role);
 
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'STAFF') {
       this.selectedComponent = component; // Cập nhật component hiển thị
       console.log(`Hiển thị component: ${component}`);
     } else {
