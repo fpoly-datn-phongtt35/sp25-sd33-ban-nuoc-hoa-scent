@@ -233,22 +233,9 @@
             return spi.findByIdSanPham(productId);
         }
 
-        public Page<SanPhamInfoDTO> findBySearchQuery(String searchQuery, Pageable pageable) {
-            return spi.findBySearchQuery(searchQuery, pageable);
-        }
         public Page<SanPhammDTO> detailOnAdmin(String searchQuery, Pageable pageable) {
             return spi.searchAllFields(searchQuery,pageable);
         }
-
-        public Page<SanPhamInfoDTO> searchSanPham( BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-            return spi.searchSanPhamByPrice(minPrice, maxPrice, pageable);
-        }
-
-        public Page<SanPhamInfoDTO> findSanPhamByField(String tenDanhMuc, String tenNhomHuong,String tenThuongHieu,String QuocGia, Pageable pageable) {
-            // Gọi phương thức trong repository và truyền các tham số cho câu truy vấn
-            return spi.findSanPhamByField(tenDanhMuc, tenNhomHuong, tenThuongHieu,QuocGia, pageable);
-        }
-
         public List<HinhAnh> findAllImageBySanPhamId(Integer idSanPham) {
             return hai.findHinhAnhBySanPhamId(idSanPham);
         }
@@ -256,4 +243,17 @@
         public Optional<SanPham> findById(Integer id) {
              return spi.findById(id);
         }
+
+        ///
+        public Page<SanPhamInfoDTO> searchSanPhamCombined(String searchQuery,
+                                                          BigDecimal minPrice,
+                                                          BigDecimal maxPrice,
+                                                          String tenDanhMuc,
+                                                          String tenNhomHuong,
+                                                          String tenThuongHieu,
+                                                          String quocGia,
+                                                          Pageable pageable) {
+            return spi.searchSanPhamCombined(searchQuery, minPrice, maxPrice, tenDanhMuc, tenNhomHuong, tenThuongHieu, quocGia, pageable);
+        }
+
     }

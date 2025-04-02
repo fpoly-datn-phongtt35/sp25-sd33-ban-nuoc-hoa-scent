@@ -232,7 +232,46 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     Page<SanPhamInfoDTO> findSanPhamByField(String tenDanhMuc, String tenNhomHuong, String tenThuongHieu, String quocGia, Pageable pageable);
 
 
-
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "JOIN sp.hinhAnhs ha " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.huongDau hd " +
+            "JOIN sp.huongGiua hg " +
+            "JOIN sp.nhomHuong nh " +
+            "JOIN sp.danhMuc dm " +
+            "JOIN sp.huongCuoi hc " +
+            "WHERE (:searchQuery IS NULL OR :searchQuery = '' OR " +
+            "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
+            "AND (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
+            "AND (:tenDanhMuc IS NULL OR :tenDanhMuc = '' OR dm.tenDanhMuc = :tenDanhMuc) " +
+            "AND (:tenNhomHuong IS NULL OR :tenNhomHuong = '' OR nh.tenNhomHuong = :tenNhomHuong) " +
+            "AND (:tenThuongHieu IS NULL OR :tenThuongHieu = '' OR th.tenThuongHieu = :tenThuongHieu) " +
+            "AND (:quocGia IS NULL OR :quocGia = '' OR th.quocGia = :quocGia) " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, nh.tenNhomHuong, th.quocGia "
+            )
+    Page<SanPhamInfoDTO> searchSanPhamCombined(
+            @Param("searchQuery") String searchQuery,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("tenDanhMuc") String tenDanhMuc,
+            @Param("tenNhomHuong") String tenNhomHuong,
+            @Param("tenThuongHieu") String tenThuongHieu,
+            @Param("quocGia") String quocGia,
+            Pageable pageable);
 }
 
 

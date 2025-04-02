@@ -131,29 +131,42 @@ public class SanPhamCtrl {
     public List<SanPhamInfoDTO> getSortedProducts() {
         return sps.getSortedProducts();
     }
-
-
-    @GetMapping("/search")
-    public Page<SanPhamInfoDTO> searchSanPham(@RequestParam("searchQuery") String searchQuery,@PageableDefault(size = 12) Pageable pageable) {
-        return sps.findBySearchQuery(searchQuery, pageable);
-    }
-    @GetMapping("/search-price")
-    public Page<SanPhamInfoDTO> searchSanPham(
-
+    @GetMapping("/search-combined")
+    public Page<SanPhamInfoDTO> searchSanPhamCombined(
+            @RequestParam(value = "searchQuery", required = false) String searchQuery,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
+            @RequestParam(value = "tenDanhMuc", required = false) String tenDanhMuc,
+            @RequestParam(value = "tenNhomHuong", required = false) String tenNhomHuong,
+            @RequestParam(value = "tenThuongHieu", required = false) String tenThuongHieu,
+            @RequestParam(value = "quocGia", required = false) String quocGia,
             @PageableDefault(size = 12) Pageable pageable) {
-        return sps.searchSanPham( minPrice, maxPrice, pageable);
-    }
 
-    @GetMapping("/search-danhmuc")
-    public Page<SanPhamInfoDTO> getSanPhamByDanhMuc(
-            @RequestParam(required = false) String tenDanhMuc,
-            @RequestParam(required = false) String tenNhomHuong,
-            @RequestParam(required = false) String tenThuongHieu,
-            @RequestParam(required = false) String quocGia,
-            @PageableDefault(size = 12) Pageable pageable) {
-        return sps.findSanPhamByField(tenDanhMuc, tenNhomHuong, tenThuongHieu, quocGia, pageable);
+        // Kiểm tra xem tất cả tham số lọc có phải là null hoặc chuỗi rỗng không
+        boolean allFiltersEmpty = (searchQuery == null || searchQuery.isEmpty())
+                && minPrice == null
+                && maxPrice == null
+                && (tenDanhMuc == null || tenDanhMuc.isEmpty())
+                && (tenNhomHuong == null || tenNhomHuong.isEmpty())
+                && (tenThuongHieu == null || tenThuongHieu.isEmpty())
+                && (quocGia == null || quocGia.isEmpty());
+
+        // Nếu tất cả tham số lọc đều rỗng, trả về tất cả sản phẩm
+        if (allFiltersEmpty) {
+            return sps.searchSanPhamCombined(null, null, null, null, null, null, null, pageable);
+        }
+
+        // Nếu có ít nhất một tham số hợp lệ, gọi service với các tham số đã lọc
+        return sps.searchSanPhamCombined(
+                searchQuery != null && !searchQuery.isEmpty() ? searchQuery : null,
+                minPrice,
+                maxPrice,
+                tenDanhMuc != null && !tenDanhMuc.isEmpty() ? tenDanhMuc : null,
+                tenNhomHuong != null && !tenNhomHuong.isEmpty() ? tenNhomHuong : null,
+                tenThuongHieu != null && !tenThuongHieu.isEmpty() ? tenThuongHieu : null,
+                quocGia != null && !quocGia.isEmpty() ? quocGia : null,
+                pageable
+        );
     }
 
     @GetMapping("/search-product-on-admin")
