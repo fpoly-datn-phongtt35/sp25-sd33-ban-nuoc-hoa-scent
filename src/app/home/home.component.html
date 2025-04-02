@@ -4,52 +4,33 @@
 </div>
 
 <!-- 🌟 Container chính chia làm 2 cột -->
-<div class="main-container">
+<div class="main-container row">
 
   <!-- 📌 Danh mục sản phẩm bên trái -->
-  <div class="category-container">
-    <h3>DANH MỤC</h3>
-    <button class="collapsible" (click)="toggleCollapsible($event)">Danh Mục</button>
-    <div class="content">
-      <ul>
-        <li *ngFor="let category of categories">
-          <a href="#" (click)="applyFilter('category', category)">{{ category }}</a>
-        </li>
-      </ul>
-    </div>
+  <div class="category-container col-md-3">
+    <!-- Bộ lọc theo danh mục -->
+    <select class="form-select" (change)="applyFilter('category', $event.target.value)">
+      <option value="">Tất cả</option>
+      <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+    </select>
 
-    <!-- Bộ lọc thương hiệu -->
-    <h4>Thương hiệu</h4>
-    <button class="collapsible" (click)="toggleCollapsible($event)">Thương Hiệu</button>
-    <div class="content">
-      <ul>
-        <li *ngFor="let brand of tenThuonghieu">
-          <a href="#" (click)="applyFilter('brand', brand)">{{ brand }}</a>
-        </li>
-      </ul>
-    </div>
+    <!-- Bộ lọc theo thương hiệu -->
+    <select class="form-select" (change)="applyFilter('brand', $event.target.value)">
+      <option value="">Tất cả</option>
+      <option *ngFor="let brand of tenThuonghieu" [value]="brand">{{ brand }}</option>
+    </select>
 
-    <!-- Bộ lọc nhóm hương -->
-    <h4>Nhóm hương</h4>
-    <button class="collapsible" (click)="toggleCollapsible($event)">Nhóm Hương</button>
-    <div class="content">
-      <ul>
-        <li *ngFor="let scent of tennhomhuongs">
-          <a href="#" (click)="applyFilter('scent', scent)">{{ scent }}</a>
-        </li>
-      </ul>
-    </div>
+    <!-- Bộ lọc theo hương -->
+    <select class="form-select" (change)="applyFilter('scent', $event.target.value)">
+      <option value="">Tất cả</option>
+      <option *ngFor="let scent of tennhomhuongs" [value]="scent">{{ scent }}</option>
+    </select>
 
-    <!-- Bộ lọc xuất xứ -->
-    <h4>Xuất xứ</h4>
-    <button class="collapsible" (click)="toggleCollapsible($event)">Xuất Xứ</button>
-    <div class="content">
-      <ul>
-        <li *ngFor="let country of quocGia">
-          <a href="#" (click)="applyFilter('country', country)">{{ country }}</a>
-        </li>
-      </ul>
-    </div>
+    <!-- Bộ lọc theo quốc gia -->
+    <select class="form-select" (change)="applyFilter('country', $event.target.value)">
+      <option value="">Tất cả</option>
+      <option *ngFor="let country of quocGia" [value]="country">{{ country }}</option>
+    </select>
 
     <hr class="divider">
 
@@ -64,21 +45,21 @@
         <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
       </mat-slider>
       <div class="price-range">
-        Giá <strong>{{ selectedMinPrice | number }} đ</strong> —
-        <strong>{{ selectedMaxPrice | number }} đ</strong>
+        Giá <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
       </div>
-      <button class="filter-button" (click)="filterByPrice()">LỌC</button>
+      <button class="filter-button btn btn-primary" (click)="filterByPrice()">LỌC</button>
     </div>
     <hr class="divider">
   </div>
 
   <!-- 🛍️ Danh sách sản phẩm bên phải -->
-  <div class="product-container">
+  <div class="product-container col-md-9">
+
     <!-- 🔎 Ô tìm kiếm + Bộ lọc giá -->
     <div class="search-filter-container">
       <div class="search-box">
-        <input type="text" [(ngModel)]="query" placeholder="🔍 Nhập từ khóa tìm kiếm...">
-        <button class="search-button" (click)="onSearch()">Tìm kiếm</button>
+        <input type="text" [(ngModel)]="query" placeholder="🔍 Nhập từ khóa tìm kiếm..." class="form-control">
+        <button class="search-button btn btn-primary" (click)="onSearch()">Tìm kiếm</button>
       </div>
     </div>
 
@@ -117,5 +98,7 @@
       </ul>
     </nav>
   </div>
+
+</div>
 
 <app-footer></app-footer>

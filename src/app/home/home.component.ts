@@ -38,10 +38,10 @@ export class HomeComponent implements OnInit {
   tenThuonghieu:any[]=[];
   quocGia:any[]=[];
   selectedFilters: any = {
-    category: [],
-    brand: [],
-    scent: [],
-    country: [],
+    category: '',  // Đảm bảo là chuỗi
+    brand: '',  // Đảm bảo là chuỗi
+    scent: '',  // Đảm bảo là chuỗi
+    country: '',  // Đảm bảo là chuỗi
   };
   constructor(private sanPhamService: SanPhamService,private router: Router,private nhomHuongService:NhomHuongService,private thuongHieuService:ThuongHieuService) {}
 
@@ -191,21 +191,21 @@ this.ThuongHieus = Array.from(new Set(data.content.map((item: any) => item.tenTh
   }
 
   applyFilter(type: string, value: string): void {
-    // Cập nhật bộ lọc tùy theo loại
+    // Lấy giá trị đã chọn từ sự kiện
+    console.log(`Filtering by: ${type}, value: ${value}`);  // Để kiểm tra dữ liệu
+
+    // Lưu giá trị vào selectedFilters
     if (type === 'category') {
-      this.selectedFilters.category = value || null;  // Lưu danh mục vào selectedFilters
+      this.selectedFilters.category = value;
     } else if (type === 'brand') {
-      this.selectedFilters.brand = value || null;  // Lưu thương hiệu vào selectedFilters
-      console.log('Brand selected:', value);
+      this.selectedFilters.brand = value;
     } else if (type === 'scent') {
-      this.selectedFilters.scent = value || null;  // Lưu hương vào selectedFilters
-      console.log('Scent selected:', value);
+      this.selectedFilters.scent = value;
     } else if (type === 'country') {
-      this.selectedFilters.country = value || null;  // Lưu quốc gia vào selectedFilters
-      console.log('Country selected:', value);
+      this.selectedFilters.country = value;
     }
 
-    // Gọi lại hàm lọc sản phẩm để áp dụng các bộ lọc đã cập nhật
+    // Gọi hàm lọc sản phẩm
     this.filterProducts();
   }
 
@@ -222,41 +222,33 @@ this.ThuongHieus = Array.from(new Set(data.content.map((item: any) => item.tenTh
 
     this.filterProducts();  // Áp dụng bộ lọc sau khi thay đổi
   }
-
   filterProducts(): void {
-    const page = 0;  // API có thể sử dụng chỉ số trang bắt đầu từ 0
-    const pageSize = this.pageSize;
+    const { category, brand, scent, country } = this.selectedFilters;
 
-    // Kiểm tra và đảm bảo rằng các bộ lọc là giá trị chuỗi hợp lệ
-    const brand = this.selectedFilters.brand || '';
-    const scent = this.selectedFilters.scent || '';
-    const country = this.selectedFilters.country || '';
-    const category = this.selectedFilters.category || '';  // Đảm bảo danh mục luôn là một chuỗi hợp lệ
+    // Kiểm tra các giá trị lọc đã được chọn
+    console.log('Filtering with:', { category, brand, scent, country });
 
-    console.log('Filtering with:', {
-      category, brand, scent, country, page, pageSize
-    });
-
-    // Gọi API để lấy các sản phẩm đã lọc dựa trên các bộ lọc đã chọn
-    this.sanPhamService.getProductsByAllField(
-      category, // Lọc theo danh mục
-      scent,    // Lọc theo hương
-      brand,    // Lọc theo thương hiệu
-      country,  // Lọc theo quốc gia
-      page,     // Trang hiện tại
-      pageSize  // Số sản phẩm mỗi trang
-    ).subscribe({
-      next: (data: any) => {
-        this.sanPhams = data.content;  // Cập nhật danh sách sản phẩm sau khi lọc
-        this.totalPages = data.page?.totalPages ?? 1;  // Cập nhật tổng số trang
-        this.updateVisiblePages();  // Cập nhật lại các trang hiển thị
-        console.log('Filtered products:', this.sanPhams);
-      },
-      error: (err) => {
-        console.error('Error loading filtered products:', err);
-      }
-    });
+    if (category || brand || scent || country) {
+      // Chỉ gọi API khi có bộ lọc đã được chọn
+      this.sanPhamService.getProductsByAllField(
+        category, brand, scent, country, this.currentPage - 1, this.pageSize
+      ).subscribe({
+        next: (data: any) => {
+          if (data && data.content) {
+            this.sanPhams = data.content;
+            this.totalPages = data.page?.totalPages ?? 1;
+            this.updateVisiblePages();
+          } else {
+            console.error('Dữ liệu không hợp lệ từ API:', data);
+          }
+        },
+        error: (err) => {
+          console.error('Lỗi khi gọi API:', err);
+        }
+      });
+    }
   }
+
 
 
 
