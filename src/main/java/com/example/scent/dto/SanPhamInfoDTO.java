@@ -12,11 +12,7 @@ import java.math.BigDecimal;
 
 public class SanPhamInfoDTO {
     private Integer IdSanPham;
-
-
     private String TenSanPham;
-
-
     private BigDecimal DonGia;
     private String imageURL;
     private String tenThuongHieu;
@@ -25,7 +21,23 @@ public class SanPhamInfoDTO {
     private String moTaHuongGiua;
     private String moTaHuongCuoi;
     private Integer IdnhomHuong;
+    private String tennhomHuong;
+    private String QuocGia;
+    public String getTennhomHuong() {
+        return tennhomHuong;
+    }
 
+    public void setTennhomHuong(String tennhomHuong) {
+        this.tennhomHuong = tennhomHuong;
+    }
+
+    public String getQuocGia() {
+        return QuocGia;
+    }
+
+    public void setQuocGia(String quocGia) {
+        QuocGia = quocGia;
+    }
     public Integer getIdnhomHuong() {
         return IdnhomHuong;
     }
@@ -106,18 +118,21 @@ public class SanPhamInfoDTO {
         this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
-    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong) {
-        IdSanPham = idSanPham;
-        TenSanPham = tenSanPham;
-        DonGia = donGia;
+    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia) {
+        this.IdSanPham = idSanPham;
+        this.TenSanPham = tenSanPham;
+        this.DonGia = donGia;
         this.imageURL = imageURL;
         this.tenThuongHieu = tenThuongHieu;
         this.tenDanhMuc = tenDanhMuc;
         this.moTaHuongDau = moTaHuongDau;
         this.moTaHuongGiua = moTaHuongGiua;
         this.moTaHuongCuoi = moTaHuongCuoi;
-        IdnhomHuong = idnhomHuong;
+        this.IdnhomHuong = idnhomHuong;
+        this.tennhomHuong = tennhomHuong;
+        this.QuocGia = quocGia;
     }
+
 
     public SanPhamInfoDTO() {
     }

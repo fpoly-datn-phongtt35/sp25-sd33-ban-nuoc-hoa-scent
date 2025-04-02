@@ -244,9 +244,11 @@
             return spi.searchSanPhamByPrice(minPrice, maxPrice, pageable);
         }
 
-        public Page<SanPhamInfoDTO> findSanPhamByDanhMuc(String tenDanhMuc,Pageable pageable) {
-            return spi.findSanPhamByDanhMuc(tenDanhMuc,pageable);
+        public Page<SanPhamInfoDTO> findSanPhamByField(String tenDanhMuc, String tenNhomHuong,String tenThuongHieu,String QuocGia, Pageable pageable) {
+            // Gọi phương thức trong repository và truyền các tham số cho câu truy vấn
+            return spi.findSanPhamByField(tenDanhMuc, tenNhomHuong, tenThuongHieu,QuocGia, pageable);
         }
+
         public List<HinhAnh> findAllImageBySanPhamId(Integer idSanPham) {
             return hai.findHinhAnhBySanPhamId(idSanPham);
         }

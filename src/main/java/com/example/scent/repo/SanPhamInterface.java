@@ -75,7 +75,11 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
 
 
-    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id) " +
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.hinhAnhs ha " +
@@ -85,8 +89,10 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.nhomHuong nh " +
             "JOIN sp.danhMuc dm " +
             "JOIN sp.huongCuoi hc " +
-            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id")
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, nh.tenNhomHuong, th.quocGia")
     Page<SanPhamInfoDTO> findAllProductsWithImages(Pageable pageable);
+
     //
     @Query("""
     SELECT new com.example.scent.dto.SanPhammDTO(
@@ -123,7 +129,10 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
 
 
 
-    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id) " +
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id,nh.tenNhomHuong, th.quocGia) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.thuongHieu th " +
@@ -133,9 +142,12 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.danhMuc dm " +
             "JOIN sp.nhomHuong nh " +
             "JOIN sp.hinhAnhs ha " +
-            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id " +
             "ORDER BY MIN(spct.donGia) DESC")
     List<SanPhamInfoDTO> findAllProductsWithImagesSorted();
+
+
 
 
 
@@ -146,7 +158,37 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Query("SELECT new com.example.scent.dto.SanPhamDungTich(p.idSanPham,spct.dungTich, spct.donGia,spct.idSpct,spct.soLuongTonKho) FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1")
     List<SanPhamDungTich> findByIdSanPham(Integer productId);
 
-    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id) " +
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "JOIN sp.hinhAnhs ha " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.huongDau hd " +
+            "JOIN sp.huongGiua hg " +
+            "JOIN sp.nhomHuong nh " +
+            "JOIN sp.danhMuc dm " +
+            "JOIN sp.huongCuoi hc " +
+            "WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "OR LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "OR LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "OR LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "OR LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :searchQuery, '%')) " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, nh.tenNhomHuong, th.quocGia")
+    Page<SanPhamInfoDTO> findBySearchQuery(@Param("searchQuery") String searchQuery, Pageable pageable);
+
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.hinhAnhs ha " +
@@ -156,41 +198,21 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.danhMuc dm " +
             "JOIN sp.nhomHuong nh " +
             "JOIN sp.huongCuoi hc " +
-            "WHERE sp.tenSanPham LIKE %:searchQuery% " +
-            "OR th.tenThuongHieu LIKE %:searchQuery% " +
-            "OR hd.moTaHuongDau LIKE %:searchQuery% " +
-            "OR hg.moTaHuongGiua LIKE %:searchQuery% " +
-            "OR hc.moTaHuongCuoi LIKE %:searchQuery% " +
-            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi ,nh.id")
-    Page<SanPhamInfoDTO> findBySearchQuery(@Param("searchQuery") String searchQuery, Pageable pageable);
-
-    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
-            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
-            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
-            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id) " +
-            "FROM SanPham sp " +
-            "JOIN sp.spcts spct " +
-            "JOIN sp.nhomHuong nh " +
-            "LEFT JOIN sp.hinhAnhs ha " +
-            "JOIN sp.thuongHieu th " +
-            "JOIN sp.danhMuc dm " +
-            "LEFT JOIN sp.huongDau hd " +
-            "LEFT JOIN sp.huongGiua hg " +
-            "LEFT JOIN sp.huongCuoi hc " +
             "WHERE (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
             "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
-            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, nh.tenNhomHuong, th.quocGia " +
             "ORDER BY MIN(spct.donGia) ASC")
-    Page<SanPhamInfoDTO> searchSanPhamByPrice(
-            @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice,
-            Pageable pageable);
+    Page<SanPhamInfoDTO> searchSanPhamByPrice(@Param("minPrice") BigDecimal minPrice,
+                                              @Param("maxPrice") BigDecimal maxPrice,
+                                              Pageable pageable);
+
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
-            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id) " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.nhomHuong nh " +
@@ -200,11 +222,17 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "LEFT JOIN sp.huongDau hd " +
             "LEFT JOIN sp.huongGiua hg " +
             "LEFT JOIN sp.huongCuoi hc " +
-            "WHERE dm.tenDanhMuc = ?1 " +
+            "WHERE (dm.tenDanhMuc = ?1 OR ?1 IS NULL) " +  // Điều kiện cho tenDanhMuc, cho phép null
+            "AND (nh.tenNhomHuong = ?2 OR ?2 IS NULL) " +  // Điều kiện cho tenNhomHuong, cho phép null
+            "AND (th.tenThuongHieu = ?3 OR ?3 IS NULL) " +  // Điều kiện cho tenThuongHieu, cho phép null
+            "AND (th.quocGia = ?4 OR ?4 IS NULL) " +  // Điều kiện cho quocGia, cho phép null
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
-            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.id " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, th.quocGia, nh.tenNhomHuong " +
             "ORDER BY MIN(spct.donGia)")
-    Page<SanPhamInfoDTO> findSanPhamByDanhMuc(String tenDanhMuc,Pageable pageable);
+    Page<SanPhamInfoDTO> findSanPhamByField(String tenDanhMuc, String tenNhomHuong, String tenThuongHieu, String quocGia, Pageable pageable);
+
+
+
 }
 
 

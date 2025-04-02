@@ -147,9 +147,15 @@ public class SanPhamCtrl {
     }
 
     @GetMapping("/search-danhmuc")
-    public Page<SanPhamInfoDTO> getSanPhamByDanhMuc(@RequestParam String tenDanhMuc,@PageableDefault(size = 12) Pageable pageable) {
-        return sps.findSanPhamByDanhMuc(tenDanhMuc,pageable);
+    public Page<SanPhamInfoDTO> getSanPhamByDanhMuc(
+            @RequestParam(required = false) String tenDanhMuc,
+            @RequestParam(required = false) String tenNhomHuong,
+            @RequestParam(required = false) String tenThuongHieu,
+            @RequestParam(required = false) String quocGia,
+            @PageableDefault(size = 12) Pageable pageable) {
+        return sps.findSanPhamByField(tenDanhMuc, tenNhomHuong, tenThuongHieu, quocGia, pageable);
     }
+
     @GetMapping("/search-product-on-admin")
     public Page<SanPhammDTO> getSanPhamonAdmin(@RequestParam String keyword, @PageableDefault(size = 12) Pageable pageable) {
         return sps.detailOnAdmin(keyword,pageable);
