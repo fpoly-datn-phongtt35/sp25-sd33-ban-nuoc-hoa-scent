@@ -31,8 +31,24 @@ public class donhangDTOID {
     private Integer trangThai;
         private BigDecimal phiVanChuyen;
 private String phieuGiamGia;
-
+private BigDecimal soTienGiam;
     public donhangDTOID() {
+    }
+
+    public String getPhieuGiamGia() {
+        return phieuGiamGia;
+    }
+
+    public void setPhieuGiamGia(String phieuGiamGia) {
+        this.phieuGiamGia = phieuGiamGia;
+    }
+
+    public BigDecimal getSoTienGiam() {
+        return soTienGiam;
+    }
+
+    public void setSoTienGiam(BigDecimal soTienGiam) {
+        this.soTienGiam = soTienGiam;
     }
 
     public donhangDTOID(Integer idTaiKhoan, String tenNguoiNhanHang, Integer maDonHang, String diaChiGiaoHang, String sdtNguoiNhan, String phuongThucVanChuyen, String phuongThucThanhToan, LocalDateTime ngayTao, LocalDateTime ngayVanChuyen, List<OrderItemDTOID> chiTietDonHangs, List<String> imageURL, String ghichu, BigDecimal tongTien, Integer trangThai, BigDecimal phiVanChuyen) {
@@ -71,6 +87,26 @@ private String phieuGiamGia;
 
     public Integer getMaDonHang() {
         return maDonHang;
+    }
+
+    public donhangDTOID(Integer idTaiKhoan, String tenNguoiNhanHang, Integer maDonHang, String diaChiGiaoHang, String sdtNguoiNhan, String phuongThucVanChuyen, String phuongThucThanhToan, LocalDateTime ngayTao, LocalDateTime ngayVanChuyen, List<OrderItemDTOID> chiTietDonHangs, List<String> imageURL, String ghichu, BigDecimal tongTien, Integer trangThai, BigDecimal phiVanChuyen, String phieuGiamGia, BigDecimal soTienGiam) {
+        this.idTaiKhoan = idTaiKhoan;
+        this.tenNguoiNhanHang = tenNguoiNhanHang;
+        this.maDonHang = maDonHang;
+        this.diaChiGiaoHang = diaChiGiaoHang;
+        this.sdtNguoiNhan = sdtNguoiNhan;
+        this.phuongThucVanChuyen = phuongThucVanChuyen;
+        this.phuongThucThanhToan = phuongThucThanhToan;
+        this.ngayTao = ngayTao;
+        this.ngayVanChuyen = ngayVanChuyen;
+        this.chiTietDonHangs = chiTietDonHangs;
+        this.imageURL = imageURL;
+        this.ghichu = ghichu;
+        this.tongTien = tongTien;
+        this.trangThai = trangThai;
+        this.phiVanChuyen = phiVanChuyen;
+        this.phieuGiamGia = phieuGiamGia;
+        this.soTienGiam = soTienGiam;
     }
 
     public void setMaDonHang(Integer maDonHang) {

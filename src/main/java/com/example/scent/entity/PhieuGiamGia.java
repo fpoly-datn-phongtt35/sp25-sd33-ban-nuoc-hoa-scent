@@ -36,8 +36,7 @@ public class PhieuGiamGia {
     @Column(name = "gia_tri_giam")
     private BigDecimal giaTriGiam;
 
-    @NotNull(message = "Ngày bắt đầu không được để trống")
-    @FutureOrPresent(message = "Ngày bắt đầu phải là ngày hiện tại hoặc trong tương lai")
+
     @Column(name = "ngay_bat_dau")
     private LocalDateTime ngayBatDau;
 
@@ -46,8 +45,7 @@ public class PhieuGiamGia {
     @Column(name = "so_luong")
     private Integer soLuong;
 
-    @NotNull(message = "Ngày hết hạn không được để trống")
-    @FutureOrPresent(message = "Ngày hết hạn phải là ngày hiện tại hoặc trong tương lai")
+   
     @Column(name = "ngay_het_han")
     private LocalDateTime ngayHetHan;
 

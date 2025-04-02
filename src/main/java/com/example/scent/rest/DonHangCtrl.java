@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -120,6 +121,7 @@ public class DonHangCtrl {
 //    }
 
     @PostMapping
+    @Transactional
     public ResponseEntity<DonHang> createOrder(@RequestBody DonHangDTO orderRequest) {
         try{
             DonHang createdOrder = dhs.createOrder(orderRequest);
@@ -228,6 +230,26 @@ public class DonHangCtrl {
             return ResponseEntity.ok(updatedDonHang);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
+        }
+    }
+    @PutMapping("/huy/{orderId}")
+    public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable Integer orderId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            boolean isUpdated = dhs.updateOrderStatusToCancelled(orderId);
+            if (isUpdated) {
+                response.put("status", "success");
+                response.put("message", "Đơn hàng đã được huỷ.");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "Trạng thái không hợp lệ để huỷ.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Lỗi trong quá trình xử lý.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

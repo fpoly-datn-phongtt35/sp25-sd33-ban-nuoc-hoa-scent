@@ -89,16 +89,18 @@ public class DonHangSv {
     }
 
     @Transactional
+
     public DonHang createOrder(DonHangDTO orderRequest) throws Exception {
+        // Kiểm tra ID tài khoản
         if (orderRequest.getIdTaiKhoan() == null) {
             throw new RuntimeException("⚠️ Lỗi: ID tài khoản không được để trống!");
         }
 
+        // Tìm tài khoản
         TaiKhoan taiKhoan = tki.findById(orderRequest.getIdTaiKhoan())
                 .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
 
-
-        // Lấy thông tin từ API GHN thay vì cơ sở dữ liệu
+        // Kiểm tra địa chỉ giao hàng (tỉnh, quận, phường)
         Map<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
         if (!tinhList.containsKey(orderRequest.getMaTinh())) {
             throw new RuntimeException("⚠️ Lỗi: Tỉnh không tồn tại với ID: " + orderRequest.getMaTinh());
@@ -115,36 +117,41 @@ public class DonHangSv {
             throw new RuntimeException("⚠️ Lỗi: Phường không tồn tại với ID: " + orderRequest.getMaPhuong());
         }
 
+        // Tính phí vận chuyển
         PhiVanChuyenRequest phiVanChuyenRequest = convertToPhiVanChuyenRequest(orderRequest);
         BigDecimal phiVanChuyen = DiaChiApi.getFee(phiVanChuyenRequest);
         if (phiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển không hợp lệ!");
         }
 
+        // Xác định ngày tạo đơn hàng
         LocalDateTime ngayTao = (orderRequest.getNgayTao() != null) ? orderRequest.getNgayTao() : LocalDateTime.now();
 
+        // Tính tổng tiền gốc (thanhTienGoc) từ danh sách sản phẩm
         BigDecimal thanhTienGoc = BigDecimal.ZERO;
-
         List<ChiTietDonHang> chiTietList = new ArrayList<>();
 
         for (OrderItemDto itemDTO : orderRequest.getChiTietDonHangs()) {
             Spct spct = spc.findById(itemDTO.getSpctId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại với ID: " + itemDTO.getSpctId()));
 
+            // Kiểm tra số lượng tồn kho
             if (itemDTO.getQuantity() > spct.getSoLuongTonKho()) {
                 throw new RuntimeException("Số lượng sản phẩm không đủ. Sản phẩm ID: " + itemDTO.getSpctId() + " chỉ còn " + spct.getSoLuongTonKho() + " sản phẩm.");
             }
+
+            // Tính thành tiền cho từng sản phẩm
             BigDecimal thanhTien = spct.getDonGia().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
             thanhTienGoc = thanhTienGoc.add(thanhTien);
 
-
+            // Tạo chi tiết đơn hàng
             ChiTietDonHang chiTiet = new ChiTietDonHang();
             chiTiet.setSpct(spct);
             chiTiet.setSoLuong(itemDTO.getQuantity());
             chiTiet.setDonGia(spct.getDonGia());
             chiTiet.setThanhTien(thanhTien);
 
-            // 🔥 Lấy danh sách hình ảnh từ `HinhAnhRepository`
+            // Lấy danh sách hình ảnh từ HinhAnhRepository
             List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(spct.getSanPham().getIdSanPham())
                     .stream()
                     .map(HinhAnh::getLink)
@@ -155,33 +162,57 @@ public class DonHangSv {
             spct.setImageUrl(productImages);
             spct.setSoLuongTonKho(spct.getSoLuongTonKho());
             chiTietList.add(chiTiet);
-
         }
+
+        // Kiểm tra và áp dụng mã giảm giá
         BigDecimal thanhTienSauGiam = thanhTienGoc;
         PhieuGiamGia phieuGiamGia = null;
-        BigDecimal soTienGiam = null;
+        BigDecimal soTienGiam = BigDecimal.ZERO;
+
         if (orderRequest.getMaGiamGia() != null && !orderRequest.getMaGiamGia().isEmpty()) {
+            // Tìm mã giảm giá
             phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
 
+            // Kiểm tra thời gian hiệu lực
             LocalDateTime now = LocalDateTime.now();
             if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
             }
-            List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
-            if (!donHangs.isEmpty()) {
+
+            // Kiểm tra số lượng phiếu giảm giá còn lại
+            if (phieuGiamGia.getSoLuong() == null || phieuGiamGia.getSoLuong() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết lượt sử dụng!");
+            }
+
+            // Kiểm tra xem tài khoản đã sử dụng mã giảm giá này chưa
+            boolean hasUsedThisDiscount = dhi.existsByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
+            if (hasUsedThisDiscount) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
             }
+
+            // Tính số tiền giảm
             BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
             soTienGiam = thanhTienGoc.multiply(phanTramGiam);
-            thanhTienSauGiam = thanhTienGoc.subtract(soTienGiam);
 
+            // Kiểm tra giá trị tối đa của mã giảm giá (nếu có)
+            if (phieuGiamGia.getGia_tri_toi_da() != null && soTienGiam.compareTo(phieuGiamGia.getGia_tri_toi_da()) > 0) {
+                soTienGiam = phieuGiamGia.getGia_tri_toi_da();
+            }
+
+            thanhTienSauGiam = thanhTienGoc.subtract(soTienGiam);
             if (thanhTienSauGiam.compareTo(BigDecimal.ZERO) < 0) {
                 thanhTienSauGiam = BigDecimal.ZERO;
             }
+
+            // Giảm số lượng phiếu giảm giá còn lại
+            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1);
+            phieuGiamGiaInterface.save(phieuGiamGia);
         }
 
+        // Tính tổng tiền sau khi cộng phí vận chuyển
         BigDecimal tongTien = thanhTienSauGiam.add(phiVanChuyen);
+
         // Tạo đơn hàng mới
         DonHang newOrder = new DonHang();
         newOrder.setTaiKhoan(taiKhoan);
@@ -190,36 +221,35 @@ public class DonHangSv {
         newOrder.setSdtNguoiNhan(orderRequest.getSdtNguoiNhan());
         newOrder.setPhuongThucVanChuyen(orderRequest.getPhuongThucVanChuyen());
         newOrder.setPhuongThucThanhToan(orderRequest.getPhuongThucThanhToan());
-        newOrder.setNgayTao(orderRequest.getNgayTao() != null ? orderRequest.getNgayTao() : LocalDateTime.now());
+        newOrder.setNgayTao(ngayTao);
         newOrder.setNgayVanChuyen(orderRequest.getNgayVanChuyen());
         newOrder.setTrangThai(1);
         newOrder.setGhiChu(orderRequest.getGhichu());
-        // Tạo và thiết lập đối tượng Tinh
         newOrder.setPhiVanChuyen(phiVanChuyen);
-        newOrder.setGhiChu(orderRequest.getGhichu());
         newOrder.setMaTinh(orderRequest.getMaTinh());
         newOrder.setMaQuan(orderRequest.getMaQuan());
         newOrder.setMaPhuong(orderRequest.getMaPhuong());
         newOrder.setSoTienGiam(soTienGiam);
         newOrder.setTongTien(tongTien);
-newOrder.setLuongBan(orderRequest.getLuongBan());
+        newOrder.setLuongBan(orderRequest.getLuongBan());
+
+        // Gán mã giảm giá nếu có
         if (phieuGiamGia != null) {
             newOrder.setPhieuGiamGia(phieuGiamGia);
         }
+
+        // Lưu đơn hàng
         DonHang savedOrder = dhi.save(newOrder);
 
+        // Gán đơn hàng cho các chi tiết đơn hàng và lưu
         for (ChiTietDonHang chiTiet : chiTietList) {
             chiTiet.setDonHang(savedOrder);
         }
-
         cdh.saveAll(chiTietList);
-
         savedOrder.setChiTietDonHangs(chiTietList);
-
 
         return savedOrder;
     }
-
     // Phương thức chuyển đổi DonHangDTO thành PhiVanChuyenRequest
     private PhiVanChuyenRequest convertToPhiVanChuyenRequest(DonHangDTO orderRequest) {
         PhiVanChuyenRequest request = new PhiVanChuyenRequest();
@@ -275,6 +305,26 @@ newOrder.setLuongBan(orderRequest.getLuongBan());
                     spct.setImageUrl(imageMap.get(sp.getIdSanPham()));  // Gán danh sách URL hình ảnh
                 }
             });
+            BigDecimal soTienGiam = BigDecimal.ZERO;
+
+            if (dh.getPhieuGiamGia() != null && dh.getPhieuGiamGia().getGiaTriGiam() != null) {
+                BigDecimal phanTram = dh.getPhieuGiamGia().getGiaTriGiam();
+                // ví dụ: 15.0
+                BigDecimal thanhTienGoc = BigDecimal.ZERO;
+
+                // Tính tổng (đơn giá * số lượng) của từng sản phẩm
+                for (ChiTietDonHang ctdh : dh.getChiTietDonHangs()) {
+                    BigDecimal donGia = ctdh.getDonGia();
+                    BigDecimal soLuong = BigDecimal.valueOf(ctdh.getSoLuong());
+                    thanhTienGoc = thanhTienGoc.add(donGia.multiply(soLuong));
+                }
+
+                // Tính số tiền giảm
+                soTienGiam = thanhTienGoc.multiply(phanTram).divide(BigDecimal.valueOf(100));
+            }
+
+            dh.setSoTienGiam(soTienGiam);
+
         });
 
         return donHangPage;
@@ -355,8 +405,9 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         donHangDTO.setTongTien(donHang.getTongTien());
         donHangDTO.setTrangThai(donHang.getTrangThai());
         donHangDTO.setGhichu(donHang.getGhiChu());
-donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
-         // Assuming getMaPhieu() returns a String
+        donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
+        // Gán mã phiếu giảm giá (nếu có)
+        donHangDTO.setPhieuGiamGia(donHang.getPhieuGiamGia() != null ? donHang.getPhieuGiamGia().getMaGiamGia() : null);
 
         // Chuyển đổi chi tiết đơn hàng
         List<OrderItemDTOID> chiTietList = cdh.findByDonHangId(donHang.getId())
@@ -367,32 +418,42 @@ donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
                     itemDto.setQuantity(chiTiet.getSoLuong());
                     itemDto.setDonGia(chiTiet.getDonGia());
                     itemDto.setThanhTien(chiTiet.getThanhTien());
-                    String tenSanPham = chiTiet.getSpct().getSanPham().getTenSanPham();
-                    itemDto.setTenSanPham(tenSanPham);
-                    BigDecimal quantity = new BigDecimal(chiTiet.getSoLuong());  // Số lượng
-                    BigDecimal unitPrice = new BigDecimal(String.valueOf(chiTiet.getDonGia()));  // Đơn giá
+                    itemDto.setTenSanPham(chiTiet.getSpct().getSanPham().getTenSanPham());
 
-                    // Calculate the total price before discount
-                    BigDecimal totalPriceBeforeDiscount = quantity.multiply(unitPrice);
+                    // Tính số tiền giảm giá: (số lượng * đơn giá) * giá trị giảm
+                    BigDecimal quantity = new BigDecimal(chiTiet.getSoLuong()); // Số lượng
+                    BigDecimal unitPrice = new BigDecimal(String.valueOf(chiTiet.getDonGia())); // Đơn giá
+                    BigDecimal totalPriceBeforeDiscount = quantity.multiply(unitPrice); // Tổng tiền trước giảm giá
 
-                    // Assuming the discount is a percentage (for example, 10% = 0.10)
-                    BigDecimal phanTramGiam = donHang.getPhieuGiamGia() != null ? donHang.getPhieuGiamGia().getGiaTriGiam() : BigDecimal.ZERO;  // Get the discount percentage from PhieuGiamGia
-                    BigDecimal soTienGiam = totalPriceBeforeDiscount.multiply(phanTramGiam);  // Calculate the discount amount
+                    // Lấy giá trị giảm (giaTriGiam) từ PhieuGiamGia (nếu có)
+                    BigDecimal giaTriGiam = donHang.getPhieuGiamGia() != null
+                            ? donHang.getPhieuGiamGia().getGiaTriGiam()
+                            : BigDecimal.ZERO;
 
-                    // Set the discount amount in the DTO
+                    // Tính số tiền giảm: (số lượng * đơn giá) * giá trị giảm
+                    BigDecimal soTienGiam = totalPriceBeforeDiscount.multiply(giaTriGiam);
+
+                    // Gán số tiền giảm vào DTO
                     itemDto.setSoTienGiamGia(soTienGiam);
+
                     // Lấy hình ảnh của sản phẩm
                     List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
                             .stream()
                             .map(HinhAnh::getLink)
                             .collect(Collectors.toList());
-
                     itemDto.setImageURL(productImages);
+
                     return itemDto;
                 })
                 .collect(Collectors.toList());
 
         donHangDTO.setChiTietDonHangs(chiTietList);
+
+        // Tính tổng số tiền giảm giá cho toàn bộ đơn hàng
+        BigDecimal totalDiscount = chiTietList.stream()
+                .map(OrderItemDTOID::getSoTienGiamGia)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        donHangDTO.setSoTienGiam(totalDiscount);
 
         return donHangDTO;
     }).collect(Collectors.toList());
@@ -512,5 +573,20 @@ donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
         // Lưu đơn hàng đã cập nhật vào database
         return dhi.save(donHang);
     }
+    public boolean updateOrderStatusToCancelled(Integer orderId) {
+        Optional<DonHang> orderOpt = dhi.findById(orderId);
 
+        if (orderOpt.isPresent()) {
+            DonHang order = orderOpt.get();
+
+            // Kiểm tra trạng thái hiện tại của đơn hàng
+            if (order.getTrangThai() == 1) {  // Trạng thái "Chờ xác nhận"
+                order.setTrangThai(5);  // Cập nhật trạng thái thành "Đã huỷ"
+                dhi.save(order);  // Lưu lại thay đổi
+                return true;
+            }
+        }
+
+        return false;  // Trả về false nếu không thể cập nhật trạng thái
+    }
 }

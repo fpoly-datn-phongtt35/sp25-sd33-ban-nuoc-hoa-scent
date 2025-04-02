@@ -105,5 +105,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
 
     List<DonHang> findByTaiKhoanAndPhieuGiamGia(TaiKhoan taiKhoan, PhieuGiamGia phieuGiamGia);
 
+    @Query("SELECT COUNT(dh) > 0 FROM DonHang dh WHERE dh.taiKhoan = :taiKhoan AND dh.phieuGiamGia = :phieuGiamGia")
+    boolean existsByTaiKhoanAndPhieuGiamGia(@Param("taiKhoan") TaiKhoan taiKhoan, @Param("phieuGiamGia") PhieuGiamGia phieuGiamGia);
 
 }
