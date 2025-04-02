@@ -1,3 +1,4 @@
+import { NhomHuongService } from './../../../service/nhomhuong.service';
 import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit } from '@angular/core';
 import { ReactiveFormsModule,FormBuilder, FormGroup, Validators,FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -26,6 +27,7 @@ export class AddProductComponent implements OnInit{
   productForm: FormGroup;
   selectedFiles: File[] = [];
   danhMucList: any[] = [];
+  nhomHuongList:any[]=[];
   thuongHieuList: any[]=[];
     previewUrls: string[] = [];
   constructor(
@@ -39,12 +41,14 @@ export class AddProductComponent implements OnInit{
     private huondauService:HuongDauService,
     private huonggiuaService:HuongGiuaService,
     private huongcuoiService:HuongCuoiService,
+    private nhomHuongService:NhomHuongService,
   ) {
     this.productForm = this.fb.group({
       ten: ['', [Validators.required, Validators.minLength(3)]],
       moTa: ['', [Validators.maxLength(1000)]],
       idThuongHieu: ['', Validators.required],
       idDanhMuc: ['', Validators.required],
+      idNhomHuong:['',Validators.required],
       huongDau: ['', [Validators.required, Validators.minLength(2)]],
       huongGiua: ['', [Validators.required, Validators.minLength(2)]],
       huongCuoi: ['', [Validators.required, Validators.minLength(2)]]
@@ -54,13 +58,45 @@ export class AddProductComponent implements OnInit{
   }ngOnInit() {
     this.getAllDanhMuc();
     this.getAllThuongHieu();
+    this.getAllNhomHuong();
     this.productForm.get('idThuongHieu')?.valueChanges.subscribe((val) => {
       if (val === '-1') {
         this.handleAddThuongHieu();
       }
     });
-
+    this.productForm.get('idNhomHuong')?.valueChanges.subscribe((val) => {
+      if (val === '-1') {
+        this.handleAddNhomHuong();
+      }
+    });
   }
+  async handleAddNhomHuong() {
+    const tenNhomHuong = prompt('📝 Nhập tên nhóm hương mới:');
+    if (!tenNhomHuong || tenNhomHuong.trim().length < 2) {
+      alert('⚠️ Tên nhóm hương không hợp lệ!');
+      this.productForm.get('idNhomHuong')?.setValue('');
+      return;
+    }
+
+    const moTa = prompt('📄 Nhập mô tả cho nhóm hương (nếu có):') || '';
+
+    const body = {
+      tenNhomHuong: tenNhomHuong.trim(),
+      moTa: moTa.trim()
+    };
+
+    try {
+      const response = await firstValueFrom(this.nhomHuongService.createnhomHuong(body));
+      alert('✅ Đã thêm nhóm hương mới!');
+      await this.getAllNhomHuong(); // Làm mới danh sách
+      this.productForm.get('idNhomHuong')?.setValue(response.id); // Gán nhóm hương vừa tạo
+    } catch (err) {
+      console.error('❌ Lỗi khi thêm nhóm hương:', err);
+      alert('❌ Không thể thêm nhóm hương mới. Vui lòng thử lại!');
+      this.productForm.get('idNhomHuong')?.setValue('');
+    }
+  }
+
   async handleAddThuongHieu() {
     const tenThuongHieu = prompt('📝 Nhập tên thương hiệu mới:');
     if (!tenThuongHieu || tenThuongHieu.trim().length < 2) {
@@ -89,7 +125,15 @@ export class AddProductComponent implements OnInit{
       this.productForm.get('idThuongHieu')?.setValue('');
     }
   }
-
+  getAllNhomHuong(){
+    this.nhomHuongService.getnhomHuong().subscribe({
+      next: (data) => {
+        this.nhomHuongList = data;
+      },
+      error: (err) => {
+        console.error('Lỗi lấy danh mục:', err);
+      }
+    })}
     getAllDanhMuc(){
       this.danhMucService.getAllDanhMucDanhMuc().subscribe({
         next: (data) => {
@@ -156,7 +200,7 @@ export class AddProductComponent implements OnInit{
         formData.append('idHuongDau', String(idHuongDau || ''));
         formData.append('idHuongGiua', String(idHuongGiua || ''));
         formData.append('idHuongCuoi', String(idHuongCuoi || ''));
-
+        formData.append('idNhomHuong',String(formValues.idNhomHuong));
         // Thêm hình ảnh
         for (let file of this.selectedFiles) {
           formData.append('image', file);

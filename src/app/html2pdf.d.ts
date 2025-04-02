@@ -1,18 +1,20 @@
 declare module 'html2pdf.js' {
     interface Html2PdfOptions {
-      margin?: number | [number, number] | [number, number, number, number];
+      margin: [10, 10, 10, 10] // Lề trên, phải, dưới, trái
+
       filename?: string;
-      image: { type: 'jpeg', quality: 0.5 }, // Giảm chất lượng hình ảnh để tăng tốc
-  html2canvas: { scale: 1, useCORS: true },
-      jsPDF?: { unit: string; format: string; orientation: string };
+      image: { type: 'jpeg', quality: 1}, // Giảm chất lượng hình ảnh để tăng tốc
+  html2canvas: { scale: 2 },
+  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+
     }
-  
+
     interface Html2Pdf {
       from(element: HTMLElement): Html2Pdf;
       set(options: Html2PdfOptions): Html2Pdf;
       save(): Promise<void>;
     }
-  
+
     function html2pdf(): Html2Pdf;
     export default html2pdf;
   }

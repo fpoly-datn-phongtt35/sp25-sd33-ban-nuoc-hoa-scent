@@ -10,9 +10,10 @@ export class SanPhamService {
   private apiURL = 'http://localhost:8080/rest/san-pham/All'; // URL của API
   private baseUrl = 'http://localhost:8080/rest/san-pham';
   private apiSearch = 'http://localhost:8080/rest/san-pham/search';
-  private apiSearchdm = 'http://localhost:8080/rest/san-pham/search-danhmuc';
-private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll'
-private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-admin'
+private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll';
+private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-admin';
+private apiURLbb = 'http://localhost:8080/rest/san-pham/search-combined'; // API mới
+
   constructor(private http: HttpClient) {
     console.log('SanPhamService đã được khởi tạo.');
   }
@@ -51,34 +52,41 @@ private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-a
   getCategories(): Observable<any> {
     return this.http.get<any>(this.apiDanhMuc);
   }
-  getProductsByAllField(
-    category: string,
-    scent: string,
-    brand: string,
-    country: string,
-    page: number = 0,
-    pageSize: number = 12
-  ): Observable<any> {
-    let params = new HttpParams()
-      .set('page', page.toString()) // Truyền tham số trang
-      .set('pageSize', pageSize.toString()); // Truyền tham số số lượng sản phẩm mỗi trang
+  searchFilterSanPham(queryParams: any): Observable<any> {
+    let params = new HttpParams();
 
-    // Chỉ thêm các tham số khi có giá trị
-    if (category) params = params.set('tenDanhMuc', category);
-    if (scent) params = params.set('tenNhomHuong', scent);
-    if (brand) params = params.set('tenThuongHieu', brand);
-    if (country) params = params.set('quocGia', country);
+    // Chỉ thêm tham số nếu giá trị không phải null, undefined, hoặc chuỗi rỗng
+    if (queryParams.searchQuery != null && queryParams.searchQuery !== '') {
+      params = params.set('searchQuery', queryParams.searchQuery);
+    }
+    if (queryParams.minPrice != null && queryParams.minPrice !== '') {
+      params = params.set('minPrice', queryParams.minPrice.toString());
+    }
+    if (queryParams.maxPrice != null && queryParams.maxPrice !== '') {
+      params = params.set('maxPrice', queryParams.maxPrice.toString());
+    }
+    if (queryParams.tenDanhMuc != null && queryParams.tenDanhMuc !== '') {
+      params = params.set('tenDanhMuc', queryParams.tenDanhMuc);
+    }
+    if (queryParams.tenNhomHuong != null && queryParams.tenNhomHuong !== '') {
+      params = params.set('tenNhomHuong', queryParams.tenNhomHuong);
+    }
+    if (queryParams.tenThuongHieu != null && queryParams.tenThuongHieu !== '') {
+      params = params.set('tenThuongHieu', queryParams.tenThuongHieu);
+    }
+    if (queryParams.quocGia != null && queryParams.quocGia !== '') {
+      params = params.set('quocGia', queryParams.quocGia);
+    }
 
-    // Thực hiện gọi API
-    console.log('Gọi API với tham số: ', params);
-    return this.http.get<any>(this.apiSearchdm, { params });
+    // page và size luôn được gửi, với giá trị mặc định nếu không có
+    params = params.set('page', queryParams.page?.toString() || '0');
+    params = params.set('size', queryParams.size?.toString() || '12');
+
+    console.log('Query Params:', params.toString());
+
+
+    return this.http.get<any>(this.apiURLbb, { params });
   }
-
-
-
-
-
-
 
 addProductOnAdmin(formData: FormData): Observable<any> {
   const url = `${this.baseUrl}/add`;

@@ -1,26 +1,73 @@
 <app-header></app-header>
+
 <div class="banner">
   <img src="banner1.jpg" alt="Banner Sản Phẩm" class="banner-image" />
 </div>
 
-<!-- 🌟 Container chính chia làm 2 cột -->
 <div class="main-container row">
+  <!-- Bộ lọc bên trái -->
+  <div class="category-container col-md-3">
+    <h3 class="category-title">Bộ lọc sản phẩm</h3>
 
-  <!-- 📌 Danh mục sản phẩm bên trái -->
- 
+    <div class="filter-group">
+      <label for="category-filter">Danh mục</label>
+      <select id="category-filter" class="form-select" [(ngModel)]="selectedFilters.tenDanhMuc" (ngModelChange)="applyFilter('tenDanhMuc')">
+        <option value="">Tất cả</option>
+        <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+      </select>
+    </div>
 
-  <!-- 🛍️ Danh sách sản phẩm bên phải -->
+    <div class="filter-group">
+      <label for="brand-filter">Thương hiệu</label>
+      <select id="brand-filter" class="form-select" [(ngModel)]="selectedFilters.tenThuongHieu" (ngModelChange)="applyFilter('tenThuongHieu')">
+        <option value="">Tất cả</option>
+        <option *ngFor="let brand of tenThuongHieus" [value]="brand">{{ brand }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="scent-filter">Nhóm hương</label>
+      <select id="scent-filter" class="form-select" [(ngModel)]="selectedFilters.tenNhomHuong" (ngModelChange)="applyFilter('tenNhomHuong')">
+        <option value="">Tất cả</option>
+        <option *ngFor="let scent of tenNhomHuongs" [value]="scent">{{ scent }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="country-filter">Quốc gia</label>
+      <select id="country-filter" class="form-select" [(ngModel)]="selectedFilters.quocGia" (ngModelChange)="applyFilter('quocGia')">
+        <option value="">Tất cả</option>
+        <option *ngFor="let country of quocGias" [value]="country">{{ country }}</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <div class="filter-container">
+      <h4>Lọc theo giá</h4>
+      <mat-slider class="price-slider" [min]="minPrice" [max]="maxPrice" [step]="50000" (change)="filterByPrice()">
+        <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
+        <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
+      </mat-slider>
+      <div class="price-range">
+        Giá: <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danh sách sản phẩm bên phải -->
   <div class="product-container col-md-9">
-
-    <!-- 🔎 Ô tìm kiếm + Bộ lọc giá -->
     <div class="search-filter-container">
       <div class="search-box">
-        <input type="text" [(ngModel)]="query" placeholder="🔍 Nhập từ khóa tìm kiếm..." class="form-control">
-        <button class="search-button btn btn-primary" (click)="onSearch()">Tìm kiếm</button>
+        <input
+          type="text"
+          [(ngModel)]="query"
+          (ngModelChange)="onSearch()"
+          placeholder="🔍 Nhập từ khóa tìm kiếm..."
+          class="form-control">
       </div>
     </div>
 
-    <!-- 🛍️ Danh sách sản phẩm -->
     <div class="product-grid">
       <div *ngFor="let product of sanPhams" class="product-card" (click)="viewProductDetail(product.idSanPham)">
         <div class="product-image-container">
@@ -33,29 +80,56 @@
       </div>
     </div>
 
-    <nav class="pagination-container">
-      <ul class="pagination">
-        <li class="page-item" *ngIf="currentPage > 1">
-          <button class="page-link" (click)="onPageChange(1)">First</button>
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+
+        <!-- Nút "Trang đầu" -->
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="goToPage(0)">«</button>
         </li>
-        <li class="page-item" *ngIf="currentPage > 1">
-          <button class="page-link" (click)="onPageChange(currentPage - 1)">Previous</button>
+
+        <!-- Nút "Trước" -->
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="prevPage()">‹</button>
         </li>
-        <ng-container *ngFor="let page of visiblePages || []">
-          <li class="page-item" [ngClass]="{ active: page === currentPage }">
-            <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
-          </li>
-        </ng-container>
-        <li class="page-item" *ngIf="currentPage < totalPages">
-          <button class="page-link" (click)="onPageChange(currentPage + 1)">Next</button>
+
+        <!-- Hiển thị trang đầu nếu page > 2 -->
+        <li class="page-item" *ngIf="page > 2">
+          <button class="page-link" (click)="goToPage(0)">1</button>
         </li>
-        <li class="page-item" *ngIf="currentPage < totalPages">
-          <button class="page-link" (click)="onPageChange(totalPages)">Last</button>
+
+        <!-- Dấu "..." nếu cần -->
+        <li class="page-item disabled" *ngIf="page > 3">
+          <span class="page-link">...</span>
+        </li>
+
+        <!-- Hiển thị các trang gần nhất -->
+        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+        </li>
+
+        <!-- Dấu "..." nếu có nhiều trang -->
+        <li class="page-item disabled" *ngIf="page < totalPages - 4">
+          <span class="page-link">...</span>
+        </li>
+
+        <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
+        <li class="page-item" *ngIf="page < totalPages - 3">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+        </li>
+
+        <!-- Nút "Sau" -->
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="nextPage()">›</button>
+        </li>
+
+        <!-- Nút "Trang cuối" -->
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
         </li>
       </ul>
     </nav>
   </div>
-
 </div>
 
 <app-footer></app-footer>

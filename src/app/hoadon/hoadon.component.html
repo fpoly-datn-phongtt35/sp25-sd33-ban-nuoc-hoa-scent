@@ -1,12 +1,12 @@
 
-  
- 
+
+
   <button class="btn btn-success" (click)="exportToPDF()">Tải Hóa Đơn (PDF)</button>
   <div class="modal-body" id="invoice-content">
     <!-- Thông tin người gửi và người nhận -->
     <div class="modal-header">
         <h4 class="modal-title">🧾 HÓA ĐƠN BÁN HÀNG</h4>
-        
+
         <button type="button" class="btn-close" (click)="close()"></button>
       </div>
     <p style="color: red; font-weight: bold; font-size: 1.2rem;">
@@ -15,17 +15,17 @@
     <div class="row mb-2">
       <div class="col-6">
         <h5 class="text-primary">📦 Người gửi</h5>
-        <p><strong>Từ:</strong> {{ orderData.tenNguoiNhanHang }}</p>
-        <p><strong>SĐT:</strong> {{ orderData.sdtNguoiNhan }}</p>
-        <p><strong>Địa chỉ:</strong> {{ orderData.diaChiGiaoHang }}</p>
+        <p><strong>Từ:</strong> Scent </p>
+        <p><strong>SĐT:</strong>0974671634</p>
+        <p><strong>Địa chỉ:</strong> 43 Phú Diễn ,Nam Từ Liêm, Hà Nội</p>
         <h5 class="text-primary">👤 Người đặt hàng</h5>
         <p><strong>Họ tên:</strong> {{ orderData.taiKhoan.hoTen }}</p>
         <p><strong>Email:</strong> {{ orderData.taiKhoan.email }}</p>
-   
+
       </div>
       <div class="col-6">
         <h5 class="text-primary">📦 Người nhận</h5>
-        <p><strong>Đến:</strong> {{ orderData.tenNguoiNhan }}</p>
+        <p><strong>Đến:</strong> {{ orderData.tenNguoiNhanHang }}</p>
         <p><strong>SĐT:</strong> {{ orderData.sdtNguoiNhan }}</p>
         <p><strong>Địa chỉ:</strong> {{ orderData.diaChiGiaoHang }}</p>
         <p><strong>Ngày đặt:</strong> {{ orderData.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</p>
@@ -33,9 +33,9 @@
         <p><strong>Phương thức vận chuyển:</strong> {{ orderData.phuongThucVanChuyen }}</p>
       </div>
     </div>
-  
+
     <!-- Thông tin đơn hàng -->
-   
+
     <h5 class="mt-4 text-primary">🧾 Sản phẩm</h5>
     <table class="table table-bordered">
       <thead class="table-light">
@@ -55,10 +55,10 @@
         </tr>
       </tbody>
     </table>
-  
+
     <!-- Tổng kết -->
-   
-  
+
+
     <!-- Ngày và Ký tên -->
    <div class="row mb-2">
     <div class="text-end col-6">
@@ -71,7 +71,6 @@
         <p class="text-end"><em>(Ký tên)</em></p>
          <!-- Space for signature -->
       </div>
-      
+
    </div>
   </div>
-  

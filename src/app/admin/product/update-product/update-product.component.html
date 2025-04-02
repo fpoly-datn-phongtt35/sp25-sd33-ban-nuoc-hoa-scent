@@ -41,6 +41,16 @@
                   Vui lòng chọn danh mục.
                 </div>
               </div>
+              <div class="w-50">
+                <label class="form-label fw-semibold">Nhóm hương</label>
+                <select class="form-select" formControlName="idNhomHuong">
+                  <option *ngFor="let nh of nhomHuongList" [value]="nh.id">{{ nh.tenNhomHuong }}</option>
+                  <option value="-1">➕ Thêm nhóm hương mới...</option>
+                </select>
+                <div *ngIf="productForm.get('idThuongHieu')?.touched && productForm.get('idThuongHieu')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn Nhóm hương.
+                </div>
+              </div>
             </div>
 
             <!-- Ba tầng hương -->

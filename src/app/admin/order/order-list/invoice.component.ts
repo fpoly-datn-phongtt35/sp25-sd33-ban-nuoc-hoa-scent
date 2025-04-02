@@ -57,13 +57,13 @@ export class InvoiceComponent implements OnInit {
   };
 
   constructor(private http: HttpClient, private donHangService: DonhangService, private modalService: NgbModal,private router: Router) {
-    
+
   }
   closeDetail() {
     this.selectedOrder = null;
   }
   ngOnInit(): void {
-    
+
     this.loadCustomers();
     this.filteredDonhang = this.orders;
   }
@@ -97,8 +97,8 @@ export class InvoiceComponent implements OnInit {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
-  
-    if (order.selectedStatus === 2 && nextStatus === 3) {
+
+    if (order.selectedStatus === 2 || order.selectedStatus === 6  && nextStatus === 3) {
       const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
       modalRef.componentInstance.orderData = order;
       modalRef.result.then(
@@ -247,13 +247,13 @@ export class InvoiceComponent implements OnInit {
   // }
 
   loadCustomers(): void {
-   
+
     this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
       next: (response) => {
         this.orders = response.map((order: any) => ({
           ...order,
           selectedStatus: order.trangThai,
-          
+
         }));
         console.log(this.orders);
         this.filterOrders(this.selectedStatus !== null ? this.selectedStatus.toString() : '');
@@ -348,5 +348,5 @@ export class InvoiceComponent implements OnInit {
 
     return range;
   }
-  
+
 }
