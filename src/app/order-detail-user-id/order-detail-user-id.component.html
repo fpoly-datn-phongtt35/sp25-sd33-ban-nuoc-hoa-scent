@@ -1,11 +1,19 @@
 <app-header></app-header>
 
 <div class="order-container" *ngIf="selectedOrder === null">
-  <h2>Danh sách đơn hàng</h2>
-
+  
+  <div class="btn-group mb-4" role="group">
+    <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
+    <button class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
+    <button class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
+    <button class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
+    <button class="btn btn-outline-dark" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+    <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
+    <button class="btn btn-outline-danger" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Hủy</button>
+  </div>
   <!-- Hiển thị đơn hàng -->
   <div class="order-list" style="border: 1p;">
-    <div *ngFor="let order of orders" class="order" (click)="toggleOrderDetail(order)">
+    <div *ngFor="let order of filteredOrders" class="order" (click)="toggleOrderDetail(order)">
       <div class="order-header">
         <h3>Mã đơn hàng: {{ order.maDonHang }}</h3>
         <p class="order-status">Trạng thái: {{ order.statusLabel }}</p>
@@ -31,7 +39,7 @@
           <p><strong>Giảm giá:</strong> - {{ order.chiTietDonHangs.soTienGiamGia | number: '1.0-0' }} VNĐ</p>
           <p><strong>Thành tiền:</strong> {{ order.tongTien | number: '1.0-0' }} VNĐ</p>
           <button class="contact-seller">Liên Hệ Người Bán</button>
-          <button class="cancel-order">Hủy Đơn Hàng</button>
+          
         </div>
       </div>
     </div>
@@ -39,7 +47,7 @@
 </div>
 
 <div *ngIf="selectedOrder !== null" class="order-detail">
-  <button class="go-back-button" (click)="goBack()">Quay lại</button>
+  <button class="go-back-button" (click)="goBack()"> <--Quay lại</button>
 
   <div class="order-detail-content">
     <!-- Thông tin đơn hàng -->
@@ -67,7 +75,7 @@
             <div [ngClass]="{'active': selectedOrder.trangThai >= 4}" class="status-step">
               <i class="fas fa-check-circle"></i> Hoàn thành
             </div>
-            <div *ngIf="selectedOrder.trangThai === 5" [ngClass]="{'active': selectedOrder.trangThai === 5}" class="status-step">
+<div *ngIf="selectedOrder.trangThai === 5" [ngClass]="{'active': selectedOrder.trangThai === 5}" class="status-step">
               <i class="fas fa-times-circle"></i> Đã hủy
             </div>
           </div>
@@ -111,6 +119,8 @@
         <p><strong>Phí vận chuyển:</strong> {{ selectedOrder.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
         <p><strong>Tổng tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
       </div>
+      <button *ngIf="selectedOrder.trangThai === 1" class="cancel-order" (click)="cancelOrder(selectedOrder.maDonHang)">Hủy Đơn Hàng</button>
+
     </div>
 
   </div>
@@ -119,13 +129,3 @@
     <div *ngFor="let item of selectedOrder.chiTietDonHangs" class="product-item">
       <img [src]="item.imageURL?.[0] || 'path/to/default-image.jpg'" alt="product image" class="product-image" />
       <div class="product-info">
-        <h4>{{ item.tenSanPham }}</h4>
-        <p>Số lượng: {{ item.quantity }}</p>
-        <p>Giá: {{ item.donGia | number: '1.0-0' }} VNĐ</p>
-        <p>Thành tiền: {{ item.thanhTien | number: '1.0-0' }} VNĐ</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<app-footer></app-footer>

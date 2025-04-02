@@ -5,11 +5,12 @@ import { UserService } from '../service/user.service';
 import { TokenService } from '../service/token.service';
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
-
+import { DonhangService } from '../service/donhang.service';
+import { FormsModule } from '@angular/forms'; 
 @Component({
   selector: 'app-order-detail-user-id',
   standalone: true,
-  imports: [CommonModule,HeaderComponent, FooterComponent],
+  imports: [CommonModule,HeaderComponent, FooterComponent,FormsModule],
   templateUrl: './order-detail-user-id.component.html',
   styleUrl: './order-detail-user-id.component.scss'
 })
@@ -17,7 +18,18 @@ export class OrderDetailUserIDComponent implements OnInit{
   orders: any[] = [];
   userId: number=0;
   selectedOrder: any = null;
-  constructor(private userService: UserService,private tokenService: TokenService) {
+  filteredOrders: any[] = [];
+  selectedStatus: number = 0;
+  keyToStatus: Record<string, number> = {
+    pending: 1,
+    unPaid: 1,
+    processed: 2,
+    shipping: 3,
+    prepaid: 6,
+    completed: 4,
+    cancelled: 5,
+  };
+  constructor(private userService: UserService,private tokenService: TokenService,private donhangService :DonhangService) {
    
   }
 
@@ -32,6 +44,7 @@ export class OrderDetailUserIDComponent implements OnInit{
             statusLabel: this.getStatusLabel(order.trangThai) // Thêm nhãn trạng thái vào mỗi đơn hàng
              
           }));
+          this.filteredOrders = [...this.orders];
           console.log('Dữ liệu đơn hàng:', this.orders);
         },
         error: (error) => {
@@ -73,5 +86,47 @@ export class OrderDetailUserIDComponent implements OnInit{
   goBack() {
     this.selectedOrder = null; // Quay lại danh sách đơn hàng
   }
+  cancelOrder(orderId: number) {
+    this.donhangService.cancelOrder(orderId).subscribe(
+      (response: { status: string; message: any; }) => {
+        if (response.status === 'success') {
+          // If cancellation is successful, update the order status
+          this.selectedOrder.trangThai = 5;  // Update the status to "Đã huỷ"
+          this.selectedOrder.statusLabel = 'Đã huỷ';  // Update the label accordingly
+          alert(response.message);  // Display success message from API
+        } else {
+          // If cancellation failed
+          alert(response.message);  // Display error message from API
+        }
+      },
+      (error) => {
+        alert('Lỗi hệ thống. Không thể hủy đơn hàng.');
+        console.error(error);
+      }
+    );
+  }
+  filterOrders(status: string): void {
+    const statusCode = this.keyToStatus[status] ?? null;
+    this.selectedStatus = statusCode;
+  
+    // Nếu trạng thái không có hoặc là 0 (Tất cả), hiển thị tất cả đơn hàng
+    if (statusCode === null || statusCode === 0) {
+      this.filteredOrders = [...this.orders];  // Hiển thị tất cả đơn hàng
+    } else {
+      // Lọc đơn hàng theo trạng thái
+      this.filteredOrders = this.orders.filter(order => order.trangThai === statusCode);
+    }
+  
+    // Đảm bảo lọc lại đơn hàng mỗi khi chọn trạng thái mới
+    console.log("Lọc đơn hàng với trạng thái:", status, this.filteredOrders);
+  }
+  
+  // filterOrders(status: number) {
+  //   if (status === 0) {
+  //     this.filteredOrders = this.orders; // Hiển thị tất cả đơn hàng nếu không có trạng thái lọc
+  //   } else {
+  //     this.filteredOrders = this.orders.filter(order => order.statusLabel === status);
+  //   }
+  // }
   
 }

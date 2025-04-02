@@ -45,14 +45,99 @@
 .order-price div {
   width: 60%;
 }
+/* Container cho bộ lọc trạng thái */
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+/* Các nút bộ lọc trạng thái */
+.btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Hiển thị màu sắc khác nhau cho mỗi trạng thái */
+.btn-outline-secondary {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+.btn-outline-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.btn-outline-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.btn-outline-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.btn-outline-dark {
+  background-color: #c6c8ca;
+  color: #343a40;
+}
+
+.btn-outline-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Chỉnh màu khi nút được chọn (active) */
+.btn.active {
+  background-color: #007bff;
+  color: white;
+  border: 1px solid #007bff;
+}
+
+/* Khi di chuột vào nút (hover) */
+.btn:hover {
+  background-color: #f1f1f1;
+  border-color: #ddd;
+}
+
+/* Đảm bảo các nút không bị đè lên nhau khi màn hình nhỏ */
+@media (max-width: 768px) {
+  .btn-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Các nút khi đang chọn (active) */
+.btn.active {
+  font-weight: bold;
+  background-color: #28a745;
+  color: white;
+}
 
 .order-actions {
   width: 35%;
   text-align: right;
 }
-
-.contact-seller, .cancel-order {
-  background-color: #ff6347;
+.contact-seller  {
+  background-color: #8b8a89;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+ .cancel-order {
+  background-color: #f0705f;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -152,7 +237,7 @@
 }
 
 .status-step i.fa-times-circle {
-  color: #f44336;
+  color: #6f6868;
 }
 
 .status-step:not(.active) {

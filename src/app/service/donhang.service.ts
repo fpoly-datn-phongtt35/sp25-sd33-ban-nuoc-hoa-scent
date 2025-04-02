@@ -9,7 +9,7 @@ import { TokenService } from './token.service';
 })
 export class DonhangService {
   private apiUrl = 'http://localhost:8080/rest/don-hang';
-
+private apiHuy = 'http://localhost:8080/rest/don-hang';
   private orderIdSource = new BehaviorSubject<string | null>(null);
 
   currentOrderId = this.orderIdSource.asObservable();
@@ -43,6 +43,9 @@ getDonhangWithoutPagination(): Observable<any> {
   }
   capNhatTrangThaiTuDong(orderId: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/capnhat-tu-dong/${orderId}`, {});
+  }
+  cancelOrder(orderId: number): Observable<any> {
+    return this.http.put<any>(`${this.apiHuy}/huy/${orderId}`, {});
   }
 }
 
