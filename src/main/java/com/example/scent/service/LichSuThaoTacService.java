@@ -12,23 +12,8 @@ import java.util.List;
 public class LichSuThaoTacService {
     @Autowired
     LichSuThaoTacInterface lichSuThaoTacInterface;
-    public void ghiLogThaoTac(Integer maDonHang, Integer taiKhoanId, String tenTaiKhoan,
-                              String thaoTac, Integer trangThaiCu, Integer trangThaiMoi, String ghiChu) {
-        LichSuThaoTac log = new LichSuThaoTac();
-        log.setMaDonHang(maDonHang);
-        log.setTaiKhoanId(taiKhoanId);
-        log.setTenTaiKhoan(tenTaiKhoan);
-        log.setThaoTac(thaoTac);
-        log.setTrangThaiCu(trangThaiCu);
-        log.setTrangThaiMoi(trangThaiMoi);
-        log.setGhiChu(ghiChu);
-        log.setThoiGianThaoTac(LocalDateTime.now());
-        System.out.println("Ghi log: " + maDonHang + log.toString()); // Thêm log để kiểm tra
-        lichSuThaoTacInterface.save(log);
-    }
-    public List<LichSuThaoTac> getLichSuByMaDonHang(Integer maDonHang) {
-        List<LichSuThaoTac> lichSu = lichSuThaoTacInterface.findByMaDonHang(maDonHang);
-        System.out.println("Lịch sử cho đơn hàng " + maDonHang + ": " + lichSu);
-        return lichSu;
+
+    public List<LichSuThaoTac> getAllLichSuThaoTac() {
+        return lichSuThaoTacInterface.findAll();
     }
 }

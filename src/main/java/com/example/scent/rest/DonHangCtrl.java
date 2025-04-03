@@ -331,4 +331,9 @@ public class DonHangCtrl {
         return ResponseEntity.ok(lichSu);
     }
 
+    @GetMapping("/lich-su-thao-tac-by-user")
+    public ResponseEntity<List<LichSuThaoTac>> getAllLichSuThaoTac() {
+        List<LichSuThaoTac> result = lichSuThaoTacService.getAllLichSuThaoTac();
+        return ResponseEntity.ok(result);
+    }
 }

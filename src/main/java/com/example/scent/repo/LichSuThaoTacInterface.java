@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface LichSuThaoTacInterface extends JpaRepository<LichSuThaoTac,Integer> {
     List<LichSuThaoTac> findByMaDonHang(Integer maDonHang);
+    List<LichSuThaoTac> findByTaiKhoanId(Integer taiKhoanId);
+    List<LichSuThaoTac> findAll();
 }
