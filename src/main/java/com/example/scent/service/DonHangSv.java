@@ -42,7 +42,8 @@ public class DonHangSv {
     CTDHInterface cdh;
 @Autowired
     TaiKhoanInterface tki;
-
+@Autowired
+LichSuThaoTacInterface lichSuThaoTacInterface;
     public List<SanPhamThongKeDto> getProductStatistics(Integer year, Integer month) {
 
         int status = 1; // 1 : Đã nhận
@@ -588,5 +589,57 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         }
 
         return false;  // Trả về false nếu không thể cập nhật trạng thái
+    }
+
+    public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
+        DonHang donHang = dhi.findById(maDonHang)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + maDonHang));
+
+        // Lưu trạng thái cũ trước khi cập nhật
+        Integer trangThaiCu = donHang.getTrangThai();
+
+        // Kiểm tra nếu trạng thái không thay đổi
+        if (trangThaiCu.equals(trangThaiMoi)) {
+
+            return donHang; // Không cần cập nhật
+        }
+
+        // Cập nhật trạng thái mới cho đơn hàng
+        donHang.setTrangThai(trangThaiMoi);
+        if (ghiChuHuy != null && !ghiChuHuy.isEmpty()) {
+            donHang.setGhiChu(ghiChuHuy);
+        }
+        dhi.save(donHang);
+
+        // Lưu lịch sử thao tác
+        LichSuThaoTac lichSu = new LichSuThaoTac();
+        lichSu.setMaDonHang(maDonHang);
+        lichSu.setTrangThaiCu(trangThaiCu);
+        lichSu.setTrangThaiMoi(trangThaiMoi);
+        lichSu.setTaiKhoanId(userId);
+        lichSu.setTenTaiKhoan(tenDangNhap);
+        lichSu.setGhiChu(ghiChuHuy);
+        lichSu.setThoiGianThaoTac(LocalDateTime.now());
+        lichSu.setThaoTac("Cập nhật trạng thái đơn hàng từ trạng thái "
+                + trangThaiCu + " sang trạng thái " + trangThaiMoi);
+
+
+        lichSuThaoTacInterface.save(lichSu);
+
+
+
+        return donHang;
+    }
+    // Phương thức tính trạng thái mới (giả định)
+    public Integer tinhTrangThaiMoi(Integer trangThaiCu, String phuongThucThanhToan, String lyDoHuy) {
+
+        if (lyDoHuy != null && !lyDoHuy.isEmpty()) {
+            return 5; // Đã Hủy
+        }
+        // Logic khác để tính trạng thái mới
+        if (trangThaiCu == 3) {
+            return 4; // Ví dụ: từ trạng thái 3 (Đang xử lý) sang 4 (Đang giao)
+        }
+        return trangThaiCu; // Giữ nguyên nếu không có thay đổi
     }
 }

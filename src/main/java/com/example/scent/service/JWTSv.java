@@ -57,6 +57,11 @@ public class JWTSv {
                 .compact(); //tạo và trả về jwt dưới da23
     }
 
+    public Integer getUserIdFromToken(String token) {
+        return extractClaim(token, claims -> claims.get("UserID", Integer.class));
+    }
+
+    // Thêm phương thức để lấy tenTaiKhoan từ token (trùng với username trong subject)
 
     public String extractUsername(String token) {
         //xuất username từ jwt

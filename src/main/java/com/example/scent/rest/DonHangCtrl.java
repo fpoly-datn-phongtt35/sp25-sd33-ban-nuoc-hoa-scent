@@ -6,7 +6,10 @@ import com.example.scent.dto.donhangDTOID;
 import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.*;
 
+import com.example.scent.repo.LichSuThaoTacInterface;
 import com.example.scent.service.DonHangSv;
+import com.example.scent.service.JWTSv;
+import com.example.scent.service.LichSuThaoTacService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -21,15 +24,23 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*")
 
-@CrossOrigin("*")
 @RestController
 @RequestMapping("/rest/don-hang")
 public class DonHangCtrl {
+    private static final Logger log = LoggerFactory.getLogger(DonHangSv.class);
+
     final
     DonHangSv dhs;
-
-
+ @Autowired
+ JWTSv jwtSv;
+@Autowired
+    LichSuThaoTacService lichSuThaoTacService;
+ @Autowired
+    LichSuThaoTacInterface lichSuThaoTacInterface;
     public DonHangCtrl(DonHangSv dhs) {
         this.dhs = dhs;
     }
@@ -149,28 +160,28 @@ public class DonHangCtrl {
         }
     }
 
-    @PutMapping("/capnhat-trangthai/{id}")
-    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id,
-                                                     @RequestParam Integer trangThai,
-                                                     @RequestParam(required = false) String lyDoHuy) {
-        try {
-            // Kiểm tra nếu trạng thái là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
-            if (trangThai == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
-                // Nếu lý do hủy không được cung cấp, trả về lỗi
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lý do hủy không thể trống!");
-            }
-
-            // Cập nhật trạng thái đơn hàng
-            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai, lyDoHuy);
-
-            // Trả về phản hồi thành công với dữ liệu đơn hàng đã cập nhật
-            return ResponseEntity.ok(donHang);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("❌ Lỗi cập nhật trạng thái: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
-        }
-    }
+//    @PutMapping("/capnhat-trangthai/{id}")
+//    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id,
+//                                                     @RequestParam Integer trangThai,
+//                                                     @RequestParam(required = false) String lyDoHuy) {
+//        try {
+//            // Kiểm tra nếu trạng thái là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
+//            if (trangThai == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
+//                // Nếu lý do hủy không được cung cấp, trả về lỗi
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lý do hủy không thể trống!");
+//            }
+//
+//            // Cập nhật trạng thái đơn hàng
+//            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai, lyDoHuy);
+//
+//            // Trả về phản hồi thành công với dữ liệu đơn hàng đã cập nhật
+//            return ResponseEntity.ok(donHang);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            System.err.println("❌ Lỗi cập nhật trạng thái: " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
+//        }
+//    }
     @GetMapping("/user/{idTaiKhoan}")
     public ResponseEntity<List<donhangDTOID>> getDonHangsByTaiKhoan(@PathVariable Integer idTaiKhoan) {
         List<donhangDTOID> donHangs = dhs.getDonHangsByTaiKhoan(idTaiKhoan);
@@ -252,6 +263,72 @@ public class DonHangCtrl {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+    @PutMapping("/capnhat-trangthai/{maDonHang}")
 
+
+    public ResponseEntity<?> capNhatTrangThai(
+            @PathVariable Integer maDonHang,
+            @RequestParam(required = false) String ghiChu,
+            @RequestParam(required = false) String lyDoHuy,
+            @RequestParam Integer userID,
+            @RequestParam String tenDangNhap,
+            @RequestParam(required = false) Integer trangThai) {
+        Logger logger = LoggerFactory.getLogger(this.getClass());
+
+        try {
+            logger.info("API /capnhat-trangthai-ls/{} được gọi bởi tài khoản: userID={}, tenDangNhap={}",
+                    maDonHang, userID, tenDangNhap);
+
+            // Kiểm tra userID và tenDangNhap có hợp lệ không
+            if (userID == null || tenDangNhap == null || tenDangNhap.trim().isEmpty()) {
+                logger.warn("userID hoặc tên đăng nhập không hợp lệ: userID={}, tenDangNhap={}", userID, tenDangNhap);
+                return ResponseEntity.status(400).body("userID hoặc tên đăng nhập không hợp lệ");
+            }
+
+            // Lấy đơn hàng hiện tại
+            DonHang donHang = dhs.detail(maDonHang);
+            if (donHang == null) {
+                logger.warn("Không tìm thấy đơn hàng với ID: {}", maDonHang);
+                return ResponseEntity.status(404).body("Không tìm thấy đơn hàng với ID: " + maDonHang);
+            }
+
+            // Xác định trạng thái mới
+            Integer trangThaiMoi;
+            if (trangThai != null) {
+                trangThaiMoi = trangThai;
+                logger.info("Sử dụng trạng thái được truyền vào: {}", trangThaiMoi);
+            } else {
+                Integer trangThaiCu = donHang.getTrangThai();
+                trangThaiMoi = dhs.tinhTrangThaiMoi(trangThaiCu, donHang.getPhuongThucThanhToan(), lyDoHuy);
+                logger.info("Tính trạng thái mới: trangThaiCu={}, trangThaiMoi={}", trangThaiCu, trangThaiMoi);
+            }
+
+            // Kiểm tra nếu trạng thái mới là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
+            if (trangThaiMoi == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
+                logger.warn("Lý do hủy không được cung cấp khi trạng thái là Đã Hủy (5)");
+                return ResponseEntity.status(400).body("Lý do hủy không thể trống khi hủy đơn hàng!");
+            }
+
+            // Cập nhật trạng thái và ghi log
+            String ghiChuHuy = (lyDoHuy != null && !lyDoHuy.isEmpty()) ? lyDoHuy : ghiChu;
+            if (ghiChuHuy != null && !ghiChuHuy.isEmpty()) {
+                donHang.setLyDoHuy(ghiChuHuy);
+            }
+            logger.info("Cập nhật trạng thái đơn hàng {}: trạng thái mới={}, ghiChuHuy={}, bởi userID={}, tenDangNhap={}",
+                    maDonHang, trangThaiMoi, ghiChuHuy, userID, tenDangNhap);
+            DonHang updatedDonHang = dhs.capNhatTrangThaiDonHang(maDonHang, trangThaiMoi, userID, tenDangNhap, ghiChuHuy);
+
+            return ResponseEntity.ok(updatedDonHang);
+        } catch (Exception e) {
+            logger.error("Lỗi khi xử lý cập nhật trạng thái đơn hàng {}: {}", maDonHang, e.getMessage(), e);
+            return ResponseEntity.status(500).body("Lỗi khi xử lý: " + e.getMessage());
+        }
+        // Phương thức phụ để tính trạng thái mới
+    }
+    @GetMapping("/lichsu/{maDonHang}")
+    public ResponseEntity<List<LichSuThaoTac>> getLichSuDonHang(@PathVariable Integer maDonHang) {
+        List<LichSuThaoTac> lichSu = lichSuThaoTacInterface.findByMaDonHang(maDonHang);
+        return ResponseEntity.ok(lichSu);
+    }
 
 }

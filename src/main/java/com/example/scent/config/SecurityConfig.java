@@ -75,7 +75,7 @@ public class SecurityConfig {
 
 
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
-
+                        .requestMatchers("/rest/don-hang/lichsu/**").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
 //                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
