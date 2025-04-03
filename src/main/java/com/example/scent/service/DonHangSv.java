@@ -703,20 +703,18 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
             phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
 
-            LocalDateTime now = LocalDateTime.now();
-            if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
+            // Chỉ cho phép áp dụng phiếu giảm giá có dieuKienapDung = 0 (offline)
+            if (phieuGiamGia.getDieuKienapDung() != 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng offline!");
             }
 
-            if (phieuGiamGia.getSoLuong() <= 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết lượt sử dụng!");
-            }
+            // Không kiểm tra thời gian hiệu lực và số lượng vì đây là phiếu offline do nhân viên phát
 
+            // Kiểm tra xem tài khoản đã sử dụng mã giảm giá này chưa (tùy bạn có muốn giữ điều kiện này hay không)
             List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
-            if (!donHangs.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
-            }
 
+
+            // Tính toán số tiền giảm
             BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
             soTienGiam = thanhTienGoc.multiply(phanTramGiam);
 
@@ -747,8 +745,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         if (phieuGiamGia != null) {
             newOrder.setPhieuGiamGia(phieuGiamGia);
-            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1);
-            phieuGiamGiaInterface.save(phieuGiamGia);
+            // Không giảm số lượng phiếu giảm giá cho đơn offline
         }
 
         // Save the order
@@ -758,7 +755,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         for (ChiTietDonHang chiTiet : chiTietList) {
             chiTiet.setDonHang(savedOrder);
             Spct spct = chiTiet.getSpct();
-            System.out.println("idSPCT"+orderRequest.getChiTietDonHangs());
             spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong());
             spc.save(spct);
         }
@@ -768,7 +764,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         return savedOrder;
     }
-
     public DonHang updateOrderStatus(Integer orderId, UpdateOrderStatusRequest statusRequest) throws Exception {
         DonHang order = dhi.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại với ID: " + orderId));
