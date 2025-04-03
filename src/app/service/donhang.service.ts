@@ -14,6 +14,8 @@ private apiHuy = 'http://localhost:8080/rest/don-hang';
 
   currentOrderId = this.orderIdSource.asObservable();
   constructor(private http: HttpClient) {}
+ 
+
   getDonhang(trangThai: number = -1): Observable<any> {
     // Chỉ truyền tham số trangThai vào URL
     let params = `/page?trangThai=${trangThai}`;
@@ -37,7 +39,13 @@ getDonhangWithoutPagination(): Observable<any> {
         })
       );
   }
-
+  getLichSuThaoTac(maDonHang: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/lich-su-thao-tac/${maDonHang}`).pipe(
+      catchError((error: any) => {
+        return throwError(() => new Error('Error fetching history: ' + error.message));
+      })
+    );
+  }
   getOrderDetails(orderId: number): Observable<any> {
     return this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`);
   }

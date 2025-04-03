@@ -10,6 +10,7 @@ import { UserAdminComponent } from '../account/account-staff-list/user-admin.com
 import { ProductAdminComponent } from '../product/product-list/product-admin.component';
 import { VourcherComponent } from '../voucher/vourcher-list/vourcher.component';
 import { InvoiceComponent } from '../order/order-list/invoice.component';
+import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.component';
 
 @Component({
   selector: 'app-home-admin',
@@ -23,6 +24,7 @@ import { InvoiceComponent } from '../order/order-list/invoice.component';
     VourcherComponent,
     StatisticsComponent,
     InvoiceComponent,
+    LichsuthaotacComponent
   ],
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'], // Sửa từ styleUrl thành styleUrls

@@ -1,0 +1,48 @@
+<div class="container">
+    <h2>Lịch Sử Thao Tác</h2>
+  
+    <!-- Ô tìm kiếm duy nhất -->
+    <div class="search-form">
+      <div class="form-group">
+        <label for="searchTerm">Tìm kiếm:</label>
+        <input
+          id="searchTerm"
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="search()"
+          placeholder="Nhập mã đơn hàng, ID tài khoản hoặc tên tài khoản..."
+          class="form-control"
+        />
+      </div>
+    </div>
+  
+    <!-- Bảng hiển thị -->
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Mã Đơn Hàng</th>
+          <th>Tài Khoản ID</th>
+          <th>Tên Tài Khoản</th>
+          <th>Thao Tác</th>
+          <th>Trạng Thái Cũ</th>
+          <th>Trạng Thái Mới</th>
+          <th>Thời Gian Thao Tác</th>
+          <th>Ghi Chú</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredLichSuThaoTacs">
+          <td>{{ item.id }}</td>
+          <td>{{ item.maDonHang }}</td>
+          <td>{{ item.taiKhoanId }}</td>
+          <td>{{ item.tenTaiKhoan }}</td>
+          <td>{{ item.thaoTac }}</td>
+          <td>{{ item.trangThaiCu }}</td>
+          <td>{{ item.trangThaiMoi }}</td>
+          <td>{{ item.thoiGianThaoTac | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td>{{ item.ghiChu }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>

@@ -64,6 +64,12 @@ export class TokenService {
 
 
 
+// Get tenDangNhap
+getTenDangNhap(): string {
+  const userInfo = this.getUserInfo();
+  return userInfo ? userInfo.tenDangNhap : '';
+}
+
   isTokenExpired(): boolean {
     const token = this.getToken();
     if (!token) {

@@ -1,0 +1,95 @@
+.container {
+    margin-top: 20px;
+    max-width: 1200px;
+  }
+  
+  .search-bar {
+    margin-bottom: 20px;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table th, .table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  .table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  .table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .table tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  pagination-controls {
+    margin-top: 20px;
+    text-align: center;
+  }
+  /* Style the search form container */
+.search-form {
+    max-width: 600px; /* Maximum width for the form */
+    margin: 20px auto; /* Center align the form with margin */
+    padding: 15px;
+    background-color: #f9f9f9; /* Light background color for the form */
+    border-radius: 8px; /* Rounded corners for the form */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
+  }
+  
+  /* Style for the label of the input */
+  .search-form .form-group label {
+    font-size: 16px; /* Font size for the label */
+    color: #333; /* Dark text color */
+    margin-bottom: 8px; /* Space between label and input */
+    display: block; /* Make label block-level for better alignment */
+  }
+  
+  /* Style for the input field */
+  .search-form .form-group input {
+    width: 100%; /* Make the input fill the container */
+    padding: 10px; /* Padding inside the input */
+    font-size: 14px; /* Font size for the text inside input */
+    border: 1px solid #ccc; /* Light border for the input */
+    border-radius: 4px; /* Rounded corners for the input */
+    transition: all 0.3s ease; /* Smooth transition for focus effect */
+  }
+  
+  /* Input field focus effect */
+  .search-form .form-group input:focus {
+    outline: none; /* Remove the default focus outline */
+    border-color: #007bff; /* Blue border on focus */
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3); /* Light shadow for focus */
+  }
+  
+  /* Placeholder styling */
+  .search-form .form-group input::placeholder {
+    color: #aaa; /* Lighter placeholder text color */
+    font-style: italic; /* Italicize the placeholder text */
+  }
+  
+  /* Optional style for responsiveness */
+  @media (max-width: 600px) {
+    .search-form {
+      padding: 10px;
+    }
+  
+    .search-form .form-group input {
+      font-size: 16px; /* Larger font size for mobile */
+    }
+  }
+  

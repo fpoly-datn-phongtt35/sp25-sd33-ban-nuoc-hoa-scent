@@ -80,7 +80,14 @@
           <i class="bi bi-people"></i> Khách hàng
         </a>
       </li>
-
+      <li class="nav-item mb-3">
+        <a
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'ls','disabled-link': userRole === 'STAFF'}"
+          (click)="showComponent('ls')">
+          <i class="bi bi-person"></i>Lịch Sử
+        </a>
+      </li>
       <!-- Đăng xuất -->
       <li class="nav-item mb-3">
         <a
@@ -102,7 +109,7 @@
       <app-product-admin *ngSwitchCase="'products'"></app-product-admin>
       <app-user-admin *ngSwitchCase="'staff'"></app-user-admin>
       <app-customer *ngSwitchCase="'customer'"></app-customer>
-
+<app-lichsuthaotac *ngSwitchCase="'ls'"></app-lichsuthaotac>
     </ng-container>
   </div>
 </div>

@@ -1,6 +1,6 @@
-import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -9,30 +9,18 @@ import { Router } from '@angular/router';
 import { DonhangService } from '../../../service/donhang.service';
 import { OrderDetaiComponent } from '../order-detail/order-detail.component';
 import { HoadonComponent } from '../../../hoadon/hoadon.component';
-
+import { TokenService } from '../../../service/token.service'; // Import TokenService
 
 @Component({
   selector: 'app-invoice',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule,
-    OrderDetaiComponent // ✅ Bắt buộc
-  ],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, OrderDetaiComponent],
   templateUrl: './invoice.component.html',
-  styleUrl: './invoice.component.scss',
-  providers: [NgbActiveModal]
+  styleUrls: ['./invoice.component.scss'],
+  providers: [NgbActiveModal],
 })
 export class InvoiceComponent implements OnInit {
-  getPaymentMethod(method: string): string {
-    const normalized = method?.toLowerCase(); // chuyển về viết thường
-
-    switch (normalized) {
-      case 'ck': return ' Chuyển khoản';
-      case 'tienmat': return ' Tiền mặt';
-      case 'momo': return ' Ví MoMo';
-      case 'tm': return ' Tiền mặt';
-      default: return '❓ Không rõ';
-    }
-  }
+  lichSuThaoTac: any[] = [];
   orders: any[] = [];
   selectedStatus: number | null = null;
   orderId: number | null = null;
@@ -44,7 +32,9 @@ export class InvoiceComponent implements OnInit {
   cancellationReason: string | null = null;
   cancellationReasons: { [key: number]: string } = {};
   showPagination: boolean = false;
-  selectedOrder: any = null; // Đã có sẵn
+  selectedOrder: any = null;
+  userID: number | null = null; // Store userID
+  tenDangNhap: string | null = null; // Store tenDangNhap
 
   keyToStatus: Record<string, number> = {
     pending: 1,
@@ -56,22 +46,62 @@ export class InvoiceComponent implements OnInit {
     cancelled: 5,
   };
 
-  constructor(private http: HttpClient, private donHangService: DonhangService, private modalService: NgbModal,private router: Router) {
+  constructor(
+    private http: HttpClient,
+    private donHangService: DonhangService,
+    private modalService: NgbModal,
+    private router: Router,
+    private tokenService: TokenService // Inject TokenService
+  ) {}
 
-  }
-  closeDetail() {
-    this.selectedOrder = null;
-  }
   ngOnInit(): void {
+    // Retrieve UserID and tenDangNhap from TokenService
+    const userInfo = this.tokenService.getUserInfo();
+    if (userInfo) {
+      this.userID = userInfo.UserID; // Updated to UserID
+      this.tenDangNhap = userInfo.sub;
+      console.log('UserID:', this.userID);
+      console.log('tenDangNhap:', this.tenDangNhap);
+    } else {
+      console.error('User not logged in or token invalid');
+      this.showErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      setTimeout(() => {
+        this.router.navigate(['/login']);
+      }, 3000);
+      return;
+    }
 
     this.loadCustomers();
     this.filteredDonhang = this.orders;
   }
+
+  onRowClick(order: any) {
+    this.selectedOrder = order;
+    this.loadLichSuThaoTac(order.id);
+  }
+
+  closeDetail() {
+    this.selectedOrder = null;
+  }
+
+  loadLichSuThaoTac(maDonHang: number) {
+    this.donHangService.getLichSuThaoTac(maDonHang).subscribe({
+      next: (response) => {
+        this.lichSuThaoTac = response;
+        console.log('Lịch sử thao tác:', this.lichSuThaoTac);
+      },
+      error: (error) => {
+        console.error('Error loading lịch sử thao tác', error);
+        this.showErrorMessage('Không thể tải lịch sử thao tác.');
+      },
+    });
+  }
+
   applySearch(): void {
     const keyword = this.searchKeyword.toLowerCase().trim();
     const statusCode = this.selectedStatus;
 
-    this.filteredDonhang = this.orders.filter(order => {
+    this.filteredDonhang = this.orders.filter((order) => {
       const matchesKeyword =
         keyword === '' ||
         order.id?.toString().includes(keyword) ||
@@ -88,17 +118,12 @@ export class InvoiceComponent implements OnInit {
     });
   }
 
-  onRowClick(order: any) {
-    this.selectedOrder = order;
-  }
-
-
   confirmStatusChange(order: any) {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
 
-    if (order.selectedStatus === 2 || order.selectedStatus === 6  && nextStatus === 3) {
+    if ((order.selectedStatus === 2 || order.selectedStatus === 6) && nextStatus === 3) {
       const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
       modalRef.componentInstance.orderData = order;
       modalRef.result.then(
@@ -122,7 +147,7 @@ export class InvoiceComponent implements OnInit {
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'OK',
-        cancelButtonText: 'Hủy'
+        cancelButtonText: 'Hủy',
       }).then((result) => {
         if (result.isConfirmed) {
           this.updateStatus(order.id, nextStatus);
@@ -130,22 +155,27 @@ export class InvoiceComponent implements OnInit {
         }
       });
     }
+
     if (order.selectedStatus === 3) {
       this.selectShippingOption(order.id);
       return;
     }
   }
+
   openInvoiceModal(order: any) {
     const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
-    modalRef.componentInstance.order = order; // Truyền dữ liệu đơn hàng vào modal
-    modalRef.result.then((result) => {
-      if (result === 'printed') {
-        this.updateStatus(order.id, 3); // Cập nhật trạng thái sang "Đang giao"
+    modalRef.componentInstance.order = order;
+    modalRef.result.then(
+      (result) => {
+        if (result === 'printed') {
+          this.updateStatus(order.id, 3);
+        }
+      },
+      (reason) => {
+        // Handle if invoice printing fails
       }
-    }, (reason) => {
-      // Xử lý nếu không in được hóa đơn
-    });
-}
+    );
+  }
 
   requestCancellationReason(orderId: number): void {
     Swal.fire({
@@ -155,7 +185,7 @@ export class InvoiceComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'OK',
       cancelButtonText: 'Hủy',
-    }).then(result => {
+    }).then((result) => {
       if (result.isConfirmed && result.value.trim() !== '') {
         this.updateStatusWithReason(orderId, 5, result.value);
       } else if (result.isConfirmed) {
@@ -170,36 +200,48 @@ export class InvoiceComponent implements OnInit {
       input: 'select',
       inputOptions: {
         '1': '✅ Đã Nhận Hàng (Hoàn thành)',
-        '2': '❌ Hủy Đơn (Khách không nhận)'
+        '2': '❌ Hủy Đơn (Khách không nhận)',
       },
       inputPlaceholder: 'Chọn hành động',
       showCancelButton: true,
       confirmButtonText: 'OK',
       cancelButtonText: 'Hủy',
-    }).then(result => {
+    }).then((result) => {
       if (result.isConfirmed) {
         const choice = result.value;
         if (choice === '1') this.updateStatus(orderId, 4);
         else if (choice === '2') this.requestCancellationReason(orderId);
-        else this.showErrorMessage("Vui lòng chọn một hành động hợp lệ.");
+        else this.showErrorMessage('Vui lòng chọn một hành động hợp lệ.');
       }
     });
   }
 
-  updateStatus(orderId: number, newStatus: number) {
-    const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}?trangThai=${newStatus}`;
-    this.http.put(url, {}).subscribe(
-      response => {
-        const order = this.orders.find(o => o.id === orderId);
+  updateStatus(orderId: number, newStatus: number, ghiChu?: string) {
+    if (!this.userID || !this.tenDangNhap) {
+      this.showErrorMessage('User not logged in or token invalid.');
+      return;
+    }
+
+    const params = {
+      trangThai: newStatus,
+      userID: this.userID,
+      tenDangNhap: this.tenDangNhap,
+      ghiChu: ghiChu || undefined, // Optional
+    };
+
+    const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}`;
+    this.http.put(url, {}, { params }).subscribe(
+      (response) => {
+        const order = this.orders.find((o) => o.id === orderId);
         if (order) {
-          console.log(`Successfully updated status for order ${orderId} to ${status}`, response);
-      // Cập nhật giao diện nếu cần
+          console.log(`Successfully updated status for order ${orderId} to ${newStatus}`, response);
           order.selectedStatus = newStatus;
+          this.loadLichSuThaoTac(orderId);
         }
         this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('Cập nhật thành công!', '', 'success');
       },
-      error => {
+      (error) => {
         console.error('Error updating status', error);
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       }
@@ -207,18 +249,31 @@ export class InvoiceComponent implements OnInit {
   }
 
   updateStatusWithReason(orderId: number, newStatus: number, cancellationReason: string) {
-    const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}?trangThai=${newStatus}&lyDoHuy=${encodeURIComponent(cancellationReason)}`;
-    this.http.put(url, {}).subscribe(
-      response => {
-        const order = this.orders.find(o => o.id === orderId);
+    if (!this.userID || !this.tenDangNhap) {
+      this.showErrorMessage('User not logged in or token invalid.');
+      return;
+    }
+
+    const params = {
+      trangThai: newStatus,
+      userID: this.userID,
+      tenDangNhap: this.tenDangNhap,
+      lyDoHuy: cancellationReason,
+    };
+
+    const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}`;
+    this.http.put(url, {}, { params }).subscribe(
+      (response) => {
+        const order = this.orders.find((o) => o.id === orderId);
         if (order) {
           order.selectedStatus = newStatus;
           order.lyDoHuy = cancellationReason;
+          this.loadLichSuThaoTac(orderId);
         }
         this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('✅ Thành công', 'Đơn hàng đã được hủy!', 'success');
       },
-      error => {
+      (error) => {
         console.error('Error updating status', error);
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       }
@@ -232,87 +287,95 @@ export class InvoiceComponent implements OnInit {
       text: message,
       position: 'bottom-end',
       showConfirmButton: false,
-      timer: 3000
+      timer: 3000,
     });
   }
 
-  // xemChiTietTaiKhoan(order: any) {
-  //   const modalRef = this.modalService.open(UserDetailOrderComponent);
-  //   modalRef.componentInstance.taiKhoan = order.taiKhoan;
-  // }
-
-  // openDetailModal(order: any) {
-  //   const modalRef = this.modalService.open(OrderDetaiAdminComponent, { size: 'lg' });
-  //   modalRef.componentInstance.order = order;
-  // }
-
   loadCustomers(): void {
-
     this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
       next: (response) => {
         this.orders = response.map((order: any) => ({
           ...order,
           selectedStatus: order.trangThai,
-
         }));
         console.log(this.orders);
         this.filterOrders(this.selectedStatus !== null ? this.selectedStatus.toString() : '');
-        // ❌ Không cần dòng này nữa: this.filteredDonhang = this.orders;
       },
-      error: (error: any) => console.error('Error loading orders', error)
+      error: (error: any) => console.error('Error loading orders', error),
     });
   }
-
 
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? null;
     this.selectedStatus = statusCode;
-    this.applySearch(); // chỉ gọi applySearch để lọc đúng theo cả trạng thái và từ khóa
+    this.applySearch();
   }
-
-
 
   getFilterKey(status: number): string {
     switch (status) {
-      case 1: return 'pending';
-      case 2: return 'processed';
-      case 3: return 'shipping';
-      case 4: return 'completed';
-      case 5: return 'cancelled';
-      case 6: return 'prepaid';
-      default: return '';
+      case 1:
+        return 'pending';
+      case 2:
+        return 'processed';
+      case 3:
+        return 'shipping';
+      case 4:
+        return 'completed';
+      case 5:
+        return 'cancelled';
+      case 6:
+        return 'prepaid';
+      default:
+        return '';
     }
   }
 
   getStatusStyle(status: number) {
     switch (status) {
-      case 1: return { 'color': 'red', 'font-weight': 'bold' };
-      case 2: return { 'color': 'blue', 'font-weight': 'bold' };
-      case 3: return { 'color': 'rgb(159, 159, 6)', 'font-weight': 'bold' };
-      case 4: return { 'color': 'white', 'background-color': 'green', 'font-weight': 'bold' };
-      case 5: return { 'color': 'black', 'background-color': 'lightgray', 'font-weight': 'bold' };
-      case 6: return { 'color': 'white', 'background-color': 'grey', 'font-weight': 'bold' };
-      default: return {};
+      case 1:
+        return { color: 'red', 'font-weight': 'bold' };
+      case 2:
+        return { color: 'blue', 'font-weight': 'bold' };
+      case 3:
+        return { color: 'rgb(159, 159, 6)', 'font-weight': 'bold' };
+      case 4:
+        return { color: 'white', 'background-color': 'green', 'font-weight': 'bold' };
+      case 5:
+        return { color: 'black', 'background-color': 'lightgray', 'font-weight': 'bold' };
+      case 6:
+        return { color: 'white', 'background-color': 'grey', 'font-weight': 'bold' };
+      default:
+        return {};
     }
   }
 
   getNextStatusText(currentStatus: number, isCK: boolean): string {
     switch (currentStatus) {
-      case 1: return 'Đã Xác Nhận';
-      case 2: return 'Đang Giao';
-      case 3: return 'Đã Hoàn Thành';
-      case 6: return 'Đang Giao';
-      default: return 'Không xác định';
+      case 1:
+        return 'Đã Xác Nhận';
+      case 2:
+        return 'Đang Giao';
+      case 3:
+        return 'Đã Hoàn Thành';
+      case 6:
+        return 'Đang Giao';
+      default:
+        return 'Không xác định';
     }
   }
 
   getNextStatusCode(currentStatus: number, isCK: boolean): number {
     switch (currentStatus) {
-      case 1: return isCK ? 6 : 2;
-      case 2: return 3;
-      case 3: return 4;
-      case 6: return 3;
-      default: return currentStatus;
+      case 1:
+        return isCK ? 6 : 2;
+      case 2:
+        return 3;
+      case 3:
+        return 4;
+      case 6:
+        return 3;
+      default:
+        return currentStatus;
     }
   }
 
@@ -349,4 +412,19 @@ export class InvoiceComponent implements OnInit {
     return range;
   }
 
+  getPaymentMethod(method: string): string {
+    const normalized = method?.toLowerCase();
+    switch (normalized) {
+      case 'ck':
+        return ' Chuyển khoản';
+      case 'tienmat':
+        return ' Tiền mặt';
+      case 'momo':
+        return ' Ví MoMo';
+      case 'tm':
+        return ' Tiền mặt';
+      default:
+        return '❓ Không rõ';
+    }
+  }
 }
