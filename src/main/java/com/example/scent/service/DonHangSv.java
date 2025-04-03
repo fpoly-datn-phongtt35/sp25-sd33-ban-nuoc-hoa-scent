@@ -176,7 +176,9 @@ LichSuThaoTacInterface lichSuThaoTacInterface;
             // Tìm mã giảm giá
             phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
-
+            if (phieuGiamGia.getDieuKienapDung() != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng offline!");
+            }
             // Kiểm tra thời gian hiệu lực
             LocalDateTime now = LocalDateTime.now();
             if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
@@ -705,7 +707,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
             // Chỉ cho phép áp dụng phiếu giảm giá có dieuKienapDung = 0 (offline)
             if (phieuGiamGia.getDieuKienapDung() != 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng offline!");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng online!");
             }
 
             // Không kiểm tra thời gian hiệu lực và số lượng vì đây là phiếu offline do nhân viên phát
