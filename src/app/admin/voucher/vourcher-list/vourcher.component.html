@@ -39,7 +39,9 @@
             <th>Ngày hết hạn</th>
 
             <th>Số lượng</th>
+            <th>Dùng cho luồng</th>
             <th>Giá trị tối đa sd</th>
+            
             <th>Chức năng</th>
           </tr>
         </thead>
@@ -51,6 +53,7 @@
             <td>{{ item.ngayBatDau }}</td>
             <td>{{ item.ngayHetHan }}</td>
             <td>{{ item.soLuong }}</td>
+            <td>{{ item.dieuKienapDung === 0 ? 'Offline' : 'Online' }}</td>
             <td>{{ item.gia_tri_toi_da }}</td>
 
             <td>

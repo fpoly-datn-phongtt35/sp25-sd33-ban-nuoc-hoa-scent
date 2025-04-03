@@ -1,38 +1,67 @@
 <div class="modal-header">
-  <h5 class="modal-title">Thêm Voucher</h5>
-  <button type="button" class="btn-close" (click)="closeModal()"></button>
-</div>
-
-<div class="modal-body">
-  <form [formGroup]="voucherForm">
+    <h5 class="modal-title">Thêm Voucher</h5>
+    <button type="button" class="btn-close" (click)="closeModal()"></button>
+  </div>
+  
+  <div class="modal-body">
+    <form [formGroup]="voucherForm">
       <div class="mb-3">
-          <label class="form-label">Mã giảm giá</label>
-          <input type="text" class="form-control" formControlName="maGiamGia">
+        <label class="form-label">Mã giảm giá</label>
+        <input type="text" class="form-control" formControlName="maGiamGia">
       </div>
       <div class="mb-3">
-          <label class="form-label">Giá trị</label>
-          <input type="number" class="form-control" formControlName="giaTriGiam">
+        <label class="form-label">Giá trị giảm</label>
+        <input
+          type="number"
+          class="form-control"
+          formControlName="giaTriGiam"
+          step="0.01"
+          min="0.1"
+          max="0.8"
+        />
+        <div class="text-danger mt-1" *ngIf="voucherForm.get('giaTriGiam')?.touched && voucherForm.get('giaTriGiam')?.invalid">
+          <div *ngIf="voucherForm.get('giaTriGiam')?.errors?.['required']">
+            Vui lòng nhập giá trị giảm.
+          </div>
+          <div *ngIf="voucherForm.get('giaTriGiam')?.errors?.['min'] || voucherForm.get('giaTriGiam')?.errors?.['max']">
+            Giá trị giảm phải từ 0.1 đến 0.8.
+          </div>
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Ngày bắt đầu</label>
+        <input type="date" class="form-control" formControlName="ngayBatDau">
       </div>
       <div class="mb-3">
-          <label class="form-label">Ngày bắt đầu</label>
-          <input type="date" class="form-control" formControlName="ngayBatDau">
+        <label class="form-label">Thời gian bắt đầu</label>
+        <input type="time" class="form-control" formControlName="gioPhutBatDau" min="00:00" max="23:59">
       </div>
       <div class="mb-3">
-          <label class="form-label">Thời gian bắt đầu</label>
-          <input type="time" class="form-control" formControlName="gioPhutBatDau" min="00:00" max="23:59">
+        <label class="form-label">Ngày hết hạn</label>
+        <input type="date" class="form-control" formControlName="ngayHetHan">
       </div>
       <div class="mb-3">
-          <label class="form-label">Ngày hết hạn</label>
-          <input type="date" class="form-control" formControlName="ngayHetHan">
+        <label class="form-label">Thời gian hết hạn</label>
+        <input type="time" class="form-control" formControlName="gioPhutHetHan" min="00:00" max="23:59">
       </div>
       <div class="mb-3">
-          <label class="form-label">Thời gian hết hạn</label>
-          <input type="time" class="form-control" formControlName="gioPhutHetHan" min="00:00" max="23:59">
+        <label class="form-label">Số lượng</label>
+        <input type="number" class="form-control" formControlName="soLuong" min="1">
       </div>
-  </form>
-</div>
-
-<div class="modal-footer">
-  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-  <button type="button" class="btn btn-primary" (click)="saveVoucher()">Lưu</button>
-</div>
+      <div class="mb-3">
+        <label class="form-label">Giá trị tối đa</label>
+        <input type="number" class="form-control" formControlName="gia_tri_toi_da" step="0.01" min="0">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Điều kiện áp dụng (giá trị đơn hàng tối thiểu) </label>
+        <p style="color: #878788;transition: all 0.3s ease">Nếu -- 0 : offline || 1 : online</p>
+        <input type="number" class="form-control" formControlName="dieuKienapDung" min="0" max="1">
+      </div>
+    </form>
+  </div>
+  
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+    <button type="button" class="btn btn-primary" (click)="saveVoucher()">Lưu</button>
+  </div>

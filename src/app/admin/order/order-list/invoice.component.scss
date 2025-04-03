@@ -1,4 +1,34 @@
-/* ==================== TABLE ==================== */
+/* ==================== TAB LAYOUT ==================== */
+.tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 5px;
+}
+
+.btn-outline-primary {
+  background-color: #fff;
+  border-color: #878788;
+  color: #878788;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary.active {
+  background-color: #33d3a6;
+  color: #fff;
+}
+
+.btn-outline-primary:hover {
+  background-color: #33d3a6;
+  color: #fff;
+  border-color: #03080f;
+}
+
+/* Ensure table styling remains consistent */
 .table th, .table td {
   min-width: 100px;
   white-space: nowrap;
@@ -34,7 +64,7 @@
   white-space: nowrap;
 }
 
-/* ==================== BUTTON ==================== */
+/* Keep existing button, filter, alert, and badge styles */
 button.btn-sm {
   transition: all 0.2s ease;
 }
@@ -44,9 +74,8 @@ button.btn-sm:hover {
   cursor: pointer;
 }
 
-/* ==================== LỌC ĐƠN HÀNG ==================== */
 .btn-custom {
-  background-color: #8c8e90;
+  background-color: #f2a306;
   color: white;
   font-weight: bold;
   padding: 10px 20px;
@@ -65,7 +94,7 @@ button.btn-sm:hover {
   background-color: #a8d8ed;
 }
 
-/* ==================== ALERT BOX ==================== */
+/* Alert box styles remain unchanged */
 .alert-box {
   background-color: #f0f8ff;
   border: 1px solid #007bff;
@@ -103,10 +132,10 @@ button.btn-sm:hover {
   right: 10px;
 }
 .alert-box .close:hover {
-  color: #0056b3;
+  color: #00b39e;
 }
 
-/* ==================== BADGE TRẠNG THÁI ==================== */
+/* Badge status styles remain unchanged */
 .badge-status {
   display: inline-block;
   padding: 6px 12px;
@@ -126,7 +155,6 @@ button.btn-sm:hover {
   opacity: 0.95;
 }
 
-/* === Tooltip cho badge === */
 .badge-status[title]:hover::after {
   content: attr(title);
   position: absolute;
@@ -141,7 +169,6 @@ button.btn-sm:hover {
   z-index: 999;
 }
 
-/* === Màu trạng thái cụ thể === */
 .status-warning {
   background-color: #fff3cd;
   color: #856404;

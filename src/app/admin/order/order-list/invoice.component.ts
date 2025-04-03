@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 import { DonhangService } from '../../../service/donhang.service';
 import { OrderDetaiComponent } from '../order-detail/order-detail.component';
 import { HoadonComponent } from '../../../hoadon/hoadon.component';
-import { TokenService } from '../../../service/token.service'; // Import TokenService
+import { TokenService } from '../../../service/token.service';
 
 @Component({
   selector: 'app-invoice',
@@ -20,7 +20,6 @@ import { TokenService } from '../../../service/token.service'; // Import TokenSe
   providers: [NgbActiveModal],
 })
 export class InvoiceComponent implements OnInit {
-  lichSuThaoTac: any[] = [];
   orders: any[] = [];
   selectedStatus: number | null = null;
   orderId: number | null = null;
@@ -33,8 +32,9 @@ export class InvoiceComponent implements OnInit {
   cancellationReasons: { [key: number]: string } = {};
   showPagination: boolean = false;
   selectedOrder: any = null;
-  userID: number | null = null; // Store userID
-  tenDangNhap: string | null = null; // Store tenDangNhap
+  userID: number | null = null;
+  tenDangNhap: string | null = null;
+  @Input() selectedTab: string = 'online'; // Nhận selectedTab từ HomeAdminComponent
 
   keyToStatus: Record<string, number> = {
     pending: 1,
@@ -46,19 +46,24 @@ export class InvoiceComponent implements OnInit {
     cancelled: 5,
   };
 
+  // Define allowed statuses for each tab
+  private allowedStatuses: { [key: string]: number[] } = {
+    online: [1, 2, 3, 4, 5, 6], // All statuses including 6 for Online
+    offline: [4, 5], // Only "Hoàn thành" (4) and "Hủy" (5) for Offline
+  };
+
   constructor(
     private http: HttpClient,
     private donHangService: DonhangService,
     private modalService: NgbModal,
     private router: Router,
-    private tokenService: TokenService // Inject TokenService
+    private tokenService: TokenService
   ) {}
 
   ngOnInit(): void {
-    // Retrieve UserID and tenDangNhap from TokenService
     const userInfo = this.tokenService.getUserInfo();
     if (userInfo) {
-      this.userID = userInfo.UserID; // Updated to UserID
+      this.userID = userInfo.UserID;
       this.tenDangNhap = userInfo.sub;
       console.log('UserID:', this.userID);
       console.log('tenDangNhap:', this.tenDangNhap);
@@ -72,25 +77,30 @@ export class InvoiceComponent implements OnInit {
     }
 
     this.loadCustomers();
-    this.filteredDonhang = this.orders;
+    this.applySearch(); // Áp dụng lọc ngay khi khởi tạo với selectedTab
+  }
+
+  // Chuyển tab và lọc đơn hàng
+  switchTab(tab: string): void {
+    this.selectedTab = tab; // Cập nhật selectedTab
+    this.applySearch(); // Gọi lại applySearch để lọc đơn hàng theo tab
   }
 
   onRowClick(order: any) {
     this.selectedOrder = order;
-   
   }
 
   closeDetail() {
     this.selectedOrder = null;
   }
 
-  
-
   applySearch(): void {
     const keyword = this.searchKeyword.toLowerCase().trim();
     const statusCode = this.selectedStatus;
+    const allowedStatuses = this.allowedStatuses[this.selectedTab] || [];
 
     this.filteredDonhang = this.orders.filter((order) => {
+      // Lọc theo từ khóa
       const matchesKeyword =
         keyword === '' ||
         order.id?.toString().includes(keyword) ||
@@ -101,9 +111,17 @@ export class InvoiceComponent implements OnInit {
         order.phuongThucThanhToan?.toLowerCase().includes(keyword) ||
         order.taiKhoan?.tenDangNhap?.toLowerCase().includes(keyword);
 
+      // Lọc theo trạng thái
       const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
 
-      return matchesKeyword && matchesStatus;
+      // Lọc theo tab Online/Offline (luongBan: 1 là Online, 0 là Offline)
+      const isOnline = order.luongBan === 1;
+      const matchesTab = this.selectedTab === 'online' ? isOnline : !isOnline;
+
+      // Lọc theo trạng thái được phép cho tab hiện tại
+      const matchesAllowedStatus = allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
+
+      return matchesKeyword && matchesStatus && matchesTab && matchesAllowedStatus;
     });
   }
 
@@ -117,12 +135,8 @@ export class InvoiceComponent implements OnInit {
       modalRef.componentInstance.orderData = order;
       modalRef.result.then(
         (result) => {
-          console.log('Modal result:', result);
           if (result === 'confirm') {
             this.updateStatus(order.id, nextStatus);
-            console.log(`Updated status to ${nextStatus} for order ${order.id}`);
-          } else {
-            console.log('Modal did not return "confirm", status not updated');
           }
         },
         (reason) => {
@@ -140,7 +154,6 @@ export class InvoiceComponent implements OnInit {
       }).then((result) => {
         if (result.isConfirmed) {
           this.updateStatus(order.id, nextStatus);
-          console.log(`Updated status to ${nextStatus} for order ${order.id}`);
         }
       });
     }
@@ -160,9 +173,7 @@ export class InvoiceComponent implements OnInit {
           this.updateStatus(order.id, 3);
         }
       },
-      (reason) => {
-        // Handle if invoice printing fails
-      }
+      (reason) => {}
     );
   }
 
@@ -215,7 +226,7 @@ export class InvoiceComponent implements OnInit {
       trangThai: newStatus,
       userID: this.userID,
       tenDangNhap: this.tenDangNhap,
-      ghiChu: ghiChu || undefined, // Optional
+      ghiChu: ghiChu || undefined,
     };
 
     const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}`;
@@ -223,11 +234,10 @@ export class InvoiceComponent implements OnInit {
       (response) => {
         const order = this.orders.find((o) => o.id === orderId);
         if (order) {
-          console.log(`Successfully updated status for order ${orderId} to ${newStatus}`, response);
           order.selectedStatus = newStatus;
-          
         }
-        this.filterOrders(this.getFilterKey(newStatus));
+        this.applySearch(); // Cập nhật filteredDonhang sau khi thay đổi trạng thái
+        this.filterOrders(this.getFilterKey(newStatus)); // Jump to the new status filter
         Swal.fire('Cập nhật thành công!', '', 'success');
       },
       (error) => {
@@ -257,9 +267,9 @@ export class InvoiceComponent implements OnInit {
         if (order) {
           order.selectedStatus = newStatus;
           order.lyDoHuy = cancellationReason;
-          
         }
-        this.filterOrders(this.getFilterKey(newStatus));
+        this.applySearch(); // Cập nhật filteredDonhang sau khi thay đổi trạng thái
+        this.filterOrders(this.getFilterKey(newStatus)); // Jump to the new status filter
         Swal.fire('✅ Thành công', 'Đơn hàng đã được hủy!', 'success');
       },
       (error) => {
@@ -286,9 +296,10 @@ export class InvoiceComponent implements OnInit {
         this.orders = response.map((order: any) => ({
           ...order,
           selectedStatus: order.trangThai,
+          
         }));
-        console.log(this.orders);
-        this.filterOrders(this.selectedStatus !== null ? this.selectedStatus.toString() : '');
+        console.log('du liệu đơn hàng',this.orders)
+        this.applySearch(); // Lọc ngay sau khi tải dữ liệu
       },
       error: (error: any) => console.error('Error loading orders', error),
     });
@@ -334,7 +345,7 @@ export class InvoiceComponent implements OnInit {
       case 6:
         return { color: 'white', 'background-color': 'grey', 'font-weight': 'bold' };
       default:
-        return {'text-decoration': 'none'};
+        return { 'text-decoration': 'none' };
     }
   }
 

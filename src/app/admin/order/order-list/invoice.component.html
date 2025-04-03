@@ -4,13 +4,24 @@
     <input class="form-control w-50" type="text" placeholder="🔍 Tìm kiếm..." [(ngModel)]="searchKeyword" (input)="applySearch()" />
   </div>
 
+  <!-- 🌐 Tab Online/Offline (Moved to Top) -->
+  <div class="btn-group mb-3" role="group">
+    <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'online'}" (click)="switchTab('online')">Online</button>
+    <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'offline'}" (click)="switchTab('offline')">Offline</button>
+  </div>
+
   <!-- ✅ Bộ lọc trạng thái -->
   <div class="btn-group mb-4" role="group">
+    <!-- Common filter for both tabs -->
     <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
-    <button class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
-    <button class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
-    <button class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
-    <button class="btn btn-outline-dark" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+
+    <!-- Filters for Online tab only -->
+    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
+    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
+    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
+    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-dark" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+
+    <!-- Common filters for both tabs, but restricted to Offline's allowed statuses -->
     <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
     <button class="btn btn-outline-danger" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Hủy</button>
   </div>
@@ -36,67 +47,44 @@
         <td>{{ order.sdtNguoiNhan }}</td>
         <td>{{ getPaymentMethod(order.phuongThucThanhToan) }}</td>
         <td>{{ order.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</td>
-
         <td>
           <ng-container [ngSwitch]="order.selectedStatus">
-
             <!-- 1. Chờ xác nhận -->
-            <div *ngSwitchCase="1"
-                 class="badge-status status-warning"
-                 title="Click để xác nhận đơn"
-                 (click)="confirmStatusChange(order)">
+            <div *ngSwitchCase="1" class="badge-status status-warning" title="Click để xác nhận đơn" (click)="confirmStatusChange(order)">
               {{ order.phuongThucThanhToan?.toLowerCase().includes('ck') ? '💳 Chờ Thanh Toán' : '🕒 Chờ Xác Nhận' }}
             </div>
-
+          
             <!-- 2. Đã xác nhận -->
-            <div *ngSwitchCase="2"
-                 class="badge-status status-success"
-                 title="Click để chuyển sang đang giao"
-                 (click)="confirmStatusChange(order)">
+            <div *ngSwitchCase="2" class="badge-status status-success" title="Click để chuyển sang đang giao" (click)="confirmStatusChange(order)">
               ✅ Đã Xác Nhận
             </div>
-
+          
             <!-- 3. Đang giao -->
-            <div *ngSwitchCase="3"
-                 class="badge-status status-info"
-                 title="Click để hoàn thành hoặc hủy đơn"
-                 (click)="confirmStatusChange(order)">
+            <div *ngSwitchCase="3" class="badge-status status-info" title="Click để hoàn thành hoặc hủy đơn" (click)="confirmStatusChange(order)">
               🚚 Đang Giao
             </div>
-
+          
             <!-- 4. Hoàn thành -->
-            <div *ngSwitchCase="4"
-                 class="badge-status status-secondary disabled"
-                 title="Đơn hàng đã hoàn tất">
+            <div *ngSwitchCase="4" class="badge-status status-secondary disabled" title="Đơn hàng đã hoàn tất">
               🎉 Hoàn Thành
             </div>
-
+          
             <!-- 5. Hủy -->
-            <div *ngSwitchCase="5"
-                 class="badge-status status-danger disabled"
-                 title="Đơn hàng đã bị hủy">
-              ❌ Hủy
-            </div>  {{ order.lyDoHuy }}
-
+            <div *ngSwitchCase="5" class="badge-status status-danger disabled" title="Đơn hàng đã bị hủy">
+              ❌ Hủy {{ order.lyDoHuy }}
+            </div>
+          
             <!-- 6. Đã thanh toán (CK) -->
-            <div *ngSwitchCase="6"
-                 class="badge-status status-dark"
-                 title="Click để xác nhận giao hàng"
-                 (click)="confirmStatusChange(order)">
+            <div *ngSwitchCase="6" class="badge-status status-dark" title="Click để xác nhận giao hàng" (click)="confirmStatusChange(order)">
               💰 Đã Thanh Toán
             </div>
-
           </ng-container>
         </td>
         <td>{{ order.luongBan === 0 ? 'Offline' : 'Online' }}</td>
-
-
-
         <td>
           <button class="btn btn-sm btn-outline-primary" (click)="onRowClick(order)">
             <i class="bi bi-eye"></i>
           </button>
-         
         </td>
       </tr>
     </tbody>
@@ -105,14 +93,7 @@
 
 <!-- ✅ Chi tiết đơn -->
 <div class="container mt-4" *ngIf="selectedOrder !== null">
-  <h3>Chi tiết đơn hàng #{{selectedOrder.id}}</h3>
-  <app-order-detai
-    [order]="selectedOrder"
-    (closeDetail)="closeDetail()"
-  ></app-order-detai>
-
-  <!-- Hiển thị lịch sử thao tác -->
- 
-
+  
+  <app-order-detai [order]="selectedOrder" [selectedTab]="selectedTab" (closeDetail)="closeDetail()"></app-order-detai>
   <button class="btn btn-secondary mt-3" (click)="closeDetail()">Đóng</button>
 </div>

@@ -6,19 +6,19 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   templateUrl: './order-detail.component.html',
   styleUrls: ['./order-detail.component.scss'],
   standalone: true,
-  imports: [CommonModule] // Thêm những module cần thiết
+  imports: [CommonModule]
 })
-export class OrderDetaiComponent  {
-  @Input() order: any; // ✅ Sửa tại đây
+export class OrderDetaiComponent {
+  @Input() order: any;
+  @Input() selectedTab: string = 'online'; // Thêm input để biết chế độ online/offline
   @Output() closeDetail = new EventEmitter<void>();
 
-  // Có thể dùng this.order để hiển thị dữ liệu
   close() {
     this.closeDetail.emit();
   }
-  getPaymentMethod(method: string): string {
-    const normalized = method?.toLowerCase(); // chuyển về viết thường
 
+  getPaymentMethod(method: string): string {
+    const normalized = method?.toLowerCase();
     switch (normalized) {
       case 'ck': return '💳 Chuyển khoản';
       case 'tienmat': return '💵 Tiền mặt';
@@ -26,7 +26,6 @@ export class OrderDetaiComponent  {
       default: return '❓ Không rõ';
     }
   }
-
 
   getOrderStatus(status: number): string {
     switch (status) {
@@ -39,5 +38,4 @@ export class OrderDetaiComponent  {
       default: return 'Không rõ';
     }
   }
-
 }

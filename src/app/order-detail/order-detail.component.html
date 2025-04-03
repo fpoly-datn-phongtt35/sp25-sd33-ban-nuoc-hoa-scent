@@ -14,10 +14,10 @@
       <!-- Thêm phần thông tin thanh toán -->
       <div class="payment-info">
         <h2>Thông Tin Thanh Toán</h2>
-        <p><strong>Tổng Tiền:</strong> </p>
-        <p><strong>Giảm Giá:</strong> </p>
-        <p><strong>Phí Vận Chuyển:</strong> </p>
-        <p class="total-amount"><strong>Thành Tiền:{{ orderDetails[0].tongTien }}</strong> </p>
+        
+        <p><strong>Giảm Giá::{{orderDetails.soTienGiam}}</strong> </p>
+        <p><strong>Phí Vận Chuyển::{{orderDetails.phiVanChuyen}}</strong> </p>
+        <p class="total-amount"><strong>Thành Tiền:{{orderDetails[0].tongTien | number}} vnđ</strong> </p>
       </div>
     </div>
 
