@@ -10,11 +10,11 @@ import { UserAdminComponent } from '../account/account-staff-list/user-admin.com
 import { ProductAdminComponent } from '../product/product-list/product-admin.component';
 import { VourcherComponent } from '../voucher/vourcher-list/vourcher.component';
 import { InvoiceComponent } from '../order/order-list/invoice.component';
-<<<<<<< Updated upstream
+
 import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.component';
-=======
+
 import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhangofffline.component';
->>>>>>> Stashed changes
+
 
 @Component({
   selector: 'app-home-admin',
@@ -28,13 +28,12 @@ import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhan
     VourcherComponent,
     StatisticsComponent,
     InvoiceComponent,
-<<<<<<< Updated upstream
-    LichsuthaotacComponent
-  ],
-=======
+
+    LichsuthaotacComponent,
+
     OfflineOrderComponent,
 ],
->>>>>>> Stashed changes
+
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'], // Sửa từ styleUrl thành styleUrls
 })
@@ -42,10 +41,15 @@ export class HomeAdminComponent implements OnInit {
   selectedComponent: string = 'invoice'; // Mặc định hiển thị trang dashboard
   selectedNav: string = 'invoice'; // Điều khiển mục active trên sidebar
   userRole: string | null = null; // Lưu vai trò người dùng
-
+  tenDangNhap: string | null = null;
+  userID: number | null = null;
   constructor(private tokenService: TokenService, private router: Router) {}
 
   ngOnInit(): void {
+    const userInfo = this.tokenService.getUserInfo();
+    this.tenDangNhap=userInfo;
+    this.userID = userInfo.UserID;
+    console.log('ngườI dùng vào là : ',this.tenDangNhap)
     // Lấy vai trò từ TokenService hoặc localStorage
     const role = this.tokenService.getRole(); // Hoặc lấy từ localStorage
     console.log('Vai trò người dùng:', role);

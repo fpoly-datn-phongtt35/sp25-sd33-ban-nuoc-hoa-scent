@@ -1,5 +1,5 @@
 <div class="container">
-  <h2>Bán hàng tại quầy</h2>
+  <h2 class="page-title">Bán hàng tại quầy</h2>
 
   <!-- Thông báo -->
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
@@ -18,65 +18,93 @@
     </div>
   </div>
 
-  <!-- Thông tin khách hàng -->
-  <div class="card customer-card">
-    <div class="row">
-      <div class="col-6">
-        <input [(ngModel)]="currentOrder.donHang.tenNguoiNhanHang" placeholder="Tên khách hàng" />
+  <!-- Nội dung chính -->
+  <div class="main-content">
+    <!-- Cột trái: Tìm kiếm sản phẩm và giỏ hàng -->
+    <div class="left-column">
+      <!-- Thông tin khách hàng -->
+      <div class="card customer-card">
+        <h4>Thông tin khách hàng</h4>
+        <div class="row">
+          <div class="col-6">
+            <input [(ngModel)]="currentOrder.donHang.tenNguoiNhanHang" placeholder="Tên khách hàng" class="form-control" />
+          </div>
+          <div class="col-6">
+            <input [(ngModel)]="currentOrder.donHang.sdtNguoiNhan" placeholder="Số điện thoại" class="form-control" />
+          </div>
+        </div>
       </div>
-      <div class="col-6">
-        <input [(ngModel)]="currentOrder.donHang.sdtNguoiNhan" placeholder="Số điện thoại" />
-      </div>
-    </div>
-  </div>
 
-  <!-- Tìm kiếm sản phẩm -->
-  <div class="card product-card">
-    <input [(ngModel)]="searchKeyword" (ngModelChange)="onSearchInput()" placeholder="🔍 Tìm kiếm sản phẩm" />
-    <div class="product-list" *ngIf="products.length > 0">
-      <div class="row">
-        <div class="col-4" *ngFor="let product of products">
-          <div class="product-item" (click)="openQuantityModal(product)">
-            <img [src]="product.urlImage || 'assets/placeholder.png'" alt="{{ product.tenSanPham }}" />
-            <div class="product-info">
-              <span>{{ product.tenSanPham }}</span>
-              <span>{{ product.dungTich || 'N/A' }}ml</span>
-              <span>{{ product.donGia | number }} VNĐ</span>
+      <!-- Tìm kiếm sản phẩm -->
+      <div class="card product-card">
+        <h4>Tìm kiếm sản phẩm</h4>
+        <input [(ngModel)]="searchKeyword" (ngModelChange)="onSearchInput()" placeholder="🔍 Tìm kiếm sản phẩm" class="form-control search-input" />
+        <div class="product-list" *ngIf="products.length > 0">
+          <div class="row">
+            <div class="col-4" *ngFor="let product of products">
+              <div class="product-item" (click)="openQuantityModal(product)">
+                <img [src]="product.urlImage || 'assets/placeholder.png'" alt="{{ product.tenSanPham }}" class="product-image" />
+                <div class="product-info">
+                  <span class="product-name">{{ product.tenSanPham }}</span>
+                  <span class="product-volume">{{ product.dungTich  }}ml</span>
+                  <span class="product-price">{{ product.donGia | number }} VNĐ</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+        <div *ngIf="products.length === 0 && !isLoading" class="no-result">Không tìm thấy sản phẩm</div>
       </div>
     </div>
-    <div *ngIf="products.length === 0 && !isLoading" class="no-result">Không tìm thấy sản phẩm</div>
-  </div>
 
-  <!-- Giỏ hàng -->
-  <div class="card cart-card">
-    <div class="cart-list" *ngIf="currentOrder.chiTietDonHangs.length > 0">
-      <div class="cart-item" *ngFor="let item of currentOrder.chiTietDonHangs; let i = index">
-        <span>{{ item.tenSanPham }} ({{ item.dungTich }}ml)</span>
-        <div class="cart-actions">
-          <div class="quantity-control">
-            <button (click)="decreaseQuantity(i)" [disabled]="item.soLuong <= 1">-</button>
-            <span>{{ item.soLuong }}</span>
-            <button (click)="increaseQuantity(i)">+</button>
-          </div>
-          <span>{{ item.thanhTien | number }} VNĐ</span>
-          <button class="btn-delete" (click)="removeProduct(i)">X</button>
-        </div>
+    <!-- Cột phải: Giỏ hàng và thanh toán -->
+    <div class="right-column">
+     <!-- Giỏ hàng -->
+<div class="card cart-card">
+  <h4>Giỏ hàng</h4>
+  <div class="cart-list" *ngIf="currentOrder.chiTietDonHangs.length > 0">
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Tên sản phẩm</th>
+          <th>Số lượng</th>
+          <th>Giá tiền</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of currentOrder.chiTietDonHangs; let i = index">
+          <td class="cart-item-name">{{ item.tenSanPham }} ({{ item.dungTich }}ml)</td>
+          <td>
+            <div class="quantity-control">
+              <button (click)="decreaseQuantity(i)" [disabled]="item.soLuong <= 1">-</button>
+              <span>{{ item.soLuong }}</span>
+              <button (click)="increaseQuantity(i)">+</button>
+              <span class="product-volume">{{ item.dungTich  }}ml</span>
+            </div>
+          </td>
+          <td class="cart-item-price">{{ item.thanhTien | number }} VNĐ</td>
+          <td>
+            <button class="btn-delete" (click)="removeProduct(i)">X</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div *ngIf="currentOrder.chiTietDonHangs.length === 0" class="no-result">Giỏ hàng trống</div>
+</div>
+
+      <!-- Thanh toán -->
+      <div class="card payment-card">
+        <h4>Thanh toán</h4>
+        <select [(ngModel)]="currentOrder.phuongThucThanhToan" class="form-control">
+          <option value="tm">Tiền mặt</option>
+          <option value="ck">Chuyển khoản</option>
+        </select>
+        <p class="total-price">Tổng: <strong>{{ totalBeforeDiscount  | number }} VNĐ</strong></p>
+        <button class="btn-submit" (click)="submitOrder()" [disabled]="isLoading">Xác nhận</button>
       </div>
     </div>
-    <div *ngIf="currentOrder.chiTietDonHangs.length === 0" class="no-result">Giỏ hàng trống</div>
-  </div>
-
-  <!-- Thanh toán -->
-  <div class="card payment-card">
-    <select [(ngModel)]="currentOrder.phuongThucThanhToan">
-      <option value="tm">Tiền mặt</option>
-      <option value="ck">Chuyển khoản</option>
-    </select>
-    <p>Tổng: <strong>{{ totalBeforeDiscount | number }} VNĐ</strong></p>
-    <button class="btn-submit" (click)="submitOrder()" [disabled]="isLoading">Xác nhận</button>
   </div>
 
   <!-- Quantity Modal -->
@@ -84,7 +112,7 @@
     <div class="modal-content">
       <h4>{{ selectedProduct?.tenSanPham }}</h4>
       <img [src]="selectedProduct?.urlImage || 'assets/placeholder.png'" alt="{{ selectedProduct?.tenSanPham }}" class="modal-image" />
-      <input type="number" [(ngModel)]="selectedQuantity" min="1" />
+      <input type="number" [(ngModel)]="selectedQuantity" min="1" class="form-control" />
       <div class="modal-actions">
         <button class="btn btn-confirm" (click)="confirmAddProduct()">Thêm</button>
         <button class="btn btn-cancel" (click)="closeQuantityModal()">Hủy</button>

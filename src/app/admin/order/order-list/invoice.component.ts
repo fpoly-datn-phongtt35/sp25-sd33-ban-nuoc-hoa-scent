@@ -77,25 +77,14 @@ export class InvoiceComponent implements OnInit {
 
   onRowClick(order: any) {
     this.selectedOrder = order;
-    this.loadLichSuThaoTac(order.id);
+   
   }
 
   closeDetail() {
     this.selectedOrder = null;
   }
 
-  loadLichSuThaoTac(maDonHang: number) {
-    this.donHangService.getLichSuThaoTac(maDonHang).subscribe({
-      next: (response) => {
-        this.lichSuThaoTac = response;
-        console.log('Lịch sử thao tác:', this.lichSuThaoTac);
-      },
-      error: (error) => {
-        console.error('Error loading lịch sử thao tác', error);
-        this.showErrorMessage('Không thể tải lịch sử thao tác.');
-      },
-    });
-  }
+  
 
   applySearch(): void {
     const keyword = this.searchKeyword.toLowerCase().trim();
@@ -236,7 +225,7 @@ export class InvoiceComponent implements OnInit {
         if (order) {
           console.log(`Successfully updated status for order ${orderId} to ${newStatus}`, response);
           order.selectedStatus = newStatus;
-          this.loadLichSuThaoTac(orderId);
+          
         }
         this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('Cập nhật thành công!', '', 'success');
@@ -268,7 +257,7 @@ export class InvoiceComponent implements OnInit {
         if (order) {
           order.selectedStatus = newStatus;
           order.lyDoHuy = cancellationReason;
-          this.loadLichSuThaoTac(orderId);
+          
         }
         this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('✅ Thành công', 'Đơn hàng đã được hủy!', 'success');
@@ -345,7 +334,7 @@ export class InvoiceComponent implements OnInit {
       case 6:
         return { color: 'white', 'background-color': 'grey', 'font-weight': 'bold' };
       default:
-        return {};
+        return {'text-decoration': 'none'};
     }
   }
 

@@ -112,30 +112,7 @@
   ></app-order-detai>
 
   <!-- Hiển thị lịch sử thao tác -->
-  <div class="mt-4">
-    <h4>Lịch sử thao tác</h4>
-    <table class="table table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>Thời gian</th>
-          <th>Tài khoản</th>
-          <th>Thao tác</th>
-          <th>Ghi chú</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let log of lichSuThaoTac">
-          <td>{{ log.thoiGian | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>{{ log.tenTaiKhoan }} (ID: {{ log.taiKhoanId }})</td>
-          <td>{{ log.thaoTac }}</td>
-          <td>{{ log.ghiChu || 'Không có' }}</td>
-        </tr>
-        <tr *ngIf="lichSuThaoTac.length === 0">
-          <td colspan="4" class="text-center">Chưa có lịch sử thao tác</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+ 
 
   <button class="btn btn-secondary mt-3" (click)="closeDetail()">Đóng</button>
 </div>

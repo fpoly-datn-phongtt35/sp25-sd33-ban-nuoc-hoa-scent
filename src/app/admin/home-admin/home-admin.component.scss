@@ -5,7 +5,9 @@
 }
 
 .sidebar {
+  height: 108vh; /* Chiều cao thanh bên bằng chiều cao màn hình */
   width: 250px;
+  
   background-color: #727375;
   color: white;
   display: flex;
@@ -36,6 +38,7 @@
 .menu {
   padding: 0;
   list-style: none;
+  flex-grow: 1;
 }
 
 .nav-item {
@@ -79,6 +82,7 @@
 }
 
 .col-md-10 {
+  height: 108vh;
   flex-grow: 1;
   background-color: #fff;
   overflow-y: auto;

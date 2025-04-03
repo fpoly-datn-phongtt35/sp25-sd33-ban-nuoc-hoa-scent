@@ -1,0 +1,41 @@
+<div class="modal-header">
+    <h4 class="modal-title">Hóa đơn #{{ orderData?.id }}</h4>
+    <button type="button" class="close" (click)="close()">&times;</button>
+  </div>
+  <div class="modal-body" id="invoice-content">
+    <div class="invoice">
+      <h2>HÓA ĐƠN BÁN HÀNG</h2>
+      <p><strong>Mã đơn hàng:</strong> {{ orderData?.orderId }}</p>
+      <p><strong>Ngày tạo:</strong> {{ orderData?.ngayTao }}</p>
+      <p><strong>Khách hàng:</strong> {{ orderData?.tenNguoiNhanHang }}</p>
+      <p><strong>Số điện thoại:</strong> {{ orderData?.sdtNguoiNhan }}</p>
+      <p><strong>Phương thức thanh toán:</strong> {{ orderData?.phuongThucThanhToan }}</p>
+  
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Tên sản phẩm</th>
+            <th>Dung tích</th>
+            <th>Số lượng</th>
+            <th>Đơn giá</th>
+            <th>Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of orderData?.chiTietDonHangs">
+            <td>{{ item.tenSanPham  }}</td>
+            <td>{{ item.dungTich }}ml</td>
+            <td>{{ item.soLuong }}</td>
+            <td>{{ item.donGia  }} VNĐ</td>
+            <td>{{ item.thanhTien  }} VNĐ</td>
+          </tr>
+        </tbody>
+      </table>
+  
+      <p class="total"><strong>Tổng cộng:</strong> {{ orderData?.total  }} VNĐ</p>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" (click)="exportToPDF()">In hóa đơn</button>
+    <button type="button" class="btn btn-secondary" (click)="close()">Đóng</button>
+  </div>
