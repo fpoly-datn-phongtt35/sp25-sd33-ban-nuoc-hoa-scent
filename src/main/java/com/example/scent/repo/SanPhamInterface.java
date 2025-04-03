@@ -1,9 +1,6 @@
 package com.example.scent.repo;
 
-import com.example.scent.dto.SanPhamDto;
-import com.example.scent.dto.SanPhamDungTich;
-import com.example.scent.dto.SanPhamInfoDTO;
-import com.example.scent.dto.SanPhammDTO;
+import com.example.scent.dto.*;
 import com.example.scent.entity.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -272,6 +269,28 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             @Param("tenThuongHieu") String tenThuongHieu,
             @Param("quocGia") String quocGia,
             Pageable pageable);
+    //
+    @Query("SELECT new com.example.scent.dto.SPTQDTO(" +
+            "sp.idSanPham, concat(sp.tenSanPham,' ', spct.dungTich, 'ml'), spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia, " +
+            "min(ha.link)) " +
+            "FROM SanPham sp " +
+            "LEFT JOIN Spct spct ON spct.sanPham.idSanPham = sp.idSanPham " +
+            "LEFT JOIN sp.thuongHieu th " +
+            "LEFT JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "LEFT JOIN sp.nhomHuong nh " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "WHERE (:keyword IS NULL OR " +
+            "sp.tenSanPham LIKE %:keyword% OR " +
+            "th.tenThuongHieu LIKE %:keyword% OR " +
+            "dm.tenDanhMuc LIKE %:keyword%) " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, spct.dungTich, spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia")
+    List<SPTQDTO> getALLSPQT(@Param("keyword") String keyword);
+
 }
 
 

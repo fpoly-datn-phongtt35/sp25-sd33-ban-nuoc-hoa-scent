@@ -24,22 +24,17 @@ public class DonHang {
     @Column(name = "id")
     private Integer id;
 
-    @NotEmpty(message = "Tên người nhận không được để trống")
-    @Size(max = 100, message = "Tên người nhận không được vượt quá 100 ký tự")
+
     @Column(name = "ten_nguoi_nhan_hang")
     private String tenNguoiNhanHang;
 
-    @NotEmpty(message = "Địa chỉ giao hàng không được để trống")
     @Column(name = "dia_chi_giao_hang")
     private String diaChiGiaoHang;
 
 //    @Column(name = "ma_van_don")
 //    private String maVanDon;
 
-    @NotEmpty(message = "SĐT người nhận không được để trống")
-    @Pattern(regexp = "^0.*$", message = "SĐT phải bắt đầu bằng số 0")
-    @Pattern(regexp = "^\\d+$", message = "SĐT phải chỉ chứa các chữ số")
-    @Pattern(regexp = "^\\d{10,11}$", message = "SĐT phải có từ 10 đến 11 chữ số")
+
     @Column(name = "sdt_nguoi_nhan")
     private String sdtNguoiNhan;
 
@@ -48,18 +43,17 @@ public class DonHang {
 //    @Column(name = "loai_don_hang")
 //    private String loaiDonHang;
 
-    @NotNull(message = "Tổng tiền không được để trống")
+
 
     @Column(name = "tong_tien", precision = 19, scale = 4)
     private BigDecimal tongTien;
     @Transient
     private BigDecimal soTienGiam;
 
-    @NotEmpty(message = "Phương thức vận chuyển không được để trống")
+
     @Column(name = "phuong_thuc_van_chuyen")
     private String phuongThucVanChuyen;
 
-    @NotNull(message = "Ngày tạo không được để trống")
 
     @Column(name = "ngay_tao")
     private LocalDateTime ngayTao;
@@ -70,7 +64,6 @@ public class DonHang {
     private Integer luongBan;
 
 
-    @NotNull(message = "Ngày vận chuyển không được để trống")
     @Column(name = "ngay_van_chuyen")
     private LocalDateTime ngayVanChuyen;
 

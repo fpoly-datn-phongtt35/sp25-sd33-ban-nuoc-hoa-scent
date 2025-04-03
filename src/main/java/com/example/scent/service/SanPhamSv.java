@@ -1,8 +1,5 @@
     package com.example.scent.service;
-    import com.example.scent.dto.SanPhamDto;
-    import com.example.scent.dto.SanPhamDungTich;
-    import com.example.scent.dto.SanPhamInfoDTO;
-    import com.example.scent.dto.SanPhammDTO;
+    import com.example.scent.dto.*;
     import com.example.scent.entity.HinhAnh;
     import com.example.scent.entity.SanPham;
     import com.example.scent.repo.HinhAnhInterface;
@@ -256,4 +253,7 @@
             return spi.searchSanPhamCombined(searchQuery, minPrice, maxPrice, tenDanhMuc, tenNhomHuong, tenThuongHieu, quocGia, pageable);
         }
 
+        public List<SPTQDTO> getALlSPTQ(String keyword) {
+           return spi.getALLSPQT(keyword);
+        }
     }

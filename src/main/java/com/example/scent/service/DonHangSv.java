@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.*;
 import com.example.scent.entity.*;
 import com.example.scent.repo.*;
+import com.example.scent.reques.OrderOfflineRequest;
 import com.example.scent.reques.PhiVanChuyenRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -590,6 +591,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         return false;  // Trả về false nếu không thể cập nhật trạng thái
     }
+<<<<<<< Updated upstream
 
     public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
         DonHang donHang = dhi.findById(maDonHang)
@@ -641,5 +643,129 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
             return 4; // Ví dụ: từ trạng thái 3 (Đang xử lý) sang 4 (Đang giao)
         }
         return trangThaiCu; // Giữ nguyên nếu không có thay đổi
+=======
+    public DonHang createOfflineOrderService(OrderOfflineRequest orderRequest) throws Exception {
+        // Validate the staff account
+        if (orderRequest.getIdTaiKhoan() == null) {
+            throw new RuntimeException("⚠️ Lỗi: ID tài khoản không được để trống!");
+        }
+
+        TaiKhoan taiKhoan = tki.findById(orderRequest.getIdTaiKhoan())
+                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
+
+        // Validate order items
+        if (orderRequest.getChiTietDonHangs() == null || orderRequest.getChiTietDonHangs().isEmpty()) {
+            throw new RuntimeException("⚠️ Lỗi: Danh sách sản phẩm không được để trống!");
+        }
+
+        // Validate payment method
+        if (orderRequest.getPhuongThucThanhToan() == null || orderRequest.getPhuongThucThanhToan().isEmpty()) {
+            throw new RuntimeException("⚠️ Lỗi: Phương thức thanh toán không được để trống!");
+        }
+
+        // Set creation date
+        LocalDateTime ngayTao = LocalDateTime.now();
+
+        // Calculate total amount and prepare order items
+        BigDecimal thanhTienGoc = BigDecimal.ZERO;
+        List<ChiTietDonHang> chiTietList = new ArrayList<>();
+
+        for (OrderIOfflinetemDto itemDTO : orderRequest.getChiTietDonHangs()) {
+            Spct spct = spc.findById(itemDTO.getSpctId())
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại với ID: " + itemDTO.getSpctId()));
+
+            if (itemDTO.getQuantity() <= 0) {
+                throw new RuntimeException("Số lượng sản phẩm phải lớn hơn 0. Sản phẩm ID: " + itemDTO.getSpctId());
+            }
+
+            if (itemDTO.getQuantity() > spct.getSoLuongTonKho()) {
+                throw new RuntimeException("Số lượng sản phẩm không đủ. Sản phẩm ID: " + itemDTO.getSpctId() + " chỉ còn " + spct.getSoLuongTonKho() + " sản phẩm.");
+            }
+
+            BigDecimal thanhTien = spct.getDonGia().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
+            thanhTienGoc = thanhTienGoc.add(thanhTien);
+
+            ChiTietDonHang chiTiet = new ChiTietDonHang();
+            chiTiet.setSpct(spct);
+            chiTiet.setSoLuong(itemDTO.getQuantity());
+            chiTiet.setDonGia(spct.getDonGia());
+            chiTiet.setThanhTien(thanhTien);
+
+            chiTietList.add(chiTiet);
+        }
+
+        // Apply discount if provided
+        BigDecimal thanhTienSauGiam = thanhTienGoc;
+        PhieuGiamGia phieuGiamGia = null;
+        BigDecimal soTienGiam = BigDecimal.ZERO;
+        if (orderRequest.getMaGiamGia() != null && !orderRequest.getMaGiamGia().isEmpty()) {
+            phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
+
+            LocalDateTime now = LocalDateTime.now();
+            if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
+            }
+
+            if (phieuGiamGia.getSoLuong() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết lượt sử dụng!");
+            }
+
+            List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
+            if (!donHangs.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
+            }
+
+            BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
+            soTienGiam = thanhTienGoc.multiply(phanTramGiam);
+
+            // Apply maximum discount if specified
+            if (phieuGiamGia.getGia_tri_toi_da() != null && soTienGiam.compareTo(phieuGiamGia.getGia_tri_toi_da()) > 0) {
+                soTienGiam = phieuGiamGia.getGia_tri_toi_da();
+            }
+
+            thanhTienSauGiam = thanhTienGoc.subtract(soTienGiam);
+            if (thanhTienSauGiam.compareTo(BigDecimal.ZERO) < 0) {
+                thanhTienSauGiam = BigDecimal.ZERO;
+            }
+        }
+
+        // Total amount (no shipping fee for counter order)
+        BigDecimal tongTien = thanhTienSauGiam;
+
+        // Create new order
+        DonHang newOrder = new DonHang();
+        newOrder.setTaiKhoan(taiKhoan);
+        newOrder.setTenNguoiNhanHang(orderRequest.getTenNguoiNhanHang());
+        newOrder.setSdtNguoiNhan(orderRequest.getSdtNguoiNhan());
+        newOrder.setPhuongThucThanhToan(orderRequest.getPhuongThucThanhToan());
+        newOrder.setNgayTao(ngayTao);
+        newOrder.setTrangThai(4); // Default status for counter order
+        newOrder.setGhiChu(orderRequest.getGhiChu());
+        newOrder.setTongTien(tongTien);
+        newOrder.setLuongBan(0); // Offline order
+
+        if (phieuGiamGia != null) {
+            newOrder.setPhieuGiamGia(phieuGiamGia);
+            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1); // Decrease the number of uses
+            phieuGiamGiaInterface.save(phieuGiamGia); // Update the discount voucher
+        }
+
+        // Save the order
+        DonHang savedOrder = dhi.save(newOrder);
+
+        // Associate order items with the saved order and update stock
+        for (ChiTietDonHang chiTiet : chiTietList) {
+            chiTiet.setDonHang(savedOrder);
+            Spct spct = chiTiet.getSpct();
+            spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong()); // Update stock
+            spc.save(spct); // Save the updated stock
+        }
+
+        cdh.saveAll(chiTietList);
+        savedOrder.setChiTietDonHangs(chiTietList);
+
+        return savedOrder;
+>>>>>>> Stashed changes
     }
 }
