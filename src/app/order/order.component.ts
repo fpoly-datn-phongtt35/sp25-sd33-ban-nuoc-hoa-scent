@@ -283,77 +283,94 @@ export class OrderComponent implements OnInit {
   }
  
   onDiscountCodeEntered(code: string | null) {
-    this.discountErrorMessage = ''; // Clear previous error message
+    this.discountErrorMessage = '';
 
     if (!code) {
-        this.discount = 0;
-        this.calculateTotals();
-        return;
+      this.discount = 0;
+      this.discountAmount = 0;
+      this.orderData.maGiamGia = '';
+      this.calculateTotals();
+      return;
     }
 
-    // Hiển thị loading indicator
     Swal.fire({
-        title: 'Đang kiểm tra mã giảm giá...',
-        text: 'Vui lòng chờ trong giây lát!',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
+      title: 'Đang kiểm tra mã giảm giá...',
+      text: 'Vui lòng chờ trong giây lát!',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
     });
 
-    // Gọi API để kiểm tra mã giảm giá
     this.phieugiamgiaService.getDiscountCodeDetails(code).subscribe({
-        next: (response) => {
-            Swal.close();
+      next: (response) => {
+        Swal.close();
 
-            // ✅ Tính số tiền được giảm
-            this.discountAmount = this.totalProductPrice * response.giaTriGiam;
+        // Kiểm tra điều kiện áp dụng (dieuKienapDung = 1 cho online, 0 cho offline)
+        if (response.dieuKienapDung !== 1) {
+          this.discountErrorMessage = '⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng offline!';
+          this.discount = 0;
+          this.discountAmount = 0;
+          this.orderData.maGiamGia = '';
+          this.calculateTotals();
 
-            // Kiểm tra giá trị tối đa của mã giảm giá (nếu có)
-            if (response.gia_tri_toi_da && this.discountAmount > response.gia_tri_toi_da) {
-                this.discountAmount = response.gia_tri_toi_da;
-            }
-
-            this.discount = this.discountAmount;
-            this.calculateTotals();
-
-            // Lưu vào localStorage để tránh sử dụng lại mã giảm giá cho tài khoản này
-            const userId = this.tokenService.getUserId();
-            localStorage.setItem(`discountUsed_${code}_${userId}`, 'true');
-
-            // Hiển thị thông báo thành công
-            Swal.fire({
-                title: 'Thành công!',
-                text: 'Mã giảm giá đã được áp dụng.',
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            });
-        },
-        error: (err) => {
-            Swal.close();
-            console.error('❌ Lỗi khi áp dụng mã:', err);
-
-            // Lấy thông điệp lỗi từ backend
-            let errorMessage = '⚠️ Có lỗi xảy ra khi áp dụng mã giảm giá.';
-            if (err.error && err.error.message) {
-                errorMessage = err.error.message; // Lấy thông điệp lỗi từ backend
-            }
-
-            this.discountErrorMessage = errorMessage;
-            this.discount = 0;
-            this.calculateTotals();
-
-            // Hiển thị thông báo lỗi
-            Swal.fire({
-                title: 'Lỗi',
-                text: this.discountErrorMessage,
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
+          Swal.fire({
+            title: 'Lỗi',
+            text: this.discountErrorMessage,
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+          return;
         }
+
+        // Tính số tiền được giảm
+        this.discountAmount = this.totalProductPrice * response.giaTriGiam;
+
+        // Kiểm tra giá trị tối đa của mã giảm giá (nếu có)
+        if (response.gia_tri_toi_da && this.discountAmount > response.gia_tri_toi_da) {
+          this.discountAmount = response.gia_tri_toi_da;
+        }
+
+        this.discount = this.discountAmount;
+        this.orderData.maGiamGia = code; // Lưu mã giảm giá vào orderData
+        this.calculateTotals();
+
+        // Lưu vào localStorage để tránh sử dụng lại mã giảm giá cho tài khoản này
+        const userId = this.tokenService.getUserId();
+        localStorage.setItem(`discountUsed_${code}_${userId}`, 'true');
+
+        Swal.fire({
+          title: 'Thành công!',
+          text: 'Mã giảm giá đã được áp dụng.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      },
+      error: (err) => {
+        Swal.close();
+        console.error('❌ Lỗi khi áp dụng mã:', err);
+
+        let errorMessage = '⚠️ Có lỗi xảy ra khi áp dụng mã giảm giá.';
+        if (err.error && err.error.message) {
+          errorMessage = err.error.message;
+        }
+
+        this.discountErrorMessage = errorMessage;
+        this.discount = 0;
+        this.discountAmount = 0;
+        this.orderData.maGiamGia = '';
+        this.calculateTotals();
+
+        Swal.fire({
+          title: 'Lỗi',
+          text: this.discountErrorMessage,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
     });
-}
+  }
   
   
   
