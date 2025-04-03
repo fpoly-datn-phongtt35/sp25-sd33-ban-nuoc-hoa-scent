@@ -6,6 +6,19 @@
       <p>User Name</p>
     </div>
     <nav class="menu">
+           <!-- Ban hang tai quay -->
+           <li class="nav-item mb-3">
+            <a
+              class="nav-link"
+              [ngClass]="{
+                'active': selectedComponent === 'bho',
+                'disabled-link': userRole === 'STAFF'
+              }"
+              (click)="showComponent('bho')"
+              [ngClass]="{'disabled-link': userRole === 'STAFF'}">
+              <i class="bi bi-house"></i> Bán hàng tại quầy
+            </a>
+          </li>
       <!-- Thống kê -->
       <li class="nav-item mb-3">
         <a
@@ -74,7 +87,7 @@
             'active': selectedComponent === 'customer',
             'disabled-link': userRole === 'STAFF'
           }"
-          
+
           (click)="showComponent('customer')"
           >
           <i class="bi bi-people"></i> Khách hàng
@@ -103,6 +116,7 @@
   <!-- Main Content -->
   <div class="col-md-10 col-lg-10 overflow-auto p-4">
     <ng-container [ngSwitch]="selectedComponent">
+      <app-banhangoffline *ngSwitchCase=" 'bho' "></app-banhangoffline>
       <app-statistics *ngSwitchCase="'dashboard'"></app-statistics>
       <app-vourcher *ngSwitchCase="'voucher'"></app-vourcher>
       <app-invoice *ngSwitchCase="'invoice'"></app-invoice>

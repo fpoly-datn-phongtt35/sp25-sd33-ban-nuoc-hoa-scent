@@ -10,7 +10,11 @@ import { UserAdminComponent } from '../account/account-staff-list/user-admin.com
 import { ProductAdminComponent } from '../product/product-list/product-admin.component';
 import { VourcherComponent } from '../voucher/vourcher-list/vourcher.component';
 import { InvoiceComponent } from '../order/order-list/invoice.component';
+<<<<<<< Updated upstream
 import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.component';
+=======
+import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhangofffline.component';
+>>>>>>> Stashed changes
 
 @Component({
   selector: 'app-home-admin',
@@ -24,8 +28,13 @@ import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.compon
     VourcherComponent,
     StatisticsComponent,
     InvoiceComponent,
+<<<<<<< Updated upstream
     LichsuthaotacComponent
   ],
+=======
+    OfflineOrderComponent,
+],
+>>>>>>> Stashed changes
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'], // Sửa từ styleUrl thành styleUrls
 })
@@ -50,7 +59,7 @@ export class HomeAdminComponent implements OnInit {
       this.router.navigate(['/']); // Điều hướng về trang chủ nếu không phải ADMIN hoặc STAFF
     }
   }
-  
+
 
   showComponent(component: string): void {
     const role = this.tokenService.getRole();

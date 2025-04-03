@@ -7,6 +7,9 @@ import { Observable } from 'rxjs';
   providedIn: 'root', // Đảm bảo service này có thể sử dụng ở mọi nơi
 })
 export class SanPhamService {
+  searchcccccascacProducts(searchKeyword: string) {
+    throw new Error('Method not implemented.');
+  }
   private apiURL = 'http://localhost:8080/rest/san-pham/All'; // URL của API
   private baseUrl = 'http://localhost:8080/rest/san-pham';
   private apiSearch = 'http://localhost:8080/rest/san-pham/search';
