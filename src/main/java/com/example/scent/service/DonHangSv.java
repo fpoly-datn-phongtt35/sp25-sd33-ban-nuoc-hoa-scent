@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -310,31 +311,43 @@ LichSuThaoTacInterface lichSuThaoTacInterface;
                     spct.setImageUrl(imageMap.get(sp.getIdSanPham()));  // Gán danh sách URL hình ảnh
                 }
             });
+
             BigDecimal soTienGiam = BigDecimal.ZERO;
+            BigDecimal thanhTienGoc = BigDecimal.ZERO;
 
+            // Tính tổng tiền gốc (đơn giá * số lượng) của tất cả sản phẩm
+            for (ChiTietDonHang ctdh : dh.getChiTietDonHangs()) {
+                BigDecimal donGia = ctdh.getDonGia();
+                BigDecimal soLuong = BigDecimal.valueOf(ctdh.getSoLuong());
+                thanhTienGoc = thanhTienGoc.add(donGia.multiply(soLuong));
+            }
+            System.out.println("Tổng tiền gốc: " + thanhTienGoc); // Debug
+
+            // Tính số tiền giảm nếu có phiếu giảm giá
             if (dh.getPhieuGiamGia() != null && dh.getPhieuGiamGia().getGiaTriGiam() != null) {
-                BigDecimal phanTram = dh.getPhieuGiamGia().getGiaTriGiam();
-                // ví dụ: 15.0
-                BigDecimal thanhTienGoc = BigDecimal.ZERO;
+                BigDecimal giaTriGiam = dh.getPhieuGiamGia().getGiaTriGiam(); // Giá trị giảm (0.1 đến 0.9)
 
-                // Tính tổng (đơn giá * số lượng) của từng sản phẩm
-                for (ChiTietDonHang ctdh : dh.getChiTietDonHangs()) {
-                    BigDecimal donGia = ctdh.getDonGia();
-                    BigDecimal soLuong = BigDecimal.valueOf(ctdh.getSoLuong());
-                    thanhTienGoc = thanhTienGoc.add(donGia.multiply(soLuong));
+                // Kiểm tra giá trị giảm có trong khoảng 0.1 đến 0.9 không
+
+
+                // Tính số tiền giảm dựa trên phần trăm (giaTriGiam từ 0.1 đến 0.9)
+                soTienGiam = thanhTienGoc.multiply(giaTriGiam).setScale(2, RoundingMode.HALF_UP);
+                System.out.println("Số tiền giảm ban đầu (phần trăm): " + soTienGiam);
+
+                // Áp dụng giới hạn tối đa nếu có
+                BigDecimal giaTriToiDa = dh.getPhieuGiamGia().getGia_tri_toi_da();
+                if (giaTriToiDa != null && soTienGiam.compareTo(giaTriToiDa) > 0) {
+                    soTienGiam = giaTriToiDa;
+                    System.out.println("Số tiền giảm sau khi áp dụng giới hạn tối đa: " + soTienGiam);
                 }
-
-                // Tính số tiền giảm
-                soTienGiam = thanhTienGoc.multiply(phanTram).divide(BigDecimal.valueOf(100));
             }
 
             dh.setSoTienGiam(soTienGiam);
-
+            System.out.println("Số tiền giảm cuối cùng: " + soTienGiam); // Debug
         });
 
         return donHangPage;
     }
-
     public List<donhangDetailDTO> getDonHangDetailsById(Integer id) {
         return dhi.findDonHangDetailsById(id);
     }
@@ -425,22 +438,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
                     itemDto.setThanhTien(chiTiet.getThanhTien());
                     itemDto.setTenSanPham(chiTiet.getSpct().getSanPham().getTenSanPham());
 
-                    // Tính số tiền giảm giá: (số lượng * đơn giá) * giá trị giảm
-                    BigDecimal quantity = new BigDecimal(chiTiet.getSoLuong()); // Số lượng
-                    BigDecimal unitPrice = new BigDecimal(String.valueOf(chiTiet.getDonGia())); // Đơn giá
-                    BigDecimal totalPriceBeforeDiscount = quantity.multiply(unitPrice); // Tổng tiền trước giảm giá
-
-                    // Lấy giá trị giảm (giaTriGiam) từ PhieuGiamGia (nếu có)
-                    BigDecimal giaTriGiam = donHang.getPhieuGiamGia() != null
-                            ? donHang.getPhieuGiamGia().getGiaTriGiam()
-                            : BigDecimal.ZERO;
-
-                    // Tính số tiền giảm: (số lượng * đơn giá) * giá trị giảm
-                    BigDecimal soTienGiam = totalPriceBeforeDiscount.multiply(giaTriGiam);
-
-                    // Gán số tiền giảm vào DTO
-                    itemDto.setSoTienGiamGia(soTienGiam);
-
                     // Lấy hình ảnh của sản phẩm
                     List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
                             .stream()
@@ -454,11 +451,42 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         donHangDTO.setChiTietDonHangs(chiTietList);
 
-        // Tính tổng số tiền giảm giá cho toàn bộ đơn hàng
-        BigDecimal totalDiscount = chiTietList.stream()
-                .map(OrderItemDTOID::getSoTienGiamGia)
+        // Tính tổng tiền trước giảm (dựa trên chi tiết đơn hàng)
+        BigDecimal tongTienTruocGiam = chiTietList.stream()
+                .map(item -> new BigDecimal(String.valueOf(item.getDonGia())).multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        donHangDTO.setSoTienGiam(totalDiscount);
+
+        // Tính số tiền giảm dựa trên tổng tiền toàn đơn
+        BigDecimal soTienGiam = BigDecimal.ZERO;
+        if (donHang.getPhieuGiamGia() != null && donHang.getPhieuGiamGia().getGiaTriGiam() != null) {
+            BigDecimal giaTriGiam = donHang.getPhieuGiamGia().getGiaTriGiam(); // Giá trị giảm (0.1 đến 0.9)
+
+            // Kiểm tra giá trị giảm có trong khoảng 0.1 đến 0.9 không
+
+
+            // Tính số tiền giảm: tổng tiền trước giảm * giá trị giảm
+            soTienGiam = tongTienTruocGiam.multiply(giaTriGiam).setScale(2, RoundingMode.HALF_UP);
+            System.out.println("Tổng tiền trước giảm: " + tongTienTruocGiam);
+            System.out.println("Số tiền giảm: " + soTienGiam);
+
+            // Áp dụng giới hạn tối đa nếu có
+            BigDecimal giaTriToiDa = donHang.getPhieuGiamGia().getGia_tri_toi_da();
+            if (giaTriToiDa != null && soTienGiam.compareTo(giaTriToiDa) > 0) {
+                soTienGiam = giaTriToiDa;
+                System.out.println("Số tiền giảm sau khi áp dụng giới hạn tối đa: " + soTienGiam);
+            }
+        }
+
+        donHangDTO.setSoTienGiam(soTienGiam);
+
+        // (Tùy chọn) Phân bổ số tiền giảm cho từng sản phẩm (tỷ lệ)
+        if (!chiTietList.isEmpty() && soTienGiam.compareTo(BigDecimal.ZERO) > 0) {
+            for (OrderItemDTOID item : chiTietList) {
+                BigDecimal itemTotal = new BigDecimal(String.valueOf(item.getDonGia())).multiply(BigDecimal.valueOf(item.getQuantity()));
+                BigDecimal itemDiscount = soTienGiam.multiply(itemTotal).divide(tongTienTruocGiam, 2, RoundingMode.HALF_UP);
+                item.setSoTienGiamGia(itemDiscount);
+            }
+        }
 
         return donHangDTO;
     }).collect(Collectors.toList());
