@@ -6,6 +6,7 @@ import com.example.scent.entity.*;
 import com.example.scent.repo.*;
 import com.example.scent.reques.OrderOfflineRequest;
 import com.example.scent.reques.PhiVanChuyenRequest;
+import com.example.scent.reques.UpdateOrderStatusRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -591,7 +592,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         return false;  // Trả về false nếu không thể cập nhật trạng thái
     }
-<<<<<<< Updated upstream
+
 
     public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
         DonHang donHang = dhi.findById(maDonHang)
@@ -643,15 +644,15 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
             return 4; // Ví dụ: từ trạng thái 3 (Đang xử lý) sang 4 (Đang giao)
         }
         return trangThaiCu; // Giữ nguyên nếu không có thay đổi
-=======
+    }
     public DonHang createOfflineOrderService(OrderOfflineRequest orderRequest) throws Exception {
         // Validate the staff account
-        if (orderRequest.getIdTaiKhoan() == null) {
+        if (orderRequest.getUserId() == null) {
             throw new RuntimeException("⚠️ Lỗi: ID tài khoản không được để trống!");
         }
 
-        TaiKhoan taiKhoan = tki.findById(orderRequest.getIdTaiKhoan())
-                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
+        TaiKhoan taiKhoan = tki.findById(orderRequest.getUserId())
+                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getUserId()));
 
         // Validate order items
         if (orderRequest.getChiTietDonHangs() == null || orderRequest.getChiTietDonHangs().isEmpty()) {
@@ -719,7 +720,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
             BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
             soTienGiam = thanhTienGoc.multiply(phanTramGiam);
 
-            // Apply maximum discount if specified
             if (phieuGiamGia.getGia_tri_toi_da() != null && soTienGiam.compareTo(phieuGiamGia.getGia_tri_toi_da()) > 0) {
                 soTienGiam = phieuGiamGia.getGia_tri_toi_da();
             }
@@ -740,15 +740,15 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         newOrder.setSdtNguoiNhan(orderRequest.getSdtNguoiNhan());
         newOrder.setPhuongThucThanhToan(orderRequest.getPhuongThucThanhToan());
         newOrder.setNgayTao(ngayTao);
-        newOrder.setTrangThai(4); // Default status for counter order
+        newOrder.setTrangThai(1); // Chờ xác nhận
         newOrder.setGhiChu(orderRequest.getGhiChu());
         newOrder.setTongTien(tongTien);
         newOrder.setLuongBan(0); // Offline order
 
         if (phieuGiamGia != null) {
             newOrder.setPhieuGiamGia(phieuGiamGia);
-            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1); // Decrease the number of uses
-            phieuGiamGiaInterface.save(phieuGiamGia); // Update the discount voucher
+            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1);
+            phieuGiamGiaInterface.save(phieuGiamGia);
         }
 
         // Save the order
@@ -758,14 +758,46 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         for (ChiTietDonHang chiTiet : chiTietList) {
             chiTiet.setDonHang(savedOrder);
             Spct spct = chiTiet.getSpct();
-            spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong()); // Update stock
-            spc.save(spct); // Save the updated stock
+            System.out.println("idSPCT"+orderRequest.getChiTietDonHangs());
+            spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong());
+            spc.save(spct);
         }
 
         cdh.saveAll(chiTietList);
         savedOrder.setChiTietDonHangs(chiTietList);
 
         return savedOrder;
->>>>>>> Stashed changes
+    }
+
+    public DonHang updateOrderStatus(Integer orderId, UpdateOrderStatusRequest statusRequest) throws Exception {
+        DonHang order = dhi.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại với ID: " + orderId));
+
+        int newStatus = statusRequest.getTrangThai();
+
+        // Kiểm tra trạng thái hợp lệ
+        if (newStatus != 1 && newStatus != 4 && newStatus != 5) {
+            throw new RuntimeException("Trạng thái không hợp lệ! Chỉ chấp nhận: 1 (Chờ xác nhận), 4 (Hoàn tất), 5 (Hủy)");
+        }
+
+        // Nếu chuyển sang trạng thái "Hủy" (5), yêu cầu lý do hủy
+        if (newStatus == 5) {
+            if (statusRequest.getLyDoHuy() == null || statusRequest.getLyDoHuy().isEmpty()) {
+                throw new RuntimeException("⚠️ Lỗi: Phải cung cấp lý do hủy khi hủy đơn hàng!");
+            }
+            // Không cho hủy nếu đơn đã hoàn tất
+            if (order.getTrangThai() == 4) {
+                throw new RuntimeException("⚠️ Lỗi: Không thể hủy đơn hàng đã hoàn tất!");
+            }
+            order.setLyDoHuy(statusRequest.getLyDoHuy());
+        }
+
+        // Nếu chuyển sang trạng thái "Hoàn tất" (4), không cần lý do hủy
+        if (newStatus == 4) {
+            order.setLyDoHuy(null); // Xóa lý do hủy nếu có
+        }
+
+        order.setTrangThai(newStatus);
+        return dhi.save(order);
     }
 }

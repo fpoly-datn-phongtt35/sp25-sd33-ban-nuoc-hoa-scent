@@ -15,7 +15,25 @@ public class SPTQDTO {
     private String tenNhomHuong;
     private String quocGia;
     private String urlImage;
+    private Integer dungTich;
+    private Integer idSpct;
     public SPTQDTO() {
+    }
+
+    public Integer getIdSpct() {
+        return idSpct;
+    }
+
+    public void setIdSpct(Integer idSpct) {
+        this.idSpct = idSpct;
+    }
+
+    public Integer getDungTich() {
+        return dungTich;
+    }
+
+    public void setDungTich(Integer dungTich) {
+        this.dungTich = dungTich;
     }
 
     public String getUrlImage() {
@@ -26,7 +44,7 @@ public class SPTQDTO {
         this.urlImage = urlImage;
     }
 
-    public SPTQDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idNhomHuong, String tenNhomHuong, String quocGia, String urlImage) {
+    public SPTQDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idNhomHuong, String tenNhomHuong, String quocGia, String urlImage, Integer dungTich, Integer idSpct) {
         this.idSanPham = idSanPham;
         this.tenSanPham = tenSanPham;
         this.donGia = donGia;
@@ -39,6 +57,8 @@ public class SPTQDTO {
         this.tenNhomHuong = tenNhomHuong;
         this.quocGia = quocGia;
         this.urlImage = urlImage;
+        this.dungTich = dungTich;
+        this.idSpct = idSpct;
     }
 
     public Integer getIdSanPham() {

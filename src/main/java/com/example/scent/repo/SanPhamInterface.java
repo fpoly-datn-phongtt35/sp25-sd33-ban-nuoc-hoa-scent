@@ -273,7 +273,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Query("SELECT new com.example.scent.dto.SPTQDTO(" +
             "sp.idSanPham, concat(sp.tenSanPham,' ', spct.dungTich, 'ml'), spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia, " +
-            "min(ha.link)) " +
+            "min(ha.link),spct.dungTich,spct.idSpct) " +
             "FROM SanPham sp " +
             "LEFT JOIN Spct spct ON spct.sanPham.idSanPham = sp.idSanPham " +
             "LEFT JOIN sp.thuongHieu th " +
@@ -288,7 +288,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "th.tenThuongHieu LIKE %:keyword% OR " +
             "dm.tenDanhMuc LIKE %:keyword%) " +
             "GROUP BY sp.idSanPham, sp.tenSanPham, spct.dungTich, spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
-            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia")
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia,spct.dungTich,spct.idSpct")
     List<SPTQDTO> getALLSPQT(@Param("keyword") String keyword);
 
 }

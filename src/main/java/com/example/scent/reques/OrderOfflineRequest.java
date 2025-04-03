@@ -5,11 +5,13 @@ import com.example.scent.dto.OrderIOfflinetemDto;
 import com.example.scent.dto.OrderItemDto;
 import com.example.scent.entity.ChiTietDonHang;
 import com.example.scent.entity.DonHang;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
 public class OrderOfflineRequest {
-    private Integer idTaiKhoan; // ID of the staff account creating the order
+
+    private Integer userId ; // ID of the staff account creating the order
     private String tenNguoiNhanHang; // Customer name (optional)
     private String sdtNguoiNhan; // Customer phone number (optional)
     private List<OrderIOfflinetemDto> chiTietDonHangs; // List of order items
@@ -18,12 +20,14 @@ public class OrderOfflineRequest {
     private String ghiChu; // Optional note
 
     // Getters and Setters
-    public Integer getIdTaiKhoan() {
-        return idTaiKhoan;
+
+
+    public Integer getUserId() {
+        return userId;
     }
 
-    public void setIdTaiKhoan(Integer idTaiKhoan) {
-        this.idTaiKhoan = idTaiKhoan;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 
     public String getTenNguoiNhanHang() {

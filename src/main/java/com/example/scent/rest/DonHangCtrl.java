@@ -303,17 +303,27 @@ public class DonHangCtrl {
                 logger.info("Tính trạng thái mới: trangThaiCu={}, trangThaiMoi={}", trangThaiCu, trangThaiMoi);
             }
 
-            // Kiểm tra nếu trạng thái mới là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
-            if (trangThaiMoi == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
-                logger.warn("Lý do hủy không được cung cấp khi trạng thái là Đã Hủy (5)");
-                return ResponseEntity.status(400).body("Lý do hủy không thể trống khi hủy đơn hàng!");
+            // Kiểm tra nếu trạng thái mới là "Đã Hủy" (5) và trạng thái cũ là "Đang Giao" (3)
+            Integer trangThaiCu = donHang.getTrangThai();
+            if (trangThaiMoi == 5 && trangThaiCu == 3) {
+                // Yêu cầu lý do hủy nếu chuyển từ trạng thái 3 sang 5
+                if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+                    logger.warn("Lý do hủy không được cung cấp khi chuyển từ trạng thái 3 sang 5");
+                    return ResponseEntity.status(400).body("Lý do hủy không thể trống khi hủy đơn hàng từ trạng thái Đang Giao!");
+                }
+                // Gán lý do hủy
+                donHang.setLyDoHuy(lyDoHuy);
+                logger.info("Gán lý do hủy: {}", lyDoHuy);
+            } else {
+                // Nếu không phải chuyển từ 3 sang 5, đảm bảo lyDoHuy là null
+                if (trangThaiMoi != 5) {
+                    donHang.setLyDoHuy(null);
+                    logger.info("Không cần lý do hủy, đặt lyDoHuy về null");
+                }
             }
 
             // Cập nhật trạng thái và ghi log
             String ghiChuHuy = (lyDoHuy != null && !lyDoHuy.isEmpty()) ? lyDoHuy : ghiChu;
-            if (ghiChuHuy != null && !ghiChuHuy.isEmpty()) {
-                donHang.setLyDoHuy(ghiChuHuy);
-            }
             logger.info("Cập nhật trạng thái đơn hàng {}: trạng thái mới={}, ghiChuHuy={}, bởi userID={}, tenDangNhap={}",
                     maDonHang, trangThaiMoi, ghiChuHuy, userID, tenDangNhap);
             DonHang updatedDonHang = dhs.capNhatTrangThaiDonHang(maDonHang, trangThaiMoi, userID, tenDangNhap, ghiChuHuy);
@@ -323,7 +333,6 @@ public class DonHangCtrl {
             logger.error("Lỗi khi xử lý cập nhật trạng thái đơn hàng {}: {}", maDonHang, e.getMessage(), e);
             return ResponseEntity.status(500).body("Lỗi khi xử lý: " + e.getMessage());
         }
-        // Phương thức phụ để tính trạng thái mới
     }
     @GetMapping("/lichsu/{maDonHang}")
     public ResponseEntity<List<LichSuThaoTac>> getLichSuDonHang(@PathVariable Integer maDonHang) {
