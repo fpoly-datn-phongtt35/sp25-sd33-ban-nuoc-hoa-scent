@@ -9,7 +9,7 @@ import { CartService } from './cart.Service';
 })
 export class OrderOffService {
   private apiUrl = 'http://localhost:8080/rest/offline-orders';
-
+  private discountApiUrl = 'http://localhost:8080/rest/phieu-giam-gia'
   constructor(
     private http: HttpClient,
     private tokenService: TokenService,
@@ -27,7 +27,7 @@ export class OrderOffService {
         spctId: item.spctId,
         quantity: item.quantity
       })),
-      maGiamGia: null,
+      maGiamGia: order.maGiamGia,
       phuongThucThanhToan: order.phuongThucThanhToan,
       ghiChu: null
     };
@@ -44,5 +44,8 @@ export class OrderOffService {
   updateOrderStatus(orderId: number, updateRequest: any): Observable<any> {
     console.log('Update order status request:', { orderId, updateRequest });
     return this.http.put(`${this.apiUrl}/status/${orderId}`, updateRequest);
+  }
+  getDiscountCodeDetails(code: string): Observable<any> {
+    return this.http.get(`${this.discountApiUrl}/${code}`);
   }
 }

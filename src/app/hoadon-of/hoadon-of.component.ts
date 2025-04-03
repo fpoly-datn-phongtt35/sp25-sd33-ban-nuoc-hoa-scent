@@ -16,6 +16,8 @@ declare const html2pdf: any;
 export class HoadonOfComponent {
   @Input() orderId: string = '';
   @Input() orderData: any;
+  totalBeforeDiscount: number = 0; // Tổng tiền trước giảm
+  discountAmount: number = 0; // Số tiền giảm
 
   constructor(
     public activeModal: NgbActiveModal,
@@ -24,6 +26,7 @@ export class HoadonOfComponent {
 
   ngOnInit() {
     console.log('🧾 orderData:', this.orderData);
+
     // Kiểm tra dữ liệu đầu vào
     if (!this.orderData || !this.orderData.orderId || !this.orderData.chiTietDonHangs) {
       console.error('Dữ liệu hóa đơn không hợp lệ:', this.orderData);
@@ -33,7 +36,21 @@ export class HoadonOfComponent {
         text: 'Dữ liệu hóa đơn không hợp lệ. Vui lòng thử lại!',
       });
       this.activeModal.dismiss('Invalid data');
+      return;
     }
+
+    // Tính tổng tiền trước giảm từ chi tiết đơn hàng
+    this.totalBeforeDiscount = this.orderData.chiTietDonHangs.reduce(
+      (total: number, item: any) => total + (item.thanhTien || 0),
+      0
+    );
+
+    // Tính số tiền giảm: Tổng tiền trước giảm - Tổng tiền sau giảm
+    this.discountAmount = this.totalBeforeDiscount - (this.orderData.total || 0);
+
+    console.log('Tổng tiền trước giảm:', this.totalBeforeDiscount);
+    console.log('Số tiền giảm:', this.discountAmount);
+    console.log('Tổng tiền sau giảm:', this.orderData.total);
   }
 
   close() {

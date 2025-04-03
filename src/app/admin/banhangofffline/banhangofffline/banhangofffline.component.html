@@ -101,7 +101,36 @@
           <option value="tm">Tiền mặt</option>
           <option value="ck">Chuyển khoản</option>
         </select>
-        <p class="total-price">Tổng: <strong>{{ totalBeforeDiscount  | number }} VNĐ</strong></p>
+        <div class="discount-section">
+          <label for="maGiamGia">Mã giảm giá:</label>
+          <input
+            type="text"
+            id="maGiamGia"
+            [(ngModel)]="discountCodeInput"
+            placeholder="Nhập mã giảm giá"
+          />
+          <button
+            (click)="applyDiscountCode()"
+            [disabled]="isLoading || !discountCodeInput"
+          >
+            Áp dụng
+          </button>
+        </div>
+        
+        
+        <!-- Hiển thị thông báo về mã giảm giá -->
+        <div *ngIf="discountMessage" class="discount-message" style="color: rgb(136, 236, 150);">
+          {{ discountMessage }}
+        </div>
+      
+        <p class="total-price">Tổng trước giảm: <strong>{{ totalBeforeDiscount | number }} VNĐ</strong></p>
+        <p *ngIf="totalAfterDiscount !== undefined" class="discount-amount">
+          Số tiền giảm: <strong> - {{ (totalBeforeDiscount - totalAfterDiscount) | number }} VNĐ</strong>
+        </p>
+        <p *ngIf="totalAfterDiscount !== undefined" class="total-price">
+          Tổng sau giảm: <strong>{{ totalAfterDiscount | number }} VNĐ</strong>
+        </p>
+       
         <button class="btn-submit" (click)="submitOrder()" [disabled]="isLoading">Xác nhận</button>
       </div>
     </div>

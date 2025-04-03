@@ -499,3 +499,42 @@
     padding: 20px 0;
   }
 }
+.discount-section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.discount-section label {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.discount-section input[type="text"] {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.discount-section button {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.discount-section button:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.discount-section button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

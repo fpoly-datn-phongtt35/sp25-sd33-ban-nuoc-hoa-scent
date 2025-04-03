@@ -22,7 +22,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     {
       donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },
       chiTietDonHangs: [],
-      phuongThucThanhToan: 'tm'
+      phuongThucThanhToan: 'tm',
+      maGiamGia: null
     }
   ];
   currentOrderIndex: number = 0;
@@ -39,8 +40,12 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   selectedProduct: any = null;
   selectedQuantity: number = 1;
   totalBeforeDiscount: number = 0;
+  totalAfterDiscount: number | undefined; // Tổng tiền sau giảm giá
+  discountCodeInput: string = ''; // Mã giảm giá người dùng nhập
+  discountMessage: string | null = null; // Thông báo về trạng thái mã giảm giá
+  discountAmount: number = 0; // Số tiền giảm
+  private discountDetails: any = null; // Lưu thông tin chi tiết mã giảm giá
 
-  // Thêm EventEmitter để thông báo cho màn hình "Hóa đơn" làm mới danh sách
   orderStatusUpdated = new EventEmitter<void>();
 
   private searchSubject = new Subject<string>();
@@ -76,7 +81,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.orders.push({
       donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },
       chiTietDonHangs: [],
-      phuongThucThanhToan: 'tm'
+      phuongThucThanhToan: 'tm',
+      maGiamGia: null
     });
     this.currentOrderIndex = this.orders.length - 1;
     this.calculateTotal();
@@ -85,6 +91,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   switchOrder(index: number): void {
     this.currentOrderIndex = index;
     this.calculateTotal();
+    this.reapplyDiscountIfExists(); // Áp dụng lại mã giảm giá nếu có
   }
 
   closeOrderTab(index: number): void {
@@ -101,6 +108,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.currentOrderIndex = this.orders.length - 1;
     }
     this.calculateTotal();
+    this.reapplyDiscountIfExists(); // Áp dụng lại mã giảm giá nếu có
   }
 
   onSearchInput(): void {
@@ -210,6 +218,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     }
 
     this.calculateTotal();
+    this.reapplyDiscountIfExists(); // Tự động áp dụng lại mã giảm giá nếu có
     this.closeQuantityModal();
   }
 
@@ -218,7 +227,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.currentOrder.chiTietDonHangs[index].thanhTien =
       this.currentOrder.chiTietDonHangs[index].donGia * this.currentOrder.chiTietDonHangs[index].soLuong;
     this.calculateTotal();
-    console.log('After increaseQuantity, totalBeforeDiscount:', this.totalBeforeDiscount);
+    this.reapplyDiscountIfExists(); // Tự động áp dụng lại mã giảm giá nếu có
+    this.cdr.detectChanges();
   }
 
   decreaseQuantity(index: number): void {
@@ -227,14 +237,106 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.currentOrder.chiTietDonHangs[index].thanhTien =
         this.currentOrder.chiTietDonHangs[index].donGia * this.currentOrder.chiTietDonHangs[index].soLuong;
       this.calculateTotal();
-      console.log('After decreaseQuantity, totalBeforeDiscount:', this.totalBeforeDiscount);
+      this.reapplyDiscountIfExists(); // Tự động áp dụng lại mã giảm giá nếu có
+      this.cdr.detectChanges();
     }
   }
 
   removeProduct(index: number): void {
     this.currentOrder.chiTietDonHangs.splice(index, 1);
     this.calculateTotal();
-    console.log('After removeProduct, totalBeforeDiscount:', this.totalBeforeDiscount);
+    this.reapplyDiscountIfExists(); // Tự động áp dụng lại mã giảm giá nếu có
+    this.cdr.detectChanges();
+  }
+
+  applyDiscountCode(): void {
+    if (!this.discountCodeInput) {
+      this.discountMessage = 'Vui lòng nhập mã giảm giá!';
+      return;
+    }
+
+    if (this.totalBeforeDiscount <= 0) {
+      this.discountMessage = 'Giỏ hàng trống, không thể áp dụng mã giảm giá!';
+      return;
+    }
+
+    this.isLoading = true;
+    this.discountMessage = null;
+
+    this.orderoffservice.getDiscountCodeDetails(this.discountCodeInput).subscribe(
+      (response) => {
+        this.isLoading = false;
+        console.log('Discount code details:', response);
+
+        if (response.dieuKienapDung !== 0) {
+          this.currentOrder.maGiamGia = null;
+          this.discountDetails = null;
+          this.totalAfterDiscount = undefined;
+          this.discountAmount = 0;
+          this.discountMessage = 'Mã giảm giá này chỉ áp dụng cho đơn hàng online!';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        // Lưu thông tin mã giảm giá để tái sử dụng
+        this.discountDetails = response;
+        this.currentOrder.maGiamGia = this.discountCodeInput;
+
+        // Tính toán số tiền giảm
+        this.applyDiscountLogic(response);
+
+        this.discountMessage = `Áp dụng mã giảm giá thành công! Số tiền giảm: ${this.discountAmount.toLocaleString()} VNĐ`;
+        this.cdr.detectChanges();
+      },
+      (error) => {
+        this.isLoading = false;
+        this.currentOrder.maGiamGia = null;
+        this.discountDetails = null;
+        this.totalAfterDiscount = undefined;
+        this.discountAmount = 0;
+        this.discountMessage = 'Mã giảm giá không tồn tại hoặc không hợp lệ!';
+        this.cdr.detectChanges();
+        console.error('Error fetching discount code:', error);
+      }
+    );
+  }
+
+  private applyDiscountLogic(response: any): void {
+    // Tính toán số tiền giảm (mặc định là giảm theo phần trăm)
+    let discountAmount = this.totalBeforeDiscount * response.giaTriGiam;
+    console.log('Initial discountAmount:', discountAmount);
+
+    // Kiểm tra giá trị giảm tối đa (nếu có)
+    if (response.gia_tri_toi_da && discountAmount > response.gia_tri_toi_da) {
+      discountAmount = response.gia_tri_toi_da;
+      console.log('Adjusted discountAmount (max limit):', discountAmount);
+    }
+
+    // Đảm bảo số tiền giảm không vượt quá tổng tiền
+    if (discountAmount > this.totalBeforeDiscount) {
+      discountAmount = this.totalBeforeDiscount;
+      console.log('Adjusted discountAmount (cannot exceed total):', discountAmount);
+    }
+
+    // Cập nhật số tiền giảm và tổng tiền sau giảm
+    this.discountAmount = discountAmount;
+    this.totalAfterDiscount = this.totalBeforeDiscount - discountAmount;
+    console.log('Final discountAmount:', this.discountAmount);
+    console.log('Total after discount:', this.totalAfterDiscount);
+  }
+
+  private reapplyDiscountIfExists(): void {
+    if (this.currentOrder.maGiamGia && this.discountDetails) {
+      // Nếu đã có mã giảm giá và thông tin mã giảm giá, tự động áp dụng lại
+      this.applyDiscountLogic(this.discountDetails);
+      this.discountMessage = `Áp dụng mã giảm giá thành công! Số tiền giảm: ${this.discountAmount.toLocaleString()} VNĐ`;
+      this.cdr.detectChanges();
+    } else {
+      // Nếu không có mã giảm giá, reset các giá trị
+      this.totalAfterDiscount = undefined;
+      this.discountAmount = 0;
+      this.discountMessage = null;
+    }
   }
 
   validateOrder(): boolean {
@@ -331,7 +433,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
         spctId: item.idSpct,
         quantity: item.soLuong,
       })),
-      maGiamGia: null,
+      maGiamGia: this.currentOrder.maGiamGia,
       phuongThucThanhToan: this.currentOrder.phuongThucThanhToan,
       ghiChu: null,
     };
@@ -340,7 +442,9 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.orderoffservice.createOrder(orderRequest).subscribe(
       (response) => {
         this.isLoading = false;
-        this.orderId = response.orderId; // Lưu orderId từ response
+        this.orderId = response.orderId;
+        this.totalAfterDiscount = response.tongTien; // Cập nhật lại tổng tiền từ back-end
+        this.cdr.detectChanges();
 
         const orderData = {
           orderId: this.orderId,
@@ -348,7 +452,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           sdtNguoiNhan: this.currentOrder.donHang.sdtNguoiNhan,
           chiTietDonHangs: [...this.currentOrder.chiTietDonHangs],
           phuongThucThanhToan: this.currentOrder.phuongThucThanhToan === 'tm' ? 'Tiền mặt' : 'Chuyển khoản',
-          total: this.totalBeforeDiscount,
+          total: this.totalAfterDiscount,
           ngayTao: new Date().toLocaleString(),
         };
 
@@ -361,7 +465,6 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           (result) => {
             if (result === 'printed') {
               isPrinted = true;
-              // In hóa đơn thành công -> Cập nhật trạng thái thành 4 (Hoàn tất)
               this.orderoffservice.updateOrderStatus(this.orderId!, {
                 trangThai: 4,
                 lyDoHuy: null,
@@ -377,10 +480,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
                     showConfirmButton: false,
                   });
 
-                  // Reset giỏ hàng
                   this.resetCurrentOrder();
-
-                  // Thông báo cho màn hình "Hóa đơn" làm mới danh sách
                   this.orderStatusUpdated.emit();
                 },
                 (error) => {
@@ -410,12 +510,21 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!';
         } else if (error.status === 400) {
           errorMessage = error.error.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!';
+          if (errorMessage.includes('Mã giảm giá')) {
+            this.currentOrder.maGiamGia = null;
+            this.discountDetails = null;
+            this.discountCodeInput = '';
+            this.discountMessage = errorMessage;
+            this.totalAfterDiscount = undefined;
+            this.discountAmount = 0;
+          }
         }
         Swal.fire({
           icon: 'error',
           title: 'Lỗi',
           text: errorMessage,
         });
+        this.cdr.detectChanges();
       }
     );
   }
@@ -458,10 +567,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
               showConfirmButton: false,
             });
 
-            // Reset giỏ hàng
             this.resetCurrentOrder();
-
-            // Thông báo cho màn hình "Hóa đơn" làm mới danh sách
             this.orderStatusUpdated.emit();
           },
           (error) => {
@@ -490,10 +596,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
               showConfirmButton: false,
             });
 
-            // Reset giỏ hàng
             this.resetCurrentOrder();
-
-            // Thông báo cho màn hình "Hóa đơn" làm mới danh sách
             this.orderStatusUpdated.emit();
           },
           (error) => {
@@ -515,8 +618,14 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },
       chiTietDonHangs: [],
       phuongThucThanhToan: 'tm',
+      maGiamGia: null
     };
-    this.orderId = null;
+    this.discountCodeInput = '';
+    this.discountMessage = null;
+    this.totalAfterDiscount = undefined;
+    this.discountAmount = 0;
+    this.discountDetails = null;
     this.calculateTotal();
+    this.cdr.detectChanges();
   }
 }
