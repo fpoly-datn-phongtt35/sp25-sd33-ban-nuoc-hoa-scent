@@ -45,7 +45,11 @@ public class PhieuGiamGia {
     @Column(name = "so_luong")
     private Integer soLuong;
 
-   
+    @Column(name = "dieu_kien_ap_dung")
+    private Integer dieuKienapDung;
+
+
+
     @Column(name = "ngay_het_han")
     private LocalDateTime ngayHetHan;
 

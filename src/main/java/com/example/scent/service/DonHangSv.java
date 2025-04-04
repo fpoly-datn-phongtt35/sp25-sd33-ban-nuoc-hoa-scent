@@ -6,6 +6,7 @@ import com.example.scent.entity.*;
 import com.example.scent.repo.*;
 import com.example.scent.reques.OrderOfflineRequest;
 import com.example.scent.reques.PhiVanChuyenRequest;
+import com.example.scent.reques.UpdateOrderStatusRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -175,7 +177,9 @@ LichSuThaoTacInterface lichSuThaoTacInterface;
             // Tìm mã giảm giá
             phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
-
+            if (phieuGiamGia.getDieuKienapDung() != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng offline!");
+            }
             // Kiểm tra thời gian hiệu lực
             LocalDateTime now = LocalDateTime.now();
             if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
@@ -307,31 +311,43 @@ LichSuThaoTacInterface lichSuThaoTacInterface;
                     spct.setImageUrl(imageMap.get(sp.getIdSanPham()));  // Gán danh sách URL hình ảnh
                 }
             });
+
             BigDecimal soTienGiam = BigDecimal.ZERO;
+            BigDecimal thanhTienGoc = BigDecimal.ZERO;
 
+            // Tính tổng tiền gốc (đơn giá * số lượng) của tất cả sản phẩm
+            for (ChiTietDonHang ctdh : dh.getChiTietDonHangs()) {
+                BigDecimal donGia = ctdh.getDonGia();
+                BigDecimal soLuong = BigDecimal.valueOf(ctdh.getSoLuong());
+                thanhTienGoc = thanhTienGoc.add(donGia.multiply(soLuong));
+            }
+            System.out.println("Tổng tiền gốc: " + thanhTienGoc); // Debug
+
+            // Tính số tiền giảm nếu có phiếu giảm giá
             if (dh.getPhieuGiamGia() != null && dh.getPhieuGiamGia().getGiaTriGiam() != null) {
-                BigDecimal phanTram = dh.getPhieuGiamGia().getGiaTriGiam();
-                // ví dụ: 15.0
-                BigDecimal thanhTienGoc = BigDecimal.ZERO;
+                BigDecimal giaTriGiam = dh.getPhieuGiamGia().getGiaTriGiam(); // Giá trị giảm (0.1 đến 0.9)
 
-                // Tính tổng (đơn giá * số lượng) của từng sản phẩm
-                for (ChiTietDonHang ctdh : dh.getChiTietDonHangs()) {
-                    BigDecimal donGia = ctdh.getDonGia();
-                    BigDecimal soLuong = BigDecimal.valueOf(ctdh.getSoLuong());
-                    thanhTienGoc = thanhTienGoc.add(donGia.multiply(soLuong));
+                // Kiểm tra giá trị giảm có trong khoảng 0.1 đến 0.9 không
+
+
+                // Tính số tiền giảm dựa trên phần trăm (giaTriGiam từ 0.1 đến 0.9)
+                soTienGiam = thanhTienGoc.multiply(giaTriGiam).setScale(2, RoundingMode.HALF_UP);
+                System.out.println("Số tiền giảm ban đầu (phần trăm): " + soTienGiam);
+
+                // Áp dụng giới hạn tối đa nếu có
+                BigDecimal giaTriToiDa = dh.getPhieuGiamGia().getGia_tri_toi_da();
+                if (giaTriToiDa != null && soTienGiam.compareTo(giaTriToiDa) > 0) {
+                    soTienGiam = giaTriToiDa;
+                    System.out.println("Số tiền giảm sau khi áp dụng giới hạn tối đa: " + soTienGiam);
                 }
-
-                // Tính số tiền giảm
-                soTienGiam = thanhTienGoc.multiply(phanTram).divide(BigDecimal.valueOf(100));
             }
 
             dh.setSoTienGiam(soTienGiam);
-
+            System.out.println("Số tiền giảm cuối cùng: " + soTienGiam); // Debug
         });
 
         return donHangPage;
     }
-
     public List<donhangDetailDTO> getDonHangDetailsById(Integer id) {
         return dhi.findDonHangDetailsById(id);
     }
@@ -422,22 +438,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
                     itemDto.setThanhTien(chiTiet.getThanhTien());
                     itemDto.setTenSanPham(chiTiet.getSpct().getSanPham().getTenSanPham());
 
-                    // Tính số tiền giảm giá: (số lượng * đơn giá) * giá trị giảm
-                    BigDecimal quantity = new BigDecimal(chiTiet.getSoLuong()); // Số lượng
-                    BigDecimal unitPrice = new BigDecimal(String.valueOf(chiTiet.getDonGia())); // Đơn giá
-                    BigDecimal totalPriceBeforeDiscount = quantity.multiply(unitPrice); // Tổng tiền trước giảm giá
-
-                    // Lấy giá trị giảm (giaTriGiam) từ PhieuGiamGia (nếu có)
-                    BigDecimal giaTriGiam = donHang.getPhieuGiamGia() != null
-                            ? donHang.getPhieuGiamGia().getGiaTriGiam()
-                            : BigDecimal.ZERO;
-
-                    // Tính số tiền giảm: (số lượng * đơn giá) * giá trị giảm
-                    BigDecimal soTienGiam = totalPriceBeforeDiscount.multiply(giaTriGiam);
-
-                    // Gán số tiền giảm vào DTO
-                    itemDto.setSoTienGiamGia(soTienGiam);
-
                     // Lấy hình ảnh của sản phẩm
                     List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())
                             .stream()
@@ -451,11 +451,42 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         donHangDTO.setChiTietDonHangs(chiTietList);
 
-        // Tính tổng số tiền giảm giá cho toàn bộ đơn hàng
-        BigDecimal totalDiscount = chiTietList.stream()
-                .map(OrderItemDTOID::getSoTienGiamGia)
+        // Tính tổng tiền trước giảm (dựa trên chi tiết đơn hàng)
+        BigDecimal tongTienTruocGiam = chiTietList.stream()
+                .map(item -> new BigDecimal(String.valueOf(item.getDonGia())).multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        donHangDTO.setSoTienGiam(totalDiscount);
+
+        // Tính số tiền giảm dựa trên tổng tiền toàn đơn
+        BigDecimal soTienGiam = BigDecimal.ZERO;
+        if (donHang.getPhieuGiamGia() != null && donHang.getPhieuGiamGia().getGiaTriGiam() != null) {
+            BigDecimal giaTriGiam = donHang.getPhieuGiamGia().getGiaTriGiam(); // Giá trị giảm (0.1 đến 0.9)
+
+            // Kiểm tra giá trị giảm có trong khoảng 0.1 đến 0.9 không
+
+
+            // Tính số tiền giảm: tổng tiền trước giảm * giá trị giảm
+            soTienGiam = tongTienTruocGiam.multiply(giaTriGiam).setScale(2, RoundingMode.HALF_UP);
+            System.out.println("Tổng tiền trước giảm: " + tongTienTruocGiam);
+            System.out.println("Số tiền giảm: " + soTienGiam);
+
+            // Áp dụng giới hạn tối đa nếu có
+            BigDecimal giaTriToiDa = donHang.getPhieuGiamGia().getGia_tri_toi_da();
+            if (giaTriToiDa != null && soTienGiam.compareTo(giaTriToiDa) > 0) {
+                soTienGiam = giaTriToiDa;
+                System.out.println("Số tiền giảm sau khi áp dụng giới hạn tối đa: " + soTienGiam);
+            }
+        }
+
+        donHangDTO.setSoTienGiam(soTienGiam);
+
+        // (Tùy chọn) Phân bổ số tiền giảm cho từng sản phẩm (tỷ lệ)
+        if (!chiTietList.isEmpty() && soTienGiam.compareTo(BigDecimal.ZERO) > 0) {
+            for (OrderItemDTOID item : chiTietList) {
+                BigDecimal itemTotal = new BigDecimal(String.valueOf(item.getDonGia())).multiply(BigDecimal.valueOf(item.getQuantity()));
+                BigDecimal itemDiscount = soTienGiam.multiply(itemTotal).divide(tongTienTruocGiam, 2, RoundingMode.HALF_UP);
+                item.setSoTienGiamGia(itemDiscount);
+            }
+        }
 
         return donHangDTO;
     }).collect(Collectors.toList());
@@ -592,6 +623,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         return false;  // Trả về false nếu không thể cập nhật trạng thái
     }
 
+
     public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
         DonHang donHang = dhi.findById(maDonHang)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + maDonHang));
@@ -643,15 +675,14 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         }
         return trangThaiCu; // Giữ nguyên nếu không có thay đổi
     }
-
     public DonHang createOfflineOrderService(OrderOfflineRequest orderRequest) throws Exception {
         // Validate the staff account
-        if (orderRequest.getIdTaiKhoan() == null) {
+        if (orderRequest.getUserId() == null) {
             throw new RuntimeException("⚠️ Lỗi: ID tài khoản không được để trống!");
         }
 
-        TaiKhoan taiKhoan = tki.findById(orderRequest.getIdTaiKhoan())
-                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getIdTaiKhoan()));
+        TaiKhoan taiKhoan = tki.findById(orderRequest.getUserId())
+                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Tài khoản không tồn tại với ID: " + orderRequest.getUserId()));
 
         // Validate order items
         if (orderRequest.getChiTietDonHangs() == null || orderRequest.getChiTietDonHangs().isEmpty()) {
@@ -702,24 +733,21 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
             phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
 
-            LocalDateTime now = LocalDateTime.now();
-            if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!");
+            // Chỉ cho phép áp dụng phiếu giảm giá có dieuKienapDung = 0 (offline)
+            if (phieuGiamGia.getDieuKienapDung() != 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng online!");
             }
 
-            if (phieuGiamGia.getSoLuong() <= 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá đã hết lượt sử dụng!");
-            }
+            // Không kiểm tra thời gian hiệu lực và số lượng vì đây là phiếu offline do nhân viên phát
 
+            // Kiểm tra xem tài khoản đã sử dụng mã giảm giá này chưa (tùy bạn có muốn giữ điều kiện này hay không)
             List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
-            if (!donHangs.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản này đã sử dụng mã giảm giá này rồi.");
-            }
 
+
+            // Tính toán số tiền giảm
             BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
             soTienGiam = thanhTienGoc.multiply(phanTramGiam);
 
-            // Apply maximum discount if specified
             if (phieuGiamGia.getGia_tri_toi_da() != null && soTienGiam.compareTo(phieuGiamGia.getGia_tri_toi_da()) > 0) {
                 soTienGiam = phieuGiamGia.getGia_tri_toi_da();
             }
@@ -740,15 +768,14 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         newOrder.setSdtNguoiNhan(orderRequest.getSdtNguoiNhan());
         newOrder.setPhuongThucThanhToan(orderRequest.getPhuongThucThanhToan());
         newOrder.setNgayTao(ngayTao);
-        newOrder.setTrangThai(4); // Default status for counter order
+        newOrder.setTrangThai(1); // Chờ xác nhận
         newOrder.setGhiChu(orderRequest.getGhiChu());
         newOrder.setTongTien(tongTien);
         newOrder.setLuongBan(0); // Offline order
 
         if (phieuGiamGia != null) {
             newOrder.setPhieuGiamGia(phieuGiamGia);
-            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1); // Decrease the number of uses
-            phieuGiamGiaInterface.save(phieuGiamGia); // Update the discount voucher
+            // Không giảm số lượng phiếu giảm giá cho đơn offline
         }
 
         // Save the order
@@ -758,13 +785,44 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         for (ChiTietDonHang chiTiet : chiTietList) {
             chiTiet.setDonHang(savedOrder);
             Spct spct = chiTiet.getSpct();
-            spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong()); // Update stock
-            spc.save(spct); // Save the updated stock
+            spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong());
+            spc.save(spct);
         }
 
         cdh.saveAll(chiTietList);
         savedOrder.setChiTietDonHangs(chiTietList);
 
         return savedOrder;
+    }
+    public DonHang updateOrderStatus(Integer orderId, UpdateOrderStatusRequest statusRequest) throws Exception {
+        DonHang order = dhi.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại với ID: " + orderId));
+
+        int newStatus = statusRequest.getTrangThai();
+
+        // Kiểm tra trạng thái hợp lệ
+        if (newStatus != 1 && newStatus != 4 && newStatus != 5) {
+            throw new RuntimeException("Trạng thái không hợp lệ! Chỉ chấp nhận: 1 (Chờ xác nhận), 4 (Hoàn tất), 5 (Hủy)");
+        }
+
+        // Nếu chuyển sang trạng thái "Hủy" (5), yêu cầu lý do hủy
+        if (newStatus == 5) {
+            if (statusRequest.getLyDoHuy() == null || statusRequest.getLyDoHuy().isEmpty()) {
+                throw new RuntimeException("⚠️ Lỗi: Phải cung cấp lý do hủy khi hủy đơn hàng!");
+            }
+            // Không cho hủy nếu đơn đã hoàn tất
+            if (order.getTrangThai() == 4) {
+                throw new RuntimeException("⚠️ Lỗi: Không thể hủy đơn hàng đã hoàn tất!");
+            }
+            order.setLyDoHuy(statusRequest.getLyDoHuy());
+        }
+
+        // Nếu chuyển sang trạng thái "Hoàn tất" (4), không cần lý do hủy
+        if (newStatus == 4) {
+            order.setLyDoHuy(null); // Xóa lý do hủy nếu có
+        }
+
+        order.setTrangThai(newStatus);
+        return dhi.save(order);
     }
 }

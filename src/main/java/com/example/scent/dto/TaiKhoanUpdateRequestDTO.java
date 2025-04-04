@@ -6,8 +6,7 @@ public class TaiKhoanUpdateRequestDTO {
     private String email;
     private String sdt;
 
-    public TaiKhoanUpdateRequestDTO(Integer id) {
-        this.id = id;
+    public TaiKhoanUpdateRequestDTO() {
     }
 
     public TaiKhoanUpdateRequestDTO(Integer id, String hoTen, String email, String sdt) {
