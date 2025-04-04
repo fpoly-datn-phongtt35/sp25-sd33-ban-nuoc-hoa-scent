@@ -1,9 +1,14 @@
 <div class="dashboard-container">
   <!-- Sidebar -->
   <div class="sidebar">
-    <div class="profile">
+    <div class="profile" (mouseenter)="showDropdown()" (mouseleave)="hideDropdown()">
       <img src="logo.webp" alt="Profile Picture">
-      <p> ID :{{userID}}   ||  Tên : {{tenDangNhap.sub}} </p>
+      <p>ID: {{userID}} || Tên: {{tenDangNhap?.sub}}</p>
+      <!-- Dropdown -->
+      <div class="dropdown" *ngIf="isDropdownVisible">
+        <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi mật khẩu</a>
+        <a class="dropdown-item logout" (click)="logout()">Đăng xuất</a>
+      </div>
     </div>
     <nav class="menu">
       <!-- Bán hàng tại quầy -->
@@ -83,15 +88,6 @@
           [ngClass]="{'active': selectedComponent === 'ls'}"
           (click)="showComponent('ls')">
           <i class="bi bi-person"></i> Lịch Sử
-        </a>
-      </li>
-
-      <!-- Đăng xuất -->
-      <li class="nav-item mb-3">
-        <a
-          class="nav-link logout"
-          (click)="logout()">
-          <i class="bi bi-box-arrow-right"></i> Đăng xuất
         </a>
       </li>
     </nav>

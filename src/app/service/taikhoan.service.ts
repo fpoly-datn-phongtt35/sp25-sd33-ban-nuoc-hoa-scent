@@ -8,16 +8,10 @@ import { catchError } from 'rxjs/operators';
 })
 export class AccountService {
   private readonly apiUrl = 'http://localhost:8080/rest/tai-khoan';
+  private readonly otpApiUrl = 'http://localhost:8080/rest/otp';
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Lấy danh sách tài khoản với phân trang và tìm kiếm.
-   * @param searchTerm Từ khóa tìm kiếm
-   * @param page Số trang (bắt đầu từ 0)
-   * @param size Số bản ghi mỗi trang
-   * @returns Observable chứa danh sách tài khoản
-   */
   getAccounts(searchTerm: string, page: number, size: number): Observable<any> {
     const params = new HttpParams()
       .set('searchTerm', searchTerm)
@@ -28,13 +22,6 @@ export class AccountService {
     );
   }
 
-  /**
-   * Lấy danh sách tài khoản nhân viên với phân trang và tìm kiếm.
-   * @param keyword Từ khóa tìm kiếm
-   * @param page Số trang (bắt đầu từ 0)
-   * @param size Số bản ghi mỗi trang
-   * @returns Observable chứa danh sách tài khoản nhân viên
-   */
   getStaffAccounts(keyword: string, page: number, size: number): Observable<any> {
     const params = new HttpParams()
       .set('keyword', keyword)
@@ -45,13 +32,6 @@ export class AccountService {
     );
   }
 
-  /**
-   * Lấy danh sách tài khoản người dùng với phân trang và tìm kiếm.
-   * @param keyword Từ khóa tìm kiếm
-   * @param page Số trang (bắt đầu từ 0)
-   * @param size Số bản ghi mỗi trang
-   * @returns Observable chứa danh sách tài khoản người dùng
-   */
   getUserAccounts(keyword: string, page: number, size: number): Observable<any> {
     const params = new HttpParams()
       .set('keyword', keyword)
@@ -62,33 +42,18 @@ export class AccountService {
     );
   }
 
-  /**
-   * Đăng ký tài khoản mới.
-   * @param user Thông tin tài khoản cần đăng ký
-   * @returns Observable chứa thông tin tài khoản đã tạo
-   */
   register(user: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/register`, user).pipe(
       catchError(this.handleError)
     );
   }
 
-  /**
-   * Cập nhật thông tin tài khoản.
-   * @param dto Dữ liệu cập nhật tài khoản
-   * @returns Observable chứa thông tin tài khoản đã cập nhật
-   */
   updateAccount(dto: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/update`, dto).pipe(
       catchError(this.handleError)
     );
   }
 
-  /**
-   * Cấp lại mật khẩu cho ADMIN/STAFF qua email.
-   * @param email Email của tài khoản cần cấp lại mật khẩu
-   * @returns Observable chứa thông báo kết quả
-   */
   resetPassword(email: string): Observable<string> {
     const params = new HttpParams().set('email', email);
     return this.http.post(`${this.apiUrl}/forgot-password/reset-admin-staff`, null, {
@@ -99,11 +64,6 @@ export class AccountService {
     );
   }
 
-  /**
-   * Tìm tài khoản theo email.
-   * @param email Email cần tìm
-   * @returns Observable chứa thông tin tài khoản (nếu tồn tại)
-   */
   findByEmail(email: string): Observable<any> {
     const params = new HttpParams().set('email', email);
     return this.http.get(`${this.apiUrl}/findByEmail`, { params }).pipe(
@@ -111,11 +71,6 @@ export class AccountService {
     );
   }
 
-  /**
-   * Gửi OTP cho USER để khôi phục mật khẩu.
-   * @param email Email của USER
-   * @returns Observable chứa thông báo kết quả
-   */
   sendOtpForUser(email: string): Observable<string> {
     const params = new HttpParams().set('email', email);
     return this.http.post(`${this.apiUrl}/forgot-password/sendOTP`, null, {
@@ -126,13 +81,6 @@ export class AccountService {
     );
   }
 
-  /**
-   * Đặt lại mật khẩu cho USER bằng OTP.
-   * @param email Email của USER
-   * @param otp Mã OTP
-   * @param newPassword Mật khẩu mới
-   * @returns Observable chứa thông báo kết quả
-   */
   resetPasswordWithOtp(email: string, otp: string, newPassword: string): Observable<string> {
     const params = new HttpParams()
       .set('email', email)
@@ -146,13 +94,6 @@ export class AccountService {
     );
   }
 
-  /**
-   * Đổi mật khẩu cho USER (yêu cầu mật khẩu cũ).
-   * @param username Tên đăng nhập
-   * @param oldPassword Mật khẩu cũ
-   * @param newPassword Mật khẩu mới
-   * @returns Observable chứa thông báo kết quả
-   */
   changePassword(username: string, oldPassword: string, newPassword: string): Observable<string> {
     const params = new HttpParams()
       .set('username', username)
@@ -166,14 +107,46 @@ export class AccountService {
     );
   }
 
-  /**
-   * Xử lý lỗi từ các yêu cầu HTTP.
-   * @param error Lỗi từ server
-   * @returns Observable phát ra lỗi
-   */
+  findByUsername(username: string): Observable<any> {
+    const params = new HttpParams().set('username', username);
+    return this.http.get(`${this.apiUrl}/findByUsername`, { params }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  sendOtp(email: string): Observable<string> {
+    const params = new HttpParams().set('email', email);
+    return this.http.post(`${this.otpApiUrl}/send`, null, {
+      params,
+      responseType: 'text',
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  verifyOtp(email: string, otp: string): Observable<string> {
+    const params = new HttpParams()
+      .set('email', email)
+      .set('otp', otp);
+    return this.http.post(`${this.otpApiUrl}/verify`, null, {
+      params,
+      responseType: 'text',
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   private handleError(error: any): Observable<never> {
     console.error('Có lỗi xảy ra:', error);
     const errorMessage = error.error || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
     return throwError(() => new Error(errorMessage));
+  }
+  verifyOldPassword(username: string, oldPassword: string): Observable<string> {
+    const params = new HttpParams()
+      .set('username', username)
+      .set('oldPassword', oldPassword);
+    return this.http.get(`${this.apiUrl}/verify-old-password`, { params, responseType: 'text' }).pipe(
+      catchError(this.handleError)
+    );
   }
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { AccountService } from '../../../service/taikhoan.service';
@@ -24,6 +24,7 @@ export class AccountStaffUpdateComponent {
   constructor(
     public activeModal: NgbActiveModal,
     private accountService: AccountService
+    , private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -53,7 +54,28 @@ export class AccountStaffUpdateComponent {
     });
   }
 
-  closeModal(): void {
-    this.activeModal.dismiss();
+  closeModal() {
+    console.log('🛑 Attempting to close modal...');
+    if (this.activeModal) {
+      this.activeModal.dismiss('cancel'); // Dismiss the modal
+      console.log('✅ Dismiss method called');
+    } else {
+      console.error('❌ ActiveModal is not available');
+    }
+
+    // Backup plan: Remove modal manually using Bootstrap classes
+    setTimeout(() => {
+      const modalElement = document.querySelector('.modal');
+      if (modalElement) {
+        modalElement.remove();
+      }
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+      document.body.classList.remove('modal-open');
+      console.log('✅ Forced modal removal executed');
+      this.cdr.detectChanges(); // Trigger change detection to update UI
+    }, 100);
   }
 }
