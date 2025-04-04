@@ -86,7 +86,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN spct ON ctdh.id_spct = spct.id " +
             "JOIN san_pham sp ON spct.id_san_pham = sp.id " +
             "JOIN don_hang dh ON dh.id = ctdh.id_don_hang " +
-            "WHERE dh.trang_thai = 2 " + //không biết trạng tháng đơn hoàn thành là số mấy nên lấy tạm 2, update lại thành trạng thái đúng sau
+            "WHERE dh.trang_thai = 2  sp.trang_thai = 1" + //không biết trạng tháng đơn hoàn thành là số mấy nên lấy tạm 2, update lại thành trạng thái đúng sau
             "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, spct.so_luong_ton_kho, spct.id " +
             "ORDER BY tongSoLuongBan DESC ", nativeQuery = true)
     List<SanPhamBanChayDto> getTop10SanPhamBanChay();
@@ -105,7 +105,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN spct ON ctdh.id_spct = spct.id " +
             "JOIN san_pham sp ON spct.id_san_pham = sp.id " +
             "JOIN don_hang dh ON dh.id = ctdh.id_don_hang " +
-            "WHERE dh.trang_thai = 2 " +  //không biết trạng tháng đơn hoàn thành là số mấy nên lấy tạm 2, update lại thành trạng thái đúng sau
+            "WHERE dh.trang_thai = 2 and sp.trang_thai = 1" +  //không biết trạng tháng đơn hoàn thành là số mấy nên lấy tạm 2, update lại thành trạng thái đúng sau
             "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, spct.so_luong_ton_kho, spct.id " +
             "ORDER BY tongSoLuongBan ASC ", nativeQuery = true)
     List<SanPhamBanChayDto> getTop10SanPhamBanIt();
