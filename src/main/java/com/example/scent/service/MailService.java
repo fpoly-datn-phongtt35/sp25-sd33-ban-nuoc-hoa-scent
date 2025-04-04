@@ -4,6 +4,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.mail.javamail.MimeMessageHelper;
 @Service
@@ -11,7 +12,7 @@ public class MailService {
 
     @Autowired
     private JavaMailSender mailSender;
-
+    @Async
     public void sendOtpEmail(String to, String otp) {
         String subject = "Mã OTP khôi phục mật khẩu";
         String body = "<html>" +
@@ -31,6 +32,7 @@ public class MailService {
 
         sendHtmlEmail(to, subject, body);
     }
+    @Async
     public void sendNewPasswordEmail(String email, String newPassword) {
         String subject = "Mật khẩu mới của bạn - Scent";
         String body = "<html>" +
@@ -50,7 +52,7 @@ public class MailService {
         sendHtmlEmail(email, subject, body);
     }
 
-
+    @Async
     public void sendHtmlEmail(String to, String subject, String body) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
