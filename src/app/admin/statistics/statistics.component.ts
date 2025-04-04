@@ -14,6 +14,9 @@ interface ThongKeDonHangDTO {
   offlineHoanThanh: number;
   offlineHuy: number;
   soLuongDon: number;
+  soLuongDonOnline: number;
+  soLuongDonOffline: number;
+  tiLeTangTruongDoanhThu: number | null;
 }
 
 interface ThongKeTheoThoiGianDTO {
@@ -43,14 +46,19 @@ interface SoLuongDonHangDTO {
 })
 export class StatisticsComponent implements OnInit {
   thongKeTongQuan: ThongKeDonHangDTO | null = null;
+  
+  doanhThuData: ThongKeTheoThoiGianDTO[] = [];
+  soLuongDonData: SoLuongDonHangDTO[] = [];
+  compareDoanhThuData: ThongKeTheoThoiGianDTO[] = [];
 
   // Dữ liệu cho dropdown
-  selectedTimeType: string = 'thang'; // Mặc định là thống kê theo tháng
+  selectedTimeType: string = 'tuan'; // Mặc định là thống kê theo tháng
   selectedMonth: string = new Date().getMonth() + 1 + ''; // Mặc định là tháng hiện tại
   selectedYear: string = new Date().getFullYear() + ''; // Mặc định là năm hiện tại
-  selectedWeek: string = '1'; // Mặc định là tuần 1
-  startDate: string = ''; // Ngày bắt đầu
-  endDate: string = ''; // Ngày kết thúc
+  compareYear: string | null = null; // Năm để so sánh
+  selectedWeek: string = '1'; // Sẽ được cập nhật thành tuần hiện tại
+  startDate: string = ''; // Sẽ được cập nhật thành hôm qua
+  endDate: string = ''; // Sẽ được cập nhật thành hôm nay
 
   months = [
     { value: '1', label: 'Tháng 1' },
@@ -85,7 +93,7 @@ export class StatisticsComponent implements OnInit {
         title: {
           display: true,
           text: 'Thời gian'
-        } as any // Sử dụng `as any` để tránh lỗi TypeScript
+        } as any
       },
       y: {
         display: true,
@@ -94,9 +102,15 @@ export class StatisticsComponent implements OnInit {
           text: 'Doanh thu (VNĐ)'
         } as any
       }
+    },
+    datasets: {
+      bar: {
+         // Set a fixed width for the bars (in pixels)
+        maxBarThickness: 130 // Optional: Set a maximum width to ensure it doesn't get too wide
+      }
     }
   };
-  doanhThuType: ChartType = 'bar';
+  doanhThuType: ChartType = 'line'; // Cố định là dạng đường
 
   // Dữ liệu biểu đồ số lượng đơn
   soLuongDonConfig: ChartConfiguration['data'] = {
@@ -114,7 +128,7 @@ export class StatisticsComponent implements OnInit {
         title: {
           display: true,
           text: 'Thời gian'
-        } as any // Sử dụng `as any` để tránh lỗi TypeScript
+        } as any
       },
       y: {
         display: true,
@@ -123,24 +137,34 @@ export class StatisticsComponent implements OnInit {
           text: 'Số lượng đơn'
         } as any
       }
+    },
+    datasets: {
+      bar: {
+        barThickness: 120, // Set a fixed width for the bars (in pixels)
+        maxBarThickness: 120 // Optional: Set a maximum width to ensure it doesn't get too wide
+      }
     }
   };
-  soLuongDonType: ChartType = 'bar';
+  soLuongDonType: ChartType = 'bar'; // Biểu đồ số lượng đơn vẫn có thể thay đổi
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    this.loadThongKeTongQuan();
-    this.loadDataForSelectedTimeType(); // Tải dữ liệu ban đầu dựa trên loại thời gian mặc định
-  }
+    // Tính tuần hiện tại
+    const today = new Date();
+    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
+    const pastDaysOfYear = Math.floor((today.getTime() - firstDayOfYear.getTime()) / (1000 * 60 * 60 * 24));
+    this.selectedWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7).toString();
 
-  // Hàm xử lý khi người dùng thay đổi loại thống kê
-  onTimeTypeChange(): void {
-    // Cập nhật loại biểu đồ dựa trên loại thời gian
+    // Tính ngày hôm qua và hôm nay
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    this.startDate = yesterday.toISOString().split('T')[0]; // Định dạng YYYY-MM-DD
+    this.endDate = today.toISOString().split('T')[0]; // Định dạng YYYY-MM-DD
     this.doanhThuType = this.selectedTimeType === 'ngay' ? 'line' : 'bar';
+    // Chỉ thay đổi loại biểu đồ cho số lượng đơn, giữ biểu đồ doanh thu là dạng đường
     this.soLuongDonType = this.selectedTimeType === 'ngay' ? 'line' : 'bar';
 
-    // Cập nhật tiêu đề trục X
     if (this.doanhThuOptions.scales && this.doanhThuOptions.scales['x']) {
       (this.doanhThuOptions.scales['x'] as any).title.text = this.getTimeLabel();
     }
@@ -149,10 +173,27 @@ export class StatisticsComponent implements OnInit {
     }
 
     // Tải dữ liệu
+    this.loadThongKeTongQuan();
     this.loadDataForSelectedTimeType();
   }
 
-  // Hàm lấy nhãn trục X dựa trên loại thời gian
+  onTimeTypeChange(): void {
+    this.selectedMonth = new Date().getMonth() + 1 + '';
+    this.selectedYear = new Date().getFullYear() + '';
+    const today = new Date();
+    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
+    const pastDaysOfYear = Math.floor((today.getTime() - firstDayOfYear.getTime()) / (1000 * 60 * 60 * 24));
+    this.selectedWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7).toString();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    this.startDate = yesterday.toISOString().split('T')[0];
+    this.endDate = today.toISOString().split('T')[0];
+    this.compareYear = null;
+    this.compareDoanhThuData = [];
+   
+    this.loadDataForSelectedTimeType();
+  }
+
   getTimeLabel(): string {
     switch (this.selectedTimeType) {
       case 'ngay':
@@ -168,10 +209,12 @@ export class StatisticsComponent implements OnInit {
     }
   }
 
-  // Hàm tải dữ liệu dựa trên loại thời gian được chọn
   loadDataForSelectedTimeType(): void {
     this.loadDoanhThu();
     this.loadSoLuongDon();
+    if (this.compareYear) {
+      this.loadCompareDoanhThu();
+    }
   }
 
   loadThongKeTongQuan(): void {
@@ -188,10 +231,10 @@ export class StatisticsComponent implements OnInit {
         url = `http://localhost:8080/api/thong-ke/doanh-thu/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
         break;
       case 'tuan':
-        url = `http://localhost:8080/api/thong-ke/doanh-thu/tuan?year=${this.selectedYear}&week=${this.selectedWeek}`;
+        url = `http://localhost:8080/api/thong-ke/doanh-thu/tuan?year=${this.selectedYear}${this.selectedWeek ? `&week=${this.selectedWeek}` : ''}`;
         break;
       case 'thang':
-        url = `http://localhost:8080/api/thong-ke/doanh-thu/thang?year=${this.selectedYear}&month=${this.selectedMonth}`;
+        url = `http://localhost:8080/api/thong-ke/doanh-thu/thang?year=${this.selectedYear}${this.selectedMonth ? `&month=${this.selectedMonth}` : ''}`;
         break;
       case 'nam':
         url = `http://localhost:8080/api/thong-ke/doanh-thu/nam?year=${this.selectedYear}`;
@@ -200,15 +243,61 @@ export class StatisticsComponent implements OnInit {
 
     this.http.get<ThongKeTheoThoiGianDTO[]>(url)
       .subscribe(data => {
-        this.doanhThuConfig = {
-          labels: data.map(item => item.thoiGian),
-          datasets: [
-            { data: data.map(item => item.tongDoanhThu), label: 'Tổng doanh thu', backgroundColor: '#FF6384', borderColor: '#FF6384', fill: false },
-            { data: data.map(item => item.doanhThuOnline), label: 'Doanh thu online', backgroundColor: '#36A2EB', borderColor: '#36A2EB', fill: false },
-            { data: data.map(item => item.doanhThuOffline), label: 'Doanh thu offline', backgroundColor: '#FFCE56', borderColor: '#FFCE56', fill: false }
-          ]
-        };
+        this.doanhThuData = data;
+        this.updateDoanhThuChart();
       });
+  }
+
+  loadCompareDoanhThu(): void {
+    if (!this.compareYear) return;
+
+    let url = '';
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        url = `http://localhost:8080/api/thong-ke/doanh-thu/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
+        break;
+      case 'tuan':
+        url = `http://localhost:8080/api/thong-ke/doanh-thu/tuan?year=${this.compareYear}${this.selectedWeek ? `&week=${this.selectedWeek}` : ''}`;
+        break;
+      case 'thang':
+        url = `http://localhost:8080/api/thong-ke/doanh-thu/thang?year=${this.compareYear}${this.selectedMonth ? `&month=${this.selectedMonth}` : ''}`;
+        break;
+      case 'nam':
+        url = `http://localhost:8080/api/thong-ke/doanh-thu/nam?year=${this.compareYear}`;
+        break;
+    }
+
+    this.http.get<ThongKeTheoThoiGianDTO[]>(url)
+      .subscribe(data => {
+        this.compareDoanhThuData = data;
+        const hasData = data.some(item => item.tongDoanhThu > 0 || item.doanhThuOnline > 0 || item.doanhThuOffline > 0);
+        if (!hasData) {
+          this.compareDoanhThuData = [];
+        }
+        this.updateDoanhThuChart();
+      });
+  }
+
+  updateDoanhThuChart(): void {
+    const labels = this.doanhThuData.map(item => item.thoiGian);
+    const datasets = [
+      { data: this.doanhThuData.map(item => item.tongDoanhThu), label: `Tổng doanh thu (${this.selectedYear})`, backgroundColor: '#FF6384', borderColor: '#FF6384', fill: false },
+      { data: this.doanhThuData.map(item => item.doanhThuOnline), label: `Doanh thu online (${this.selectedYear})`, backgroundColor: '#36A2EB', borderColor: '#36A2EB', fill: false },
+      { data: this.doanhThuData.map(item => item.doanhThuOffline), label: `Doanh thu offline (${this.selectedYear})`, backgroundColor: '#FFCE56', borderColor: '#FFCE56', fill: false }
+    ];
+
+    if (this.compareDoanhThuData.length > 0) {
+      datasets.push(
+        { data: this.compareDoanhThuData.map(item => item.tongDoanhThu), label: `Tổng doanh thu (${this.compareYear})`, backgroundColor: '#FF9999', borderColor: '#FF9999', fill: false },
+        { data: this.compareDoanhThuData.map(item => item.doanhThuOnline), label: `Doanh thu online (${this.compareYear})`, backgroundColor: '#66B2FF', borderColor: '#66B2FF', fill: false },
+        { data: this.compareDoanhThuData.map(item => item.doanhThuOffline), label: `Doanh thu offline (${this.compareYear})`, backgroundColor: '#FFE066', borderColor: '#FFE066', fill: false }
+      );
+    }
+
+    this.doanhThuConfig = {
+      labels: labels,
+      datasets: datasets
+    };
   }
 
   loadSoLuongDon(): void {
@@ -218,10 +307,10 @@ export class StatisticsComponent implements OnInit {
         url = `http://localhost:8080/api/thong-ke/so-luong-don/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
         break;
       case 'tuan':
-        url = `http://localhost:8080/api/thong-ke/so-luong-don/tuan?year=${this.selectedYear}&week=${this.selectedWeek}`;
+        url = `http://localhost:8080/api/thong-ke/so-luong-don/tuan?year=${this.selectedYear}${this.selectedWeek ? `&week=${this.selectedWeek}` : ''}`;
         break;
       case 'thang':
-        url = `http://localhost:8080/api/thong-ke/so-luong-don/thang?year=${this.selectedYear}&month=${this.selectedMonth}`;
+        url = `http://localhost:8080/api/thong-ke/so-luong-don/thang?year=${this.selectedYear}${this.selectedMonth ? `&month=${this.selectedMonth}` : ''}`;
         break;
       case 'nam':
         url = `http://localhost:8080/api/thong-ke/so-luong-don/nam?year=${this.selectedYear}`;
@@ -230,6 +319,7 @@ export class StatisticsComponent implements OnInit {
 
     this.http.get<SoLuongDonHangDTO[]>(url)
       .subscribe(data => {
+        this.soLuongDonData = data;
         this.soLuongDonConfig = {
           labels: data.map(item => item.thoiGian),
           datasets: [
@@ -237,5 +327,9 @@ export class StatisticsComponent implements OnInit {
           ]
         };
       });
+  }
+
+  onCompareYearChange(): void {
+    this.loadDataForSelectedTimeType();
   }
 }

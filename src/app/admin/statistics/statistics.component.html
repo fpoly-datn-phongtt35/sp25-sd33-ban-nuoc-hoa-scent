@@ -1,12 +1,39 @@
 <!-- Container -->
 <div class="statistics-container">
   <!-- Tổng quan -->
-  <div *ngIf="thongKeTongQuan" class="overview">
-    <h2>Tổng quan</h2>
-    <p>Tổng doanh thu: {{ thongKeTongQuan.tongDoanhThu | currency:'VND' }}</p>
-    <p>Doanh thu online: {{ thongKeTongQuan.doanhThuOnline | currency:'VND' }}</p>
-    <p>Doanh thu offline: {{ thongKeTongQuan.doanhThuOffline | currency:'VND' }}</p>
+<!-- Tổng quan -->
+<div *ngIf="thongKeTongQuan" class="overview">
+  <h2>Tổng quan</h2>
+  <div class="overview-grid">
+    <!-- Doanh thu -->
+    <div class="overview-section">
+      <h3>Doanh thu</h3>
+      <p><span class="label">Tổng doanh thu:</span> {{ thongKeTongQuan.tongDoanhThu | currency:'VND' }}</p>
+      <p><span class="label">Doanh thu online:</span> {{ thongKeTongQuan.doanhThuOnline | currency:'VND' }}</p>
+      <p><span class="label">Doanh thu offline:</span> {{ thongKeTongQuan.doanhThuOffline | currency:'VND' }}</p>
+    </div>
+
+    <!-- Số lượng đơn -->
+    <div class="overview-section">
+      <h3>Số lượng đơn</h3>
+      <p><span class="label">Tổng số lượng đơn:</span> {{ thongKeTongQuan.soLuongDon }}</p>
+      <p><span class="label">Số lượng đơn online:</span> {{ thongKeTongQuan.soLuongDonOnline }}</p>
+      <p><span class="label">Số lượng đơn offline:</span> {{ thongKeTongQuan.soLuongDonOffline }}</p>
+    </div>
+
+    <!-- Trạng thái đơn -->
+    <div class="overview-section">
+      <h3>Trạng thái đơn</h3>
+      <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuan.onlineHoanThanh }}</p>
+      <p><span class="label">Online hủy:</span> {{ thongKeTongQuan.onlineHuy }}</p>
+      <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuan.offlineHoanThanh }}</p>
+      <p><span class="label">Offline hủy:</span> {{ thongKeTongQuan.offlineHuy }}</p>
+    </div>
+
+    <!-- Tỉ lệ tăng trưởng -->
+  
   </div>
+</div>
 
   <!-- Dropdown để chọn loại thống kê -->
   <div class="filters">
@@ -45,6 +72,7 @@
   <div *ngIf="selectedTimeType === 'thang'" class="filters">
     <label for="monthSelect">Chọn tháng: </label>
     <select id="monthSelect" [(ngModel)]="selectedMonth" (change)="loadDataForSelectedTimeType()">
+      <option value="">Tất cả</option>
       <option *ngFor="let month of months" [value]="month.value">{{ month.label }}</option>
     </select>
 
@@ -62,6 +90,9 @@
     </select>
   </div>
 
+  <!-- Form so sánh -->
+ 
+
   <!-- Biểu đồ doanh thu -->
   <div class="chart-container">
     <h2>Doanh thu</h2>
@@ -69,6 +100,31 @@
       [data]="doanhThuConfig"
       [options]="doanhThuOptions"
       [type]="doanhThuType"></canvas>
+
+    <!-- Bảng chi tiết doanh thu -->
+    <div class="data-table" *ngIf="doanhThuData.length > 0">
+      <h3>Chi tiết doanh thu</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Tổng doanh thu</th>
+            <th>Doanh thu online</th>
+            <th>Doanh thu offline</th>
+            <th>Tỉ lệ tăng trưởng (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of doanhThuData">
+            <td>{{ item.thoiGian }}</td>
+            <td>{{ item.tongDoanhThu | currency:'VND' }}</td>
+            <td>{{ item.doanhThuOnline | currency:'VND' }}</td>
+            <td>{{ item.doanhThuOffline | currency:'VND' }}</td>
+            <td>{{ item.tiLeTangTruongDoanhThu !== null ? (item.tiLeTangTruongDoanhThu | number:'1.2-2') + '%' : 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Biểu đồ số lượng đơn -->
