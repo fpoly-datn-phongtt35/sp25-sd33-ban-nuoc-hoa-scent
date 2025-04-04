@@ -29,6 +29,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
   isLoading: boolean = false;
   email: string = '';
   username: string = '';
+  maskedEmail: string = '';
 
   constructor(
     public activeModal: NgbActiveModal,
@@ -42,7 +43,10 @@ export class ChangePasswordModalComponent implements OnDestroy {
       this.accountService.findByUsername(this.username).subscribe({
         next: (user: any) => {
           this.email = user.email;
+          this.maskedEmail = this.maskEmail(this.email);
+          console.log('email:',this.email)
         },
+        
         error: () => {
           Swal.fire({
             title: 'Lỗi',
@@ -67,7 +71,15 @@ export class ChangePasswordModalComponent implements OnDestroy {
       this.closeModal();
     }
   }
-
+  private maskEmail(email: string): string {
+    if (!email) return '';
+    const [localPart, domain] = email.split('@');
+    if (localPart.length <= 3) return email; // Nếu phần local quá ngắn, không che
+    const firstThree = localPart.substring(0, 3);
+    const lastTwo = localPart.substring(localPart.length - 2);
+    const maskedPart = '*'.repeat(localPart.length - 5); // Che phần giữa
+    return `${firstThree}${maskedPart}${lastTwo}@${domain}`;
+  }
   ngOnDestroy(): void {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);

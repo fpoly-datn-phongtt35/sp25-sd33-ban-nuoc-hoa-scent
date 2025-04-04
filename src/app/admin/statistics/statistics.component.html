@@ -1,32 +1,82 @@
-<div class="dashboard-container">
-    <h2 class="section-title">Thống kê</h2>
-  
-    <!-- Bộ lọc thời gian -->
-    <div class="filter-tabs">
-      <button class="tab active">Hôm nay</button>
-      <button class="tab">Tuần này</button>
-      <button class="tab">Tháng này</button>
-      <button class="tab">Năm nay</button>
-      <button class="tab">Tùy chỉnh</button>
-    </div>
-  
-    <!-- Khu vực hiển thị thông tin -->
-    <div class="summary-container">
-      <h3 class="summary-title"><i class="bi bi-calendar3"></i> Hôm nay</h3>
-      <div class="summary-info">
-        <div class="summary-item">Tổng số sản phẩm <span>0</span></div>
-        <div class="summary-item">Trả hàng <span>0</span></div>
-        <div class="summary-item">Tổng số đơn thành công <span>0</span></div>
-        <div class="summary-item">Tổng số đơn hủy <span>0</span></div>
-        <div class="summary-item">Tổng số đơn trả <span>0</span></div>
-        <div class="summary-item">Tổng số doanh thu <span>0</span></div>
-      </div>
-      <button class="btn-export">Export Excel</button>
-    </div>
-  
-    <!-- Biểu đồ doanh thu -->
-    <div class="chart-container">
-      <img src="chart-placeholder.webp" alt="Biểu đồ doanh thu" class="chart-image">
-    </div>
+<!-- Container -->
+<div class="statistics-container">
+  <!-- Tổng quan -->
+  <div *ngIf="thongKeTongQuan" class="overview">
+    <h2>Tổng quan</h2>
+    <p>Tổng doanh thu: {{ thongKeTongQuan.tongDoanhThu | currency:'VND' }}</p>
+    <p>Doanh thu online: {{ thongKeTongQuan.doanhThuOnline | currency:'VND' }}</p>
+    <p>Doanh thu offline: {{ thongKeTongQuan.doanhThuOffline | currency:'VND' }}</p>
   </div>
-  
+
+  <!-- Dropdown để chọn loại thống kê -->
+  <div class="filters">
+    <label for="timeTypeSelect">Chọn loại thống kê: </label>
+    <select id="timeTypeSelect" [(ngModel)]="selectedTimeType" (change)="onTimeTypeChange()">
+      <option value="ngay">Theo ngày</option>
+      <option value="tuan">Theo tuần</option>
+      <option value="thang">Theo tháng</option>
+      <option value="nam">Theo năm</option>
+    </select>
+  </div>
+
+  <!-- Form chọn ngày (hiển thị khi chọn "Theo ngày") -->
+  <div *ngIf="selectedTimeType === 'ngay'" class="filters">
+    <label for="startDate">Ngày bắt đầu: </label>
+    <input type="date" id="startDate" [(ngModel)]="startDate" (change)="loadDataForSelectedTimeType()" />
+
+    <label for="endDate">Ngày kết thúc: </label>
+    <input type="date" id="endDate" [(ngModel)]="endDate" (change)="loadDataForSelectedTimeType()" />
+  </div>
+
+  <!-- Form chọn tuần (hiển thị khi chọn "Theo tuần") -->
+  <div *ngIf="selectedTimeType === 'tuan'" class="filters">
+    <label for="weekSelect">Chọn tuần: </label>
+    <select id="weekSelect" [(ngModel)]="selectedWeek" (change)="loadDataForSelectedTimeType()">
+      <option *ngFor="let week of weeks" [value]="week">{{ week }}</option>
+    </select>
+
+    <label for="yearSelectTuan">Chọn năm: </label>
+    <select id="yearSelectTuan" [(ngModel)]="selectedYear" (change)="loadDataForSelectedTimeType()">
+      <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+    </select>
+  </div>
+
+  <!-- Form chọn tháng (hiển thị khi chọn "Theo tháng") -->
+  <div *ngIf="selectedTimeType === 'thang'" class="filters">
+    <label for="monthSelect">Chọn tháng: </label>
+    <select id="monthSelect" [(ngModel)]="selectedMonth" (change)="loadDataForSelectedTimeType()">
+      <option *ngFor="let month of months" [value]="month.value">{{ month.label }}</option>
+    </select>
+
+    <label for="yearSelectThang">Chọn năm: </label>
+    <select id="yearSelectThang" [(ngModel)]="selectedYear" (change)="loadDataForSelectedTimeType()">
+      <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+    </select>
+  </div>
+
+  <!-- Form chọn năm (hiển thị khi chọn "Theo năm") -->
+  <div *ngIf="selectedTimeType === 'nam'" class="filters">
+    <label for="yearSelectNam">Chọn năm: </label>
+    <select id="yearSelectNam" [(ngModel)]="selectedYear" (change)="loadDataForSelectedTimeType()">
+      <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+    </select>
+  </div>
+
+  <!-- Biểu đồ doanh thu -->
+  <div class="chart-container">
+    <h2>Doanh thu</h2>
+    <canvas baseChart
+      [data]="doanhThuConfig"
+      [options]="doanhThuOptions"
+      [type]="doanhThuType"></canvas>
+  </div>
+
+  <!-- Biểu đồ số lượng đơn -->
+  <div class="chart-container">
+    <h2>Số lượng đơn</h2>
+    <canvas baseChart
+      [data]="soLuongDonConfig"
+      [options]="soLuongDonOptions"
+      [type]="soLuongDonType"></canvas>
+  </div>
+</div>

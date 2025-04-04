@@ -1,98 +1,162 @@
-.dashboard-container {
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+/* Container for the entire component */
+.statistics-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+}
+
+/* Styling for the overview section */
+.overview {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.overview h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.overview p {
+  font-size: 1rem;
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+}
+
+.overview .label {
+  font-weight: bold;
+  color: #555;
+  margin-right: 10px;
+}
+
+.overview .value {
+  color: #333;
+}
+
+/* Styling for the dropdowns and inputs */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.filters label {
+  font-size: 1rem;
+  color: #333;
+  margin-right: 5px;
+}
+
+.filters select,
+.filters input[type="date"] {
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.filters select:focus,
+.filters input[type="date"]:focus {
+  border-color: #36A2EB;
+  outline: none;
+}
+
+/* Styling for the charts */
+.chart-container {
+  margin-bottom: 30px;
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h2 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+/* Make charts more compact */
+canvas {
+  max-height: 300px !important; /* Reduce chart height */
+  width: 100% !important;
+}
+
+/* Styling for the data table */
+.data-table {
+  margin-top: 20px;
+}
+
+.data-table h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.data-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+  color: #333;
+}
+
+.data-table td {
+  color: #555;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .section-title {
-    font-size: 24px;
-    margin-bottom: 20px;
+
+  .filters select,
+  .filters input[type="date"] {
+    width: 100%;
   }
-  
-  .filter-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  
-  .tab {
-    padding: 8px 20px;
-    background-color: #e0e0e0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .tab.active {
-    background-color: #6c757d;
-    color: white;
-  }
-  
-  .tab:hover {
-    background-color: #d6d6d6;
-  }
-  
-  .summary-container {
-    background-color: #f7f7f7;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-  }
-  
-  .summary-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-  
-  .summary-info {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-  
-  .summary-item {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-    font-weight: bold;
-  }
-  
-  .summary-item span {
-    display: block;
-    font-size: 20px;
-    color: #333;
-  }
-  
-  .btn-export {
-    background-color: #28a745;
-    color: white;
-    padding: 8px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    float: right;
-    margin-top: 10px;
-  }
-  
-  .btn-export:hover {
-    background-color: #218838;
-  }
-  
+
   .chart-container {
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    text-align: center;
+    padding: 10px;
   }
-  
-  .chart-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
+
+  .chart-container h2 {
+    font-size: 1.2rem;
   }
-  
+
+  .data-table table {
+    font-size: 0.9rem;
+  }
+}

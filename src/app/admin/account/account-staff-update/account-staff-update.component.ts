@@ -40,7 +40,7 @@ export class AccountStaffUpdateComponent {
       email: this.accountData.email,
       sdt: this.accountData.sdt
     };
-
+console.log('Email',this.accountData.email)
     this.accountService.updateAccount(dto).subscribe({
       next: (response) => {
         console.log('✅ Cập nhật tài khoản thành công:', response);
