@@ -16,13 +16,28 @@ public class ThongKeSv {
     public List<ThongKeDTO> findTopProductsByCustomer() {
         List<Object[]> rawData = donHangRepo.findTopProductsByCustomer();
         if (rawData == null || rawData.isEmpty()) {
-            return List.of();  // Trả về danh sách rỗng thay vì null
+            return List.of();  // Trả về danh sách rỗng
         }
         return rawData.stream()
                 .map(obj -> new ThongKeDTO(
                         (String) obj[0],  // Tên khách hàng
                         (String) obj[1],  // Tên sản phẩm
-                        ((Number) obj[2]).longValue()  // Số lượng mua
+                        ((Number) obj[2]).longValue()  // Số lượng
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<ThongKeDTO> findTopSellingProductsCompletedOrders() {
+        List<Object[]> rawData = donHangRepo.findTopSellingProductsCompletedOrders();
+        if (rawData == null || rawData.isEmpty()) {
+            return List.of();  // Trả về danh sách rỗng
+        }
+        // Chuyển dữ liệu thành đối tượng DTO
+        return rawData.stream()
+                .map(obj -> new ThongKeDTO(
+                        (String) obj[0],  // Tên sản phẩm
+                        null,
+                        ((Number) obj[1]).longValue()  // Số lượng
                 ))
                 .collect(Collectors.toList());
     }

@@ -123,5 +123,13 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
             nativeQuery = true)
     List<Object[]> findTopProductsByCustomer();
 
-
+    @Query(value = "SELECT sp.ten, SUM(ctdh.so_luong) AS totalQuantity " +
+            "FROM chi_tiet_don_hang ctdh " +
+            "JOIN spct sp ON ctdh.id_spct = sp.id " +
+            "JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
+            "WHERE dh.trang_thai = 'Hoàn thành' " +
+            "GROUP BY sp.ten " +
+            "ORDER BY totalQuantity DESC",
+            nativeQuery = true)
+    List<Object[]> findTopSellingProductsCompletedOrders();
 }

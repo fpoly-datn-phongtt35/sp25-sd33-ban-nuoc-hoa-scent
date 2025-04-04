@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/thongke")
+@RequestMapping("rest/thong-ke")
 public class ThongKeCtrl {
     @Autowired
     private ThongKeSv thongKeSv;
@@ -18,5 +18,10 @@ public class ThongKeCtrl {
     @GetMapping("/top-customers")
     public List<ThongKeDTO> getTopCustomers() {
         return thongKeSv.findTopProductsByCustomer();
+    }
+
+    @GetMapping("/top-selling-products-completed")
+    public List<ThongKeDTO> getTopSellingProductsCompleted() {
+        return thongKeSv.findTopSellingProductsCompletedOrders();
     }
 }
