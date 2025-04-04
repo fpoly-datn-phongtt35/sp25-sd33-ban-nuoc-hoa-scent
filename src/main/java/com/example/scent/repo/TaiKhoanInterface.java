@@ -38,5 +38,7 @@ public interface TaiKhoanInterface extends JpaRepository<TaiKhoan, Integer>{
             @Param("role") String role,
             @Param("keyword") String keyword,
             Pageable pageable);
+    Optional<TaiKhoan> findByEmail(String email);
+    Optional<TaiKhoan> findBySdt(String sdt);
 
 }

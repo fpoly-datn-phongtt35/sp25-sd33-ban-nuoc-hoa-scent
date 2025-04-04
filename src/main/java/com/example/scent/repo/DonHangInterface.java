@@ -18,11 +18,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
 
-public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
+public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 
     @Query(value = "SELECT SUM(o.tong_tien) FROM don_hang o WHERE "
             + "(:year IS NULL OR YEAR(o.ngay_van_chuyen) = :year) "
@@ -49,10 +50,8 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     @Modifying
     @Query("UPDATE DonHang d SET d.trangThai = 2 WHERE d.id = :id")
     void updateStatusToProcessing(@Param("id") Integer id);
-    List<DonHang> findByTrangThai( Integer trangThai);
 
-
-
+    List<DonHang> findByTrangThai(Integer trangThai);
 
 
     @Query(value = """
@@ -98,11 +97,11 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
     Page<DonHang> findByTrangThai(@Param("trangThai") Integer trangThai, Pageable pageable);
 
 
-
     List<DonHang> findByTaiKhoanId(Integer taiKhoanId);
 
     @Query(value = "select * from don_hang where loai_don_hang like 'online'", nativeQuery = true)
     List<DonHang> getAllOnline();
+
     @Query(value = "select * from don_hang where loai_don_hang like 'offline' and trang_thai like 'đang xử lý'", nativeQuery = true)
     List<DonHang> getAllOffline();
 
@@ -110,6 +109,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
 
     @Query("SELECT COUNT(dh) > 0 FROM DonHang dh WHERE dh.taiKhoan = :taiKhoan AND dh.phieuGiamGia = :phieuGiamGia")
     boolean existsByTaiKhoanAndPhieuGiamGia(@Param("taiKhoan") TaiKhoan taiKhoan, @Param("phieuGiamGia") PhieuGiamGia phieuGiamGia);
+
 
 
     @Query(value = "SELECT k.ten_khach_hang, sp.ten, SUM(ctdh.so_luong) AS totalQuantity " +
@@ -132,4 +132,128 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
             "ORDER BY totalQuantity DESC",
             nativeQuery = true)
     List<Object[]> findTopSellingProductsCompletedOrders();
+
+
+    //===================Thống kê===========================
+
+
+    // Tổng đơn Online hoàn thành (luongBan = 1, trangThai = 4)
+
+    // Tổng số đơn hàng
+    long count();
+
+    long countByLuongBanAndTrangThai(Integer luongBan, Integer trangThai);
+
+    @Query(value = "SELECT SUM(tong_tien) FROM don_hang", nativeQuery = true)
+    BigDecimal getTotalRevenue();
+
+
+    @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE luong_ban = 1 AND trang_thai = 4", nativeQuery = true)
+    BigDecimal getRevenueOnline();
+
+    @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE luong_ban = 0 AND trang_thai = 4", nativeQuery = true)
+    BigDecimal getRevenueOffline();
+
+    // Số lượng đơn hàng theo ngày với khoảng thời gian
+    @Query(value = "SELECT CONVERT(DATE, dh.ngay_tao) as ngay, COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate) " +
+            "AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
+            "GROUP BY CONVERT(DATE, dh.ngay_tao) " +
+            "ORDER BY ngay", nativeQuery = true)
+    List<Object[]> getSoLuongDonTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
+
+    // Số lượng đơn hàng theo tuần với năm và tuần cụ thể
+    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, DATEPART(WEEK, dh.ngay_tao) as tuan, COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "AND (:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
+            "GROUP BY DATEPART(YEAR, dh.ngay_tao), DATEPART(WEEK, dh.ngay_tao) " +
+            "ORDER BY nam, tuan", nativeQuery = true)
+    List<Object[]> getSoLuongDonTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
+
+    // Số lượng đơn hàng theo tháng với năm và tháng cụ thể
+    @Query(value = "SELECT FORMAT(dh.ngay_tao, 'yyyy-MM') as thang, COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
+            "GROUP BY FORMAT(dh.ngay_tao, 'yyyy-MM') " +
+            "ORDER BY thang", nativeQuery = true)
+    List<Object[]> getSoLuongDonTheoThang(@Param("year") Integer year, @Param("month") Integer month);
+
+    // Số lượng đơn hàng theo năm với năm cụ thể
+    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "GROUP BY DATEPART(YEAR, dh.ngay_tao) " +
+            "ORDER BY nam", nativeQuery = true)
+    List<Object[]> getSoLuongDonTheoNam(@Param("year") Integer year);
+
+    // Thống kê doanh thu và số đơn theo ngày với khoảng thời gian
+    @Query(value = "SELECT CONVERT(DATE, dh.ngay_tao) as ngay, " +
+            "SUM(dh.tong_tien) as tongDoanhThu, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
+            "COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate) " +
+            "AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
+            "GROUP BY CONVERT(DATE, dh.ngay_tao) " +
+            "ORDER BY ngay", nativeQuery = true)
+    List<Object[]> thongKeTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
+
+    // Thống kê doanh thu và số đơn theo tuần với năm và tuần cụ thể
+    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, DATEPART(WEEK, dh.ngay_tao) as tuan, " +
+            "SUM(dh.tong_tien) as tongDoanhThu, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
+            "COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "AND (:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
+            "GROUP BY DATEPART(YEAR, dh.ngay_tao), DATEPART(WEEK, dh.ngay_tao) " +
+            "ORDER BY nam, tuan", nativeQuery = true)
+    List<Object[]> thongKeTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
+
+    // Thống kê doanh thu và số đơn theo tháng với năm và tháng cụ thể
+    @Query(value = "SELECT FORMAT(dh.ngay_tao, 'yyyy-MM') as thang, " +
+            "SUM(dh.tong_tien) as tongDoanhThu, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
+            "COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
+            "GROUP BY FORMAT(dh.ngay_tao, 'yyyy-MM') " +
+            "ORDER BY thang", nativeQuery = true)
+    List<Object[]> thongKeTheoThang(@Param("year") Integer year, @Param("month") Integer month);
+
+    // Thống kê doanh thu và số đơn theo năm với năm cụ thể
+    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, " +
+            "SUM(dh.tong_tien) as tongDoanhThu, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
+            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
+            "COUNT(*) as soLuongDon " +
+            "FROM don_hang dh " +
+            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "GROUP BY DATEPART(YEAR, dh.ngay_tao) " +
+            "ORDER BY nam", nativeQuery = true)
+    List<Object[]> thongKeTheoNam(@Param("year") Integer year);
 }
+

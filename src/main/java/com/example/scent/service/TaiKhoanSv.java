@@ -109,7 +109,10 @@ public class TaiKhoanSv implements UserDetailsService {
 
         // Lưu tài khoản mới
         return tki.save(taiKhoan);
-    }public Page<TaiKhoan> getPageTaiKhoan(int page, int size) {
+    }
+
+
+    public Page<TaiKhoan> getPageTaiKhoan(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return tki.findAll(pageable);
     }public Page<TaiKhoan> searchByTerm(String searchTerm, Pageable pageable) {
