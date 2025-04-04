@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,9 +27,23 @@ public class ThongKeService {
         long offlineHoanThanh = donHangRepository.countByLuongBanAndTrangThai(0, 4);
         long offlineHuy = donHangRepository.countByLuongBanAndTrangThai(0, 5);
         long soLuongDon = donHangRepository.count();
+        long soLuongDonOnline = donHangRepository.countOnlineOrders();
+        long soLuongDonOffline = donHangRepository.countOfflineOrders();
+
+        // Tính tỉ lệ tăng trưởng doanh thu so với năm trước
+        Double tiLeTangTruongDoanhThu = null;
+        int currentYear = LocalDate.now().getYear();
+        BigDecimal doanhThuNamTruoc = donHangRepository.getTotalRevenueByYear(currentYear - 1);
+        if (doanhThuNamTruoc != null && doanhThuNamTruoc.compareTo(BigDecimal.ZERO) != 0) {
+            tiLeTangTruongDoanhThu = tongDoanhThu.subtract(doanhThuNamTruoc)
+                    .divide(doanhThuNamTruoc, 4, BigDecimal.ROUND_HALF_UP)
+                    .multiply(BigDecimal.valueOf(100))
+                    .doubleValue();
+        }
 
         return new ThongKeDonHangDTO(tongDoanhThu, doanhThuOnline, doanhThuOffline,
-                onlineHoanThanh, onlineHuy, offlineHoanThanh, offlineHuy, soLuongDon);
+                onlineHoanThanh, onlineHuy, offlineHoanThanh, offlineHuy, soLuongDon,
+                soLuongDonOnline, soLuongDonOffline, tiLeTangTruongDoanhThu);
     }
 
     public long countByLuongBanAndTrangThai(Integer luongBan, Integer trangThai) {
@@ -199,6 +214,10 @@ public class ThongKeService {
         for (int i = 0; i < results.size(); i++) {
             Object[] result = results.get(i);
             BigDecimal tongDoanhThu = (BigDecimal) result[1];
+            // Kiểm tra nếu không có dữ liệu, trả về doanh thu bằng 0
+            if (tongDoanhThu == null) {
+                tongDoanhThu = BigDecimal.ZERO;
+            }
             Double tiLeTangTruong = null;
 
             if (i > 0) {

@@ -154,6 +154,18 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE luong_ban = 0 AND trang_thai = 4", nativeQuery = true)
     BigDecimal getRevenueOffline();
 
+    @Query(value = "SELECT COUNT(*) FROM don_hang WHERE luong_ban = 1", nativeQuery = true)
+    long countOnlineOrders();
+
+    @Query(value = "SELECT COUNT(*) FROM don_hang WHERE luong_ban = 0", nativeQuery = true)
+    long countOfflineOrders();
+
+
+
+    @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE trang_thai = 4 AND DATEPART(YEAR, ngay_tao) = :year", nativeQuery = true)
+    BigDecimal getTotalRevenueByYear(@Param("year") Integer year);
+
+
     // Số lượng đơn hàng theo ngày với khoảng thời gian
     @Query(value = "SELECT CONVERT(DATE, dh.ngay_tao) as ngay, COUNT(*) as soLuongDon " +
             "FROM don_hang dh " +
