@@ -591,7 +591,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         return false;  // Trả về false nếu không thể cập nhật trạng thái
     }
-<<<<<<< Updated upstream
 
     public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
         DonHang donHang = dhi.findById(maDonHang)
@@ -643,7 +642,8 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
             return 4; // Ví dụ: từ trạng thái 3 (Đang xử lý) sang 4 (Đang giao)
         }
         return trangThaiCu; // Giữ nguyên nếu không có thay đổi
-=======
+    }
+
     public DonHang createOfflineOrderService(OrderOfflineRequest orderRequest) throws Exception {
         // Validate the staff account
         if (orderRequest.getIdTaiKhoan() == null) {
@@ -766,6 +766,5 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         savedOrder.setChiTietDonHangs(chiTietList);
 
         return savedOrder;
->>>>>>> Stashed changes
     }
 }
