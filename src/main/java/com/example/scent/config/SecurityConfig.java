@@ -61,7 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("rest/offline-orders"
                         ,"rest/offline-orders/getAll-sptq").permitAll()
                         .requestMatchers("/rest/phieu-giam-gia/**").permitAll()
-                        .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
+                        .requestMatchers("/rest/san-pham/**","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
                         .requestMatchers("rest/nhom-huong","rest/nhom-huong/**").permitAll()
                         .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","/rest/san-pham/add","/rest/san-pham/update","/rest/san-pham/volums/**","/rest/san-pham/search-combined",
                                 "/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**",

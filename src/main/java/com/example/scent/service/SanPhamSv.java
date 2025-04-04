@@ -2,13 +2,7 @@
     import com.example.scent.dto.*;
     import com.example.scent.entity.HinhAnh;
     import com.example.scent.entity.SanPham;
-    import com.example.scent.repo.HinhAnhInterface;
-    import com.example.scent.repo.SanPhamInterface;
-    import com.example.scent.repo.DanhMucInterface;
-    import com.example.scent.repo.HuongDauInterface;
-    import com.example.scent.repo.HuongGiuaInterface;
-    import com.example.scent.repo.HuongCuoiInterface;
-    import com.example.scent.repo.ThuongHieuInterface;
+    import com.example.scent.repo.*;
     import com.example.scent.spec.SanPhamSpec;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.data.domain.Page;
@@ -255,5 +249,18 @@
 
         public List<SPTQDTO> getALlSPTQ(String keyword) {
            return spi.getALLSPQT(keyword);
+        }
+
+        public List<SanPhamBanChayDto> getSPBanChay() {
+            return spi.getTop10SanPhamBanChay();
+        }
+        public List<SanPhamBanChayDto> getSPBanIt() {
+            return spi.getTop10SanPhamBanIt();
+        }
+        public List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoDesc() {
+            return spi.findTop5BySoLuongTonKhoDesc();
+        }
+        public List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoAsc() {
+            return spi.findTop5BySoLuongTonKhoAsc();
         }
     }

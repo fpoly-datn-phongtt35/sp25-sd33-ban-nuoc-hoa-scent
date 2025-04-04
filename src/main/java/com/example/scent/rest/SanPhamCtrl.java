@@ -1,12 +1,10 @@
 package com.example.scent.rest;
 
-import com.example.scent.dto.SanPhamDto;
-import com.example.scent.dto.SanPhamDungTich;
-import com.example.scent.dto.SanPhamInfoDTO;
-import com.example.scent.dto.SanPhammDTO;
+import com.example.scent.dto.*;
 import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
+import com.example.scent.repo.SanPhamBanChayDto;
 import com.example.scent.service.SanPhamSv;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -43,6 +41,7 @@ public class SanPhamCtrl {
     final
     SanPhamSv sps;
 
+
     public SanPhamCtrl(SanPhamSv sps) {
         this.sps = sps;
     }
@@ -54,6 +53,23 @@ public class SanPhamCtrl {
     @GetMapping("/getAll")
     public List<SanPham> getAll() {
         return sps.getAll();
+    }
+
+    @GetMapping("/get-san-pham-ban-chay")
+    public List<SanPhamBanChayDto> getSPBanChay() {
+        return sps.getSPBanChay();
+    }
+    @GetMapping("/get-san-pham-ban-it")
+    public List<SanPhamBanChayDto> getSPBanIt() {
+        return sps.getSPBanIt();
+    }
+    @GetMapping("/get-san-pham-ton-kho-asc")
+    public List<SanPhamTonKhoDTO> getSPTonKhoAsc() {
+        return sps.findTop5BySoLuongTonKhoAsc();
+    }
+    @GetMapping("/get-san-pham-ton-kho-desc")
+    public List<SanPhamTonKhoDTO> getSPTonKhoDesc() {
+        return sps.findTop5BySoLuongTonKhoDesc();
     }
 
     @PostMapping("/add")
