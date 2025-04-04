@@ -11,9 +11,7 @@ import { ProductDetailComponent } from './product-detail/product-detail.componen
 import { ProductComponent } from './product/product.component';
 import { RegisterComponent } from './register/register.component';
 import { ProductAdminComponent } from './admin/product/product-list/product-admin.component';
-// import { ShoppingCartComponent } from './shopping-cart/shopping-cart.component';
-// import { ContactComponent } from './contact/contact.component';
-// import { NotFoundComponent } from './not-found/not-found.component';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component'; // Thêm import này
 
 export const routes: Routes = [
   { path: '', component: HomeComponent }, // Trang chủ
@@ -21,28 +19,14 @@ export const routes: Routes = [
   { path: 'app-order', component: OrderComponent },
   { path: 'product/detail/:id', component: ProductDetailComponent },
   { path: 'app-order-id', component: OrderDetailUserIDComponent },
-  { path: 'register', component: RegisterComponent }, // Trang sản phẩm
+  { path: 'register', component: RegisterComponent }, // Đăng ký (đã loại bỏ route trùng lặp)
   { path: 'product_detail', component: ProductDetailComponent }, // Chi tiết sản phẩm
-  { path: 'register', component: RegisterComponent }, // Đăng ký
-  {
-    path: 'admin',
-    component: HomeAdminComponent,
-    canActivate: [AdminGuard], // Chỉ admin được truy cập
-  },
-  // app-routing.module.ts
-{ path: 'order-success/:orderId', component: OrderSuccessComponent },
-{ path: 'order-details/:id', component: OrderDetailComponent },
-
-
-  {
-    path: 'product_admin',
-    component: ProductAdminComponent,
-    canActivate: [AdminGuard], // Chỉ admin được truy cập
-  },
-
-
+  { path: 'admin', component: HomeAdminComponent, canActivate: [AdminGuard] }, // Chỉ admin được truy cập
+  { path: 'order-success/:orderId', component: OrderSuccessComponent },
+  { path: 'order-details/:id', component: OrderDetailComponent },
+  { path: 'product_admin', component: ProductAdminComponent, canActivate: [AdminGuard] }, // Chỉ admin được truy cập
   { path: 'login', component: LoginComponent },
   { path: 'detail/:id', component: ProductDetailComponent },
   { path: 'product/:id', component: ProductDetailComponent }, // Định tuyến chi tiết sản phẩm
+  { path: 'forgot-password', component: ForgotPasswordComponent }, // Thêm route cho quên mật khẩu
 ];
-
