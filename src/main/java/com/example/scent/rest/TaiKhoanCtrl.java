@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @CrossOrigin("*")
 @RestController
@@ -103,10 +104,17 @@ public class TaiKhoanCtrl {
             return ResponseEntity.status(403).body("Chỉ USER mới có thể yêu cầu OTP");
         }
 
-        String otp = String.valueOf(otpService.generateOtp(email));
+        CompletableFuture<String> otpFuture = otpService.generateOtp(email);
+        String otp;
+        try {
+            otp = otpFuture.get(); // Chờ và lấy giá trị String từ CompletableFuture
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Đã xảy ra lỗi khi tạo OTP: " + e.getMessage());
+        }
         mailService.sendOtpEmail(email, otp);
         return ResponseEntity.ok("OTP đã gửi tới email của bạn");
     }
+
 
     @PostMapping("/forgot-password/reset-admin-staff")
     public ResponseEntity<String> resetPasswordAdminAndStaff(@RequestParam String email) {
@@ -124,6 +132,8 @@ public class TaiKhoanCtrl {
         tks.resetPassword(tk, newPassword);
         mailService.sendNewPasswordEmail(email, newPassword);
         return ResponseEntity.ok("Mật khẩu mới đã được gửi tới email");
+
+
     }
 
     @PutMapping("/change-password")

@@ -57,9 +57,10 @@ public class MailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setFrom("laivanquang986@gmail.com"); // Thêm dòng này
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(body, true);  // Chú ý: Tham số thứ 2 là true để gửi email dạng HTML
+            helper.setText(body, true);  // true = gửi email dạng HTML
             mailSender.send(message);
         } catch (Exception e) {
             e.printStackTrace();
