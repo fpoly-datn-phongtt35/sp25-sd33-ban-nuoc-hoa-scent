@@ -1,5 +1,6 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.ThongKeDTO;
 import com.example.scent.service.ThongKeSv;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +16,7 @@ public class ThongKeCtrl {
     private ThongKeSv thongKeSv;
 
     @GetMapping("/top-customers")
-    public List<Object[]> getTopCustomers() {
+    public List<ThongKeDTO> getTopCustomers() {
         return thongKeSv.findTopProductsByCustomer();
     }
 }
