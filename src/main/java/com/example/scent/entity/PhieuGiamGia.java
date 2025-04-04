@@ -13,9 +13,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+
+
 
 @Table(name = "phieu_giam_gia")
 @Entity
@@ -103,5 +102,44 @@ public class PhieuGiamGia {
 
     public void setDonHang(List<DonHang> donHang) {
         this.donHang = donHang;
+    }
+
+    public PhieuGiamGia() {
+    }
+
+    public PhieuGiamGia(Integer id, String maGiamGia, BigDecimal giaTriGiam, LocalDateTime ngayBatDau, BigDecimal gia_tri_toi_da, Integer soLuong, Integer dieuKienapDung, LocalDateTime ngayHetHan, List<DonHang> donHang) {
+        this.id = id;
+        this.maGiamGia = maGiamGia;
+        this.giaTriGiam = giaTriGiam;
+        this.ngayBatDau = ngayBatDau;
+        this.gia_tri_toi_da = gia_tri_toi_da;
+        this.soLuong = soLuong;
+        this.dieuKienapDung = dieuKienapDung;
+        this.ngayHetHan = ngayHetHan;
+        this.donHang = donHang;
+    }
+
+    public BigDecimal getGia_tri_toi_da() {
+        return gia_tri_toi_da;
+    }
+
+    public void setGia_tri_toi_da(BigDecimal gia_tri_toi_da) {
+        this.gia_tri_toi_da = gia_tri_toi_da;
+    }
+
+    public Integer getSoLuong() {
+        return soLuong;
+    }
+
+    public void setSoLuong(Integer soLuong) {
+        this.soLuong = soLuong;
+    }
+
+    public Integer getDieuKienapDung() {
+        return dieuKienapDung;
+    }
+
+    public void setDieuKienapDung(Integer dieuKienapDung) {
+        this.dieuKienapDung = dieuKienapDung;
     }
 }

@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 
 @Table(name = "nhom_huong")
 @Entity
@@ -28,4 +25,45 @@ public class NhomHuong {
     @OneToMany(mappedBy = "nhomHuong")
     private List<SanPham> sanPhams;
 
+    public NhomHuong() {
+    }
+
+    public NhomHuong(Integer id, String tenNhomHuong, String mota, List<SanPham> sanPhams) {
+        this.id = id;
+        this.tenNhomHuong = tenNhomHuong;
+        this.mota = mota;
+        this.sanPhams = sanPhams;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTenNhomHuong() {
+        return tenNhomHuong;
+    }
+
+    public void setTenNhomHuong(String tenNhomHuong) {
+        this.tenNhomHuong = tenNhomHuong;
+    }
+
+    public String getMota() {
+        return mota;
+    }
+
+    public void setMota(String mota) {
+        this.mota = mota;
+    }
+
+    public List<SanPham> getSanPhams() {
+        return sanPhams;
+    }
+
+    public void setSanPhams(List<SanPham> sanPhams) {
+        this.sanPhams = sanPhams;
+    }
 }
