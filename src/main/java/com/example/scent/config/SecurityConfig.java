@@ -56,7 +56,9 @@ public class SecurityConfig {
                         .requestMatchers("rest/tai-khoan/change-password",
                                 "rest/tai-khoan/forgot-password/reset-admin-staff",
                                 "rest/tai-khoan/forgot-password/sendOTP"
-                                ,"rest/tai-khoan/verify-old-password","rest/tai-khoan/findByUsername","rest/tai-khoan/findByEmail").permitAll()
+                                ,"rest/tai-khoan/verify-old-password",
+                                "rest/tai-khoan/findByUsername","rest/tai-khoan/findByEmail",
+                                "rest/tai-khoan/forgot-password/reset").permitAll()
                         .requestMatchers("rest/otp/send",
                                 "rest/otp/verify").permitAll()
                         .requestMatchers("rest/offline-orders"

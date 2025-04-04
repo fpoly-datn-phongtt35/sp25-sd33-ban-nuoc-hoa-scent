@@ -153,7 +153,31 @@ public class TaiKhoanCtrl {
         tks.resetPassword(tk, newPassword);
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<String> resetPassword(
+            @RequestParam String email,
+            @RequestParam String otp,
+            @RequestParam String newPassword) {
 
+        Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
+        if (tkOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy tài khoản.");
+        }
+
+        TaiKhoan tk = tkOpt.get();
+        if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
+            return ResponseEntity.status(403).body("Chỉ USER mới được phép sử dụng phương thức này.");
+        }
+
+        boolean valid = otpService.validateOtp(email, otp).join();
+        if (!valid) {
+            return ResponseEntity.badRequest().body("OTP không hợp lệ hoặc đã hết hạn.");
+        }
+
+        tks.resetPassword(tk, newPassword);
+        mailService.sendNewPasswordEmail(email, newPassword);
+        return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công.");
+    }
     // Thêm endpoint để lấy thông tin người dùng theo username
     @GetMapping("/findByUsername")
     public ResponseEntity<TaiKhoan> findByUsername(@RequestParam("username") String username) {
