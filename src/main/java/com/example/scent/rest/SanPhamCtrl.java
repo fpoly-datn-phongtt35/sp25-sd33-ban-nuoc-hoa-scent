@@ -1,9 +1,6 @@
 package com.example.scent.rest;
 
-import com.example.scent.dto.SanPhamDto;
-import com.example.scent.dto.SanPhamDungTich;
-import com.example.scent.dto.SanPhamInfoDTO;
-import com.example.scent.dto.SanPhammDTO;
+import com.example.scent.dto.*;
 import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
@@ -65,6 +62,14 @@ public class SanPhamCtrl {
     @GetMapping("/get-san-pham-ban-it")
     public List<SanPhamBanChayDto> getSPBanIt() {
         return sps.getSPBanIt();
+    }
+    @GetMapping("/get-san-pham-ton-kho-asc")
+    public List<SanPhamTonKhoDTO> getSPTonKhoAsc() {
+        return sps.findTop5BySoLuongTonKhoAsc();
+    }
+    @GetMapping("/get-san-pham-ton-kho-desc")
+    public List<SanPhamTonKhoDTO> getSPTonKhoDesc() {
+        return sps.findTop5BySoLuongTonKhoDesc();
     }
 
     @PostMapping("/add")

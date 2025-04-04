@@ -110,6 +110,34 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "ORDER BY tongSoLuongBan ASC ", nativeQuery = true)
     List<SanPhamBanChayDto> getTop10SanPhamBanIt();
 
+    @Query(value = "SELECT TOP 5 sp.id AS idSanPham, " +
+            "sp.ten AS tenSanPham, " +
+            "sp.mo_ta AS moTa, " +
+            "spct.dung_tich AS dungTich, " +
+            "spct.don_gia AS donGia, " +
+            "spct.so_luong_ton_kho AS soLuongTonKho, " +
+            "spct.id AS idSpct, " +
+            "(SELECT STRING_AGG(ha.link, ', ') FROM hinh_anh ha WHERE ha.id_san_pham = sp.id) AS imageURL " +
+            "FROM san_pham sp " +
+            "JOIN spct ON spct.id_san_pham = sp.id " +
+            "WHERE sp.trang_thai = 1" +
+            "ORDER BY soLuongTonKho ASC", nativeQuery = true)
+    List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoAsc();
+
+    @Query(value = "SELECT TOP 5 sp.id AS idSanPham, " +
+            "sp.ten AS tenSanPham, " +
+            "sp.mo_ta AS moTaSanPham, " +
+            "spct.dung_tich AS dungTich, " +
+            "spct.don_gia AS donGia, " +
+            "spct.so_luong_ton_kho AS soLuongTonKho, " +
+            "spct.id AS idSpct, " +
+            "(SELECT STRING_AGG(ha.link, ', ') FROM hinh_anh ha WHERE ha.id_san_pham = sp.id) AS imageURL " +
+            "FROM san_pham sp " +
+            "JOIN spct ON spct.id_san_pham = sp.id " +
+            "WHERE sp.trang_thai = 1" +
+            "ORDER BY soLuongTonKho Desc ", nativeQuery = true)
+    List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoDesc();
+
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +

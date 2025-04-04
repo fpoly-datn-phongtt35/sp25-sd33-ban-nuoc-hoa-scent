@@ -257,4 +257,10 @@
         public List<SanPhamBanChayDto> getSPBanIt() {
             return spi.getTop10SanPhamBanIt();
         }
+        public List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoDesc() {
+            return spi.findTop5BySoLuongTonKhoDesc();
+        }
+        public List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoAsc() {
+            return spi.findTop5BySoLuongTonKhoAsc();
+        }
     }
