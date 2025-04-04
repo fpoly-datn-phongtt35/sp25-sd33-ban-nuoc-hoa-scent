@@ -18,28 +18,30 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/rest/tai-khoan")
 public class TaiKhoanCtrl {
-    final
-    TaiKhoanSv tks;
+    final TaiKhoanSv tks;
+
     @Autowired
     private com.example.scent.service.OtpService otpService;
 
     @Autowired
     private com.example.scent.service.MailService mailService;
+
     @Autowired
     private TaiKhoanInterface taiKhoanInterface;
 
     public TaiKhoanCtrl(TaiKhoanSv tks) {
         this.tks = tks;
     }
+
     @PostMapping("login")
     public String login(@RequestBody TaiKhoan taiKhoan) {
         return tks.verify(taiKhoan);
     }
+
     @PostMapping("register")
     public TaiKhoan register(@RequestBody TaiKhoan taiKhoan) {
         return tks.create(taiKhoan);
     }
-
 
     @GetMapping("/getAll")
     public List<TaiKhoan> getAll() {
@@ -58,103 +60,120 @@ public class TaiKhoanCtrl {
     }
 
     @DeleteMapping("/del/{id}")
-    public void delete(@PathVariable Integer id) { tks.delete(id);
+    public void delete(@PathVariable Integer id) {
+        tks.delete(id);
     }
+
     @GetMapping("page")
     public Page<TaiKhoan> getAllTaiKhoan(
             @RequestParam(required = false) String searchTerm,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-           ) {
+            @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return tks.searchByTerm(searchTerm,pageable);
+        return tks.searchByTerm(searchTerm, pageable);
     }
+
     @GetMapping("/get-staff-accounts")
     public ResponseEntity<Page<TaiKhoan>> getStaffAccounts(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-
-        Page<TaiKhoan> result = tks.getStaffAccounts( keyword, page, size);
+        Page<TaiKhoan> result = tks.getStaffAccounts(keyword, page, size);
         return ResponseEntity.ok(result);
     }
+
     @GetMapping("/get-user-accounts")
     public ResponseEntity<Page<TaiKhoan>> getUserAccounts(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-
-        Page<TaiKhoan> result = tks.getUserAccounts( keyword, page, size);
+        Page<TaiKhoan> result = tks.getUserAccounts(keyword, page, size);
         return ResponseEntity.ok(result);
     }
-    //Update Tài khoản
 
-   //OTPEMAIL Mật Khẩu
-    //API Gửi OTP cho USER (Chỉ dành cho USER)
-   @PostMapping("/forgot-password/sendOTP")
-   public ResponseEntity<String> sendOtpForUser(@RequestParam String email) {
-       Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
-       if (tkOpt.isEmpty()) {
-           return ResponseEntity.badRequest().body("Không tìm thấy tài khoản");
-       }
+    @PostMapping("/forgot-password/sendOTP")
+    public ResponseEntity<String> sendOtpForUser(@RequestParam String email) {
+        Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
+        if (tkOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy tài khoản");
+        }
 
-       TaiKhoan tk = tkOpt.get();
-       if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
-           return ResponseEntity.status(403).body("Chỉ USER mới có thể yêu cầu OTP");
-       }
+        TaiKhoan tk = tkOpt.get();
+        if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
+            return ResponseEntity.status(403).body("Chỉ USER mới có thể yêu cầu OTP");
+        }
 
-       // Tạo OTP và gửi tới email
-       String otp = otpService.generateOtp(email);
-       mailService.sendOtpEmail(email, otp);
-
-       return ResponseEntity.ok("OTP đã gửi tới email của bạn");
-   }
-//API Cấp lại Mật khẩu cho ADMIN và STAFF (Gửi mật khẩu mới)
-@PostMapping("/forgot-password/reset-admin-staff")
-public ResponseEntity<String> resetPasswordAdminAndStaff(@RequestParam String email) {
-    Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
-    if (tkOpt.isEmpty()) {
-        return ResponseEntity.badRequest().body("Không tìm thấy tài khoản");
+        String otp = String.valueOf(otpService.generateOtp(email));
+        mailService.sendOtpEmail(email, otp);
+        return ResponseEntity.ok("OTP đã gửi tới email của bạn");
     }
 
-    TaiKhoan tk = tkOpt.get();
-    if (!"ADMIN".equalsIgnoreCase(tk.getVaiTro()) && !"STAFF".equalsIgnoreCase(tk.getVaiTro())) {
-        return ResponseEntity.status(403).body("Chỉ ADMIN hoặc STAFF mới có thể sử dụng phương thức này");
+    @PostMapping("/forgot-password/reset-admin-staff")
+    public ResponseEntity<String> resetPasswordAdminAndStaff(@RequestParam String email) {
+        Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
+        if (tkOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy tài khoản");
+        }
+
+        TaiKhoan tk = tkOpt.get();
+        if (!"ADMIN".equalsIgnoreCase(tk.getVaiTro()) && !"STAFF".equalsIgnoreCase(tk.getVaiTro())) {
+            return ResponseEntity.status(403).body("Chỉ ADMIN hoặc STAFF mới có thể sử dụng phương thức này");
+        }
+
+        String newPassword = tks.generateRandomPassword();
+        tks.resetPassword(tk, newPassword);
+        mailService.sendNewPasswordEmail(email, newPassword);
+        return ResponseEntity.ok("Mật khẩu mới đã được gửi tới email");
     }
 
-    // Tạo mật khẩu mới cho ADMIN hoặc STAFF
-    String newPassword = tks.generateRandomPassword();
-    tks.resetPassword(tk, newPassword);
+    @PutMapping("/change-password")
+    public ResponseEntity<String> changePassword(
+            @RequestParam String username,
+            @RequestParam String oldPassword,
+            @RequestParam String newPassword) {
+        Optional<TaiKhoan> tkOpt = Optional.ofNullable(tks.findByUsername(username));
+        if (tkOpt.isEmpty()) return ResponseEntity.badRequest().body("Tài khoản không tồn tại");
 
-    // Gửi mật khẩu mới qua email
-    mailService.sendNewPasswordEmail(email, newPassword);
+        TaiKhoan tk = tkOpt.get();
 
-    return ResponseEntity.ok("Mật khẩu mới đã được gửi tới email");
-}
-// Đổi Mật khẩu cho ADMIN, STAFF và USER (Cần mật khẩu cũ)
-//Đổi mật khẩu thì thôi OTP làm đếch gì hoặc nếu OTP thì lấy
-// bên OtpCtrl xử lí nếu được thì mới cho đổi(xử lí bên fe)
-@PutMapping("/change-password")
-public ResponseEntity<String> changePassword(
-        @RequestParam String username,
-        @RequestParam String oldPassword,
-        @RequestParam String newPassword) {
+        if (!tks.passwordMatches(oldPassword, tk.getMatKhau())) {
+            return ResponseEntity.badRequest().body("Mật khẩu cũ không đúng");
+        }
 
-    Optional<TaiKhoan> tkOpt = Optional.ofNullable(tks.findByUsername(username));
-    if (tkOpt.isEmpty()) return ResponseEntity.badRequest().body("Tài khoản không tồn tại");
-
-    TaiKhoan tk = tkOpt.get();
-
-    // Kiểm tra mật khẩu cũ
-    if (!tks.passwordMatches(oldPassword, tk.getMatKhau())) {
-        return ResponseEntity.badRequest().body("Mật khẩu cũ không đúng");
+        tks.resetPassword(tk, newPassword);
+        return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 
-    // Đặt lại mật khẩu
-    tks.resetPassword(tk, newPassword);
+    // Thêm endpoint để lấy thông tin người dùng theo username
+    @GetMapping("/findByUsername")
+    public ResponseEntity<TaiKhoan> findByUsername(@RequestParam("username") String username) {
+        TaiKhoan taiKhoan = tks.findByUsername(username);
+        if (taiKhoan == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(taiKhoan);
+    }
+    @GetMapping("/verify-old-password")
+    public ResponseEntity<String> verifyOldPassword(
+            @RequestParam String username,
+            @RequestParam String oldPassword) {
+        // Sử dụng hàm riêng để kiểm tra mật khẩu cũ
+        if (!tks.verifyOldPassword(username, oldPassword)) {
+            return ResponseEntity.badRequest().body("Mật khẩu cũ không đúng hoặc tài khoản không tồn tại");
+        }
+        return ResponseEntity.ok("Mật khẩu cũ hợp lệ");
+    }
+    @GetMapping("/findByEmail")
+    public TaiKhoan findByEmail(@RequestParam("email") String email) {
+        Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
+        if (tkOpt.isEmpty()) {
+            return null;// Trả về 404 nếu không tìm thấy
+        }
 
-    return ResponseEntity.ok("Đổi mật khẩu thành công");
-}
-//Tạm thời thì chỉ tính được vậy thôi khi nào làm fe rồi tính tiếp
-}
+        TaiKhoan tk = tkOpt.get();
+        // Chuyển đổi TaiKhoan thành TaiKhoanDTO
 
+
+        return tk;
+    }
+}

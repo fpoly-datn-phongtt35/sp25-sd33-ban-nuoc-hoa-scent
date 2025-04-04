@@ -156,4 +156,12 @@ public class TaiKhoanSv implements UserDetailsService {
         tk.setSdt(updatedTaiKhoan.getSdt());
         return tki.save(tk);
     }
+    public boolean verifyOldPassword(String username, String oldPassword) {
+        Optional<TaiKhoan> tkOpt = Optional.ofNullable(tki.findByUsername(username));
+        if (tkOpt.isEmpty()) {
+            return false; // Tài khoản không tồn tại
+        }
+        TaiKhoan tk = tkOpt.get();
+        return passwordMatches(oldPassword, tk.getMatKhau()); // Kiểm tra mật khẩu
+    }
 }

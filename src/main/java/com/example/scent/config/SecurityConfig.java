@@ -55,7 +55,8 @@ public class SecurityConfig {
                         .requestMatchers("rest/phieu-giam-gia/getAll","rest/phieu-giam-gia/add","rest/phieu-giam-gia/del/**","rest/phieu-giam-gia/update","rest/phieu-giam-gia/page").permitAll()
                         .requestMatchers("rest/tai-khoan/change-password",
                                 "rest/tai-khoan/forgot-password/reset-admin-staff",
-                                "rest/tai-khoan/forgot-password/sendOTP").permitAll()
+                                "rest/tai-khoan/forgot-password/sendOTP"
+                                ,"rest/tai-khoan/verify-old-password","rest/tai-khoan/findByUsername","rest/tai-khoan/findByEmail").permitAll()
                         .requestMatchers("rest/otp/send",
                                 "rest/otp/verify").permitAll()
                         .requestMatchers("rest/offline-orders"
