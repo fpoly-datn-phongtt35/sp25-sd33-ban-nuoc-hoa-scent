@@ -1,6 +1,9 @@
 package com.example.scent.repo;
 
 import com.example.scent.dto.DonHangDTO;
+
+import com.example.scent.entity.DonHang;
+import com.example.scent.entity.KhachHang;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.dto.donhangDetailDTO;
 import com.example.scent.entity.DonHang;
@@ -107,5 +110,18 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer>{
 
     @Query("SELECT COUNT(dh) > 0 FROM DonHang dh WHERE dh.taiKhoan = :taiKhoan AND dh.phieuGiamGia = :phieuGiamGia")
     boolean existsByTaiKhoanAndPhieuGiamGia(@Param("taiKhoan") TaiKhoan taiKhoan, @Param("phieuGiamGia") PhieuGiamGia phieuGiamGia);
+
+
+    @Query(value = "SELECT k.ten_khach_hang, sp.ten, SUM(ctdh.so_luong) AS totalQuantity " +
+            "FROM khach_hang k " +
+            "JOIN don_hang dh ON k.id = dh.id_khach_hang " +
+            "JOIN chi_tiet_don_hang ctdh ON dh.id = ctdh.id_don_hang " +
+            "JOIN spct sp ON ctdh.id_spct = sp.id " +
+            "WHERE dh.trang_thai = 'Hoàn thành' " +
+            "GROUP BY k.ten_khach_hang, sp.ten " +
+            "ORDER BY totalQuantity DESC",
+            nativeQuery = true)
+    List<Object[]> findTopProductsByCustomer();
+
 
 }
