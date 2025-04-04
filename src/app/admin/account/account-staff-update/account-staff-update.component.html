@@ -1,0 +1,45 @@
+<div class="modal-header">
+  <h4 class="modal-title">Cập nhật tài khoản</h4>
+  <button type="button" class="btn-close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+  <form>
+    <div class="mb-3">
+      <label for="hoTen" class="form-label">Họ tên</label>
+      <input
+        type="text"
+        class="form-control"
+        id="hoTen"
+        [(ngModel)]="accountData.hoTen"
+        name="hoTen"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input
+        type="email"
+        class="form-control"
+        id="email"
+        [(ngModel)]="accountData.email"
+        name="email"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label for="sdt" class="form-label">Số điện thoại</label>
+      <input
+        type="text"
+        class="form-control"
+        id="sdt"
+        [(ngModel)]="accountData.sdt"
+        name="sdt"
+        required
+      />
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="button" class="btn btn-primary" (click)="updateAccount()">Cập nhật</button>
+</div>

@@ -5,7 +5,7 @@
 
 
 <div class="actions">
-  <button class="btn btn-primary" (click)="openModalAddSpct()">Thêm mới</button>
+  <button class="btn btn-primary" (click)="openModalAddSpct()" *ngIf="userRole !== 'STAFF'">Thêm mới</button>
   <div class="search-box">
       <input type="text" placeholder="Search" />
       <button class="search-btn"><i class="bi bi-search"></i></button>
@@ -35,7 +35,7 @@
         <td>{{ sp.soLuongTonKho }}</td>
         <td>
           <div class="d-flex gap-2">
-            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateSpctModal(sp)">
+            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateSpctModal(sp)" *ngIf="userRole !== 'STAFF'">
               <i class="bi bi-pencil"></i>
             </button>
           </div>

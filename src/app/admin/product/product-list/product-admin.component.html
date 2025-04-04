@@ -8,7 +8,7 @@
   <div *ngIf="selectedProductId === null">
   <div class="header-section">
     <div class="actions">
-      <button class="btn btn-primary" (click)="openAddModal()">Thêm mới</button>
+      <button class="btn btn-primary" (click)="openAddModal()" *ngIf="userRole !== 'STAFF'">Thêm mới</button>
       <div class="search-box">
         <input
           type="text"
@@ -29,7 +29,7 @@
           <th>Danh mục</th>
           <th>Nhóm hương</th>
           <th>Mùi hương</th>
-          <th>Action</th>
+          <th *ngIf="userRole !== 'STAFF'">Action</th>
         </tr>
       <tbody>
         <tr *ngFor="let product of products; let i = index" >
@@ -52,12 +52,12 @@
               <li><strong>Tầng cuối:</strong> {{ product.moTaHuongCuoi }}</li>
             </ul>
           </td>
-          <td>
-            <div class="d-flex gap-2">
-            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateProductModal(product.idSanPham)">
+          <td *ngIf="userRole !== 'STAFF'">
+            <div class="d-flex gap-2" >
+            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateProductModal(product.idSanPham)" *ngIf="userRole !== 'STAFF'">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-danger btn-sm me-1" (click)="deleteProduct(product.idSanPham)">
+            <button class="btn btn-danger btn-sm me-1" (click)="deleteProduct(product.idSanPham)" *ngIf="userRole !== 'STAFF'">
               <i class="bi bi-trash"></i>
             </button>
             <!-- <button class="btn btn-primary btn-sm" (click)="viewProduct(product.idSanPham)">
