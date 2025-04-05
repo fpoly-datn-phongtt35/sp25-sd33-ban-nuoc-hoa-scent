@@ -2,10 +2,16 @@
   <!-- 🔙 Quay lại -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="javascript:void(0)" (click)="close()" class="text-decoration-none text-muted fw-medium">
-      <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng
+      <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng12
     </a>
     <h4 class="fw-semibold mb-0"><i class="bi bi-receipt-cutoff me-2"></i>Chi tiết đơn hàng #{{ order?.id }}</h4>
-    <div></div>
+    <!-- Nút 3 chấm -->
+    <div class="dropdown">
+      <button class="btn btn-light" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false" (click)="showLichSuThaoTac()">
+        <i class="bi bi-three-dots-vertical" ></i>
+      </button>
+    
+    </div>
   </div>
 
   <!-- 👤 Thông tin người nhận và người đặt -->
@@ -18,25 +24,20 @@
         <p class="mb-1"><i class="bi bi-geo-alt me-1"></i> {{ order?.diaChiGiaoHang }}</p>
         <p class="mb-1"><i class="bi bi-telephone me-1"></i> {{ order?.sdtNguoiNhan }}</p>
         <p class="mb-1"><i class="bi bi-wallet2 me-1"></i> {{ getPaymentMethod(order?.phuongThucThanhToan) }}</p>
-        
       </div>
     </div>
 
-    <!-- Người đặt hàng (hiển thị ở cả online và offline, nhưng ở offline chỉ hiển thị tên) -->
+    <!-- Người đặt hàng -->
     <div class="col-md-6">
       <div class="border rounded p-3 bg-white shadow-sm h-100">
         <h6 class="fw-bold mb-3"><i class="bi bi-person-badge me-2"></i>Người đặt hàng</h6>
         <p class="mb-1"><i class="bi bi-person me-1"></i> {{ order?.taiKhoan?.hoTen }}</p>
-        
-        <!-- Thông tin bổ sung chỉ hiển thị ở chế độ online -->
         <div>
           <p class="mb-1"><i class="bi bi-envelope me-1"></i> {{ order?.taiKhoan?.email }}</p>
           <p class="mb-1"><i class="bi bi-phone me-1"></i> {{ order?.taiKhoan?.sdt }}</p>
           <p class="mb-1"><i class="bi bi-person-lines-fill me-1"></i> {{ order?.taiKhoan?.tenDangNhap }}</p>
           <p class="mb-0"><i class="bi bi-shield-lock me-1"></i> {{ order?.taiKhoan?.vaiTro }}</p>
         </div>
-
-        <!-- Trạng thái và ngày đặt hàng (hiển thị ở cả online và offline) -->
         <p class="mb-1">
           <i class="bi bi-truck me-1"></i> {{ getOrderStatus(order?.selectedStatus) }}
           <br *ngIf="order?.selectedStatus === 5 && order?.lyDoHuy">
@@ -49,8 +50,8 @@
     </div>
   </div>
 
-  <!-- 🧾 Sản phẩm (chỉ hiển thị ở chế độ online) -->
-  <div >
+  <!-- 🧾 Sản phẩm -->
+  <div>
     <h6 class="fw-bold mb-3"><i class="bi bi-box2-heart me-2"></i>Sản phẩm trong đơn</h6>
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
@@ -75,11 +76,49 @@
       </table>
     </div>
 
-    <!-- 💰 Tổng (chỉ hiển thị ở chế độ online) -->
+    <!-- 💰 Tổng -->
     <div class="text-end mt-3">
-      <p class="mb-1"><strong>Số tiền giảm giảm từ mã giảm giá:</strong> - {{ order?.soTienGiam| number }} vnđ</p>
-      <p class="mb-1" *ngIf="selectedTab === 'online'"><strong>Phí vận chuyển:</strong> {{ order?.phiVanChuyen| number }} vnđ</p>
+      <p class="mb-1"><strong>Số tiền giảm từ mã giảm giá:</strong> - {{ order?.soTienGiam | number }} vnđ</p>
+      <p class="mb-1" *ngIf="selectedTab === 'online'"><strong>Phí vận chuyển:</strong> {{ order?.phiVanChuyen | number }} vnđ</p>
       <p class="fs-5 fw-semibold"><strong>Tổng tiền:</strong> {{ order?.tongTien | number }} vnđ</p>
+    </div>
+  </div>
+
+  <!-- Modal hiển thị lịch sử thao tác -->
+  <div class="modal fade" [ngClass]="{'show d-block': showLichSuModal}" tabindex="-1" role="dialog" *ngIf="showLichSuModal">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Lịch Sử Thao Tác - Đơn hàng #{{ order?.id }}</h5>
+          <button type="button" class="btn-close" (click)="closeLichSuModal()"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                
+                <th>Tên Tài Khoản</th>
+                <th>Thao Tác</th>
+                <th>Thời Gian Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of lichSuThaoTacs">
+               
+                <td>{{ item.tenTaiKhoan }}</td>
+                <td>{{ item.thaoTac }}</td>
+                <td>{{ item.thoiGianThaoTac | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              </tr>
+              <tr *ngIf="lichSuThaoTacs.length === 0">
+                <td colspan="5" class="text-center">Không có lịch sử thao tác</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeLichSuModal()">Đóng</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

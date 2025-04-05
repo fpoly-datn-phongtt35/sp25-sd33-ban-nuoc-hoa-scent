@@ -18,9 +18,15 @@ export class LichSuThaoTac {
 })
 export class LichSuThaoTacService {
   private apiUrl = 'http://localhost:8080/rest/don-hang/lich-su-thao-tac-by-user';
+  private api='http://localhost:8080/rest/don-hang';
 
   constructor(private http: HttpClient) {}
   getAllLichSuThaoTac(): Observable<LichSuThaoTac[]> {
     return this.http.get<LichSuThaoTac[]>(this.apiUrl);
+  }
+
+  // Thêm phương thức lấy lịch sử thao tác theo maDonHang
+  getLichSuThaoTacByMaDonHang(maDonHang: number): Observable<LichSuThaoTac[]> {
+    return this.http.get<LichSuThaoTac[]>(`${this.api}/by-don-hang/${maDonHang}`);
   }
 }

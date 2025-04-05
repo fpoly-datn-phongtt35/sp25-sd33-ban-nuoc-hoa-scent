@@ -346,23 +346,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   }
 
   validateOrder(): boolean {
-    if (!this.currentOrder.donHang.tenNguoiNhanHang) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Vui lòng nhập tên khách hàng!',
-      });
-      return false;
-    }
-
-    if (!this.currentOrder.donHang.sdtNguoiNhan) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Vui lòng nhập số điện thoại!',
-      });
-      return false;
-    }
+   
 
     if (this.currentOrder.chiTietDonHangs.length === 0) {
       Swal.fire({
