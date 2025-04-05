@@ -81,7 +81,8 @@ public class SecurityConfig {
 
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
                         .requestMatchers("/api/thong-ke/doanh-thu/nam","/api/thong-ke/doanh-thu/thang","/api/thong-ke/doanh-thu/tuan","/api/thong-ke/doanh-thu/ngay"
-                                ,"/api/thong-ke/so-luong-don/nam","/api/thong-ke/so-luong-don/thang","/api/thong-ke/so-luong-don/tuan","/api/thong-ke/so-luong-don/ngay","/api/thong-ke/tong-quan","/api/thong-ke/count-by-luong-ban-trang-thai").permitAll()
+                                ,"/api/thong-ke/so-luong-don/nam","/api/thong-ke/so-luong-don/thang","/api/thong-ke/so-luong-don/tuan","/api/thong-ke/so-luong-don/ngay","/api/thong-ke/tong-quan","/api/thong-ke/count-by-luong-ban-trang-thai"
+                        ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
 //                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()

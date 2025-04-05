@@ -18,6 +18,7 @@ public class ThongKeService {
     @Autowired
     private DonHangInterface donHangRepository;
 
+    // Existing method for overall statistics (Tổng quan Cố định)
     public ThongKeDonHangDTO thongKeTongQuan() {
         BigDecimal tongDoanhThu = donHangRepository.getTotalRevenue() != null ? donHangRepository.getTotalRevenue() : BigDecimal.ZERO;
         BigDecimal doanhThuOnline = donHangRepository.getRevenueOnline() != null ? donHangRepository.getRevenueOnline() : BigDecimal.ZERO;
@@ -46,10 +47,82 @@ public class ThongKeService {
                 soLuongDonOnline, soLuongDonOffline, tiLeTangTruongDoanhThu);
     }
 
+    // New method: Aggregated statistics for a date range (Theo ngày)
+    public ThongKeDonHangDTO thongKeTongQuanTheoNgay(String startDate, String endDate) {
+        List<Object[]> results = donHangRepository.thongKeTheoNgay(startDate, endDate);
+        return aggregateThongKeDonHangDTO(results);
+    }
+
+    // New method: Aggregated statistics for a specific week (Theo tuần)
+    public ThongKeDonHangDTO thongKeTongQuanTheoTuan(Integer year, Integer week) {
+        List<Object[]> results = donHangRepository.thongKeTheoTuan(year, week);
+        return aggregateThongKeDonHangDTO(results);
+    }
+
+    // New method: Aggregated statistics for a specific month (Theo tháng)
+    public ThongKeDonHangDTO thongKeTongQuanTheoThang(Integer year, Integer month) {
+        List<Object[]> results = donHangRepository.thongKeTheoThang(year, month);
+        return aggregateThongKeDonHangDTO(results);
+    }
+
+    // New method: Aggregated statistics for a specific year (Theo năm)
+    public ThongKeDonHangDTO thongKeTongQuanTheoNam(Integer year) {
+        List<Object[]> results = donHangRepository.thongKeTheoNam(year);
+        return aggregateThongKeDonHangDTO(results);
+    }
+
+    // Helper method to aggregate results into a ThongKeDonHangDTO
+    private ThongKeDonHangDTO aggregateThongKeDonHangDTO(List<Object[]> results) {
+        BigDecimal tongDoanhThu = BigDecimal.ZERO;
+        BigDecimal doanhThuOnline = BigDecimal.ZERO;
+        BigDecimal doanhThuOffline = BigDecimal.ZERO;
+        long onlineHoanThanh = 0;
+        long onlineHuy = 0;
+        long offlineHoanThanh = 0;
+        long offlineHuy = 0;
+        long soLuongDon = 0;
+        long soLuongDonOnline = 0;
+        long soLuongDonOffline = 0;
+
+        for (Object[] result : results) {
+            BigDecimal dailyTongDoanhThu = (BigDecimal) result[1];
+            BigDecimal dailyDoanhThuOnline = (BigDecimal) result[2];
+            BigDecimal dailyDoanhThuOffline = (BigDecimal) result[3];
+            long dailyOnlineHoanThanh = ((Number) result[4]).longValue();
+            long dailyOnlineHuy = ((Number) result[5]).longValue();
+            long dailyOfflineHoanThanh = ((Number) result[6]).longValue();
+            long dailyOfflineHuy = ((Number) result[7]).longValue();
+            long dailySoLuongDon = ((Number) result[8]).longValue();
+
+            // Aggregate totals
+            tongDoanhThu = tongDoanhThu.add(dailyTongDoanhThu != null ? dailyTongDoanhThu : BigDecimal.ZERO);
+            doanhThuOnline = doanhThuOnline.add(dailyDoanhThuOnline != null ? dailyDoanhThuOnline : BigDecimal.ZERO);
+            doanhThuOffline = doanhThuOffline.add(dailyDoanhThuOffline != null ? dailyDoanhThuOffline : BigDecimal.ZERO);
+            onlineHoanThanh += dailyOnlineHoanThanh;
+            onlineHuy += dailyOnlineHuy;
+            offlineHoanThanh += dailyOfflineHoanThanh;
+            offlineHuy += dailyOfflineHuy;
+            soLuongDon += dailySoLuongDon;
+
+            // Calculate online and offline order counts
+            soLuongDonOnline += dailyDoanhThuOnline != null && dailyDoanhThuOnline.compareTo(BigDecimal.ZERO) > 0 ? dailySoLuongDon : 0;
+            soLuongDonOffline += dailyDoanhThuOffline != null && dailyDoanhThuOffline.compareTo(BigDecimal.ZERO) > 0 ? dailySoLuongDon : 0;
+        }
+
+        // For simplicity, we're not calculating tiLeTangTruongDoanhThu for filtered data
+        Double tiLeTangTruongDoanhThu = null;
+
+        return new ThongKeDonHangDTO(tongDoanhThu, doanhThuOnline, doanhThuOffline,
+                onlineHoanThanh, onlineHuy, offlineHoanThanh, offlineHuy, soLuongDon,
+                soLuongDonOnline, soLuongDonOffline, tiLeTangTruongDoanhThu);
+    }
+
+    // Existing method for counting by luongBan and trangThai
     public long countByLuongBanAndTrangThai(Integer luongBan, Integer trangThai) {
         return donHangRepository.countByLuongBanAndTrangThai(luongBan, trangThai);
     }
 
+    // Existing methods for SoLuongDonHangDTO (used for charts)
     public List<SoLuongDonHangDTO> getSoLuongDonTheoNgay(String startDate, String endDate) {
         List<Object[]> results = donHangRepository.getSoLuongDonTheoNgay(startDate, endDate);
         List<SoLuongDonHangDTO> dtos = new ArrayList<>();
@@ -102,6 +175,7 @@ public class ThongKeService {
         return dtos;
     }
 
+    // Existing methods for ThongKeTheoThoiGianDTO (used for charts)
     public List<ThongKeTheoThoiGianDTO> thongKeTheoNgay(String startDate, String endDate) {
         List<Object[]> results = donHangRepository.thongKeTheoNgay(startDate, endDate);
         List<ThongKeTheoThoiGianDTO> dtos = new ArrayList<>();
@@ -214,7 +288,6 @@ public class ThongKeService {
         for (int i = 0; i < results.size(); i++) {
             Object[] result = results.get(i);
             BigDecimal tongDoanhThu = (BigDecimal) result[1];
-            // Kiểm tra nếu không có dữ liệu, trả về doanh thu bằng 0
             if (tongDoanhThu == null) {
                 tongDoanhThu = BigDecimal.ZERO;
             }

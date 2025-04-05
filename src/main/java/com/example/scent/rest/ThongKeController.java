@@ -1,15 +1,11 @@
-package com.example.scent.rest;
+package com.example.scent.controller;
 
 import com.example.scent.entity.ThongKe.SoLuongDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeTheoThoiGianDTO;
 import com.example.scent.service.ThongKeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,79 +16,95 @@ public class ThongKeController {
     @Autowired
     private ThongKeService thongKeService;
 
+    // Endpoint for overall statistics (Tổng quan Cố định)
     @GetMapping("/tong-quan")
-    public ResponseEntity<ThongKeDonHangDTO> thongKeTongQuan() {
-        ThongKeDonHangDTO thongKe = thongKeService.thongKeTongQuan();
-        return ResponseEntity.ok(thongKe);
+    public ThongKeDonHangDTO thongKeTongQuan() {
+        return thongKeService.thongKeTongQuan();
     }
 
-    @GetMapping("/count-by-luong-ban-trang-thai")
-    public ResponseEntity<Long> countByLuongBanAndTrangThai(
-            @RequestParam("luongBan") Integer luongBan,
-            @RequestParam("trangThai") Integer trangThai) {
-        long count = thongKeService.countByLuongBanAndTrangThai(luongBan, trangThai);
-        return ResponseEntity.ok(count);
-    }
-
-    @GetMapping("/so-luong-don/ngay")
-    public ResponseEntity<List<SoLuongDonHangDTO>> getSoLuongDonTheoNgay(
+    // Endpoint for aggregated statistics by date range (Theo ngày)
+    @GetMapping("/tong-quan/ngay")
+    public ThongKeDonHangDTO thongKeTongQuanTheoNgay(
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate) {
-        List<SoLuongDonHangDTO> result = thongKeService.getSoLuongDonTheoNgay(startDate, endDate);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTongQuanTheoNgay(startDate, endDate);
     }
 
-    @GetMapping("/so-luong-don/tuan")
-    public ResponseEntity<List<SoLuongDonHangDTO>> getSoLuongDonTheoTuan(
+    // Endpoint for aggregated statistics by week (Theo tuần)
+    @GetMapping("/tong-quan/tuan")
+    public ThongKeDonHangDTO thongKeTongQuanTheoTuan(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "week", required = false) Integer week) {
-        List<SoLuongDonHangDTO> result = thongKeService.getSoLuongDonTheoTuan(year, week);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTongQuanTheoTuan(year, week);
     }
 
-    @GetMapping("/so-luong-don/thang")
-    public ResponseEntity<List<SoLuongDonHangDTO>> getSoLuongDonTheoThang(
+    // Endpoint for aggregated statistics by month (Theo tháng)
+    @GetMapping("/tong-quan/thang")
+    public ThongKeDonHangDTO thongKeTongQuanTheoThang(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "month", required = false) Integer month) {
-        List<SoLuongDonHangDTO> result = thongKeService.getSoLuongDonTheoThang(year, month);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTongQuanTheoThang(year, month);
     }
 
-    @GetMapping("/so-luong-don/nam")
-    public ResponseEntity<List<SoLuongDonHangDTO>> getSoLuongDonTheoNam(
+    // Endpoint for aggregated statistics by year (Theo năm)
+    @GetMapping("/tong-quan/nam")
+    public ThongKeDonHangDTO thongKeTongQuanTheoNam(
             @RequestParam(value = "year", required = false) Integer year) {
-        List<SoLuongDonHangDTO> result = thongKeService.getSoLuongDonTheoNam(year);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTongQuanTheoNam(year);
     }
 
+    // Existing endpoints for chart data
     @GetMapping("/doanh-thu/ngay")
-    public ResponseEntity<List<ThongKeTheoThoiGianDTO>> thongKeTheoNgay(
+    public List<ThongKeTheoThoiGianDTO> thongKeTheoNgay(
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate) {
-        List<ThongKeTheoThoiGianDTO> result = thongKeService.thongKeTheoNgay(startDate, endDate);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTheoNgay(startDate, endDate);
     }
 
     @GetMapping("/doanh-thu/tuan")
-    public ResponseEntity<List<ThongKeTheoThoiGianDTO>> thongKeTheoTuan(
+    public List<ThongKeTheoThoiGianDTO> thongKeTheoTuan(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "week", required = false) Integer week) {
-        List<ThongKeTheoThoiGianDTO> result = thongKeService.thongKeTheoTuan(year, week);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTheoTuan(year, week);
     }
 
     @GetMapping("/doanh-thu/thang")
-    public ResponseEntity<List<ThongKeTheoThoiGianDTO>> thongKeTheoThang(
+    public List<ThongKeTheoThoiGianDTO> thongKeTheoThang(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "month", required = false) Integer month) {
-        List<ThongKeTheoThoiGianDTO> result = thongKeService.thongKeTheoThang(year, month);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTheoThang(year, month);
     }
 
     @GetMapping("/doanh-thu/nam")
-    public ResponseEntity<List<ThongKeTheoThoiGianDTO>> thongKeTheoNam(
+    public List<ThongKeTheoThoiGianDTO> thongKeTheoNam(
             @RequestParam(value = "year", required = false) Integer year) {
-        List<ThongKeTheoThoiGianDTO> result = thongKeService.thongKeTheoNam(year);
-        return ResponseEntity.ok(result);
+        return thongKeService.thongKeTheoNam(year);
+    }
+
+    @GetMapping("/so-luong-don/ngay")
+    public List<SoLuongDonHangDTO> getSoLuongDonTheoNgay(
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate) {
+        return thongKeService.getSoLuongDonTheoNgay(startDate, endDate);
+    }
+
+    @GetMapping("/so-luong-don/tuan")
+    public List<SoLuongDonHangDTO> getSoLuongDonTheoTuan(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "week", required = false) Integer week) {
+        return thongKeService.getSoLuongDonTheoTuan(year, week);
+    }
+
+    @GetMapping("/so-luong-don/thang")
+    public List<SoLuongDonHangDTO> getSoLuongDonTheoThang(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        return thongKeService.getSoLuongDonTheoThang(year, month);
+    }
+
+    @GetMapping("/so-luong-don/nam")
+    public List<SoLuongDonHangDTO> getSoLuongDonTheoNam(
+            @RequestParam(value = "year", required = false) Integer year) {
+        return thongKeService.getSoLuongDonTheoNam(year);
     }
 }
