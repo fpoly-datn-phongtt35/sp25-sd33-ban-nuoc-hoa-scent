@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -200,14 +202,18 @@ public class TaiKhoanCtrl {
     @GetMapping("/findByEmail")
     public TaiKhoan findByEmail(@RequestParam("email") String email) {
         Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
+
         if (tkOpt.isEmpty()) {
-            return null;// Trả về 404 nếu không tìm thấy
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaiKhoan not found for email: " + email);
         }
 
         TaiKhoan tk = tkOpt.get();
-        // Chuyển đổi TaiKhoan thành TaiKhoanDTO
+        // Check if the role (vai_tro) is "USER"
+        if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaiKhoan with email " + email + " does not have role USER");
+        }
 
-
+        // Return the TaiKhoan with 200 OK (default status for a successful response)
         return tk;
     }
 }

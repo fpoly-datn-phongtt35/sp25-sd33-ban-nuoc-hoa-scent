@@ -131,9 +131,12 @@ public class TaiKhoanSv implements UserDetailsService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return tki.searchByRoleAndKeyword("STAFF", keyword, pageable);
     }
-    public Optional<TaiKhoan> findByEmail(String email) {
-        return tki.findAll().stream().filter(t -> t.getEmail().equalsIgnoreCase(email)).findFirst();
-    }
+        public Optional<TaiKhoan> findByEmail(String email) {
+            return tki.findAll().stream().filter(
+                    t -> t.getEmail().equalsIgnoreCase(email)
+            && t.getVaiTro().equalsIgnoreCase("USER")
+            ).findFirst();
+        }
 
     public TaiKhoan findByUsername(String username) {
         return tki.findByUsername(username);
