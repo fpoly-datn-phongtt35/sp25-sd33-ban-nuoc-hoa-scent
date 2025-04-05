@@ -1,39 +1,43 @@
 <header class="header">
-    <div class="logo">
-        <h1><img src="logo.webp" alt="Logo"></h1>
-    </div>
-    <nav class="navbar">
-        <a routerLink="/">Trang chủ</a>
-        <a routerLink="/product">Sản phẩm</a>
-        <a routerLink="/contact">Liên hệ</a>
-        <a routerLink="/app-order-id">Đơn hàng </a>
-    </nav>
-   
-    <div class="header-icons">
-        <!-- Icon tìm kiếm -->
-        
-        <!-- Icon giỏ hàng -->
-        <a class="icon-link" (click)="toggleShoppingCart()">
-            <i class="bi bi-cart"></i>
-        </a>
+  <div class="logo">
+    <h1><img src="logo.webp" alt="Logo"></h1>
+  </div>
+  <nav class="navbar">
+    <a routerLink="/">Trang Chủ</a>
+    <a routerLink="/product">Sản Phẩm</a>
+    <a routerLink="/contact">Liên Hệ</a>
+  </nav>
 
-        <ng-container>
-            <ng-container *ngIf="isLoggedIn; else notLoggedIn">
-                <span class="username">Xin chào, {{ username }}</span>
-                <button class="logout-btn" (click)="logout()">Đăng xuất</button>
-            </ng-container>
-        </ng-container>
+  <div class="header-icons">
+    <!-- Icon giỏ hàng -->
+    <a class="icon-link" (click)="toggleShoppingCart()">
+      <i class="bi bi-cart"></i>
+    </a>
 
-        <ng-template #notLoggedIn>
-            <button class="login-btn" (click)="goToLogin()">Đăng nhập</button>
-        </ng-template>
-    </div>
+    <ng-container>
+      <ng-container *ngIf="isLoggedIn; else notLoggedIn">
+        <div class="user-dropdown" (mouseenter)="showDropdown()" (mouseleave)="hideDropdown()">
+          <span class="username">Xin chào, {{ username }}</span>
+          <div class="dropdown-menu" *ngIf="isDropdownOpen">
+            <a class="dropdown-item" routerLink="/app-order-id">Đơn Hàng</a>
+            <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi Mật Khẩu</a>
+            <a class="dropdown-item" >Cập nhật thông tin</a>
+            <a class="dropdown-item" (click)="logout()">Đăng Xuất</a>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <ng-template #notLoggedIn>
+      <button class="login-btn" (click)="goToLogin()">Đăng Nhập</button>
+    </ng-template>
+  </div>
 </header>
 
 <!-- Popup giỏ hàng -->
 <div *ngIf="isShoppingCartOpen" class="shopping-cart-popup">
-    <div class="shopping-cart-container">
-        <span class="close-btn" (click)="closeShoppingCart()">&times;</span>
-        <app-shopping-cart></app-shopping-cart> <!-- Load component giỏ hàng -->
-    </div>
+  <div class="shopping-cart-container">
+    <span class="close-btn" (click)="closeShoppingCart()"><i class="bi bi-x-lg"></i></span>
+    <app-shopping-cart></app-shopping-cart>
+  </div>
 </div>

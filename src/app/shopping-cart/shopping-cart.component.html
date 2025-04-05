@@ -1,58 +1,50 @@
-<!-- shopping-cart.component.html -->
 <div class="cart-container">
-    <h2>Giỏ hàng của bạn</h2>
-    <table>
-        <thead>
-            <tr>
-              <th>
-                <input type="checkbox" (change)="toggleSelectAll()" [checked]="isAllSelected">
-              </th>
-              
-                <th>Ảnh</th>
-                <th>Sản phẩm</th>
-                
-                <th>Dung tích</th>
-                <th>Giá</th>
-                <th>Số lượng</th>
-                <th>Xóa</th>
-               
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let item of cartItems; trackBy: trackByProduct">
-             <td> <input type="checkbox" (change)="onProductSelect(item, $event)" [checked]="selectedProducts.includes(item)">
-             </td>
+  <h2 class="cart-title">Giỏ Hàng Của Bạn</h2>
 
-              <td class="product-info">
-                <!-- Kiểm tra lại item.product.imageURL có phải là đường dẫn hợp lệ và item.product có tồn tại -->
-                <img [src]="item.product.imageURL[0]" alt="Product Image" />
-              </td>
-              <!-- Đảm bảo rằng các thuộc tính productName, price của product được truy cập đúng -->
-              <td>{{ item.product.tenSanPham }}</td>
-              <td>{{ item.product.dungTich }}</td>
-              <td>{{ item.product?.donGia | currency:'VND' }}</td>
-              <td>
-                <input type="number" class="quantity-input" (ngModelChange)="logQuantityChange(item, $event); updateQuantity(item,$event)" [(ngModel)]="item.quantity" min="1">
-              </td>
-              
-              <td>
-                <button class="remove-btn" (click)="removeItem(item.product.idSanPham, item.product.dungTich)">Xóa</button>
-            </td>
-              <!-- Tính toán tổng giá tiền dựa trên số lượng và giá sản phẩm -->
-             
-            </tr>
-          </tbody>
-          
-        
-    </table>
-    <div class="total-container">
-        <div class="select-all">
-            <h6 >Tất cả ({{ cartItems.length }})</h6>
-        </div>
-        <div class="total-info">
-          <span><strong>Tổng tiền:</strong> {{ totalAmount | number }} VND</span>
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="cartItems.length === 0">
+    <p>Giỏ hàng của bạn đang trống. Hãy thêm sản phẩm để tiếp tục!</p>
+    <a routerLink="/product" class="btn-shop-now">Mua Sắm Ngay</a>
+  </div>
 
-            <button class="btn-order" (click)="placeOrder()">Đặt hàng</button>
+  <!-- Cart Content -->
+  <div class="cart-content" *ngIf="cartItems.length > 0">
+    <!-- Scrollable Cart Items -->
+    <div class="cart-items-scrollable">
+      <div class="cart-items">
+        <div class="cart-item" *ngFor="let item of cartItems; trackBy: trackByProduct">
+          <input type="checkbox" (change)="onProductSelect(item, $event)" [checked]="selectedProducts.includes(item)" class="item-checkbox">
+          <div class="item-image">
+            <img [src]="item.product.imageURL[0]" alt="{{ item.product.tenSanPham }}" loading="lazy" />
+          </div>
+          <div class="item-details">
+            <h5 class="item-name">{{ item.product.tenSanPham }}</h5>
+            <p class="item-capacity">Dung tích: {{ item.product.dungTich }}ml</p>
+            <p class="item-price">{{ item.product?.donGia | number }} VND</p>
+          </div>
+          <div class="item-actions">
+            <div class="quantity-control">
+              <button class="quantity-btn" (click)="updateQuantity(item, item.quantity - 1)" [disabled]="item.quantity <= 1">-</button>
+              <span class="quantity">{{ item.quantity }}</span>
+              <button class="quantity-btn" (click)="updateQuantity(item, item.quantity + 1)">+</button>
+            </div>
+            <button class="remove-btn" (click)="removeItem(item.product.idSanPham, item.product.dungTich)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
+      </div>
     </div>
+
+    <!-- Total and Checkout (Sticky) -->
+    <div class="total-wrapper">
+      <div class="total-container">
+        <div class="total-info">
+          <span class="total-label">Tổng tiền:</span>
+          <span class="total-amount">{{ totalAmount | number }} VND</span>
+        </div>
+        <button class="btn-order" (click)="placeOrder()" [disabled]="selectedProducts.length === 0">Đặt Hàng</button>
+      </div>
+    </div>
+  </div>
 </div>
