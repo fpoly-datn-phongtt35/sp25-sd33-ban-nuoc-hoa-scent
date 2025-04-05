@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, RouterModule], // Đảm bảo RouterModule có trong imports
+  imports: [ReactiveFormsModule, CommonModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
@@ -44,37 +44,55 @@ export class LoginComponent {
           console.log('ID:', UserID);
           this.cartService.setUserId(UserID.toString());
 
+          // Centered success notification with correct icon and customClass
           Swal.fire({
             title: 'Đăng nhập thành công!',
             text: 'Chào mừng bạn đến với hệ thống!',
             icon: 'success',
             confirmButtonText: 'OK',
-            position: 'bottom-end',
+            position: 'center',
+            customClass: {
+              popup: 'swal2-centered',
+              icon: 'swal2-icon',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-content', // Changed 'content' to 'htmlContainer'
+              confirmButton: 'swal2-confirm',
+            },
             timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
+          }).then(() => {
+            // Navigate after the notification closes
+            if (role === 'ADMIN') {
+              this.router.navigate(['/admin']);
+            } else if (role === 'STAFF') {
+              this.router.navigate(['/admin']);
+            } else {
+              this.router.navigate(['/']);
+            }
           });
-
-          if (role === 'ADMIN') {
-            this.router.navigate(['/admin']);
-          } else if (role === 'STAFF') {
-            this.router.navigate(['/admin']);
-          } else {
-            this.router.navigate(['/']);
-          }
         },
         error: (error: any) => {
           console.error('Đăng nhập thất bại', error);
+          // Centered error notification with correct icon and customClass
           Swal.fire({
             icon: 'error',
             title: 'Đăng nhập thất bại',
             text: 'Tài khoản hoặc mật khẩu không đúng. Vui lòng thử lại!',
             confirmButtonText: 'Thử lại',
-            position: 'bottom-end',
-            timer: 3000,
+            position: 'center',
             customClass: {
-              popup: 'swal2-popup',
+              popup: 'swal2-centered',
               icon: 'swal2-icon',
               title: 'swal2-title',
+              htmlContainer: 'swal2-content', // Changed 'content' to 'htmlContainer'
+              confirmButton: 'swal2-confirm',
             },
+            timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
           });
         },
       });

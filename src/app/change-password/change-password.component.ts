@@ -44,17 +44,26 @@ export class ChangePasswordModalComponent implements OnDestroy {
         next: (user: any) => {
           this.email = user.email;
           this.maskedEmail = this.maskEmail(this.email);
-          console.log('email:',this.email)
+          console.log('email:', this.email);
         },
-        
         error: () => {
           Swal.fire({
             title: 'Lỗi',
             text: 'Không thể lấy thông tin người dùng!',
             icon: 'error',
             confirmButtonText: 'OK',
-            position: 'bottom-end',
+            position: 'center', // Centered position
+            customClass: {
+              popup: 'swal2-centered',
+              icon: 'swal2-icon',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-content',
+              confirmButton: 'swal2-confirm',
+            },
             timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
           });
           this.closeModal();
         },
@@ -65,12 +74,23 @@ export class ChangePasswordModalComponent implements OnDestroy {
         text: 'Bạn chưa đăng nhập!',
         icon: 'error',
         confirmButtonText: 'OK',
-        position: 'bottom-end',
+        position: 'center', // Centered position
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
         timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
       });
       this.closeModal();
     }
   }
+
   private maskEmail(email: string): string {
     if (!email) return '';
     const [localPart, domain] = email.split('@');
@@ -80,6 +100,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
     const maskedPart = '*'.repeat(localPart.length - 5); // Che phần giữa
     return `${firstThree}${maskedPart}${lastTwo}@${domain}`;
   }
+
   ngOnDestroy(): void {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
@@ -99,8 +120,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
         text: 'Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt!',
         icon: 'error',
         confirmButtonText: 'Thử lại',
-        position: 'bottom-end',
+        position: 'center', // Centered position
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
         timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
       });
       return;
     }
@@ -112,8 +143,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
         text: 'Mật khẩu xác nhận không khớp!',
         icon: 'error',
         confirmButtonText: 'Thử lại',
-        position: 'bottom-end',
+        position: 'center', // Centered position
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
         timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
       });
       return;
     }
@@ -138,8 +179,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: err.error || 'Mật khẩu cũ không đúng!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
       },
     });
@@ -153,8 +204,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
           didClose: () => {
             // Đảm bảo modal không đóng sau khi thông báo
             this.step = 2; // Chuyển sang bước nhập OTP
@@ -170,8 +231,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: err.error || 'Không thể gửi OTP. Vui lòng thử lại!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: "swal2-confirm",
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.isLoading = false;
       },
@@ -219,8 +290,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
               text: response,
               icon: 'success',
               confirmButtonText: 'OK',
-              position: 'bottom-end',
+              position: 'center', // Centered position
+              customClass: {
+                popup: 'swal2-centered',
+                icon: 'swal2-icon',
+                title: 'swal2-title',
+                htmlContainer: 'swal2-content',
+                confirmButton: 'swal2-confirm',
+              },
               timer: 3000,
+              timerProgressBar: true,
+              backdrop: true,
+              allowOutsideClick: true,
             });
             this.closeModal();
           },
@@ -230,8 +311,18 @@ export class ChangePasswordModalComponent implements OnDestroy {
               text: err.error || 'Không thể đổi mật khẩu. Vui lòng thử lại!',
               icon: 'error',
               confirmButtonText: 'Thử lại',
-              position: 'bottom-end',
+              position: 'center', // Centered position
+              customClass: {
+                popup: 'swal2-centered',
+                icon: 'swal2-icon',
+                title: 'swal2-title',
+                htmlContainer: 'swal2-content',
+                confirmButton: 'swal2-confirm',
+              },
               timer: 3000,
+              timerProgressBar: true,
+              backdrop: true,
+              allowOutsideClick: true,
             });
             this.isLoading = false;
           },
@@ -246,17 +337,47 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: err.error || 'OTP không hợp lệ hoặc đã hết hạn!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.isLoading = false;
       },
     });
   }
 
-  closeModal(): void {
-    this.activeModal.dismiss('cancel');
-    this.resetForm();
+  closeModal() {
+    console.log('🛑 Attempting to close modal...');
+    if (this.activeModal) {
+      this.activeModal.dismiss('cancel'); // Dismiss the modal
+      console.log('✅ Dismiss method called');
+    } else {
+      console.error('❌ ActiveModal is not available');
+    }
+
+    // Backup plan: Remove modal manually using Bootstrap classes
+    setTimeout(() => {
+      const modalElement = document.querySelector('.modal');
+      if (modalElement) {
+        modalElement.remove();
+      }
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+      document.body.classList.remove('modal-open');
+      console.log('✅ Forced modal removal executed');
+      this.cdr.detectChanges(); // Trigger change detection to update UI
+    }, 100);
   }
 
   resetForm(): void {

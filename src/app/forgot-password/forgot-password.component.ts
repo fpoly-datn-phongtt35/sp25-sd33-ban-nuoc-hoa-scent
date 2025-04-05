@@ -46,8 +46,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: 'Email hợp lệ, vui lòng nhập mật khẩu mới.',
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.step = 2; // Chuyển sang bước nhập mật khẩu mới
       },
@@ -59,8 +69,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: 'Email không tồn tại trong hệ thống!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
       },
     });
@@ -75,8 +95,18 @@ export class ForgotPasswordComponent implements OnDestroy {
         text: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt!',
         icon: 'error',
         confirmButtonText: 'Thử lại',
-        position: 'bottom-end',
+        position: 'center', // Centered position
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
         timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
       });
       return;
     }
@@ -90,8 +120,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.step = 3; // Chuyển sang bước nhập OTP
         this.startCountdown();
@@ -103,8 +143,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.isLoading = false;
       },
@@ -125,8 +175,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.startCountdown();
       },
@@ -137,8 +197,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.isLoading = false;
       },
@@ -164,10 +234,21 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
+        }).then(() => {
+          this.router.navigate(['/login']);
         });
-        this.router.navigate(['/login']);
       },
       error: (err) => {
         const errorMessage = err.error || 'Không thể đặt lại mật khẩu. Vui lòng thử lại!';
@@ -176,8 +257,18 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'bottom-end',
+          position: 'center', // Centered position
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
           timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
         });
         this.isLoading = false;
       },

@@ -86,93 +86,86 @@
 .options a:hover {
   text-decoration: underline;
 }
-/* Tùy chỉnh vị trí */
-.toast-bottom-right {
-  bottom: 20px;
-  right: 20px;
-}
 
-/* Kiểu thông báo thành công */
-.toast-success {
-  background-color: #4caf50 !important; /* Xanh lá */
-  color: #fff !important;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-size: 14px;
-  padding: 15px;
-}
-
-/* Kiểu thông báo lỗi */
-.toast-error {
-  background-color: #f44336 !important; /* Đỏ */
-  color: #fff !important;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-size: 14px;
-  padding: 15px;
-}
-
-/* Kiểu thông báo cảnh báo */
-.toast-warning {
-  background-color: #ff9800 !important; /* Cam */
-  color: #fff !important;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-size: 14px;
-  padding: 15px;
-}
-
-/* Thanh tiến trình */
+/* Remove old toast styles */
+.toast-bottom-right,
+.toast-success,
+.toast-error,
+.toast-warning,
 .toast-progress {
-  background-color: #fff !important; /* Màu trắng cho thanh tiến trình */
-  height: 4px;
+  display: none;
 }
-/* Custom styling for SweetAlert2 */
-/* Tùy chỉnh thông báo nhỏ */
-::ng-deep .swal2-popup {
-  display: flex;
-  align-items: center;  /* Căn giữa theo chiều dọc */
-  justify-content: flex-start;  /* Căn trái nội dung và icon */
-  padding: 15px 25px;  /* Thêm padding cho thông báo */
-  width: 400px !important;  /* Chiều rộng của thông báo */
-  height: auto;
-  border-radius: 12px !important;  /* Bo tròn góc đẹp */
-  background-color: #fff !important;  /* Màu nền trắng */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);  /* Đổ bóng nhẹ */
+
+/* Centered SweetAlert2 Notification */
+::ng-deep .swal2-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 1050 !important;
+}
+
+::ng-deep .swal2-centered {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 20px !important;
+  width: 400px !important;
+  border-radius: 12px !important;
+  background-color: #fff !important;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
 ::ng-deep .swal2-icon {
-  font-size: 30px !important;  /* Kích thước icon lớn hơn */
-  margin-right: 20px;  /* Khoảng cách giữa icon và nội dung */
-  order: -1;  /* Đảm bảo icon "X" nằm bên trái */
-  color: #e74c3c;  /* Màu đỏ dễ nhận diện */
+  font-size: 40px !important;
+  margin-bottom: 15px !important;
+  color: #48bb78 !important; /* Green for success */
+}
+
+::ng-deep .swal2-icon.swal2-error {
+  color: #f44336 !important; /* Red for error */
 }
 
 ::ng-deep .swal2-title {
-  font-size: 18px !important;  /* Kích thước tiêu đề */
-  font-weight: bold !important;
-  color: #333 !important;  /* Màu tiêu đề dễ nhìn */
-  margin-bottom: 10px;  /* Khoảng cách dưới tiêu đề */
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #1a202c !important;
+  margin-bottom: 10px !important;
+  text-align: center !important;
 }
 
 ::ng-deep .swal2-content {
-  font-size: 14px !important;  /* Kích thước văn bản */
-  color: #555 !important;  /* Màu sắc văn bản */
-  margin-bottom: 15px;  /* Khoảng cách dưới văn bản */
-}
-
-::ng-deep .swal2-footer {
-  display: none;  /* Ẩn footer nếu không cần */
+  font-size: 14px !important;
+  color: #718096 !important;
+  margin-bottom: 20px !important;
+  text-align: center !important;
 }
 
 ::ng-deep .swal2-confirm {
-  background-color: #3498db !important;  /* Màu nút Thử lại */
-  color: white !important;  /* Màu chữ trên nút */
-  border-radius: 5px !important;  /* Bo tròn nút */
-  padding: 10px 20px !important;  /* Thêm padding cho nút */
-  font-size: 14px !important;  /* Kích thước chữ trong nút */
+  padding: 8px 20px !important;
+  background-color: #6b7280 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 20px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background-color 0.3s ease, transform 0.3s ease !important;
 }
 
 ::ng-deep .swal2-confirm:hover {
-  background-color: #2980b9 !important;  /* Nút khi hover màu tối hơn */
+  background-color: #5a6268 !important;
+  transform: scale(1.05) !important;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  ::ng-deep .swal2-centered {
+    width: 90% !important;
+  }
 }
