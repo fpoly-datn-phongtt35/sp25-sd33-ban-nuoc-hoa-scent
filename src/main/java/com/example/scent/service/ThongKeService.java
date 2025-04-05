@@ -1,8 +1,10 @@
 package com.example.scent.service;
 
+import com.example.scent.entity.ThongKe.BestSellingProductDTO;
 import com.example.scent.entity.ThongKe.SoLuongDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeTheoThoiGianDTO;
+import com.example.scent.repo.CTDHInterface;
 import com.example.scent.repo.DonHangInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,7 +16,8 @@ import java.util.List;
 
 @Service
 public class ThongKeService {
-
+@Autowired
+    CTDHInterface chiTietDonHangRepository;
     @Autowired
     private DonHangInterface donHangRepository;
 
@@ -314,6 +317,51 @@ public class ThongKeService {
                     ((Number) result[7]).longValue(), // offlineHuy
                     ((Number) result[8]).longValue(), // soLuongDon
                     tiLeTangTruong // tiLeTangTruongDoanhThu
+            ));
+        }
+        return dtos;
+    }
+    public List<BestSellingProductDTO> getBestSellingProductsByDateRange(String startDate, String endDate) {
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByDateRange(startDate, endDate);
+        return mapToBestSellingProductDTO(results);
+    }
+
+    // Best-selling products by week
+    public List<BestSellingProductDTO> getBestSellingProductsByWeek(Integer year, Integer week) {
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByWeek(year, week);
+        return mapToBestSellingProductDTO(results);
+    }
+
+    // Best-selling products by month
+    public List<BestSellingProductDTO> getBestSellingProductsByMonth(Integer year, Integer month) {
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByMonth(year, month);
+        return mapToBestSellingProductDTO(results);
+    }
+
+    // Best-selling products by year
+    public List<BestSellingProductDTO> getBestSellingProductsByYear(Integer year) {
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByYear(year);
+        return mapToBestSellingProductDTO(results);
+    }
+
+    // Helper method to map query results to BestSellingProductDTO
+    private List<BestSellingProductDTO> mapToBestSellingProductDTO(List<Object[]> results) {
+        List<BestSellingProductDTO> dtos = new ArrayList<>();
+        for (Object[] result : results) {
+            dtos.add(new BestSellingProductDTO(
+                    (Integer) result[0], // id_san_pham
+                    (String) result[1], // ten_san_pham
+                    (String) result[2], // mo_ta_san_pham
+                    (String) result[3], // thuong_hieu
+                    (String) result[4], // nhom_huong
+                    (String) result[5], // danh_muc
+                    (String) result[6], // huong_dau
+                    (String) result[7], // huong_giua
+                    (String) result[8], // huong_cuoi
+                    (Integer) result[9], // id_spct
+                    (Integer) result[10], // dung_tich
+                    (Integer) result[11], // so_luong_ton_kho
+                    ((Number) result[12]).longValue() // total_quantity_sold
             ));
         }
         return dtos;

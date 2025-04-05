@@ -1,5 +1,6 @@
 package com.example.scent.controller;
 
+import com.example.scent.entity.ThongKe.BestSellingProductDTO;
 import com.example.scent.entity.ThongKe.SoLuongDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeTheoThoiGianDTO;
@@ -106,5 +107,37 @@ public class ThongKeController {
     public List<SoLuongDonHangDTO> getSoLuongDonTheoNam(
             @RequestParam(value = "year", required = false) Integer year) {
         return thongKeService.getSoLuongDonTheoNam(year);
+    }
+
+
+    //===========sản phẩm====================
+    @GetMapping("/best-selling/ngay")
+    public List<BestSellingProductDTO> getBestSellingProductsByDateRange(
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate) {
+        return thongKeService.getBestSellingProductsByDateRange(startDate, endDate);
+    }
+
+    // Best-selling products by week
+    @GetMapping("/best-selling/tuan")
+    public List<BestSellingProductDTO> getBestSellingProductsByWeek(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "week", required = false) Integer week) {
+        return thongKeService.getBestSellingProductsByWeek(year, week);
+    }
+
+    // Best-selling products by month
+    @GetMapping("/best-selling/thang")
+    public List<BestSellingProductDTO> getBestSellingProductsByMonth(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        return thongKeService.getBestSellingProductsByMonth(year, month);
+    }
+
+    // Best-selling products by year
+    @GetMapping("/best-selling/nam")
+    public List<BestSellingProductDTO> getBestSellingProductsByYear(
+            @RequestParam(value = "year", required = false) Integer year) {
+        return thongKeService.getBestSellingProductsByYear(year);
     }
 }
