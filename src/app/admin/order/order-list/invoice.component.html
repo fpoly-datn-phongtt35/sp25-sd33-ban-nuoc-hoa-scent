@@ -42,7 +42,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let order of filteredDonhang">
-        <td>{{ order.id }}</td>
+        <td>{{ formatOrderId(order) }}</td>
         <td>{{ order.tenNguoiNhanHang }}</td>
         <td>{{ order.sdtNguoiNhan }}</td>
         <td>{{ getPaymentMethod(order.phuongThucThanhToan) }}</td>

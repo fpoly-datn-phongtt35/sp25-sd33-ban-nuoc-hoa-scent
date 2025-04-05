@@ -10,7 +10,7 @@
         <button type="button" class="btn-close" (click)="close()"></button>
       </div>
     <p style="color: red; font-weight: bold; font-size: 1.2rem;">
-        <strong>Mã đơn hàng:</strong> #{{ orderData.id }}
+      <strong>Mã đơn hàng:</strong> #{{ formatOrderId(orderData) }}
       </p>
     <div class="row mb-2">
       <div class="col-6">

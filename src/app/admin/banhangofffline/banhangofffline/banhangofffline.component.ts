@@ -9,7 +9,11 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { OrderOffService } from '../../../service/OrderOffService';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { HoadonOfComponent } from '../../../hoadon-of/hoadon-of.component';
-
+import { Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+declare const html2pdf: any;
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 @Component({
   selector: 'app-banhangoffline',
   standalone: true,
@@ -39,6 +43,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   showQuantityModal: boolean = false;
   selectedProduct: any = null;
   selectedQuantity: number = 1;
+  
   totalBeforeDiscount: number = 0;
   totalAfterDiscount: number | undefined; // Tổng tiền sau giảm giá
   discountCodeInput: string = ''; // Mã giảm giá người dùng nhập
@@ -55,7 +60,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     private orderoffservice: OrderOffService,
     private tokenService: TokenService,
     private modalService: NgbModal,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.searchSubscription = this.searchSubject
       .pipe(debounceTime(300), distinctUntilChanged())
@@ -398,29 +404,12 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.isLoading = true;
 
     const userId = this.tokenService.getUserInfo();
-    console.log('userId from tokenService.getUserInfo():', userId);
-
     if (!userId || !userId.UserID || isNaN(userId.UserID) || userId.UserID <= 0) {
-      console.log('userId không hợp lệ:', { userId, userIdDotUserID: userId?.UserID });
       this.isLoading = false;
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
         text: 'ID tài khoản không hợp lệ! Vui lòng đăng nhập lại.',
-      });
-      return;
-    }
-
-    const invalidItem = this.currentOrder.chiTietDonHangs.find(
-      (item: any) => !item.idSpct || isNaN(item.idSpct) || item.idSpct <= 0
-    );
-    if (invalidItem) {
-      console.log('Sản phẩm có idSpct không hợp lệ:', invalidItem);
-      this.isLoading = false;
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: `Sản phẩm "${invalidItem.tenSanPham || 'Không xác định'}" không có idSpct hợp lệ!`,
       });
       return;
     }
@@ -437,14 +426,12 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       phuongThucThanhToan: this.currentOrder.phuongThucThanhToan,
       ghiChu: null,
     };
-    console.log('orderRequest before sending:', orderRequest);
 
     this.orderoffservice.createOrder(orderRequest).subscribe(
       (response) => {
         this.isLoading = false;
         this.orderId = response.orderId;
         this.totalAfterDiscount = response.tongTien; // Cập nhật lại tổng tiền từ back-end
-        this.cdr.detectChanges();
 
         const orderData = {
           orderId: this.orderId,
@@ -456,49 +443,34 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           ngayTao: new Date().toLocaleString(),
         };
 
-        const modalRef = this.modalService.open(HoadonOfComponent, { size: 'lg' });
-        modalRef.componentInstance.orderData = orderData;
+        // Tạo và in hóa đơn PDF tự động
+        this.generatePDF(orderData);
 
-        let isPrinted = false;
+        // Cập nhật trạng thái đơn hàng thành công (trạng thái 4)
+        this.orderoffservice.updateOrderStatus(this.orderId!, {
+          trangThai: 4,
+          lyDoHuy: null,
+        }).subscribe(
+          (updateResponse) => {
+            console.log('Cập nhật trạng thái thành công:', updateResponse);
+            Swal.fire({
+              icon: 'success',
+              title: 'Thành công',
+              text: 'Đơn hàng thành công và hóa đơn đã được in!',
+              timer: 1500,
+              showConfirmButton: false,
+            });
 
-        modalRef.result.then(
-          (result) => {
-            if (result === 'printed') {
-              isPrinted = true;
-              this.orderoffservice.updateOrderStatus(this.orderId!, {
-                trangThai: 4,
-                lyDoHuy: null,
-              }).subscribe(
-                (updateResponse) => {
-                  this.isLoading = false;
-                  console.log('Cập nhật trạng thái thành công:', updateResponse);
-                  Swal.fire({
-                    icon: 'success',
-                    title: 'Thành công',
-                    text: 'Đơn hàng thành công!',
-                    timer: 1500,
-                    showConfirmButton: false,
-                  });
-
-                  this.resetCurrentOrder();
-                  this.orderStatusUpdated.emit();
-                },
-                (error) => {
-                  this.isLoading = false;
-                  console.error('Lỗi khi cập nhật trạng thái đơn hàng:', error);
-                  Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi',
-                    text: 'Không thể cập nhật trạng thái đơn hàng. Vui lòng kiểm tra lại đơn hàng!',
-                  });
-                }
-              );
-            }
+            this.resetCurrentOrder();
+            this.orderStatusUpdated.emit();
           },
-          (reason) => {
-            if (!isPrinted) {
-              this.cancelOrder();
-            }
+          (error) => {
+            console.error('Lỗi khi cập nhật trạng thái đơn hàng:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: 'Không thể cập nhật trạng thái đơn hàng!',
+            });
           }
         );
       },
@@ -509,26 +481,214 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
         if (error.status === 401) {
           errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!';
         } else if (error.status === 400) {
-          errorMessage = error.error.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!';
-          if (errorMessage.includes('Mã giảm giá')) {
-            this.currentOrder.maGiamGia = null;
-            this.discountDetails = null;
-            this.discountCodeInput = '';
-            this.discountMessage = errorMessage;
-            this.totalAfterDiscount = undefined;
-            this.discountAmount = 0;
-          }
+          errorMessage = error.error.message || 'Dữ liệu không hợp lệ!';
         }
         Swal.fire({
           icon: 'error',
           title: 'Lỗi',
           text: errorMessage,
         });
-        this.cdr.detectChanges();
       }
     );
   }
 
+  // Phương thức mới để tạo và tải PDF
+
+  
+  private async generatePDF(orderData: any): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.error('jsPDF cannot run in SSR or Node environment');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Không thể tạo PDF trong môi trường SSR!',
+      });
+      return;
+    }
+
+    const escapeHtml = (unsafe: string) => {
+      if (!unsafe) return '';
+      return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '210mm';
+    container.style.padding = '10px';
+    container.style.fontFamily = 'Arial, sans-serif';
+    document.body.appendChild(container);
+
+    const chiTietDonHangs = orderData.chiTietDonHangs || [];
+    const rows = chiTietDonHangs.map((item: any) => {
+      const tenSanPham = escapeHtml(item.tenSanPham || 'Không xác định');
+      const soLuong = item.soLuong || 0;
+      const donGia = item.donGia ? item.donGia.toLocaleString() : '0';
+      const thanhTien = item.thanhTien ? item.thanhTien.toLocaleString() : '0';
+
+      return `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">${tenSanPham}</td>
+          <td style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">${donGia} VNĐ</td>
+          <td style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">${soLuong}</td>
+          <td style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">${thanhTien} VNĐ</td>
+        </tr>
+      `;
+    }).join('');
+
+    const htmlContent = `
+      <div style="font-size: 12px;">
+        <div id="header-section">
+          <h2 style="text-align: center; font-size: 18px; margin-bottom: 8px; color: red;">HÓA ĐƠN BÁN HÀNG</h2>
+          <h3 style="text-align: center; font-size: 14px; margin-bottom: 15px;">Mã đơn hàng: #${this.formatOrderId(orderData)}</h3>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <div style="width: 45%;">
+              <p style="font-size: 10px;"><strong>Nguồn gửi</strong></p>
+              <p style="font-size: 10px;">TỪ: Scent</p>
+              <p style="font-size: 10px;">SĐT: 0974671634</p>
+              <p style="font-size: 10px;">Địa chỉ: 43 Phú Diễn, Nam Từ Liêm, Hà Nội</p>
+            </div>
+            <div style="width: 45%;">
+              <p style="font-size: 10px;"><strong>Nguồn nhận</strong></p>
+              <p style="font-size: 10px;">ĐẾN: ${escapeHtml(orderData.tenNguoiNhanHang || 'N/A')}</p>
+              <p style="font-size: 10px;">SĐT: ${escapeHtml(orderData.sdtNguoiNhan || 'N/A')}</p>
+              <p style="font-size: 10px;">Địa chỉ: Thôn 4, Phường Kim Mã, Quận Ba Đình, Hà Nội</p>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <div style="width: 45%;">
+              <p style="font-size: 10px;"><strong>Người đặt hàng</strong></p>
+              <p style="font-size: 10px;">Họ tên: trungkien1711</p>
+              <p style="font-size: 10px;">Email: kientpph42696@fpt.edu.vn</p>
+            </div>
+            <div style="width: 45%;">
+              <p style="font-size: 10px;"><strong>Ngày đặt: ${escapeHtml(orderData.ngayTao || 'N/A')}</strong></p>
+              <p style="font-size: 10px;"><strong>Phương thức thanh toán: ${escapeHtml(orderData.phuongThucThanhToan || 'N/A')}</strong></p>
+              <p style="font-size: 10px;"><strong>Phương thức vận chuyển: Giao hàng nhanh</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;" id="product-table">
+          <thead>
+            <tr style="background-color: #f2f2f2;">
+              <th style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">Sản phẩm</th>
+              <th style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">Giá</th>
+              <th style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">Số lượng</th>
+              <th style="border: 1px solid #ddd; padding: 4px; font-size: 10px;">Tổng</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || '<tr><td colspan="4" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 10px;">Không có sản phẩm</td></tr>'}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;" id="footer">
+          <div style="width: 45%;">
+            <p style="font-size: 10px;"><strong>Số tiền giảm: ${(this.totalBeforeDiscount - orderData.total) >= 0 ? (this.totalBeforeDiscount - orderData.total).toLocaleString() : '0'} VNĐ</strong></p>
+            <p style="font-size: 10px;"><strong>Ngày ${new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</strong></p>
+          </div>
+          <div style="width: 45%; text-align: right;">
+            <p style="font-size: 10px;"><strong>(Ký tên)</strong></p>
+          </div>
+        </div>
+
+        <p style="font-size: 12px; font-weight: bold; text-align: right;" id="total">Tổng tiền: ${orderData.total ? orderData.total.toLocaleString() : '0'} VNĐ</p>
+      </div>
+    `;
+
+    // Set the container HTML only once
+    container.innerHTML = htmlContent;
+    console.log('Container HTML before rendering:', container.innerHTML);
+
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 5;
+    let yPosition = margin;
+
+    const addElementToPDF = async (element: HTMLElement, addNewPageIfNeeded: boolean = true) => {
+      if (!element) {
+        console.warn('Element is null or undefined, skipping rendering.');
+        return;
+      }
+
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        logging: true,
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const imgHeight = (canvas.height * (pageWidth - 2 * margin)) / canvas.width;
+
+      if (yPosition + imgHeight > pageHeight - margin && addNewPageIfNeeded) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+
+      pdf.addImage(imgData, 'JPEG', margin, yPosition, pageWidth - 2 * margin, imgHeight);
+      yPosition += imgHeight + 5; // Reduced spacing between sections
+    };
+
+    try {
+      // Select each section precisely using IDs
+      const headerSection = container.querySelector('#header-section') as HTMLElement;
+      const productTable = container.querySelector('#product-table') as HTMLElement;
+      const footer = container.querySelector('#footer') as HTMLElement;
+      const total = container.querySelector('#total') as HTMLElement;
+
+      // Render each section only once
+      if (headerSection) {
+        console.log('Rendering header section...');
+        await addElementToPDF(headerSection);
+      } else {
+        console.warn('Header section not found!');
+      }
+
+      if (productTable) {
+        console.log('Rendering product table...');
+        await addElementToPDF(productTable);
+      } else {
+        console.warn('Product table not found!');
+      }
+
+      if (footer) {
+        console.log('Rendering footer...');
+        await addElementToPDF(footer);
+      } else {
+        console.warn('Footer not found!');
+      }
+
+      if (total) {
+        console.log('Rendering total...');
+        await addElementToPDF(total, false);
+      } else {
+        console.warn('Total not found!');
+      }
+
+      pdf.save(`hoadon_${orderData.orderId || 'unknown'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Không thể tạo PDF. Vui lòng thử lại!',
+      });
+    } finally {
+      document.body.removeChild(container);
+    }
+  }
   cancelOrder(): void {
     if (!this.orderId) {
       this.isLoading = false;
@@ -612,7 +772,23 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       }
     });
   }
-
+// Trong OfflineOrderComponent
+private formatOrderId(orderData: any): string {
+  // Lấy ngày tạo từ orderData.ngayTao
+  const date = new Date(orderData.ngayTao);
+  
+  // Định dạng ngày thành YYYYMMDD
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Thêm số 0 nếu tháng < 10
+  const day = date.getDate().toString().padStart(2, '0'); // Thêm số 0 nếu ngày < 10
+  const dateString = `${year}${month}${day}`;
+  
+  // Đảm bảo orderId có ít nhất 4 chữ số (pad với số 0 nếu cần)
+  const paddedId = orderData.orderId.toString().padStart(4, '0');
+  
+  // Kết hợp ngày và orderId
+  return `${dateString}${paddedId}`;
+}
   resetCurrentOrder(): void {
     this.orders[this.currentOrderIndex] = {
       donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },

@@ -116,4 +116,23 @@ export class HoadonOfComponent {
       this.activeModal.dismiss('Error generating PDF');
     }
   }
+  // Trong OfflineOrderComponent
+private formatOrderId(orderData: any): string {
+  // Lấy ngày tạo từ orderData.ngayTao
+  const date = new Date(orderData.ngayTao);
+  
+  // Định dạng ngày thành YYYYMMDD
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Thêm số 0 nếu tháng < 10
+  const day = date.getDate().toString().padStart(2, '0'); // Thêm số 0 nếu ngày < 10
+  const dateString = `${year}${month}${day}`;
+  
+  // Đảm bảo orderId có ít nhất 4 chữ số (pad với số 0 nếu cần)
+  const paddedId = orderData.orderId.toString().padStart(4, '0');
+  
+  // Kết hợp ngày và orderId
+  return `${dateString}${paddedId}`;
+}
+
+
 }

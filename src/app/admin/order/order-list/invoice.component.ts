@@ -79,7 +79,23 @@ export class InvoiceComponent implements OnInit {
     this.loadCustomers();
     this.applySearch(); // Áp dụng lọc ngay khi khởi tạo với selectedTab
   }
-
+// Trong InvoiceComponent
+formatOrderId(order: any): string {
+  // Lấy ngày tạo từ order.ngayTao
+  const date = new Date(order.ngayTao);
+  
+  // Định dạng ngày thành YYYYMMDD
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Thêm số 0 nếu tháng < 10
+  const day = date.getDate().toString().padStart(2, '0'); // Thêm số 0 nếu ngày < 10
+  const dateString = `${year}${month}${day}`;
+  
+  // Đảm bảo ID có ít nhất 4 chữ số (pad với số 0 nếu cần)
+  const paddedId = order.id.toString().padStart(4, '0');
+  
+  // Kết hợp ngày và ID
+  return `${dateString}${paddedId}`;
+}
   // Chuyển tab và lọc đơn hàng
   switchTab(tab: string): void {
     this.selectedTab = tab; // Cập nhật selectedTab
