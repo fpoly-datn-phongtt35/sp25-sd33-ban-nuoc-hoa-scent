@@ -312,9 +312,15 @@ formatOrderId(order: any): string {
         this.orders = response.map((order: any) => ({
           ...order,
           selectedStatus: order.trangThai,
-          
         }));
-        console.log('du liệu đơn hàng',this.orders)
+        // Sắp xếp đơn hàng mới nhất lên đầu (dựa trên id hoặc ngayTao)
+        this.orders.sort((a, b) => {
+          // Dựa trên id (giả sử id lớn hơn là đơn mới hơn)
+          return b.id - a.id;
+          // Hoặc dựa trên ngayTao (nếu có trường này):
+          // return new Date(b.ngayTao).getTime() - new Date(a.ngayTao).getTime();
+        });
+        console.log('Dữ liệu đơn hàng sau khi sắp xếp:', this.orders);
         this.applySearch(); // Lọc ngay sau khi tải dữ liệu
       },
       error: (error: any) => console.error('Error loading orders', error),

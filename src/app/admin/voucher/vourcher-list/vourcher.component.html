@@ -1,70 +1,71 @@
 <div class="voucher-container">
-  <div class="header d-flex justify-content-between align-items-center mb-3">
-    <h2>Voucher</h2>
-    <div class="search-container form-inline">
-      <input type="text" class="form-control mr-2 search-input" placeholder="Search" aria-label="Search vouchers">
-      <button class="btn btn-outline-primary search-btn" aria-label="Search button">
-        <i class="bi bi-search"></i>
-      </button>
-    </div>
-  </div>
+ <!-- Toolbar -->
+<div class="toolbar d-flex gap-2 mb-2">
+  <button class="btn btn-primary" aria-label="Add new voucher" (click)="openAddVoucherModal()">+ Add</button>
+  <div class="flex-grow-1"></div>
+  <button class="btn btn-outline-secondary" aria-label="Export data">Export Data</button>
+  <select class="form-control sort-dropdown" aria-label="Sort vouchers">
+    <option value="id" selected>Sort by: ID</option>
+    <option value="name">Name</option>
+    <option value="price">Price</option>
+    <option value="status">Status</option>
+  </select>
+</div>
 
-
-  <!-- Toolbar -->
-  <div class="toolbar d-flex gap-2 mb-2">
-    <button class="btn btn-primary" aria-label="Add new voucher" (click)="openAddVoucherModal()">+ Add</button>
-
-    <div class="flex-grow-1"></div>
-    <button class="btn btn-outline-secondary" aria-label="Export data">Export Data</button>
-    <select class="form-control sort-dropdown" aria-label="Sort vouchers">
-      <option value="id" selected>Sort by: ID</option>
-      <option value="name">Name</option>
-      <option value="price">Price</option>
-      <option value="status">Status</option>
-    </select>
-  </div>
+<!-- Tab bộ lọc luồng -->
+<div class="filter-tabs mb-3">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType === 'all'" (click)="filterVouchers('all')">Tất cả</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType === 'online'" (click)="filterVouchers('online')">Online</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType === 'offline'" (click)="filterVouchers('offline')">Offline</button>
+    </li>
+  </ul>
+</div>
 
   <!-- Table -->
 <!-- Sử dụng safe navigation operator khi truy cập properties -->
-<div >
-
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Mã giảm giá</th>
-            <th>Giá trị</th>
-            <th>Ngày bắt đầu</th>
-            <th>Ngày hết hạn</th>
-
-            <th>Số lượng</th>
-            <th>Dùng cho luồng</th>
-            <th>Giá trị tối đa sd</th>
-            
-            <th>Chức năng</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of phieuGiamGias">
-            <td>{{ item.id }}</td>
-            <td>{{ item.maGiamGia }}</td>
-            <td>{{ item.giaTriGiam }}</td>
-            <td>{{ item.ngayBatDau }}</td>
-            <td>{{ item.ngayHetHan }}</td>
-            <td>{{ item.soLuong }}</td>
-            <td>{{ item.dieuKienapDung === 0 ? 'Offline' : 'Online' }}</td>
-            <td>{{ item.gia_tri_toi_da }}</td>
-
-            <td>
-              <button class="btn btn-warning btn-sm" (click)="openEditVoucherModal(item)">✏️ Sửa</button>
-              <button class="btn btn-danger btn-sm" aria-label="Delete selected vouchers" (click)="deleteVoucher(item.id)">Xóa</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Mã giảm giá</th>
+        <th>Giá trị</th>
+        <th>Ngày bắt đầu</th>
+        <th>Giờ bắt đầu</th>
+        <th>Ngày hết hạn</th>
+        <th>Giờ hết hạn</th>
+        <th>Số lượng</th>
+        <th>Dùng cho luồng</th>
+        <th>Giá trị tối đa sd</th>
+        <th>Chức năng</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of filteredPhieuGiamGias">
+        <td>{{ item.id }}</td>
+        <td>{{ item.maGiamGia }}</td>
+        <td>{{ item.giaTriGiam }}</td>
+        <td>{{ item.ngayBatDau | date: 'dd/MM/yyyy' }}</td>
+        <td>{{ item.ngayBatDau | date: 'HH:mm:ss' }}</td>
+        <td>{{ item.ngayHetHan | date: 'dd/MM/yyyy' }}</td>
+        <td>{{ item.ngayHetHan | date: 'HH:mm:ss' }}</td>
+        <td>{{ item.soLuong }}</td>
+        <td>{{ item.dieuKienapDung === 0 ? 'Offline' : 'Online' }}</td>
+        <td>{{ item.gia_tri_toi_da }}</td>
+        <td>
+          <button class="btn btn-warning btn-sm" (click)="openEditVoucherModal(item)">✏️ Sửa</button>
+          <button class="btn btn-danger btn-sm" aria-label="Delete selected vouchers" (click)="deleteVoucher(item.id)">Xóa</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
   <!-- Pagination -->
 <!-- ✅ Phân trang với Bootstrap -->

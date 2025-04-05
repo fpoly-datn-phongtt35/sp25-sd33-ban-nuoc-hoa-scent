@@ -15,10 +15,17 @@ import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 })
 export class VourcherComponent {
   phieuGiamGias: any[] = [];
-  page: number = 0; // Trang hiện tại
-  size: number = 5; // Số bản ghi mỗi trang
-  totalPages: number = 20; // Tổng số trang
-  constructor(private phieuGiamGiaService: PhieugiamgiaService,private modalService: NgbModal,private cdr: ChangeDetectorRef) { }
+  filteredPhieuGiamGias: any[] = []; // Danh sách đã lọc để hiển thị
+  page: number = 0;
+  size: number = 5;
+  totalPages: number = 20;
+  filterType: string = 'all'; // Trạng thái bộ lọc: 'all', 'online', 'offline'
+
+  constructor(
+    private phieuGiamGiaService: PhieugiamgiaService,
+    private modalService: NgbModal,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadAllPhieuGiamGia();
@@ -26,25 +33,48 @@ export class VourcherComponent {
 
   loadAllPhieuGiamGia(): void {
     console.log('📌 Gọi API với:', this.page, this.size);
-
     this.phieuGiamGiaService.getAllPhieuGiamGia(this.page, this.size).subscribe({
       next: (response) => {
         console.log('✅ API response:', response);
         this.phieuGiamGias = response.content || [];
-        this.totalPages = response.page?.totalPages || 1;// Nếu `totalPages` bị null, đặt mặc định là 1
+        this.totalPages = response.page?.totalPages || 1;
+        this.applyFilter(); // Áp dụng bộ lọc ngay sau khi tải dữ liệu
       },
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu khách hàng:', error);
       }
     });
-  } goToPage(p: number) {
+  }
+
+  // Hàm lọc dữ liệu dựa trên loại luồng
+  filterVouchers(type: string): void {
+    this.filterType = type;
+    this.page = 0; // Reset về trang đầu tiên khi thay đổi bộ lọc
+    this.applyFilter();
+  }
+
+  // Áp dụng bộ lọc cho danh sách
+  applyFilter(): void {
+    console.log('📌 Dữ liệu trước khi lọc:', this.phieuGiamGias);
+    if (this.filterType === 'all') {
+      this.filteredPhieuGiamGias = [...this.phieuGiamGias];
+    } else if (this.filterType === 'online') {
+      this.filteredPhieuGiamGias = this.phieuGiamGias.filter(item => item.dieuKienapDung !== 0);
+    } else if (this.filterType === 'offline') {
+      this.filteredPhieuGiamGias = this.phieuGiamGias.filter(item => item.dieuKienapDung === 0);
+    }
+    console.log('📌 Dữ liệu sau khi lọc:', this.filteredPhieuGiamGias);
+    this.cdr.detectChanges(); // Cập nhật UI
+  }
+
+  // Cập nhật các hàm khác để dùng filteredPhieuGiamGias thay vì phieuGiamGias
+  goToPage(p: number) {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
       this.loadAllPhieuGiamGia();
     }
   }
-
 
   prevPage() {
     if (this.page > 0) {
@@ -60,31 +90,14 @@ export class VourcherComponent {
     }
   }
 
-  // 🔢 Cập nhật cách lấy danh sách số trang hiển thị
-  getPaginationRange(): number[] {
-    let range: number[] = [];
-    let start = Math.max(0, this.page - 2);
-    let end = Math.min(this.totalPages, this.page + 3);
-
-    for (let i = start; i < end; i++) {
-      range.push(i);
-    }
-
-    console.log('📌 Pagination range:', range); // Debug
-    return range;
-  }
-
   openAddVoucherModal() {
     const modalRef = this.modalService.open(AddVoucherComponent, { backdrop: 'static', keyboard: false });
 
     modalRef.componentInstance.voucherAdded.subscribe((newVoucher: any) => {
       console.log('🎉 Voucher mới nhận được:', newVoucher);
-
-      // ✅ Thêm voucher mới vào đầu danh sách mà không cần load lại trang
       this.phieuGiamGias.push(newVoucher);
-
+      this.applyFilter(); // Áp dụng lại bộ lọc sau khi thêm
     });
-
   }
 
   deleteVoucher(voucherId: number) {
@@ -93,6 +106,7 @@ export class VourcherComponent {
         () => {
           alert('Xóa voucher thành công!');
           this.phieuGiamGias = this.phieuGiamGias.filter(item => item.id !== voucherId);
+          this.applyFilter(); // Áp dụng lại bộ lọc sau khi xóa
         },
         (error: any) => {
           console.error('❌ Lỗi khi xóa voucher:', error);
@@ -100,39 +114,37 @@ export class VourcherComponent {
       );
     }
   }
-  openEditVoucherModal(voucher: any) {
-    console.log('🟡 Đang mở modal chỉnh sửa với dữ liệu:', voucher);
 
+  openEditVoucherModal(voucher: any) {
     const modalRef = this.modalService.open(EditVoucherComponent, {
       backdrop: 'static',
       keyboard: false
     });
 
-    modalRef.componentInstance.voucher = { ...voucher }; // 🔥 Truyền dữ liệu vào modal
+    modalRef.componentInstance.voucher = { ...voucher };
 
     modalRef.componentInstance.voucherUpdated.subscribe((updatedVoucher: any) => {
       if (updatedVoucher) {
         console.log('🔄 Cập nhật voucher:', updatedVoucher);
-
-        // ✅ Cập nhật dữ liệu trực tiếp trong danh sách
         const index = this.phieuGiamGias.findIndex((v) => v.id === updatedVoucher.id);
         if (index !== -1) {
           this.phieuGiamGias[index] = { ...updatedVoucher };
+          this.applyFilter(); // Áp dụng lại bộ lọc sau khi chỉnh sửa
         }
-
-        this.cdr.detectChanges(); // 🔥 Cập nhật UI ngay lập tức
+        this.cdr.detectChanges();
       }
     });
-
-    modalRef.result.then(
-      () => console.log('✅ Modal đóng thành công'),
-      (reason: any) => console.log('❌ Modal bị đóng:', reason)
-    );
   }
 
+  getPaginationRange(): number[] {
+    let range: number[] = [];
+    let start = Math.max(0, this.page - 2);
+    let end = Math.min(this.totalPages, this.page + 3);
 
-
-
-
-
+    for (let i = start; i < end; i++) {
+      range.push(i);
+    }
+    console.log('📌 Pagination range:', range);
+    return range;
+  }
 }
