@@ -45,14 +45,15 @@ interface SoLuongDonHangDTO {
   styleUrls: ['./statistics.component.scss']
 })
 export class StatisticsComponent implements OnInit {
-  thongKeTongQuan: ThongKeDonHangDTO | null = null;
-  
+  thongKeTongQuan: ThongKeDonHangDTO | null = null; // Fixed overview
+  thongKeTongQuanFiltered: ThongKeDonHangDTO | null = null; // Filtered overview
+
   doanhThuData: ThongKeTheoThoiGianDTO[] = [];
   soLuongDonData: SoLuongDonHangDTO[] = [];
   compareDoanhThuData: ThongKeTheoThoiGianDTO[] = [];
 
   // Dữ liệu cho dropdown
-  selectedTimeType: string = 'tuan'; // Mặc định là thống kê theo tháng
+  selectedTimeType: string = 'tuan'; // Mặc định là thống kê theo tuần
   selectedMonth: string = new Date().getMonth() + 1 + ''; // Mặc định là tháng hiện tại
   selectedYear: string = new Date().getFullYear() + ''; // Mặc định là năm hiện tại
   compareYear: string | null = null; // Năm để so sánh
@@ -105,7 +106,6 @@ export class StatisticsComponent implements OnInit {
     },
     datasets: {
       bar: {
-         // Set a fixed width for the bars (in pixels)
         maxBarThickness: 130 // Optional: Set a maximum width to ensure it doesn't get too wide
       }
     }
@@ -161,7 +161,7 @@ export class StatisticsComponent implements OnInit {
     yesterday.setDate(today.getDate() - 1);
     this.startDate = yesterday.toISOString().split('T')[0]; // Định dạng YYYY-MM-DD
     this.endDate = today.toISOString().split('T')[0]; // Định dạng YYYY-MM-DD
-    this.doanhThuType = this.selectedTimeType === 'ngay' ? 'line' : 'bar';
+
     // Chỉ thay đổi loại biểu đồ cho số lượng đơn, giữ biểu đồ doanh thu là dạng đường
     this.soLuongDonType = this.selectedTimeType === 'ngay' ? 'line' : 'bar';
 
@@ -190,7 +190,18 @@ export class StatisticsComponent implements OnInit {
     this.endDate = today.toISOString().split('T')[0];
     this.compareYear = null;
     this.compareDoanhThuData = [];
-   
+
+    // Cập nhật nhãn trục x
+    if (this.doanhThuOptions.scales && this.doanhThuOptions.scales['x']) {
+      (this.doanhThuOptions.scales['x'] as any).title.text = this.getTimeLabel();
+    }
+    if (this.soLuongDonOptions.scales && this.soLuongDonOptions.scales['x']) {
+      (this.soLuongDonOptions.scales['x'] as any).title.text = this.getTimeLabel();
+    }
+
+    // Chỉ thay đổi loại biểu đồ cho số lượng đơn
+    this.soLuongDonType = this.selectedTimeType === 'ngay' ? 'line' : 'bar';
+
     this.loadDataForSelectedTimeType();
   }
 
@@ -209,19 +220,61 @@ export class StatisticsComponent implements OnInit {
     }
   }
 
+  loadThongKeTongQuan(): void {
+    // Load fixed overview
+    this.http.get<ThongKeDonHangDTO>('http://localhost:8080/api/thong-ke/tong-quan')
+      .subscribe({
+        next: (data) => {
+          this.thongKeTongQuan = data;
+          console.log('Fixed Overview Data:', this.thongKeTongQuan);
+        },
+        error: (err) => {
+          console.error('Error loading fixed overview:', err);
+        }
+      });
+
+    // Load filtered overview
+    this.loadThongKeTongQuanFiltered();
+  }
+
+  loadThongKeTongQuanFiltered(): void {
+    let url = '';
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        url = `http://localhost:8080/api/thong-ke/tong-quan/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
+        break;
+      case 'tuan':
+        url = `http://localhost:8080/api/thong-ke/tong-quan/tuan?year=${this.selectedYear}${this.selectedWeek ? `&week=${this.selectedWeek}` : ''}`;
+        break;
+      case 'thang':
+        url = `http://localhost:8080/api/thong-ke/tong-quan/thang?year=${this.selectedYear}${this.selectedMonth ? `&month=${this.selectedMonth}` : ''}`;
+        break;
+      case 'nam':
+        url = `http://localhost:8080/api/thong-ke/tong-quan/nam?year=${this.selectedYear}`;
+        break;
+    }
+
+    console.log('Fetching filtered overview from URL:', url);
+
+    this.http.get<ThongKeDonHangDTO>(url)
+      .subscribe({
+        next: (data) => {
+          this.thongKeTongQuanFiltered = data;
+          console.log('Filtered Overview Data:', this.thongKeTongQuanFiltered);
+        },
+        error: (err) => {
+          console.error('Error loading filtered overview:', err);
+        }
+      });
+  }
+
   loadDataForSelectedTimeType(): void {
+    this.loadThongKeTongQuanFiltered(); // Load filtered overview when time type changes
     this.loadDoanhThu();
     this.loadSoLuongDon();
     if (this.compareYear) {
       this.loadCompareDoanhThu();
     }
-  }
-
-  loadThongKeTongQuan(): void {
-    this.http.get<ThongKeDonHangDTO>('http://localhost:8080/api/thong-ke/tong-quan')
-      .subscribe(data => {
-        this.thongKeTongQuan = data;
-      });
   }
 
   loadDoanhThu(): void {
@@ -242,9 +295,15 @@ export class StatisticsComponent implements OnInit {
     }
 
     this.http.get<ThongKeTheoThoiGianDTO[]>(url)
-      .subscribe(data => {
-        this.doanhThuData = data;
-        this.updateDoanhThuChart();
+      .subscribe({
+        next: (data) => {
+          this.doanhThuData = data;
+          this.updateDoanhThuChart();
+          console.log('Revenue Data:', this.doanhThuData);
+        },
+        error: (err) => {
+          console.error('Error loading revenue data:', err);
+        }
       });
   }
 
@@ -268,13 +327,19 @@ export class StatisticsComponent implements OnInit {
     }
 
     this.http.get<ThongKeTheoThoiGianDTO[]>(url)
-      .subscribe(data => {
-        this.compareDoanhThuData = data;
-        const hasData = data.some(item => item.tongDoanhThu > 0 || item.doanhThuOnline > 0 || item.doanhThuOffline > 0);
-        if (!hasData) {
-          this.compareDoanhThuData = [];
+      .subscribe({
+        next: (data) => {
+          this.compareDoanhThuData = data;
+          const hasData = data.some(item => item.tongDoanhThu > 0 || item.doanhThuOnline > 0 || item.doanhThuOffline > 0);
+          if (!hasData) {
+            this.compareDoanhThuData = [];
+          }
+          this.updateDoanhThuChart();
+          console.log('Compare Revenue Data:', this.compareDoanhThuData);
+        },
+        error: (err) => {
+          console.error('Error loading compare revenue data:', err);
         }
-        this.updateDoanhThuChart();
       });
   }
 
@@ -318,14 +383,20 @@ export class StatisticsComponent implements OnInit {
     }
 
     this.http.get<SoLuongDonHangDTO[]>(url)
-      .subscribe(data => {
-        this.soLuongDonData = data;
-        this.soLuongDonConfig = {
-          labels: data.map(item => item.thoiGian),
-          datasets: [
-            { data: data.map(item => item.soLuongDon), label: 'Số lượng đơn', backgroundColor: '#4BC0C0', borderColor: '#4BC0C0', fill: false }
-          ]
-        };
+      .subscribe({
+        next: (data) => {
+          this.soLuongDonData = data;
+          this.soLuongDonConfig = {
+            labels: data.map(item => item.thoiGian),
+            datasets: [
+              { data: data.map(item => item.soLuongDon), label: 'Số lượng đơn', backgroundColor: '#4BC0C0', borderColor: '#4BC0C0', fill: false }
+            ]
+          };
+          console.log('Order Quantity Data:', this.soLuongDonData);
+        },
+        error: (err) => {
+          console.error('Error loading order quantity data:', err);
+        }
       });
   }
 

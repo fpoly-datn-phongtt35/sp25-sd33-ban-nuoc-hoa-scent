@@ -1,39 +1,66 @@
 <!-- Container -->
 <div class="statistics-container">
-  <!-- Tổng quan -->
-<!-- Tổng quan -->
-<div *ngIf="thongKeTongQuan" class="overview">
-  <h2>Tổng quan</h2>
-  <div class="overview-grid">
-    <!-- Doanh thu -->
-    <div class="overview-section">
-      <h3>Doanh thu</h3>
-      <p><span class="label">Tổng doanh thu:</span> {{ thongKeTongQuan.tongDoanhThu | currency:'VND' }}</p>
-      <p><span class="label">Doanh thu online:</span> {{ thongKeTongQuan.doanhThuOnline | currency:'VND' }}</p>
-      <p><span class="label">Doanh thu offline:</span> {{ thongKeTongQuan.doanhThuOffline | currency:'VND' }}</p>
-    </div>
+  <!-- Tổng quan (Cố định) -->
+  <div *ngIf="thongKeTongQuan" class="overview">
+    <h2>Doanh thu-Đơn hàng</h2>
+    <div class="overview-grid">
+      <!-- Doanh thu -->
+      <div class="overview-section">
+        <h3>Doanh thu</h3>
+        <p><span class="label">Tổng doanh thu:</span> {{ thongKeTongQuan.tongDoanhThu | currency:'VND' }}</p>
+        <p><span class="label">Doanh thu online:</span> {{ thongKeTongQuan.doanhThuOnline | currency:'VND' }}</p>
+        <p><span class="label">Doanh thu offline:</span> {{ thongKeTongQuan.doanhThuOffline | currency:'VND' }}</p>
+      </div>
 
-    <!-- Số lượng đơn -->
-    <div class="overview-section">
-      <h3>Số lượng đơn</h3>
-      <p><span class="label">Tổng số lượng đơn:</span> {{ thongKeTongQuan.soLuongDon }}</p>
-      <p><span class="label">Số lượng đơn online:</span> {{ thongKeTongQuan.soLuongDonOnline }}</p>
-      <p><span class="label">Số lượng đơn offline:</span> {{ thongKeTongQuan.soLuongDonOffline }}</p>
-    </div>
+      <!-- Số lượng đơn -->
+      <div class="overview-section">
+        <h3>Số lượng đơn</h3>
+        <p><span class="label">Tổng số lượng đơn:</span> {{ thongKeTongQuan.soLuongDon }}</p>
+        <p><span class="label">Số lượng đơn online:</span> {{ thongKeTongQuan.soLuongDonOnline }}</p>
+        <p><span class="label">Số lượng đơn offline:</span> {{ thongKeTongQuan.soLuongDonOffline }}</p>
+      </div>
 
-    <!-- Trạng thái đơn -->
-    <div class="overview-section">
-      <h3>Trạng thái đơn</h3>
-      <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuan.onlineHoanThanh }}</p>
-      <p><span class="label">Online hủy:</span> {{ thongKeTongQuan.onlineHuy }}</p>
-      <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuan.offlineHoanThanh }}</p>
-      <p><span class="label">Offline hủy:</span> {{ thongKeTongQuan.offlineHuy }}</p>
+      <!-- Trạng thái đơn -->
+      <div class="overview-section">
+        <h3>Trạng thái đơn</h3>
+        <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuan.onlineHoanThanh }}</p>
+        <p><span class="label">Online hủy:</span> {{ thongKeTongQuan.onlineHuy }}</p>
+        <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuan.offlineHoanThanh }}</p>
+        <p><span class="label">Offline hủy:</span> {{ thongKeTongQuan.offlineHuy }}</p>
+      </div>
     </div>
-
-    <!-- Tỉ lệ tăng trưởng -->
-  
   </div>
-</div>
+
+  <!-- Tổng quan (Theo bộ lọc) -->
+  <div *ngIf="thongKeTongQuanFiltered" class="overview">
+    <h2>Tổng quan</h2>
+    <div class="overview-grid">
+      <!-- Doanh thu -->
+      <div class="overview-section">
+        <h3>Doanh thu</h3>
+        <p><span class="label">Tổng doanh thu:</span> {{ thongKeTongQuanFiltered.tongDoanhThu | currency:'VND' }}</p>
+        <p><span class="label">Doanh thu online:</span> {{ thongKeTongQuanFiltered.doanhThuOnline | currency:'VND' }}</p>
+        <p><span class="label">Doanh thu offline:</span> {{ thongKeTongQuanFiltered.doanhThuOffline | currency:'VND' }}</p>
+      </div>
+
+      <!-- Số lượng đơn -->
+      <div class="overview-section">
+        <h3>Số lượng đơn</h3>
+        <p><span class="label">Tổng số lượng đơn:</span> {{ thongKeTongQuanFiltered.soLuongDon }}</p>
+        <p><span class="label">Số lượng đơn online:</span> {{ thongKeTongQuanFiltered.soLuongDonOnline }}</p>
+        <p><span class="label">Số lượng đơn offline:</span> {{ thongKeTongQuanFiltered.soLuongDonOffline }}</p>
+      </div>
+
+      <!-- Trạng thái đơn -->
+      <div class="overview-section">
+        <h3>Trạng thái đơn</h3>
+        <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHoanThanh }}</p>
+        <p><span class="label">Online hủy:</span> {{ thongKeTongQuanFiltered.onlineHuy }}</p>
+        <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuanFiltered.offlineHoanThanh }}</p>
+        <p><span class="label">Offline hủy:</span> {{ thongKeTongQuanFiltered.offlineHuy }}</p>
+      </div>
+    </div>
+  </div>
 
   <!-- Dropdown để chọn loại thống kê -->
   <div class="filters">
@@ -91,7 +118,7 @@
   </div>
 
   <!-- Form so sánh -->
- 
+  <!-- (You can add the comparison form back if needed) -->
 
   <!-- Biểu đồ doanh thu -->
   <div class="chart-container">
