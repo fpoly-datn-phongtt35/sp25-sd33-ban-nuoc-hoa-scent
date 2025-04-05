@@ -1,0 +1,106 @@
+/* Reset mặc định */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Container chính */
+.account-info-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Tiêu đề */
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 24px;
+}
+
+/* Hiển thị tên người dùng */
+.username-display {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.username-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #007bff;
+}
+
+/* Form chỉnh sửa */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.form-input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.form-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+/* Nút cập nhật */
+.form-actions {
+  text-align: center;
+}
+
+.save-btn {
+  padding: 12px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.save-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .account-info-container {
+    margin: 20px;
+    padding: 20px;
+  }
+
+  .form-input {
+    font-size: 14px;
+  }
+
+  .save-btn {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+}

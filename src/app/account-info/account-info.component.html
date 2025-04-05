@@ -1,0 +1,27 @@
+<app-header></app-header>
+
+<div class="account-info-container">
+  <h2>Thông Tin Tài Khoản</h2>
+
+  <div class="username-display">
+    <span class="username-text">{{ userInfo.tenDangNhap }}</span>
+  </div>
+
+  <form (ngSubmit)="updateAccount()" class="edit-form">
+    <div class="field">
+      <label for="email">Email:</label>
+      <input id="email" type="email" [(ngModel)]="userInfo.email" name="email" class="form-input" />
+    </div>
+    <div class="field">
+      <label for="fullName">Họ và tên:</label>
+      <input id="fullName" type="text" [(ngModel)]="userInfo.hoTen" name="fullName" class="form-input" />
+    </div>
+    <div class="field">
+      <label for="phone">Số điện thoại:</label>
+      <input id="phone" type="text" [(ngModel)]="userInfo.sdt" name="phone" class="form-input" />
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="save-btn">Cập nhật thông tin</button>
+    </div>
+  </form>
+</div>

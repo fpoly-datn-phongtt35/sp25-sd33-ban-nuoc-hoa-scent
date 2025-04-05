@@ -3,7 +3,7 @@
     <h1><img src="logo.webp" alt="Logo"></h1>
   </div>
   <nav class="navbar">
-    <a routerLink="/">Trang Chủ</a>
+     <a routerLink="/">Trang Chủ</a>
     <a routerLink="/product">Sản Phẩm</a>
     <a routerLink="/contact">Liên Hệ</a>
   </nav>
@@ -21,7 +21,7 @@
           <div class="dropdown-menu" *ngIf="isDropdownOpen">
             <a class="dropdown-item" routerLink="/app-order-id">Đơn Hàng</a>
             <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi Mật Khẩu</a>
-            <a class="dropdown-item" >Cập nhật thông tin</a>
+            <a class="dropdown-item" routerLink="/account-info">Cập nhật thông tin</a> <!-- Thêm liên kết -->
             <a class="dropdown-item" (click)="logout()">Đăng Xuất</a>
           </div>
         </div>
