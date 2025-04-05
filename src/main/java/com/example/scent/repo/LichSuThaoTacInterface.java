@@ -9,4 +9,5 @@ public interface LichSuThaoTacInterface extends JpaRepository<LichSuThaoTac,Inte
     List<LichSuThaoTac> findByMaDonHang(Integer maDonHang);
     List<LichSuThaoTac> findByTaiKhoanId(Integer taiKhoanId);
     List<LichSuThaoTac> findAll();
+    List<LichSuThaoTac> findByMaDonHangOrderByThoiGianThaoTacDesc(Integer maDonHang);
 }

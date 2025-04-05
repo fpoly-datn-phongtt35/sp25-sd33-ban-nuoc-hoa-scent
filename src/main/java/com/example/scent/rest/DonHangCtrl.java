@@ -345,4 +345,9 @@ public class DonHangCtrl {
         List<LichSuThaoTac> result = lichSuThaoTacService.getAllLichSuThaoTac();
         return ResponseEntity.ok(result);
     }
+    @GetMapping("/by-don-hang/{maDonHang}")
+    public ResponseEntity<List<LichSuThaoTac>> getLichSuThaoTacByMaDonHang(@PathVariable Integer maDonHang) {
+        List<LichSuThaoTac> lichSu = lichSuThaoTacService.getLichSuThaoTacByMaDonHang(maDonHang);
+        return ResponseEntity.ok(lichSu);
+    }
 }

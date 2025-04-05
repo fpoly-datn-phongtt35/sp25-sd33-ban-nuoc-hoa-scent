@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("rest/huong-dau/add","rest/huong-giua/add","rest/huong-cuoi/add").permitAll()
                         .requestMatchers("/rest/khach-hang/getAll","rest/khach-hang/page","rest/khach-hang/add","rest/khach-hang/update/**","rest/khach-hang/del/**").permitAll()
                         .requestMatchers(("rest/momo/pay"),"rest/momo/check-status","rest/momo/callback").permitAll()
-                        .requestMatchers("/rest/don-hang/getAll","/rest/offline-orders/status/**","/rest/don-hang/lich-su-thao-tac-by-user/**","/rest/don-hang/huy/**","/rest/don-hang/capnhat-trangthai/**","/rest/don-hang","/rest/don-hang/add","rest/don-hang/update","/rest/don-hang/don-hang/page1","/rest/don-hang/**","rest/don-hang/page","rest/don-hang/del/**").permitAll()
+                        .requestMatchers("/rest/don-hang/getAll","/rest/don-hang/by-don-hang/**","/rest/offline-orders/status/**","/rest/don-hang/lich-su-thao-tac-by-user/**","/rest/don-hang/huy/**","/rest/don-hang/capnhat-trangthai/**","/rest/don-hang","/rest/don-hang/add","rest/don-hang/update","/rest/don-hang/don-hang/page1","/rest/don-hang/**","rest/don-hang/page","rest/don-hang/del/**").permitAll()
                         .requestMatchers("rest/phieu-giam-gia/getAll","rest/phieu-giam-gia/add","rest/phieu-giam-gia/del/**","rest/phieu-giam-gia/update","rest/phieu-giam-gia/page").permitAll()
                         .requestMatchers("rest/tai-khoan/change-password",
                                 "rest/tai-khoan/forgot-password/reset-admin-staff",

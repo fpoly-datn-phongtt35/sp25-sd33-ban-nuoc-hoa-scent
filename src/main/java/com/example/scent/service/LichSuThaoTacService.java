@@ -13,6 +13,9 @@ public class LichSuThaoTacService {
     @Autowired
     LichSuThaoTacInterface lichSuThaoTacInterface;
 
+    public List<LichSuThaoTac> getLichSuThaoTacByMaDonHang(Integer maDonHang) {
+        return lichSuThaoTacInterface.findByMaDonHangOrderByThoiGianThaoTacDesc(maDonHang);
+    }
     public List<LichSuThaoTac> getAllLichSuThaoTac() {
         return lichSuThaoTacInterface.findAll();
     }

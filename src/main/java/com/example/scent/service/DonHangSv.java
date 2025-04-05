@@ -623,7 +623,27 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         return false;  // Trả về false nếu không thể cập nhật trạng thái
     }
 
-
+    private String getStatusName(Integer status) {
+        if (status == null) {
+            return "KHÔNG XÁC ĐỊNH";
+        }
+        switch (status) {
+            case 1:
+                return "CHỜ XÁC NHẬN";
+            case 2:
+                return "ĐÃ XÁC NHẬN";
+            case 3:
+                return "ĐANG GIAO";
+            case 4:
+                return "HOÀN THÀNH";
+            case 5:
+                return "ĐÃ HUỶ";
+            case 6:
+                return "THANH TOÁN CHUYỂN KHOẢN";
+            default:
+                return "KHÔNG XÁC ĐỊNH";
+        }
+    }
     public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
         DonHang donHang = dhi.findById(maDonHang)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + maDonHang));
@@ -633,7 +653,6 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         // Kiểm tra nếu trạng thái không thay đổi
         if (trangThaiCu.equals(trangThaiMoi)) {
-
             return donHang; // Không cần cập nhật
         }
 
@@ -653,17 +672,19 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         lichSu.setTenTaiKhoan(tenDangNhap);
         lichSu.setGhiChu(ghiChuHuy);
         lichSu.setThoiGianThaoTac(LocalDateTime.now());
-        lichSu.setThaoTac("Cập nhật trạng thái đơn hàng từ trạng thái "
-                + trangThaiCu + " sang trạng thái " + trangThaiMoi);
 
+        // Định dạng thông điệp thao tác mới
+        String thaoTacMessage = String.format(
+                "Cập nhật trạng thái đơn hàng từ trạng thái %s  sang trạng thái %s ",
+                getStatusName(trangThaiCu),
+                getStatusName(trangThaiMoi)
+        );
+        lichSu.setThaoTac(thaoTacMessage);
 
         lichSuThaoTacInterface.save(lichSu);
 
-
-
         return donHang;
     }
-    // Phương thức tính trạng thái mới (giả định)
     public Integer tinhTrangThaiMoi(Integer trangThaiCu, String phuongThucThanhToan, String lyDoHuy) {
 
         if (lyDoHuy != null && !lyDoHuy.isEmpty()) {
