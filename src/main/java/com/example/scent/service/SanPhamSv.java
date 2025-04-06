@@ -29,6 +29,8 @@
 
         @Autowired
         HinhAnhInterface hai;
+        @Autowired
+        private NhomHuongInterface nhi;
 
         @Autowired
         private ThuongHieuInterface thuongHieuRepo;
@@ -120,7 +122,7 @@
                 Integer idSanPham,
                 String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
                 Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images,
-                Integer[] idHinhAnhDelete
+                Integer[] idHinhAnhDelete, Integer idNhomHuong
         ) {
 
             // Tìm sản phẩm cần cập nhật
@@ -156,7 +158,7 @@
             sanPham.setHuongDau(huongDauRepo.findById(idHuongDau).orElse(null));
             sanPham.setHuongGiua(huongGiuaRepo.findById(idHuongGiua).orElse(null));
             sanPham.setHuongCuoi(huongCuoiRepo.findById(idHuongCuoi).orElse(null));
-
+            sanPham.setNhomHuong(nhi.findById(idNhomHuong).orElse(null));
             // Lưu sản phẩm đã cập nhật
             SanPham updatedSanPham = spi.save(sanPham);
 
@@ -180,7 +182,7 @@
 
         public SanPham addProductWithDetails(
                 String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
-                Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images) {
+                Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images,Integer idNhomHuong) {
 
             SanPham sanPham = new SanPham();
             sanPham.setTenSanPham(tenSanPham);
@@ -193,7 +195,7 @@
             sanPham.setHuongDau(huongDauRepo.findById(idHuongDau).orElse(null));
             sanPham.setHuongGiua(huongGiuaRepo.findById(idHuongGiua).orElse(null));
             sanPham.setHuongCuoi(huongCuoiRepo.findById(idHuongCuoi).orElse(null));
-
+           sanPham.setNhomHuong(nhi.findById(idNhomHuong).orElse(null));
             SanPham savedSanPham = spi.save(sanPham);
             int uploadedImages = 0;
 

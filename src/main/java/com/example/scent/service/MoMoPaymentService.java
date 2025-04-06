@@ -1,8 +1,6 @@
 package com.example.scent.service;
 
 import com.example.scent.reques.MomoRequest;
-import com.example.scent.rest.MoMoPaymentCtrl;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +20,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
-//@Slf4j
+@Slf4j
 @RequiredArgsConstructor
 public class MoMoPaymentService {
     private static final Logger log = LoggerFactory.getLogger(MoMoPaymentService.class);
@@ -41,34 +40,42 @@ public class MoMoPaymentService {
     @Value("${momo.endpoint}")
     private String endpoint;
 
+    private final ObjectMapper objectMapper;
+
     public Map<String, Object> createPayment(MomoRequest dto) {
         try {
+            // Generate a unique orderId if not provided
             String orderId = dto.getOrderId();
             if (orderId == null || orderId.isEmpty()) {
-                orderId = partnerCode + System.currentTimeMillis(); // fallback nếu không có
+                orderId = partnerCode + System.currentTimeMillis();
             }
-            String requestId = orderId;
 
+            // Generate a unique requestId
+            String requestId = UUID.randomUUID().toString();
 
-            String rawSignature = "accessKey=" + accessKey +
-                    "&amount=" + dto.getAmount() +
-                    "&extraData=" + dto.getExtraData() +
-                    "&ipnUrl=" + dto.getNotifyUrl() +
-                    "&orderId=" + orderId +
-                    "&orderInfo=" + dto.getOrderInfo() +
-                    "&partnerCode=" + partnerCode +
-                    "&redirectUrl=" + dto.getReturnUrl() +
-                    "&requestId=" + requestId +
-                    "&requestType=" + dto.getRequestType();
+            // Ensure extraData is not null
+            String extraData = dto.getExtraData() != null ? dto.getExtraData() : "";
 
+            // Parse amount to long
+            long amount = Long.parseLong(dto.getAmount());
+
+            // Create raw signature string
+            String rawSignature = String.format(
+                    "accessKey=%s&amount=%d&extraData=%s&ipnUrl=%s&orderId=%s&orderInfo=%s&partnerCode=%s&redirectUrl=%s&requestId=%s&requestType=%s",
+                    accessKey, amount, extraData, dto.getNotifyUrl(), orderId, dto.getOrderInfo(),
+                    partnerCode, dto.getReturnUrl(), requestId, dto.getRequestType()
+            );
+
+            // Generate HMAC SHA256 signature
             String signature = hmacSHA256(rawSignature, secretKey);
 
+            // Create request body
             Map<String, Object> body = new HashMap<>();
             body.put("partnerCode", partnerCode);
             body.put("partnerName", "Test");
             body.put("storeId", "MomoTestStore");
             body.put("requestId", requestId);
-            body.put("amount", dto.getAmount());
+            body.put("amount", amount);
             body.put("orderId", orderId);
             body.put("orderInfo", dto.getOrderInfo());
             body.put("redirectUrl", dto.getReturnUrl());
@@ -76,20 +83,21 @@ public class MoMoPaymentService {
             body.put("lang", "vi");
             body.put("requestType", dto.getRequestType());
             body.put("autoCapture", true);
-            body.put("expireTime", String.valueOf(System.currentTimeMillis() + 15 * 60 * 1000));
-            body.put("extraData", dto.getExtraData());
+            body.put("expireTime", String.valueOf(System.currentTimeMillis() + 15 * 60 * 1000)); // 15 minutes expiry
+            body.put("extraData", extraData);
             body.put("orderGroupId", "");
             body.put("signature", signature);
 
+            // Send request to MoMo
             HttpClient client = HttpClientBuilder.create().build();
             HttpPost post = new HttpPost(endpoint);
             post.setHeader("Content-Type", "application/json");
-            post.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(body), StandardCharsets.UTF_8));
+            post.setEntity(new StringEntity(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8));
 
             HttpResponse response = client.execute(post);
             String json = EntityUtils.toString(response.getEntity());
 
-            return new ObjectMapper().readValue(json, Map.class);
+            return objectMapper.readValue(json, Map.class);
         } catch (Exception e) {
             log.error("[MoMo] Payment creation failed", e);
             Map<String, Object> error = new HashMap<>();
@@ -100,15 +108,19 @@ public class MoMoPaymentService {
 
     public Map<String, Object> checkTransactionStatus(String orderId) {
         try {
-            String requestId = orderId;
+            // Generate a unique requestId
+            String requestId = UUID.randomUUID().toString();
 
-            String rawSignature = "accessKey=" + accessKey +
-                    "&orderId=" + orderId +
-                    "&partnerCode=" + partnerCode +
-                    "&requestId=" + requestId;
+            // Create raw signature string
+            String rawSignature = String.format(
+                    "accessKey=%s&orderId=%s&partnerCode=%s&requestId=%s",
+                    accessKey, orderId, partnerCode, requestId
+            );
 
+            // Generate HMAC SHA256 signature
             String signature = hmacSHA256(rawSignature, secretKey);
 
+            // Create request body
             Map<String, Object> body = new HashMap<>();
             body.put("partnerCode", partnerCode);
             body.put("requestId", requestId);
@@ -116,23 +128,31 @@ public class MoMoPaymentService {
             body.put("signature", signature);
             body.put("lang", "vi");
 
+            // Log request body for debugging
+            log.info("Request to MoMo /query: {}", objectMapper.writeValueAsString(body));
+
+            // Send request to MoMo
             HttpClient client = HttpClientBuilder.create().build();
-            HttpPost post = new HttpPost("https://test-payment.momo.vn/v2/gateway/api/query");
+            String queryEndpoint = endpoint.replace("/create", "/query");
+            HttpPost post = new HttpPost(queryEndpoint);
             post.setHeader("Content-Type", "application/json");
-            post.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(body), StandardCharsets.UTF_8));
+            post.setEntity(new StringEntity(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8));
 
             HttpResponse response = client.execute(post);
             String json = EntityUtils.toString(response.getEntity());
-            return new ObjectMapper().readValue(json, Map.class);
+
+            // Log response for debugging
+            log.info("Response from MoMo /query: {}", json);
+
+            return objectMapper.readValue(json, Map.class);
 
         } catch (Exception e) {
-            log.error("[MoMo] Transaction status check failed", e);
+            log.error("[MoMo] Transaction status check failed for orderId: {}", orderId, e);
             Map<String, Object> error = new HashMap<>();
-            error.put("message", e.getMessage());
+            error.put("message", "Failed to check transaction status: " + e.getMessage());
             return error;
         }
     }
-
     private String hmacSHA256(String data, String key) throws Exception {
         Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
         SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");

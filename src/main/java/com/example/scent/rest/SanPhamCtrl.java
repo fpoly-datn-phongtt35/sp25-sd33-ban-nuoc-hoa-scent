@@ -81,11 +81,11 @@ public class SanPhamCtrl {
             @RequestParam("idHuongDau") Integer idHuongDau,
             @RequestParam("idHuongGiua") Integer idHuongGiua,
             @RequestParam("idHuongCuoi") Integer idHuongCuoi,
-            @RequestParam(value = "image", required = false) MultipartFile[] image) {
+            @RequestParam(value = "image", required = false) MultipartFile[] image,Integer idNhomHuong) {
         try {
             SanPham savedSanPham = sps.addProductWithDetails(
                     tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, image
-            );
+            ,idNhomHuong);
             return ResponseEntity.ok(savedSanPham);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -106,12 +106,12 @@ public class SanPhamCtrl {
             @RequestParam("idHuongGiua") Integer idHuongGiua,
             @RequestParam("idHuongCuoi") Integer idHuongCuoi,
             @RequestParam(value = "image", required = false) MultipartFile[] images,
-            @RequestParam(value = "idHinhAnhDelete",required = false) Integer[] idHinhAnhDelete)
+            @RequestParam(value = "idHinhAnhDelete",required = false) Integer[] idHinhAnhDelete,Integer idNhomHuong)
     {
         try {
             SanPham updatedSanPham = sps.updateProductWithDetails(
                     idSanPham, tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, images
-            ,idHinhAnhDelete);
+            ,idHinhAnhDelete,idNhomHuong);
             return ResponseEntity.ok(updatedSanPham);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
