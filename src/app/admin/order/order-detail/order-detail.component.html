@@ -10,7 +10,7 @@
       <button class="btn btn-light" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false" (click)="showLichSuThaoTac()">
         <i class="bi bi-three-dots-vertical" ></i>
       </button>
-    
+
     </div>
   </div>
 
@@ -30,7 +30,8 @@
     <!-- Người đặt hàng -->
     <div class="col-md-6">
       <div class="border rounded p-3 bg-white shadow-sm h-100">
-        <h6 class="fw-bold mb-3"><i class="bi bi-person-badge me-2"></i>Người đặt hàng</h6>
+        <h6 class="fw-bold mb-3"><i class="bi bi-person-badge me-2"*ngIf="selectedTab === 'offline'"></i><p *ngIf="selectedTab === 'offline'">Người Bán Hàng</p></h6>
+        <h6 class="fw-bold mb-3"><i class="bi bi-person-badge me-2"*ngIf="selectedTab === 'online'"></i><p *ngIf="selectedTab === 'online'">Người Đặt hàng</p></h6>
         <p class="mb-1"><i class="bi bi-person me-1"></i> {{ order?.taiKhoan?.hoTen }}</p>
         <div>
           <p class="mb-1"><i class="bi bi-envelope me-1"></i> {{ order?.taiKhoan?.email }}</p>
@@ -96,7 +97,7 @@
           <table class="table table-bordered">
             <thead>
               <tr>
-                
+
                 <th>Tên Tài Khoản</th>
                 <th>Thao Tác</th>
                 <th>Thời Gian Thao Tác</th>
@@ -104,7 +105,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of lichSuThaoTacs">
-               
+
                 <td>{{ item.tenTaiKhoan }}</td>
                 <td>{{ item.thaoTac }}</td>
                 <td>{{ item.thoiGianThaoTac | date:'dd/MM/yyyy HH:mm:ss' }}</td>

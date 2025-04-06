@@ -54,7 +54,7 @@ export class OrderComponent implements OnInit {
     maGiamGia: '',
   };
   discountCodes = {
-  
+
   };
   discountErrorMessage: string = '';
   discountAmount: number = 0;
@@ -281,7 +281,7 @@ export class OrderComponent implements OnInit {
       discountRate // ✅ Trả thêm giá trị này ra
     };
   }
- 
+
   onDiscountCodeEntered(code: string | null) {
     this.discountErrorMessage = '';
 
@@ -371,21 +371,21 @@ export class OrderComponent implements OnInit {
       }
     });
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   updateUI() {
     this.calculateTotals();
     this.cdr.markForCheck(); // Đảm bảo Angular kiểm tra lại thay đổi để cập nhật UI
   }
-  
+
 
 
   tinhPhiVanChuyen() {
@@ -443,7 +443,7 @@ export class OrderComponent implements OnInit {
       return total + (item.quantity || 0) * (item.donGia || 0);
     }, 0);
 
-    
+
     this.finalAmount = this.totalProductPrice  - this.discount + this.shippingFee;
     this.cdr.markForCheck();
   }
@@ -549,7 +549,7 @@ onSubmit() {
         amount: this.finalAmount.toString(),
         returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
         notifyUrl: 'http://localhost:8080/api/momo/callback',
-        requestType: 'payWithMethod',
+        requestType: 'captureWallet',
         extraData,
       };
 
@@ -587,7 +587,7 @@ onSubmit() {
         this.orderData.maGiamGia = '';
         this.calculateTotals();
 
-       
+
         Swal.fire({
           icon: 'warning',
           title: 'Mã giảm giá không hợp lệ',

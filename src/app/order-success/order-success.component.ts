@@ -121,7 +121,7 @@ export class OrderSuccessComponent implements OnInit {
       amount: this.amount,
       returnUrl: `http://localhost:4200/order-success/${this.orderId}?extraData=${extraData}`,
       notifyUrl: 'http://localhost:8080/api/momo/callback',
-      requestType: 'payWithMethod',
+      requestType: 'captureWallet',
       extraData,
     };
 
