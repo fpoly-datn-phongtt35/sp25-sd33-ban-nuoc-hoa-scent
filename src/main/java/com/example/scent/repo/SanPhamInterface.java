@@ -169,17 +169,18 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
         hg.moTaHuongGiua,
         hc.moTaHuongCuoi,
         nh.tenNhomHuong,
-        COALESCE(SUM(spct.soLuongTonKho), 0)
+        (SELECT COALESCE(SUM(spct2.soLuongTonKho), 0)
+         FROM Spct spct2
+         WHERE spct2.sanPham.idSanPham = sp.idSanPham)
     )
     FROM SanPham sp
     LEFT JOIN sp.nhomHuong nh 
     LEFT JOIN sp.hinhAnhs ha
     LEFT JOIN sp.thuongHieu th
+    LEFT JOIN sp.danhMuc dm
     LEFT JOIN sp.huongDau hd
     LEFT JOIN sp.huongGiua hg
-    LEFT JOIN sp.danhMuc dm
     LEFT JOIN sp.huongCuoi hc
-    LEFT JOIN sp.spcts spct
     WHERE (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))
