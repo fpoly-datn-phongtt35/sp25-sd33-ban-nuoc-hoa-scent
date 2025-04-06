@@ -29,6 +29,7 @@
           <th>Danh mục</th>
           <th>Nhóm hương</th>
           <th>Mùi hương</th>
+          <th>Tổng số lượng tồn kho</th>
           <th *ngIf="userRole !== 'STAFF'">Action</th>
         </tr>
       <tbody>
@@ -52,6 +53,7 @@
               <li><strong>Tầng cuối:</strong> {{ product.moTaHuongCuoi }}</li>
             </ul>
           </td>
+          <td (click)="onRowClick(product.idSanPham)">{{ product.tongSoLuong }}</td>
           <td *ngIf="userRole !== 'STAFF'">
             <div class="d-flex gap-2" >
             <button class="btn btn-warning btn-sm me-1" (click)="openUpdateProductModal(product.idSanPham)" *ngIf="userRole !== 'STAFF'">
