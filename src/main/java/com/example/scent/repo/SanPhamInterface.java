@@ -168,31 +168,29 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
         hd.moTaHuongDau,
         hg.moTaHuongGiua,
         hc.moTaHuongCuoi,
-        nh.tenNhomHuong
+        nh.tenNhomHuong,
+        COALESCE(SUM(spct.soLuongTonKho), 0)
     )
     FROM SanPham sp
-    JOIN sp.nhomHuong nh 
-    JOIN sp.hinhAnhs ha
-    JOIN sp.thuongHieu th
-    JOIN sp.huongDau hd
-    JOIN sp.huongGiua hg
-    JOIN sp.danhMuc dm
-   
-    JOIN sp.huongCuoi hc
-    WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    LEFT JOIN sp.nhomHuong nh 
+    LEFT JOIN sp.hinhAnhs ha
+    LEFT JOIN sp.thuongHieu th
+    LEFT JOIN sp.huongDau hd
+    LEFT JOIN sp.huongGiua hg
+    LEFT JOIN sp.danhMuc dm
+    LEFT JOIN sp.huongCuoi hc
+    LEFT JOIN sp.spcts spct
+    WHERE (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :keyword, '%')))
     GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc,
-             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi,nh.tenNhomHuong
+             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.tenNhomHuong
 """)
     Page<SanPhammDTO> searchAllFields(@Param("keyword") String keyword, Pageable pageable);
-
-
-
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
