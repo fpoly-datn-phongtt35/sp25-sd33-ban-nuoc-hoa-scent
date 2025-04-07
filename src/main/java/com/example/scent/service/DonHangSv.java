@@ -437,6 +437,7 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
                     itemDto.setDonGia(chiTiet.getDonGia());
                     itemDto.setThanhTien(chiTiet.getThanhTien());
                     itemDto.setTenSanPham(chiTiet.getSpct().getSanPham().getTenSanPham());
+                    itemDto.setIdSanPham(chiTiet.getSpct().getSanPham().getIdSanPham());
 
                     // Lấy hình ảnh của sản phẩm
                     List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(chiTiet.getSpct().getSanPham().getIdSanPham())

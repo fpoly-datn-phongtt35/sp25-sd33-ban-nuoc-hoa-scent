@@ -20,7 +20,7 @@ import java.util.List;
         private BigDecimal thanhTien;
         private String tenSanPham;
 private BigDecimal soTienGiamGia;
-
+        private Integer idSanPham;
         public BigDecimal getSoTienGiamGia() {
             return soTienGiamGia;
         }
@@ -37,7 +37,11 @@ private BigDecimal soTienGiamGia;
             this.tenSanPham = tenSanPham;
         }
 
-        public OrderItemDTOID(Integer spctId, Integer quantity, List<String> imageURL, BigDecimal donGia, BigDecimal thanhTien, String tenSanPham, BigDecimal soTienGiamGia) {
+        public Integer getIdSanPham() {
+            return idSanPham;
+        }
+
+        public OrderItemDTOID(Integer spctId, Integer quantity, List<String> imageURL, BigDecimal donGia, BigDecimal thanhTien, String tenSanPham, BigDecimal soTienGiamGia, Integer idSanPham) {
             this.spctId = spctId;
             this.quantity = quantity;
             this.imageURL = imageURL;
@@ -45,6 +49,11 @@ private BigDecimal soTienGiamGia;
             this.thanhTien = thanhTien;
             this.tenSanPham = tenSanPham;
             this.soTienGiamGia = soTienGiamGia;
+            this.idSanPham = idSanPham;
+        }
+
+        public void setIdSanPham(Integer idSanPham) {
+            this.idSanPham = idSanPham;
         }
 
         public OrderItemDTOID() {

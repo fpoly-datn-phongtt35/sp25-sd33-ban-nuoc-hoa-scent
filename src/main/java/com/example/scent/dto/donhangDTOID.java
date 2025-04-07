@@ -32,6 +32,7 @@ public class donhangDTOID {
         private BigDecimal phiVanChuyen;
 private String phieuGiamGia;
 private BigDecimal soTienGiam;
+
     public donhangDTOID() {
     }
 

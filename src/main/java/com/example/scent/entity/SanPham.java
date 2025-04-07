@@ -71,7 +71,9 @@ public class SanPham {
     @JsonIgnore
     @OneToMany(mappedBy = "sanPham")
     private List<HinhAnh> hinhAnhs;
-
+    @JsonIgnore
+    @OneToMany(mappedBy = "sanPham")
+    private List<DanhGia> danhGias; // Thêm mối quan hệ với DanhGia
 
     public HuongDau getHuongDau() {
         return huongDau;

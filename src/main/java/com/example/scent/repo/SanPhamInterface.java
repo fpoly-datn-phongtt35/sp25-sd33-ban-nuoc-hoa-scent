@@ -67,7 +67,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
             "where\n" +
             "    sp.id = :idSanPham\n " +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich, th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota",  // Ensure to group by all selected columns
+            "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich, th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota ",  // Ensure to group by all selected columns
     nativeQuery = true)
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
 
@@ -206,7 +206,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.nhomHuong nh " +
             "JOIN sp.hinhAnhs ha " +
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
-            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id ,nh.tenNhomHuong , th.quocGia " +
             "ORDER BY MIN(spct.donGia) DESC")
     List<SanPhamInfoDTO> findAllProductsWithImagesSorted();
 
