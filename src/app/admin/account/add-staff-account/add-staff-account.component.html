@@ -23,7 +23,6 @@
         <div *ngIf="accountForm.get('email')?.errors?.['email']">Email không hợp lệ.</div>
       </div>
     </div>
-
     <!-- Số điện thoại -->
     <div class="mb-3">
       <label class="form-label">Số Điện Thoại</label>
@@ -33,7 +32,6 @@
         <div *ngIf="accountForm.get('sdt')?.errors?.['pattern']">Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.</div>
       </div>
     </div>
-
     <!-- Tên đăng nhập -->
     <div class="mb-3">
       <label class="form-label">Tên Đăng Nhập</label>
@@ -42,7 +40,6 @@
         <div *ngIf="accountForm.get('tenDangNhap')?.errors?.['required']">Tên đăng nhập là bắt buộc.</div>
       </div>
     </div>
-
     <!-- Mật khẩu -->
     <div class="mb-3">
       <label class="form-label">Mật Khẩu</label>
@@ -52,14 +49,12 @@
         <div *ngIf="accountForm.get('matKhau')?.errors?.['minlength']">Mật khẩu phải có ít nhất 6 ký tự.</div>
       </div>
     </div>
-
     <!-- Submit Button -->
     <div class="mb-3">
       <button type="submit" class="btn btn-primary" [disabled]="!accountForm.valid">Lưu</button>
     </div>
   </form>
 </div>
-
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
   <button type="submit" class="btn btn-primary" [disabled]="!accountForm.valid" (click)="saveAccount()">Lưu</button>

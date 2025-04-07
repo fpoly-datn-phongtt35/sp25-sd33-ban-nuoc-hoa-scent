@@ -100,23 +100,7 @@ name="searchBox"
       <span>Chuyển khoản MoMo</span>
     </label>
 
-    <!-- VietQR (Đổi tên thành "Chuyển khoản ngân hàng") -->
-    <label class="payment-option d-flex align-items-center gap-2">
-      <input
-        type="radio"
-        name="phuongThucThanhToan"
-        [(ngModel)]="orderData.phuongThucThanhToan"
-        value="qr"
-        required
-      />
-      <img
-        src="https://vietqr.io/static/images/logo.png"
-        alt="VietQR"
-        width="20"
-        height="20"
-      />
-      <span>Chuyển khoản ngân hàng</span>
-    </label>
+
 
     <!-- Tiền mặt -->
     <label class="payment-option d-flex align-items-center gap-2">
@@ -131,8 +115,6 @@ name="searchBox"
     </label>
   </div>
 </div>
-
-
     <!-- Ghi chú -->
     <div class="mb-3">
       <label for="ghichu" class="form-label">Ghi chú:</label>
@@ -164,11 +146,6 @@ name="searchBox"
     ✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!
   </div>
 </div>
-
-
-
-
-
     <!-- Tổng tiền -->
     <div class="payment-info mb-4">
       <h5>Thông tin thanh toán</h5>
@@ -179,16 +156,11 @@ name="searchBox"
         <small *ngIf="shippingDiscount > 0" class="shipping-discount-note">
           🔥 Bạn nhận ưu đãi giảm {{ shippingDiscount | number }}₫ phí ship!
         </small>
-
-
         <p><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
       </div>
-
     </div>
-
     <button type="submit" class="btn btn-primary" [disabled]="orderForm.invalid">Đặt hàng</button>
   </form>
-
   <!-- Danh Sách Sản Phẩm Đã Chọn -->
   <div class="order-summary mt-5">
     <h4>Sản phẩm đã chọn</h4>

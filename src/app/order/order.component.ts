@@ -252,16 +252,13 @@ export class OrderComponent implements OnInit {
 
     const volWeight = (length * width * height) / 5;
     const usedWeight = Math.max(weight, volWeight);
-
     let discountRate = 0;
     if (soLuong >= 10) discountRate = 0.2;
     else if (soLuong >= 6) discountRate = 0.15;
     else if (soLuong >= 3) discountRate = 0.1;
-
     console.log(`📦 ${soLuong} chai | Thực: ${weight}g | Quy đổi: ${volWeight.toFixed(0)}g → Dùng: ${usedWeight.toFixed(0)}g`);
     console.log(`📐 Kích thước: ${length} x ${width} x ${height} cm`);
     console.log(`🎁 Giảm phí ship: ${discountRate * 100}%`);
-
     return {
       weight: Math.ceil(usedWeight),
       length,
@@ -270,7 +267,6 @@ export class OrderComponent implements OnInit {
       discountRate,
     };
   }
-
   onDiscountCodeEntered(code: string | null) {
     this.discountErrorMessage = '';
     if (!code) {
@@ -280,7 +276,6 @@ export class OrderComponent implements OnInit {
       this.calculateTotals();
       return;
     }
-
     Swal.fire({
       title: 'Đang kiểm tra mã giảm giá...',
       text: 'Vui lòng chờ trong giây lát!',
@@ -289,7 +284,6 @@ export class OrderComponent implements OnInit {
         Swal.showLoading();
       },
     });
-
     this.phieugiamgiaService.getDiscountCodeDetails(code).subscribe({
       next: (response) => {
         Swal.close();
@@ -501,51 +495,7 @@ export class OrderComponent implements OnInit {
         this.cartService.clearCartOnClient();
         localStorage.removeItem('selectedProducts');
 
-        if (this.orderData.phuongThucThanhToan === 'qr') {
-          this.orderId = `ORDER_${orderRes.id}`;
-          const orderInfo = `Thanh toán đơn hàng ${orderRes.id} từ SCENT`;
 
-          try {
-            this.vietQRString = await this.generateVietQRString(this.orderId, this.finalAmount, orderInfo);
-            console.log('vietQRString:', this.vietQRString);
-
-            if (!this.vietQRString) {
-              throw new Error('Không nhận được dữ liệu mã QR từ API VietQR');
-            }
-
-            Swal.fire({
-              title: 'Quét mã QR để thanh toán',
-              html: `
-                <p>Số tiền: ${this.finalAmount.toLocaleString()} VNĐ</p>
-                <p>Nội dung: ${orderInfo}</p>
-                <img src="${this.vietQRString}" alt="QR Code" width="200" height="200" />
-                <p>Vui lòng quét mã QR để thanh toán. Sau khi thanh toán xong, nhấn "Xác nhận" để tiếp tục.</p>
-              `,
-              confirmButtonText: 'Xác nhận',
-              showCancelButton: true,
-              cancelButtonText: 'Hủy',
-            }).then((result) => {
-              if (result.isConfirmed) {
-                Swal.fire({
-                  title: 'Thành công!',
-                  text: 'Đơn hàng đã được đặt thành công.',
-                  icon: 'success',
-                  timer: 1500,
-                  showConfirmButton: false,
-                });
-                this.router.navigate(['/order-success', orderRes.id]);
-              }
-            });
-          } catch (error) {
-            Swal.fire({
-              title: 'Lỗi',
-              text: `Không thể tạo mã QR. Vui lòng thử lại sau! ${error.message || ''}`,
-              icon: 'error',
-              confirmButtonText: 'OK',
-            });
-          }
-          return;
-        }
 
         if (this.orderData.phuongThucThanhToan === 'tm') {
           Swal.fire({

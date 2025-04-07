@@ -168,13 +168,13 @@
       <div class="card payment-card">
         <h4>Thanh toán</h4>
         <select
-          [(ngModel)]="currentOrder.phuongThucThanhToan"
-          (ngModelChange)="updatePaymentMethod($event)"
-          class="form-control"
-        >
-          <option value="tm">Tiền mặt</option>
-          <option value="ck">Chuyển khoản</option>
-        </select>
+        [(ngModel)]="currentOrder.phuongThucThanhToan"
+        (ngModelChange)="updatePaymentMethod($event)"
+        class="form-control"
+      >
+        <option value="tm">Tiền mặt</option>
+        <option value="ck">Chuyển khoản ngân hàng (VietQR)</option>
+      </select>
         <div class="discount-section">
           <label for="maGiamGia">Mã giảm giá:</label>
           <div class="discount-input-group">

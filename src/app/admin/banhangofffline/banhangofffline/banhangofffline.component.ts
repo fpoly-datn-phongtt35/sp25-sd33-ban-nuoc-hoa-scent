@@ -1,4 +1,4 @@
-import { Component, OnInit,Input, OnDestroy, ChangeDetectorRef, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy, ChangeDetectorRef, EventEmitter } from '@angular/core';
 import Swal from 'sweetalert2';
 import { TokenService } from '../../../service/token.service';
 import { CommonModule } from '@angular/common';
@@ -12,6 +12,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { Router } from '@angular/router';
 import { HomeAdminComponent } from '../../home-admin/home-admin.component';
+import { VietQRService } from '../../../service/VietQR.Service';
 
 @Component({
   selector: 'app-banhangoffline',
@@ -32,26 +33,30 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   ];
   currentOrderIndex: number = 0;
   orderId: number | null = null;
+  vietQRString: string | null = null;
+  finalAmount: number = 0;
+
   get currentOrder() {
     return this.orders[this.currentOrderIndex];
   }
+
   nhomHuongList: string[] = [];
   danhMucList: string[] = [];
   thuongHieuList: string[] = [];
-  
+
   allProducts: any[] = [];
   products: any[] = [];
   searchKeyword: string = '';
   filterTenNhomHuong: string = '';
   filterTenDanhMuc: string = '';
   filterTenThuongHieu: string = '';
-  
+
   errorMessage: string | null = null;
   isLoading: boolean = false;
   showQuantityModal: boolean = false;
   selectedProduct: any = null;
   selectedQuantity: number = 1;
-  
+
   totalBeforeDiscount: number = 0;
   totalAfterDiscount: number | undefined;
   discountCodeInput: string = '';
@@ -61,22 +66,26 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   private sessionId: string;
   orderStatusUpdated = new EventEmitter<void>();
   @Input() isComponentSwitched: boolean = false;
+
   constructor(
     private orderoffservice: OrderOffService,
     private tokenService: TokenService,
     private modalService: NgbModal,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private homeAdminComponent:HomeAdminComponent,
+    private homeAdminComponent: HomeAdminComponent,
+    private vietQRService: VietQRService, // Inject VietQRService
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {{
+  ) {
     // Tạo sessionId duy nhất khi khởi tạo component
     this.sessionId = localStorage.getItem('sessionId') || this.generateSessionId();
     localStorage.setItem('sessionId', this.sessionId);
-  }}
+  }
+
   private generateSessionId(): string {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
+
   ngOnInit(): void {
     if (!this.tokenService.isLoggedIn()) {
       Swal.fire({
@@ -93,7 +102,6 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     const userInfo = this.tokenService.getUserInfo();
     console.log('User Info:', userInfo);
 
-    // Lấy sessionId từ localStorage
     const sessionId = localStorage.getItem('sessionId');
     if (!sessionId) {
       console.log('Không có sessionId trong localStorage, reset trạng thái.');
@@ -101,16 +109,15 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Kiểm tra sessionId và dữ liệu trong localStorage
     const storedSessionId = localStorage.getItem('sessionId');
-    const savedOrders = localStorage.getItem(`offlineOrders_${sessionId}`); // Lưu với key gắn với sessionId
+    const savedOrders = localStorage.getItem(`offlineOrders_${sessionId}`);
     console.log('storedSessionId:', storedSessionId, 'isComponentSwitched:', this.homeAdminComponent.isComponentSwitched);
     console.log('savedOrders:', savedOrders);
 
     if (
       this.homeAdminComponent.isComponentSwitched &&
       storedSessionId === sessionId &&
-      savedOrders // Chỉ khôi phục nếu có dữ liệu trong localStorage
+      savedOrders
     ) {
       console.log('Khôi phục trạng thái từ localStorage vì sessionId khớp và có dữ liệu.');
       this.restoreStateFromLocalStorage(sessionId);
@@ -123,12 +130,14 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.currentOrder.chiTietDonHangs = [];
     }
 
+    console.log('Phương thức thanh toán sau khi khôi phục:', this.currentOrder.phuongThucThanhToan); // Thêm log để kiểm tra
+
     if (this.currentOrder.chiTietDonHangs.length > 0) {
       this.calculateTotal();
     }
     this.loadAllProducts();
   }
-  
+
   private resetState(): void {
     this.orders = [{
       donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },
@@ -158,8 +167,11 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.showQuantityModal = false;
     this.selectedProduct = null;
     this.selectedQuantity = 1;
-    this.saveStateToLocalStorage(); // Lưu trạng thái mặc định
+    this.vietQRString = null; // Reset VietQR string
+    this.finalAmount = 0; // Reset final amount
+    this.saveStateToLocalStorage();
   }
+
   private isLocalStorageAvailable(): boolean {
     try {
       const test = '__test__';
@@ -170,18 +182,14 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       return false;
     }
   }
+
   ngOnDestroy(): void {
-    // Lưu trạng thái trước khi component bị hủy
     this.saveStateToLocalStorage();
-  
-    // Xóa tất cả dữ liệu trong localStorage khi component bị hủy
-  
   }
 
-  // Lưu trạng thái vào localStorage
   public saveStateToLocalStorage(): void {
     const sessionId = localStorage.getItem('sessionId');
-    if (!sessionId) return; // Không lưu nếu không có sessionId
+    if (!sessionId) return;
 
     localStorage.setItem(`offlineOrders_${sessionId}`, JSON.stringify(this.orders));
     localStorage.setItem(`currentOrderIndex_${sessionId}`, this.currentOrderIndex.toString());
@@ -205,9 +213,10 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     localStorage.setItem(`showQuantityModal_${sessionId}`, this.showQuantityModal.toString());
     localStorage.setItem(`selectedProduct_${sessionId}`, JSON.stringify(this.selectedProduct));
     localStorage.setItem(`selectedQuantity_${sessionId}`, this.selectedQuantity.toString());
+    localStorage.setItem(`vietQRString_${sessionId}`, this.vietQRString || '');
+    localStorage.setItem(`finalAmount_${sessionId}`, this.finalAmount.toString());
   }
 
-  // Khôi phục trạng thái từ localStorage
   private restoreStateFromLocalStorage(sessionId: string): void {
     const storedSessionId = localStorage.getItem('sessionId');
     if (storedSessionId !== sessionId) {
@@ -268,14 +277,184 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       ? JSON.parse(localStorage.getItem(`selectedProduct_${sessionId}`)!)
       : null;
     this.selectedQuantity = Number(localStorage.getItem(`selectedQuantity_${sessionId}`)) || 1;
+    this.vietQRString = localStorage.getItem(`vietQRString_${sessionId}`) || null;
+    this.finalAmount = Number(localStorage.getItem(`finalAmount_${sessionId}`)) || 0;
 
     console.log('Trạng thái sau khi khôi phục:', this.orders);
   }
 
-  // Cập nhật thông tin khách hàng và lưu vào localStorage
   updateCustomerInfo(field: 'tenNguoiNhanHang' | 'sdtNguoiNhan', value: string): void {
     this.currentOrder.donHang[field] = value;
-    this.saveStateToLocalStorage(); // Lưu trạng thái ngay khi thông tin thay đổi
+    this.saveStateToLocalStorage();
+  }
+
+  async generateVietQRString(orderId: string, amount: number, orderInfo: string): Promise<string> {
+    const vietQRData = {
+      accountNo: '0855616615',
+      accountName: 'Lại Văn Quang',
+      acqId: '970422',
+      addInfo: orderInfo,
+      amount: amount.toString(),
+      template: 'compact',
+    };
+
+    return new Promise((resolve, reject) => {
+      this.vietQRService.generateQRCode(vietQRData).subscribe({
+        next: (response: any) => {
+          console.log('Response từ API VietQR:', response);
+          if (response && response.code === '00' && response.data && response.data.qrDataURL) {
+            resolve(response.data.qrDataURL);
+          } else {
+            reject(new Error(`Không nhận được qrDataURL từ API VietQR. Response: ${JSON.stringify(response)}`));
+          }
+        },
+        error: (err) => {
+          console.error('Lỗi khi gọi API VietQR:', err);
+          reject(new Error(`Lỗi khi gọi API VietQR: ${err.message || JSON.stringify(err)}`));
+        },
+      });
+    });
+  }
+
+  async submitOrder(): Promise<void> {
+    if (!this.validateOrder()) {
+      return;
+    }
+
+    this.isLoading = true;
+
+    const userId = this.tokenService.getUserInfo();
+    if (!userId || !userId.UserID || isNaN(userId.UserID) || userId.UserID <= 0) {
+      this.isLoading = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'ID tài khoản không hợp lệ! Vui lòng đăng nhập lại.',
+      });
+      return;
+    }
+
+    const orderRequest = {
+      userId: Number(userId.UserID),
+      tenNguoiNhanHang: this.currentOrder.donHang.tenNguoiNhanHang || '',
+      sdtNguoiNhan: this.currentOrder.donHang.sdtNguoiNhan || '',
+      chiTietDonHangs: this.currentOrder.chiTietDonHangs.map((item: any) => ({
+        spctId: item.idSpct,
+        quantity: item.soLuong,
+      })),
+      maGiamGia: this.currentOrder.maGiamGia,
+      phuongThucThanhToan: this.currentOrder.phuongThucThanhToan,
+      ghiChu: null,
+    };
+
+    this.orderoffservice.createOrder(orderRequest).subscribe(
+      async (response) => {
+        this.isLoading = false;
+        this.orderId = response.orderId;
+        this.totalAfterDiscount = response.tongTien;
+        this.finalAmount = this.totalAfterDiscount;
+
+        const orderData = {
+          orderId: this.orderId,
+          tenNguoiNhanHang: this.currentOrder.donHang.tenNguoiNhanHang,
+          sdtNguoiNhan: this.currentOrder.donHang.sdtNguoiNhan,
+          chiTietDonHangs: [...this.currentOrder.chiTietDonHangs],
+          phuongThucThanhToan: this.currentOrder.phuongThucThanhToan === 'tm' ? 'Tiền mặt' :
+                               this.currentOrder.phuongThucThanhToan === 'ck' ? 'Chuyển khoản' : 'VietQR',
+          total: this.totalAfterDiscount,
+          ngayTao: new Date().toLocaleString(),
+        };
+
+        // Sửa điều kiện để kiểm tra 'ck' thay vì 'qr'
+        if (this.currentOrder.phuongThucThanhToan === 'ck') {
+          const orderIdString = `ORDER_${this.orderId}`;
+          const orderInfo = `Thanh toán đơn hàng ${this.orderId} từ SCENT`;
+
+          try {
+            this.vietQRString = await this.generateVietQRString(orderIdString, this.finalAmount, orderInfo);
+            console.log('vietQRString:', this.vietQRString);
+
+            if (!this.vietQRString) {
+              throw new Error('Không nhận được dữ liệu mã QR từ API VietQR');
+            }
+
+            const result = await Swal.fire({
+              title: 'Quét mã QR để thanh toán',
+              html: `
+                <p>Số tiền: ${this.finalAmount.toLocaleString()} VNĐ</p>
+                <p>Nội dung: ${orderInfo}</p>
+                <img src="${this.vietQRString}" alt="QR Code" width="200" height="200" />
+                <p>Vui lòng quét mã QR để thanh toán. Sau khi thanh toán xong, nhấn "Xác nhận" để tiếp tục.</p>
+              `,
+              confirmButtonText: 'Xác nhận',
+              showCancelButton: true,
+              cancelButtonText: 'Hủy',
+            });
+
+            if (result.isConfirmed) {
+              this.finalizeOrder(orderData);
+            } else {
+              this.cancelOrder();
+            }
+          } catch (error) {
+            Swal.fire({
+              title: 'Lỗi',
+              text: `Không thể tạo mã QR. Vui lòng thử lại sau! ${error.message || ''}`,
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
+            this.cancelOrder();
+          }
+        } else {
+          this.finalizeOrder(orderData);
+        }
+      },
+      (error) => {
+        this.isLoading = false;
+        console.error('Lỗi khi tạo đơn hàng:', error);
+        let errorMessage = 'Không thể tạo đơn hàng. Vui lòng thử lại sau!';
+        if (error.status === 401) {
+          errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!';
+        } else if (error.status === 400) {
+          errorMessage = error.error.message || 'Dữ liệu không hợp lệ!';
+        }
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: errorMessage,
+        });
+      }
+    );
+  }
+  private finalizeOrder(orderData: any): void {
+    this.generatePDF(orderData);
+
+    this.orderoffservice.updateOrderStatus(this.orderId!, {
+      trangThai: 4,
+      lyDoHuy: null,
+    }).subscribe(
+      (updateResponse) => {
+        console.log('Cập nhật trạng thái thành công:', updateResponse);
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: 'Đơn hàng thành công và hóa đơn đã được in!',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+        this.resetCurrentOrder();
+        this.orderStatusUpdated.emit();
+      },
+      (error) => {
+        console.error('Lỗi khi cập nhật trạng thái đơn hàng:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Không thể cập nhật trạng thái đơn hàng!',
+        });
+      }
+    );
   }
 
   loadAllProducts(): void {
@@ -315,7 +494,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
         this.isLoading = false;
         this.filterProducts();
-        this.saveStateToLocalStorage(); // Lưu trạng thái
+        this.saveStateToLocalStorage();
       },
       (error) => {
         console.error('Error fetching products:', error);
@@ -326,14 +505,14 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
         this.danhMucList = [];
         this.thuongHieuList = [];
         this.isLoading = false;
-        this.saveStateToLocalStorage(); // Lưu trạng thái
+        this.saveStateToLocalStorage();
       }
     );
   }
 
   onSearchInput(): void {
     this.filterProducts();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   filterProducts(): void {
@@ -383,25 +562,25 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       console.log('No products match the current filters or search keyword.');
     }
     this.cdr.detectChanges();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   onFilterTenNhomHuongChange(event: string): void {
     this.filterTenNhomHuong = event;
     this.filterProducts();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   onFilterTenDanhMucChange(event: string): void {
     this.filterTenDanhMuc = event;
     this.filterProducts();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   onFilterTenThuongHieuChange(event: string): void {
     this.filterTenThuongHieu = event;
     this.filterProducts();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   addNewOrder(): void {
@@ -415,14 +594,14 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.currentOrderIndex = this.orders.length - 1;
     this.calculateTotal();
     this.reapplyDiscountIfExists();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   switchOrder(index: number): void {
     this.currentOrderIndex = index;
     this.calculateTotal();
     this.reapplyDiscountIfExists();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   closeOrderTab(index: number): void {
@@ -440,21 +619,21 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     }
     this.calculateTotal();
     this.reapplyDiscountIfExists();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   openQuantityModal(product: any): void {
     this.selectedProduct = product;
     this.selectedQuantity = 1;
     this.showQuantityModal = true;
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   closeQuantityModal(): void {
     this.showQuantityModal = false;
     this.selectedProduct = null;
     this.selectedQuantity = 1;
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   calculateTotal(): void {
@@ -468,7 +647,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     );
     this.totalAfterDiscount = this.totalBeforeDiscount - this.discountAmount;
     console.log('Total Before Discount:', this.totalBeforeDiscount);
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   confirmAddProduct(): void {
@@ -533,7 +712,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.calculateTotal();
     this.reapplyDiscountIfExists();
     this.closeQuantityModal();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   increaseQuantity(index: number): void {
@@ -543,7 +722,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.calculateTotal();
     this.reapplyDiscountIfExists();
     this.cdr.detectChanges();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   decreaseQuantity(index: number): void {
@@ -554,7 +733,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.calculateTotal();
       this.reapplyDiscountIfExists();
       this.cdr.detectChanges();
-      this.saveStateToLocalStorage(); // Lưu trạng thái
+      this.saveStateToLocalStorage();
     }
   }
 
@@ -563,19 +742,19 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.calculateTotal();
     this.reapplyDiscountIfExists();
     this.cdr.detectChanges();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   applyDiscountCode(): void {
     if (!this.discountCodeInput) {
       this.discountMessage = 'Vui lòng nhập mã giảm giá!';
-      this.saveStateToLocalStorage(); // Lưu trạng thái
+      this.saveStateToLocalStorage();
       return;
     }
 
     if (this.totalBeforeDiscount <= 0) {
       this.discountMessage = 'Giỏ hàng trống, không thể áp dụng mã giảm giá!';
-      this.saveStateToLocalStorage(); // Lưu trạng thái
+      this.saveStateToLocalStorage();
       return;
     }
 
@@ -594,7 +773,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           this.discountAmount = 0;
           this.discountMessage = 'Mã giảm giá này chỉ áp dụng cho đơn hàng online!';
           this.cdr.detectChanges();
-          this.saveStateToLocalStorage(); // Lưu trạng thái
+          this.saveStateToLocalStorage();
           return;
         }
 
@@ -605,7 +784,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
         this.discountMessage = `Áp dụng mã giảm giá thành công! Số tiền giảm: ${this.discountAmount.toLocaleString()} VNĐ`;
         this.cdr.detectChanges();
-        this.saveStateToLocalStorage(); // Lưu trạng thái
+        this.saveStateToLocalStorage();
       },
       (error) => {
         this.isLoading = false;
@@ -616,7 +795,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
         this.discountMessage = 'Mã giảm giá không tồn tại hoặc không hợp lệ!';
         this.cdr.detectChanges();
         console.error('Error fetching discount code:', error);
-        this.saveStateToLocalStorage(); // Lưu trạng thái
+        this.saveStateToLocalStorage();
       }
     );
   }
@@ -639,7 +818,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.totalAfterDiscount = this.totalBeforeDiscount - discountAmount;
     console.log('Final discountAmount:', this.discountAmount);
     console.log('Total after discount:', this.totalAfterDiscount);
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   private reapplyDiscountIfExists(): void {
@@ -652,7 +831,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.discountAmount = 0;
       this.discountMessage = null;
     }
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    this.saveStateToLocalStorage();
   }
 
   validateOrder(): boolean {
@@ -688,127 +867,13 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  submitOrder(): void {
-    if (!this.validateOrder()) {
-      return;
-    }
-
-    this.isLoading = true;
-
-    const userId = this.tokenService.getUserInfo();
-    if (!userId || !userId.UserID || isNaN(userId.UserID) || userId.UserID <= 0) {
-      this.isLoading = false;
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'ID tài khoản không hợp lệ! Vui lòng đăng nhập lại.',
-      });
-      return;
-    }
-
-    const orderRequest = {
-      userId: Number(userId.UserID),
-      tenNguoiNhanHang: this.currentOrder.donHang.tenNguoiNhanHang || '',
-      sdtNguoiNhan: this.currentOrder.donHang.sdtNguoiNhan || '',
-      chiTietDonHangs: this.currentOrder.chiTietDonHangs.map((item: any) => ({
-        spctId: item.idSpct,
-        quantity: item.soLuong,
-      })),
-      maGiamGia: this.currentOrder.maGiamGia,
-      phuongThucThanhToan: this.currentOrder.phuongThucThanhToan,
-      ghiChu: null,
-    };
-
-    this.orderoffservice.createOrder(orderRequest).subscribe(
-      (response) => {
-        this.isLoading = false;
-        this.orderId = response.orderId;
-        this.totalAfterDiscount = response.tongTien;
-
-        const orderData = {
-          orderId: this.orderId,
-          tenNguoiNhanHang: this.currentOrder.donHang.tenNguoiNhanHang,
-          sdtNguoiNhan: this.currentOrder.donHang.sdtNguoiNhan,
-          chiTietDonHangs: [...this.currentOrder.chiTietDonHangs],
-          phuongThucThanhToan: this.currentOrder.phuongThucThanhToan === 'tm' ? 'Tiền mặt' : 'Chuyển khoản',
-          total: this.totalAfterDiscount,
-          ngayTao: new Date().toLocaleString(),
-        };
-
-        this.generatePDF(orderData);
-
-        this.orderoffservice.updateOrderStatus(this.orderId!, {
-          trangThai: 4,
-          lyDoHuy: null,
-        }).subscribe(
-          (updateResponse) => {
-            console.log('Cập nhật trạng thái thành công:', updateResponse);
-            Swal.fire({
-              icon: 'success',
-              title: 'Thành công',
-              text: 'Đơn hàng thành công và hóa đơn đã được in!',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-
-            this.resetCurrentOrder();
-            this.orderStatusUpdated.emit();
-          },
-          (error) => {
-            console.error('Lỗi khi cập nhật trạng thái đơn hàng:', error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Lỗi',
-              text: 'Không thể cập nhật trạng thái đơn hàng!',
-            });
-          }
-        );
-      },
-      (error) => {
-        this.isLoading = false;
-        console.error('Lỗi khi tạo đơn hàng:', error);
-        let errorMessage = 'Không thể tạo đơn hàng. Vui lòng thử lại sau!';
-        if (error.status === 401) {
-          errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!';
-        } else if (error.status === 400) {
-          errorMessage = error.error.message || 'Dữ liệu không hợp lệ!';
-        }
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi',
-          text: errorMessage,
-        });
-      }
-    );
-  }
-
-  // Các hàm khác như generatePDF, cancelOrder, formatOrderId, resetCurrentOrder giữ nguyên
-  // Chỉ cần đảm bảo gọi saveStateToLocalStorage() trong các hàm này nếu có thay đổi trạng thái
-
-  // Ví dụ: Trong resetCurrentOrder
-  resetCurrentOrder(): void {
-    this.orders[this.currentOrderIndex] = {
-      donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },
-      chiTietDonHangs: [],
-      phuongThucThanhToan: 'tm',
-      maGiamGia: null,
-      completed: false
-    };
-    this.discountCodeInput = '';
-    this.discountMessage = null;
-    this.totalAfterDiscount = undefined;
-    this.discountAmount = 0;
-    this.discountDetails = null;
-    this.calculateTotal();
-    this.cdr.detectChanges();
-    this.saveStateToLocalStorage(); // Lưu trạng thái
-  }
-
-  // Thêm hàm để cập nhật phương thức thanh toán
   updatePaymentMethod(method: string): void {
+    console.log('Phương thức thanh toán được chọn:', method); // Thêm log để debug
     this.currentOrder.phuongThucThanhToan = method;
-    this.saveStateToLocalStorage(); // Lưu trạng thái
+    console.log('Giá trị phuongThucThanhToan sau khi cập nhật:', this.currentOrder.phuongThucThanhToan); // Thêm log để kiểm tra
+    this.saveStateToLocalStorage();
   }
+
   private async generatePDF(orderData: any): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) {
       console.error('jsPDF cannot run in SSR or Node environment');
@@ -820,9 +885,9 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       return;
     }
     const userInfo = this.tokenService.getUserInfo();
-console.log('User Info:', userInfo);
+    console.log('User Info:', userInfo);
     const username = userInfo.sub || 'Không xác định';
-   const vaiTro =userInfo.roles
+    const vaiTro = userInfo.roles;
     const escapeHtml = (unsafe: string) => {
       if (!unsafe) return '';
       return unsafe
@@ -864,7 +929,7 @@ console.log('User Info:', userInfo);
         <div id="header-section">
           <h2 style="text-align: center; font-size: 18px; margin-bottom: 8px; color: red;">HÓA ĐƠN BÁN HÀNG</h2>
           <h3 style="text-align: center; font-size: 14px; margin-bottom: 15px;">Mã đơn hàng: #${this.formatOrderId(orderData)}</h3>
-          
+
           <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
             <div style="width: 45%;">
               <p style="font-size: 10px;"><strong>Người đặt hàng</strong></p>
@@ -1085,5 +1150,23 @@ console.log('User Info:', userInfo);
     return `${dateString}${paddedId}`;
   }
 
- 
+  resetCurrentOrder(): void {
+    this.orders[this.currentOrderIndex] = {
+      donHang: { tenNguoiNhanHang: '', sdtNguoiNhan: '' },
+      chiTietDonHangs: [],
+      phuongThucThanhToan: 'tm',
+      maGiamGia: null,
+      completed: false
+    };
+    this.discountCodeInput = '';
+    this.discountMessage = null;
+    this.totalAfterDiscount = undefined;
+    this.discountAmount = 0;
+    this.discountDetails = null;
+    this.vietQRString = null;
+    this.finalAmount = 0;
+    this.calculateTotal();
+    this.cdr.detectChanges();
+    this.saveStateToLocalStorage();
+  }
 }
