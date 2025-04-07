@@ -4,12 +4,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
-
 import { DetailService } from '../service/detail_product';
 import { CartService } from '../service/cart.Service';
 import { SanPhamService } from '../service/product.service';
 import { TokenService } from '../service/token.service';
-
+import { DanhGiaService } from '../service/DanhGiaService';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -28,6 +27,11 @@ export class ProductDetailComponent implements OnInit {
   quantity: number = 1;
   selectedImageIndex: number = 0;
   isLoading: boolean = true;
+  danhGias: any[] = []; // Danh sách đánh giá gốc
+  filteredDanhGias: any[] = []; // Danh sách đánh giá đã lọc
+  selectedStarFilter: number | null = null; // Bộ lọc sao được chọn (null = tất cả)
+  newRating: number = 0; // Rating người dùng chọn
+  newComment: string = ''; // Bình luận người dùng nhập
 
   constructor(
     private route: ActivatedRoute,
@@ -35,13 +39,15 @@ export class ProductDetailComponent implements OnInit {
     private detailService: DetailService,
     private cartService: CartService,
     private sanPhamService: SanPhamService,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private danhGiaService: DanhGiaService
   ) {}
 
   ngOnInit(): void {
     this.loadProductDetail();
     this.loadRecommendedProducts();
     this.loadVolumes();
+    this.loadDanhGias();
   }
 
   loadProductDetail(): void {
@@ -100,6 +106,24 @@ export class ProductDetailComponent implements OnInit {
       next: (data: any[]) => (this.recommendedProducts = data),
       error: (err) => console.error('Lỗi khi tải sản phẩm gợi ý:', err),
     });
+  }
+
+  loadDanhGias(): void {
+    const productId = this.route.snapshot.paramMap.get('id');
+    if (productId) {
+      const numericProductId = parseInt(productId, 10);
+      if (!isNaN(numericProductId)) {
+        this.danhGiaService.getDanhGiaBySanPham(numericProductId).subscribe({
+          next: (res) => {
+            this.danhGias = res;
+            this.applyFilter(); // Áp dụng bộ lọc ngay sau khi tải dữ liệu
+          },
+          error: (err) => {
+            console.error('Lỗi khi lấy danh sách đánh giá:', err);
+          },
+        });
+      }
+    }
   }
 
   scrollImages(direction: string): void {
@@ -224,8 +248,94 @@ export class ProductDetailComponent implements OnInit {
 
     this.selectedVolume = this.volumes.length > 0 ? this.volumes[0] : null;
     console.log('Thông tin sản phẩm đã được cập nhật:', this.product);
+    this.loadDanhGias();
   }
 
+  setRating(rating: number): void {
+    this.newRating = rating;
+  }
 
+  submitReview(): void {
+    const token = this.tokenService.getToken();
+    if (!token || this.tokenService.isTokenExpired()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Bạn cần đăng nhập để gửi đánh giá!',
+        position: 'bottom-end',
+      });
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (this.newRating === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn số sao',
+        text: 'Vui lòng chọn số sao để đánh giá!',
+        position: 'bottom-end',
+      });
+      return;
+    }
+
+    if (!this.newComment.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa nhập bình luận',
+        text: 'Vui lòng nhập bình luận để gửi đánh giá!',
+        position: 'bottom-end',
+      });
+      return;
+    }
+
+    const productId = this.route.snapshot.paramMap.get('id');
+    if (productId) {
+      const numericProductId = parseInt(productId, 10);
+      const reviewData = {
+        idSanPham: numericProductId,
+        rating: this.newRating,
+        comment: this.newComment,
+      };
+
+      this.danhGiaService.addDanhGia(reviewData).subscribe({
+        next: (res) => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Đánh giá thành công',
+            text: 'Cảm ơn bạn đã gửi đánh giá!',
+            position: 'bottom-end',
+          });
+          this.newRating = 0;
+          this.newComment = '';
+          this.loadDanhGias();
+        },
+        error: (err) => {
+          console.error('Lỗi khi gửi đánh giá:', err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không thể gửi đánh giá. Vui lòng thử lại!',
+            position: 'bottom-end',
+          });
+        },
+      });
+    }
+  }
+
+  // Phương thức để lọc đánh giá theo số sao
+  filterByStars(stars: number | null): void {
+    this.selectedStarFilter = stars;
+    this.applyFilter();
+  }
+
+  // Áp dụng bộ lọc
+  applyFilter(): void {
+    if (this.selectedStarFilter === null) {
+      this.filteredDanhGias = [...this.danhGias]; // Hiển thị tất cả đánh giá
+    } else {
+      this.filteredDanhGias = this.danhGias.filter(
+        (danhGia) => danhGia.rating === this.selectedStarFilter
+      );
+    }
+  }
 }
-

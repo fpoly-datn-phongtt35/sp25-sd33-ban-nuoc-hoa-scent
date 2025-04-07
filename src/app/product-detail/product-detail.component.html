@@ -2,15 +2,10 @@
 <div class="container" *ngIf="product">
   <div class="product-detail">
     <!-- Cột trái: Hình ảnh sản phẩm -->
-   
     <div class="product-images">
       <div class="main-image">
         <img [src]="imageUrls[selectedImageIndex]" [alt]="product.tenSanPham" class="main-img"/>
       </div>
-
-      <!-- Mũi tên cuộn ảnh -->
-     
-
       <div class="image-thumbnails">
         <div *ngFor="let image of imageUrls; let i = index" class="thumbnail" (click)="setMainImage(i)">
           <img [src]="image" [alt]="product.tenSanPham" class="thumb-img"/>
@@ -20,9 +15,7 @@
 
     <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
     <div class="product-info">
-
       <h1>{{ product['tenSanPham'] || 'Không có tên' }}</h1>
-
       <p class="brand">
         <strong>Hãng:</strong> {{ product.tenThuongHieu }}
       </p>
@@ -47,32 +40,29 @@
         Giá: <strong>{{ product.donGia | number }}</strong> VND
       </p>
 
-     <!-- Đoạn HTML này sẽ hiển thị một dropdown để chọn dung tích sản phẩm -->
-  <!-- Volume selection buttons -->
-  <p *ngFor="let volume of volumes">
-    <button type="button" class="volume-button" [ngClass]="{'selected': selectedVolume === volume}" (click)="selectVolume(volume)">
-      {{ volume.dungTich }}ml - {{ volume.donGia | currency:'VND':'symbol':'1.0-0' }}
-    </button>
-  </p>
+      <!-- Volume selection buttons -->
+      <p *ngFor="let volume of volumes">
+        <button type="button" class="volume-button" [ngClass]="{'selected': selectedVolume === volume}" (click)="selectVolume(volume)">
+          {{ volume.dungTich }}ml - {{ volume.donGia | currency:'VND':'symbol':'1.0-0' }}
+        </button>
+      </p>
 
+      <!-- Quantity input -->
+      <div class="quantity-container">
+        <label for="quantity" class="quantity-label">Số lượng:</label>
+        <input
+          type="number"
+          id="quantity"
+          [(ngModel)]="quantity"
+          min="1"
+          (ngModelChange)="quantity = $event < 1 ? 1 : $event"
+          class="quantity-input"
+        />
+      </div>
 
-<!-- Thêm nút này trong product-detail.component.html -->
-<div class="quantity-container">
-  <label for="quantity" class="quantity-label">Số lượng:</label>
-  <input
-    type="number"
-    id="quantity"
-    [(ngModel)]="quantity"
-    min="1"
-    (ngModelChange)="quantity = $event < 1 ? 1 : $event"
-    class="quantity-input"
-  />
-</div>
-
-
-<button [disabled]="!product || !selectedVolume"  class="add-to-cart-btn" (click)="addToCart()">
-  Thêm vào giỏ hàng
-</button>
+      <button [disabled]="!product || !selectedVolume" class="add-to-cart-btn" (click)="addToCart()">
+        Thêm vào giỏ hàng
+      </button>
 
       <p class="shipping-note">Miễn phí vận chuyển cho đơn hàng từ 750.000đ.</p>
       <ul class="benefits-list">
@@ -95,7 +85,6 @@
         </div>
       </div>
     </div>
-    
   </div>
 
   <!-- Phần mô tả sản phẩm -->
@@ -103,7 +92,65 @@
     <h2>Mô tả chi tiết</h2>
     <p>{{ product.moTaSanPham }}</p>
   </div>
+
+  <!-- Phần hiển thị danh sách đánh giá -->
+  <div class="danh-gia-section">
+    <h2>Đánh giá sản phẩm</h2>
+    <!-- Bộ lọc theo số sao -->
+    <div class="star-filter">
+      <button
+        class="filter-btn"
+        [ngClass]="{'active': selectedStarFilter === null}"
+        (click)="filterByStars(null)"
+      >
+        Tất cả
+      </button>
+      <button
+        *ngFor="let star of [1, 2, 3, 4, 5]"
+        class="filter-btn"
+        [ngClass]="{'active': selectedStarFilter === star}"
+        (click)="filterByStars(star)"
+      >
+        {{ star }} sao
+      </button>
+    </div>
+    <div class="danh-gia-list">
+      <div *ngIf="filteredDanhGias.length === 0">
+        <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+      </div>
+      <div *ngFor="let danhGia of filteredDanhGias" class="danh-gia-item">
+        <div class="danh-gia-header">
+          <span class="ten-nguoi-dung">{{ danhGia.tenNguoiDung }}</span>
+          <span class="rating">
+            <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.selected]="danhGia.rating >= star">
+              ★
+            </span>
+          </span>
+          <span class="ngay-tao">{{ danhGia.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <p class="comment">{{ danhGia.comment }}</p>
+      </div>
+    </div>
+
+    <!-- Form gửi đánh giá -->
+    <div class="danh-gia-form">
+      <h3>Gửi đánh giá của bạn</h3>
+      <div class="rating">
+        <span
+          *ngFor="let star of [1, 2, 3, 4, 5]"
+          (click)="setRating(star)"
+          [class.selected]="newRating >= star"
+        >
+          ★
+        </span>
+      </div>
+      <textarea
+        [(ngModel)]="newComment"
+        placeholder="Nhập bình luận của bạn..."
+        rows="4"
+      ></textarea>
+      <button (click)="submitReview()">Gửi đánh giá</button>
+    </div>
+  </div>
 </div>
 <app-footer></app-footer>
-
-

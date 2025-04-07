@@ -1,22 +1,27 @@
-import { Component,OnInit } from '@angular/core';
-
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../service/user.service';
 import { TokenService } from '../service/token.service';
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { DonhangService } from '../service/donhang.service';
-import { FormsModule } from '@angular/forms'; 
+ 
+ import { ChangeDetectorRef } from '@angular/core';
+
+import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
+import { DanhGiaService } from '../service/DanhGiaService';
+
 @Component({
   selector: 'app-order-detail-user-id',
   standalone: true,
-  imports: [CommonModule,HeaderComponent, FooterComponent,FormsModule],
+  imports: [CommonModule, HeaderComponent, FooterComponent, FormsModule],
   templateUrl: './order-detail-user-id.component.html',
-  styleUrl: './order-detail-user-id.component.scss'
+  styleUrls: ['./order-detail-user-id.component.scss'],
 })
-export class OrderDetailUserIDComponent implements OnInit{
+export class OrderDetailUserIDComponent implements OnInit {
   orders: any[] = [];
-  userId: number=0;
+  userId: number = 0;
   selectedOrder: any = null;
   filteredOrders: any[] = [];
   selectedStatus: number = 0;
@@ -29,9 +34,15 @@ export class OrderDetailUserIDComponent implements OnInit{
     completed: 4,
     cancelled: 5,
   };
-  constructor(private userService: UserService,private tokenService: TokenService,private donhangService :DonhangService) {
-   
-  }
+  danhGias: { [key: number]: { rating: number; comment: string } } = {}; // Lưu thông tin đánh giá cho từng sản phẩm
+
+  constructor(
+    private userService: UserService,
+    private tokenService: TokenService,
+    private donhangService: DonhangService,
+    private danhGiaService: DanhGiaService,
+    private cdRef: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.userId = this.tokenService.getUserId();
@@ -39,64 +50,75 @@ export class OrderDetailUserIDComponent implements OnInit{
     if (this.userId) {
       this.userService.getOrders(this.userId).subscribe({
         next: (data) => {
-          this.orders = data.map((order: { trangThai: number; }) => ({
+          this.orders = data.map((order: { trangThai: number }) => ({
             ...order,
-            statusLabel: this.getStatusLabel(order.trangThai) // Thêm nhãn trạng thái vào mỗi đơn hàng
-             
+            statusLabel: this.getStatusLabel(order.trangThai),
           }));
           this.filteredOrders = [...this.orders];
           console.log('Dữ liệu đơn hàng:', this.orders);
         },
         error: (error) => {
           console.error('Lỗi khi lấy đơn hàng', error);
-        }
+        },
       });
     } else {
       console.error('Không tìm thấy userId từ token');
     }
   }
+
   getStatusLabel(statusCode: number): string {
     switch (statusCode) {
-      case 1: return 'Chờ xác nhận';  // Trạng thái chờ xác nhận
-      case 2: return 'Đã xác nhận';  // Trạng thái đã xác nhận
-      case 3: return 'Đang giao';  // Trạng thái đang giao
-      case 4: return 'Hoàn thành';  // Trạng thái đã hoàn thành
-      case 5: return 'Đã hủy';  // Trạng thái đã hủy
-      case 6: return 'Đã thanh toán';  // Trạng thái đã thanh toán (chuyển khoản)
-      default: return 'Trạng thái không xác định';  // Nếu không phải một trong các trạng thái trên
+      case 1: return 'Chờ xác nhận';
+      case 2: return 'Đã xác nhận';
+      case 3: return 'Đang giao';
+      case 4: return 'Hoàn thành';
+      case 5: return 'Đã hủy';
+      case 6: return 'Đã thanh toán';
+      default: return 'Trạng thái không xác định';
+    }
+  }
+
+  toggleOrderDetail(order: any) {
+    if (this.selectedOrder === order) {
+      this.selectedOrder = null;
+    } else {
+      this.selectedOrder = order;
+      // Khởi tạo form đánh giá cho từng sản phẩm trong đơn hàng
+      if (this.selectedOrder.trangThai === 4) { // Chỉ khởi tạo nếu đơn hàng đã hoàn thành
+        this.selectedOrder.chiTietDonHangs.forEach((item: any) => {
+          if (!item.idSanPham) {
+            console.error('Lỗi: sanPhamId không tồn tại cho sản phẩm:', item);
+            return;
+          }
+          this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
+          console.log(`Khởi tạo danhGias cho sanPhamId: ${item.idSanPham}`, this.danhGias[item.idSanPham]);
+        });
+      }
     }
   }
   
-  openModal(order: any) {
-    console.log("Đơn hàng đã được nhấn:", order);
-    this.selectedOrder = order;
-    console.log("selectedOrder:", this.selectedOrder);
+  setRating(productId: string, rating: number) {
+    if (!this.danhGias[productId]) {
+      this.danhGias[productId] = { rating: 0, comment: '' };
+    }
+    this.danhGias[productId].rating = rating;
+    // Optionally, force a change detection if the UI doesn't update
+    this.cdRef.detectChanges(); // If you have ChangeDetectorRef injected
   }
 
-  closeModal() {
+  goBack() {
     this.selectedOrder = null;
   }
-   toggleOrderDetail(order: any) {
-    if (this.selectedOrder === order) {
-      this.selectedOrder = null; // Nếu đã chọn đơn hàng thì bỏ chọn
-    } else {
-      this.selectedOrder = order; // Chọn đơn hàng mới
-    }
-  }
-  goBack() {
-    this.selectedOrder = null; // Quay lại danh sách đơn hàng
-  }
+
   cancelOrder(orderId: number) {
     this.donhangService.cancelOrder(orderId).subscribe(
-      (response: { status: string; message: any; }) => {
+      (response: { status: string; message: any }) => {
         if (response.status === 'success') {
-          // If cancellation is successful, update the order status
-          this.selectedOrder.trangThai = 5;  // Update the status to "Đã huỷ"
-          this.selectedOrder.statusLabel = 'Đã huỷ';  // Update the label accordingly
-          alert(response.message);  // Display success message from API
+          this.selectedOrder.trangThai = 5;
+          this.selectedOrder.statusLabel = 'Đã hủy';
+          alert(response.message);
         } else {
-          // If cancellation failed
-          alert(response.message);  // Display error message from API
+          alert(response.message);
         }
       },
       (error) => {
@@ -105,28 +127,72 @@ export class OrderDetailUserIDComponent implements OnInit{
       }
     );
   }
+
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? null;
     this.selectedStatus = statusCode;
-  
-    // Nếu trạng thái không có hoặc là 0 (Tất cả), hiển thị tất cả đơn hàng
+
     if (statusCode === null || statusCode === 0) {
-      this.filteredOrders = [...this.orders];  // Hiển thị tất cả đơn hàng
+      this.filteredOrders = [...this.orders];
     } else {
-      // Lọc đơn hàng theo trạng thái
       this.filteredOrders = this.orders.filter(order => order.trangThai === statusCode);
     }
-  
-    // Đảm bảo lọc lại đơn hàng mỗi khi chọn trạng thái mới
+
     console.log("Lọc đơn hàng với trạng thái:", status, this.filteredOrders);
   }
-  
-  // filterOrders(status: number) {
-  //   if (status === 0) {
-  //     this.filteredOrders = this.orders; // Hiển thị tất cả đơn hàng nếu không có trạng thái lọc
-  //   } else {
-  //     this.filteredOrders = this.orders.filter(order => order.statusLabel === status);
-  //   }
-  // }
-  
+
+ 
+
+  submitDanhGia(productId: number): void {
+    const danhGia = this.danhGias[productId];
+    if (danhGia.rating < 1 || danhGia.rating > 5) {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng chọn đánh giá từ 1 đến 5 sao!',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    if (!danhGia.comment.trim()) {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng nhập bình luận!',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    const danhGiaDTO = {
+      idSanPham: productId,
+      idTaiKhoan: this.userId,
+      rating: danhGia.rating,
+      comment: danhGia.comment,
+    };
+
+    this.danhGiaService.addDanhGia(danhGiaDTO).subscribe({
+      next: (res) => {
+        Swal.fire({
+          title: 'Thành công!',
+          text: 'Đánh giá của bạn đã được gửi.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        // Reset form sau khi gửi
+        this.danhGias[productId] = { rating: 0, comment: '' };
+      },
+      error: (err) => {
+        const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gửi đánh giá.';
+        Swal.fire({
+          title: 'Lỗi',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonText: 'OK',
+        });
+      },
+    });
+  }
 }
