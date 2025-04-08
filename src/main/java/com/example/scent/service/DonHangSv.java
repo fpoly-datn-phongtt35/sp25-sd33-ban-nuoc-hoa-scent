@@ -265,6 +265,21 @@ LichSuThaoTacInterface lichSuThaoTacInterface;
         request.setSoLuongSanPham(orderRequest.getChiTietDonHangs().size());
         return request;
     }
+    private PhiVanChuyenRequest convertToPhiVanChuyenRequest1(DonHang donHang) {
+        PhiVanChuyenRequest request = new PhiVanChuyenRequest();
+        // Điền các thông tin cần thiết cho PhiVanChuyenRequest từ DonHang
+        request.setIdQuanHuyen(donHang.getMaQuan());
+        request.setIdPhuongXa(donHang.getMaPhuong());
+        // Các thông tin khác như trọng lượng, kích thước,... có thể lấy từ đơn hàng hoặc cấu hình mặc định
+        request.setWeight(1000); // Ví dụ: trọng lượng 1000g
+        request.setLength(20);   // Ví dụ: chiều dài 20cm
+        request.setWidth(20);    // Ví dụ: chiều rộng 20cm
+        request.setHeight(20);   // Ví dụ: chiều cao 20cm
+        request.setTrungBinhCacCanh(donHang.getTrungBinhCacCanh());
+        request.setSoLuongSanPham(donHang.getChiTietDonHangs().size());
+        // Thêm các thông tin khác nếu API GHN yêu cầu (ví dụ: service_id, from_district_id,...)
+        return request;
+    }
 
     private Map<Integer, List<String>> getHinhAnhBySanPhamIds(List<Integer> sanPhamIds) {
         // Giả sử bạn có một repository là sanPhamRepository và hinhAnhRepository
@@ -424,6 +439,9 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
         donHangDTO.setTrangThai(donHang.getTrangThai());
         donHangDTO.setGhichu(donHang.getGhiChu());
         donHangDTO.setPhiVanChuyen(donHang.getPhiVanChuyen());
+        donHangDTO.setMaQuan(donHang.getMaQuan());
+        donHangDTO.setMaTinh(donHang.getMaTinh());
+        donHangDTO.setMaPhuong(donHang.getMaPhuong());
         // Gán mã phiếu giảm giá (nếu có)
         donHangDTO.setPhieuGiamGia(donHang.getPhieuGiamGia() != null ? donHang.getPhieuGiamGia().getMaGiamGia() : null);
 
@@ -846,5 +864,101 @@ public List<donhangDTOID> getDonHangsByTaiKhoan(Integer idTaiKhoan) {
 
         order.setTrangThai(newStatus);
         return dhi.save(order);
+    }
+    public DonHangResponseDTO getOrderById(Integer orderId) throws Exception {
+        // Tìm đơn hàng theo ID
+        DonHang donHang = dhi.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Đơn hàng không tồn tại với ID: " + orderId));
+
+        // Chuyển đổi DonHang thành DonHangResponseDTO
+        return DonHangResponseDTO.fromEntity(donHang);
+    }
+    public DonHangResponseDTO updateOrderAddress(Integer orderId, UpdateOrderAddressDTO updateRequest) throws Exception {
+        // Tìm đơn hàng theo ID
+        DonHang donhang = dhi.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("⚠️ Lỗi: Đơn hàng không tồn tại với ID: " + orderId));
+
+        // Kiểm tra trạng thái đơn hàng (chỉ cho phép cập nhật khi trạng thái là "Chờ xác nhận")
+        if (donhang.getTrangThai() != 1) {
+            throw new RuntimeException("⚠️ Lỗi: Không thể cập nhật địa chỉ vì đơn hàng không ở trạng thái chờ xác nhận!");
+        }
+
+        // Kiểm tra và cập nhật địa chỉ giao hàng (tỉnh, quận, phường)
+        if (updateRequest.getMaTinh() != null && updateRequest.getMaQuan() != null && updateRequest.getMaPhuong() != null) {
+            // Kiểm tra tỉnh, quận, phường
+            Map<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
+            if (!tinhList.containsKey(updateRequest.getMaTinh())) {
+                throw new RuntimeException("⚠️ Lỗi: Tỉnh không tồn tại với ID: " + updateRequest.getMaTinh());
+            }
+
+            Map<String, String> quanList = DiaChiApi.callGetQuanHuyenAPI(updateRequest.getMaTinh());
+            if (!quanList.containsKey(String.valueOf(updateRequest.getMaQuan()))) {
+                throw new RuntimeException("⚠️ Lỗi: Quận không tồn tại với ID: " + updateRequest.getMaQuan());
+            }
+
+            Map<String, String> phuongList = DiaChiApi.callGetPhuongXaAPI(updateRequest.getMaQuan());
+            if (!phuongList.containsKey(updateRequest.getMaPhuong())) {
+                throw new RuntimeException("⚠️ Lỗi: Phường không tồn tại với ID: " + updateRequest.getMaPhuong());
+            }
+
+            // Cập nhật mã tỉnh, quận, phường
+            donhang.setMaTinh(updateRequest.getMaTinh());
+            donhang.setMaQuan(updateRequest.getMaQuan());
+            donhang.setMaPhuong(updateRequest.getMaPhuong());
+
+            // Lấy tên tỉnh, quận, phường
+            String tenTinh = tinhList.get(updateRequest.getMaTinh());
+            String tenQuan = quanList.get(String.valueOf(updateRequest.getMaQuan()));
+            String tenPhuong = phuongList.get(updateRequest.getMaPhuong());
+
+            // Kiểm tra địa chỉ chi tiết
+            if (updateRequest.getDiaChiChiTiet() == null || updateRequest.getDiaChiChiTiet().isEmpty()) {
+                throw new RuntimeException("⚠️ Lỗi: Địa chỉ chi tiết không được để trống!");
+            }
+
+            // Ghép địa chỉ đầy đủ
+            String diaChiGiaoHang = String.format("%s, %s, %s, %s",
+                    updateRequest.getDiaChiChiTiet(), tenPhuong, tenQuan, tenTinh);
+            donhang.setDiaChiGiaoHang(diaChiGiaoHang);
+
+            // Tính lại phí vận chuyển dựa trên địa chỉ mới
+            PhiVanChuyenRequest phiVanChuyenRequest = convertToPhiVanChuyenRequest1(donhang);
+            BigDecimal newPhiVanChuyen = DiaChiApi.getFee(phiVanChuyenRequest);
+            if (newPhiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển mới không hợp lệ!");
+            }
+
+            // Cập nhật phí vận chuyển mới
+            donhang.setPhiVanChuyen(newPhiVanChuyen);
+
+            // Tính lại tổng tiền: thanhTienSauGiam + phiVanChuyen mới
+            BigDecimal thanhTienGoc = BigDecimal.ZERO;
+            for (ChiTietDonHang chiTiet : donhang.getChiTietDonHangs()) {
+                thanhTienGoc = thanhTienGoc.add(chiTiet.getThanhTien());
+            }
+
+            BigDecimal thanhTienSauGiam = thanhTienGoc;
+            if (donhang.getSoTienGiam() != null && donhang.getSoTienGiam().compareTo(BigDecimal.ZERO) > 0) {
+                thanhTienSauGiam = thanhTienGoc.subtract(donhang.getSoTienGiam());
+            }
+
+            // Tổng tiền mới = thanhTienSauGiam + phí vận chuyển mới
+            BigDecimal newTongTien = thanhTienSauGiam.add(newPhiVanChuyen);
+            donhang.setTongTien(newTongTien);
+        }
+
+        // Cập nhật số điện thoại người nhận nếu có
+        if (updateRequest.getSdtNguoiNhan() != null && !updateRequest.getSdtNguoiNhan().isEmpty()) {
+            donhang.setSdtNguoiNhan(updateRequest.getSdtNguoiNhan());
+        }
+
+        // Cập nhật tên người nhận nếu có
+        if (updateRequest.getTenNguoiNhanHang() != null && !updateRequest.getTenNguoiNhanHang().isEmpty()) {
+            donhang.setTenNguoiNhanHang(updateRequest.getTenNguoiNhanHang());
+        }
+
+        // Lưu đơn hàng đã cập nhật
+        DonHang updatedOrder = dhi.save(donhang);
+        return DonHangResponseDTO.fromEntity(updatedOrder);
     }
 }

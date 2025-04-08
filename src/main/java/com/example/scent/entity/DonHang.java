@@ -49,7 +49,8 @@ public class DonHang {
     private BigDecimal tongTien;
     @Transient
     private BigDecimal soTienGiam;
-
+@Transient
+private Integer trungBinhCacCanh =10;
 
     @Column(name = "phuong_thuc_van_chuyen")
     private String phuongThucVanChuyen;

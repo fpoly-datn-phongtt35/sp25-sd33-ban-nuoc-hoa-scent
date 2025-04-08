@@ -1,9 +1,6 @@
 package com.example.scent.rest;
 
-import com.example.scent.dto.DonHangDTO;
-import com.example.scent.dto.SanPhamThongKeDto;
-import com.example.scent.dto.donhangDTOID;
-import com.example.scent.dto.donhangDetailDTO;
+import com.example.scent.dto.*;
 import com.example.scent.entity.*;
 
 import com.example.scent.repo.LichSuThaoTacInterface;
@@ -349,5 +346,27 @@ public class DonHangCtrl {
     public ResponseEntity<List<LichSuThaoTac>> getLichSuThaoTacByMaDonHang(@PathVariable Integer maDonHang) {
         List<LichSuThaoTac> lichSu = lichSuThaoTacService.getLichSuThaoTacByMaDonHang(maDonHang);
         return ResponseEntity.ok(lichSu);
+    }
+
+    @GetMapping("/diachi/{orderId}")
+    public ResponseEntity<DonHangResponseDTO> getOrderById(@PathVariable Integer orderId) {
+        try {
+            DonHangResponseDTO responseDTO = dhs.getOrderById(orderId);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PutMapping("/update-address/{orderId}")
+    public ResponseEntity<DonHangResponseDTO> updateOrderAddress(
+            @PathVariable Integer orderId,
+            @RequestBody UpdateOrderAddressDTO updateRequest) {
+        try {
+            DonHangResponseDTO responseDTO = dhs.updateOrderAddress(orderId, updateRequest);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }
