@@ -22,6 +22,7 @@ export class LichSuThaoTac {
 })
 export class OrderDetaiComponent {
   @Input() order: any;
+  
   @Input() selectedTab: string = 'online'; // Thêm input để biết chế độ online/offline
   @Output() closeDetail = new EventEmitter<void>();
   lichSuThaoTacs: LichSuThaoTac[] = []; // Danh sách lịch sử thao tác

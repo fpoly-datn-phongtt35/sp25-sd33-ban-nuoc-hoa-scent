@@ -77,4 +77,8 @@ export class DonhangService {
   updateOrderAddress(orderId: number, updateData: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/update-address/${orderId}`, updateData);
   }
+
+  getLatestOrder(idTaiKhoan: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/latest/${idTaiKhoan}`);
+  }
 }

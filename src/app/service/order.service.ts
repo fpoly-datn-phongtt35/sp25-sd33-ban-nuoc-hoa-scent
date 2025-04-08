@@ -14,4 +14,7 @@ export class OrderService {
   createOrder(orderData: any): Observable<any> {
     return this.http.post<any>(this.apiUrl, orderData);
   }
+  getLatestOrder(userId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/latest/${userId}`);
+  }
 }

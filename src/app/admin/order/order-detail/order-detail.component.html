@@ -69,9 +69,9 @@
           <tr *ngFor="let item of order?.chiTietDonHangs" class="text-center">
             <td><img [src]="item.spct.imageUrl" alt="Ảnh sản phẩm" width="60" class="rounded"></td>
             <td class="text-start">{{ item.spct?.sanPham?.tenSanPham }}</td>
-            <td>{{ item.spct?.donGia | number }} đ</td>
+            <td>{{ item.donGia | number }} đ</td>
             <td>{{ item.soLuong }}</td>
-            <td>{{ item.spct?.donGia * item.soLuong | number }} đ</td>
+            <td>{{ item.thanhTien | number }} đ</td>
           </tr>
         </tbody>
       </table>

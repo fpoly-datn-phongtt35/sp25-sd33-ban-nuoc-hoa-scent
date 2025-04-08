@@ -61,6 +61,7 @@ export class OrderComponent implements OnInit {
   totalProductPrice = 0;
   discount: number = 0;
   shippingFee = 0;
+  shippingDiscount = 0;
   finalAmount = 0;
   currentTab: 'tinh' | 'huyen' | 'xa' = 'tinh';
   danhSachTinh: DiaChiDonVi[] = [];
@@ -75,9 +76,9 @@ export class OrderComponent implements OnInit {
   searchTinh = '';
   searchHuyen = '';
   searchXa = '';
-  shippingDiscount = 0;
   vietQRString: string | null = null;
   orderId: string | null = null;
+  isAddressChanged = false;
 
   constructor(
     private cartService: CartService,
@@ -100,6 +101,68 @@ export class OrderComponent implements OnInit {
     }
     this.orderData.idTaiKhoan = idTaiKhoan;
 
+    // Gọi API để lấy thông tin đơn hàng gần nhất
+    this.orderService.getLatestOrder(idTaiKhoan).subscribe(
+      (data) => {
+        if (data) {
+          console.log('Latest order data:', data);
+          this.orderData.tenNguoiNhanHang = data.tenNguoiNhanHang || '';
+          this.orderData.sdtNguoiNhan = data.sdtNguoiNhan || '';
+          this.shippingFee = data.phiVanChuyen || 0;
+          this.shippingDiscount = 0;
+
+          // Tách địa chỉ giao hàng và tìm ID của Tỉnh, Huyện, Xã
+          if (data.diaChiGiaoHang) {
+            const addressParts = data.diaChiGiaoHang.split(', ');
+            if (addressParts.length >= 4) {
+              this.orderData.diachiChiTiet = addressParts[0];
+              this.fullAddress = addressParts.slice(1).join(', ');
+              this.orderData.diaChiGiaoHang = this.fullAddress;
+
+              // Tìm ID của Tỉnh, Huyện, Xã
+              const xaName = addressParts[1];
+              const huyenName = addressParts[2];
+              const tinhName = addressParts[3];
+
+              // Tìm ID của Tỉnh
+              this.diaChiService.getTinhThanh().subscribe((res) => {
+                const tinhList = this.mapDiaChiObjectToArray(res.result);
+                const tinh = tinhList.find(t => t.name === tinhName);
+                if (tinh) {
+                  this.selectedTinh = tinh;
+                  // Tìm ID của Huyện
+                  this.diaChiService.getQuanHuyen(tinh.id).subscribe((huyenRes) => {
+                    const huyenList = this.mapDiaChiObjectToArray(huyenRes.result);
+                    const huyen = huyenList.find(h => h.name === huyenName);
+                    if (huyen) {
+                      this.selectedHuyen = huyen;
+                      // Tìm ID của Xã
+                      this.diaChiService.getPhuongXa(huyen.id).subscribe((xaRes) => {
+                        const xaList = this.mapDiaChiObjectToArray(xaRes.result);
+                        const xa = xaList.find(x => x.name === xaName);
+                        if (xa) {
+                          this.selectedXa = xa;
+                          // Sau khi có đầy đủ ID, tính lại phí vận chuyển
+                          this.tinhPhiVanChuyen();
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            } else {
+              this.orderData.diachiChiTiet = data.diaChiGiaoHang;
+            }
+          }
+        }
+        this.calculateTotals();
+      },
+      (error) => {
+        console.error('Lỗi khi lấy đơn hàng gần nhất:', error);
+        this.calculateTotals();
+      }
+    );
+
     const stored = localStorage.getItem('selectedProducts');
     if (stored) {
       const parsed = JSON.parse(stored);
@@ -120,6 +183,7 @@ export class OrderComponent implements OnInit {
     }
   }
 
+  // Các phương thức liên quan đến địa chỉ
   get searchValue(): string {
     if (this.currentTab === 'tinh') return this.searchTinh;
     if (this.currentTab === 'huyen') return this.searchHuyen;
@@ -190,6 +254,7 @@ export class OrderComponent implements OnInit {
       this.fullAddress = `${item.name}, ${this.selectedHuyen?.name}, ${this.selectedTinh?.name}`;
       this.orderData.diaChiGiaoHang = this.fullAddress;
       this.showAddressPicker = false;
+      this.isAddressChanged = true;
       this.tinhPhiVanChuyen();
     }
   }
@@ -256,9 +321,11 @@ export class OrderComponent implements OnInit {
     if (soLuong >= 10) discountRate = 0.2;
     else if (soLuong >= 6) discountRate = 0.15;
     else if (soLuong >= 3) discountRate = 0.1;
+
     console.log(`📦 ${soLuong} chai | Thực: ${weight}g | Quy đổi: ${volWeight.toFixed(0)}g → Dùng: ${usedWeight.toFixed(0)}g`);
     console.log(`📐 Kích thước: ${length} x ${width} x ${height} cm`);
     console.log(`🎁 Giảm phí ship: ${discountRate * 100}%`);
+
     return {
       weight: Math.ceil(usedWeight),
       length,
@@ -267,6 +334,62 @@ export class OrderComponent implements OnInit {
       discountRate,
     };
   }
+
+  tinhPhiVanChuyen() {
+    const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
+    console.log('📦 Số lượng sản phẩm:', soLuong);
+    const { weight, length, width, height, discountRate } = this.getQuyDoiKichThuocVaCanNang(soLuong);
+
+    if (!this.selectedTinh || !this.selectedHuyen || !this.selectedXa) {
+      console.warn('⚠️ Chưa chọn đầy đủ Tỉnh, Huyện, Xã => Không tính phí vận chuyển.');
+      this.shippingFee = 0;
+      this.shippingDiscount = 0;
+      this.calculateTotals();
+      return;
+    }
+
+    const body = {
+      from_district_id: 1482,
+      to_ward_code: String(this.selectedXa?.id || ''),
+      weight,
+      length,
+      width,
+      height,
+      idMaTinh: this.selectedTinh?.id || 0,
+      idQuanHuyen: this.selectedHuyen?.id || 0,
+      idPhuongXa: this.selectedXa?.id || 0,
+      soLuongSanPham: soLuong,
+      trungBinhCacCanh: Math.round((length + width + height) / 3),
+    };
+
+    console.log('🚀 Gửi yêu cầu tính phí:', body);
+
+    this.diaChiService.tinhPhiVanChuyen(body).subscribe({
+      next: (fee) => {
+        const giamPhi = Math.round(fee * discountRate);
+        const finalFee = fee - giamPhi;
+        this.shippingDiscount = giamPhi;
+        this.shippingFee = finalFee;
+        this.calculateTotals();
+      },
+      error: (err) => {
+        console.error('Lỗi khi tính phí vận chuyển:', err);
+        this.shippingFee = 0;
+        this.shippingDiscount = 0;
+        this.calculateTotals();
+      }
+    });
+  }
+
+  calculateTotals() {
+    const products = Array.isArray(this.selectedProducts) ? this.selectedProducts : [];
+    this.totalProductPrice = products.reduce((total, item) => {
+      return total + (item.quantity || 0) * (item.donGia || 0);
+    }, 0);
+    this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
+    this.cdr.markForCheck();
+  }
+
   onDiscountCodeEntered(code: string | null) {
     this.discountErrorMessage = '';
     if (!code) {
@@ -348,54 +471,6 @@ export class OrderComponent implements OnInit {
 
   updateUI() {
     this.calculateTotals();
-    this.cdr.markForCheck();
-  }
-
-  tinhPhiVanChuyen() {
-    const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
-    console.log('📦 Số lượng sản phẩm:', soLuong);
-    const { weight, length, width, height, discountRate } = this.getQuyDoiKichThuocVaCanNang(soLuong);
-
-    if (!this.selectedTinh || !this.selectedHuyen || !this.selectedXa) {
-      console.warn('⚠️ Chưa chọn đầy đủ Tỉnh, Huyện, Xã => Không tính phí vận chuyển.');
-      this.shippingFee = 0;
-      this.calculateTotals();
-      return;
-    }
-
-    const body = {
-      from_district_id: 1482,
-      to_ward_code: String(this.selectedXa?.id || ''),
-      weight,
-      length,
-      width,
-      height,
-      idMaTinh: this.selectedTinh?.id || 0,
-      idQuanHuyen: this.selectedHuyen?.id || 0,
-      idPhuongXa: this.selectedXa?.id || 0,
-      soLuongSanPham: soLuong,
-      trungBinhCacCanh: Math.round((length + width + height) / 3),
-    };
-
-    console.log('🚀 Gửi yêu cầu tính phí:', body);
-
-    this.diaChiService.tinhPhiVanChuyen(body).subscribe({
-      next: (fee) => {
-        const giamPhi = Math.round(fee * discountRate);
-        const finalFee = fee - giamPhi;
-        this.shippingDiscount = giamPhi;
-        this.shippingFee = finalFee;
-        this.calculateTotals();
-      },
-    });
-  }
-
-  calculateTotals() {
-    const products = Array.isArray(this.selectedProducts) ? this.selectedProducts : [];
-    this.totalProductPrice = products.reduce((total, item) => {
-      return total + (item.quantity || 0) * (item.donGia || 0);
-    }, 0);
-    this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
     this.cdr.markForCheck();
   }
 
@@ -486,6 +561,9 @@ export class OrderComponent implements OnInit {
       maTinh: String(this.selectedTinh?.id || ''),
       maQuan: String(this.selectedHuyen?.id || ''),
       maPhuong: String(this.selectedXa?.id || ''),
+      trungBinhCacCanh: Math.round((this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).length +
+        this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).width +
+        this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).height) / 3),
       trangThai: this.orderData.phuongThucThanhToan === 'tm' ? 1 : 0,
     };
 
@@ -494,8 +572,6 @@ export class OrderComponent implements OnInit {
         Swal.close();
         this.cartService.clearCartOnClient();
         localStorage.removeItem('selectedProducts');
-
-
 
         if (this.orderData.phuongThucThanhToan === 'tm') {
           Swal.fire({
