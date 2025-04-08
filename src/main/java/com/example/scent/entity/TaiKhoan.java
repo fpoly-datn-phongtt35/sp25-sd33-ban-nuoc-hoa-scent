@@ -40,6 +40,16 @@ public class TaiKhoan {
     @Column(name = "vai_tro")
     private String vaiTro;
 
+    @Column(name = "dia_chi")
+    private String diaChi;
+
+    public String getDiaChi() {
+        return diaChi;
+    }
+
+    public void setDiaChi(String diaChi) {
+        this.diaChi = diaChi;
+    }
 
     public Integer getId() {
         return id;

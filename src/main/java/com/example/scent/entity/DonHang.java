@@ -31,8 +31,6 @@ public class DonHang {
     @Column(name = "dia_chi_giao_hang")
     private String diaChiGiaoHang;
 
-//    @Column(name = "ma_van_don")
-//    private String maVanDon;
 
 
     @Column(name = "sdt_nguoi_nhan")
@@ -40,8 +38,6 @@ public class DonHang {
 
     @Column(name = "ghi_chu")
     private String ghiChu;
-//    @Column(name = "loai_don_hang")
-//    private String loaiDonHang;
 
 
 
