@@ -20,6 +20,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 
@@ -267,5 +268,8 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
             "GROUP BY DATEPART(YEAR, dh.ngay_tao) " +
             "ORDER BY nam", nativeQuery = true)
     List<Object[]> thongKeTheoNam(@Param("year") Integer year);
+    Optional<DonHang> findTopByTaiKhoanIdOrderByNgayTaoDesc(Integer id);
+
+
 }
 

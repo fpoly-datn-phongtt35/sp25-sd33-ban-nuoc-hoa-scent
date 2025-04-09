@@ -1,12 +1,12 @@
 package com.example.scent.rest;
 
-import com.example.scent.dto.DonHangDTO;
-import com.example.scent.dto.SanPhamThongKeDto;
-import com.example.scent.dto.donhangDTOID;
-import com.example.scent.dto.donhangDetailDTO;
+import com.example.scent.dto.*;
 import com.example.scent.entity.*;
 
+import com.example.scent.repo.DonHangInterface;
 import com.example.scent.repo.LichSuThaoTacInterface;
+import com.example.scent.reques.PhiVanChuyenRequest;
+import com.example.scent.service.DiaChiApi;
 import com.example.scent.service.DonHangSv;
 import com.example.scent.service.JWTSv;
 import com.example.scent.service.LichSuThaoTacService;
@@ -32,7 +32,10 @@ import org.slf4j.LoggerFactory;
 @RequestMapping("/rest/don-hang")
 public class DonHangCtrl {
     private static final Logger log = LoggerFactory.getLogger(DonHangSv.class);
-
+@Autowired
+DonHangInterface donHangInterface;
+    @Autowired
+    private DiaChiApi diaChiApi;
     final
     DonHangSv dhs;
  @Autowired
@@ -349,5 +352,99 @@ public class DonHangCtrl {
     public ResponseEntity<List<LichSuThaoTac>> getLichSuThaoTacByMaDonHang(@PathVariable Integer maDonHang) {
         List<LichSuThaoTac> lichSu = lichSuThaoTacService.getLichSuThaoTacByMaDonHang(maDonHang);
         return ResponseEntity.ok(lichSu);
+    }
+
+    @GetMapping("/diachi/{orderId}")
+    public ResponseEntity<DonHangResponseDTO> getOrderById(@PathVariable Integer orderId) {
+        try {
+            DonHangResponseDTO responseDTO = dhs.getOrderById(orderId);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PutMapping("/update-address/{orderId}")
+    public ResponseEntity<DonHangResponseDTO> updateOrderAddress(
+            @PathVariable Integer orderId,
+            @RequestBody UpdateOrderAddressDTO updateRequest) {
+        try {
+            DonHangResponseDTO responseDTO = dhs.updateOrderAddress(orderId, updateRequest);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+    @GetMapping("/latest/{id}")
+    public ResponseEntity<thongtinFillDTO> getLatestOrderByTaiKhoan(@PathVariable Integer id) {
+        log.info("Fetching latest order for idTaiKhoan: {}", id);
+
+        // Tìm đơn hàng gần nhất của tài khoản
+        DonHang latestOrder = donHangInterface.findTopByTaiKhoanIdOrderByNgayTaoDesc(id)
+                .orElse(null);
+
+        if (latestOrder == null) {
+            log.info("No order found for idTaiKhoan: {}", id);
+            return ResponseEntity.ok(null); // Trả về null nếu không có đơn hàng
+        }
+
+        // Chuyển đổi DonHang thành thongtinFillDTO
+        thongtinFillDTO thongTinFillDTO = new thongtinFillDTO();
+        thongTinFillDTO.setIdTaiKhoan(latestOrder.getTaiKhoan().getId());
+        thongTinFillDTO.setTenNguoiNhanHang(latestOrder.getTenNguoiNhanHang());
+        thongTinFillDTO.setDiaChiGiaoHang(latestOrder.getDiaChiGiaoHang());
+        thongTinFillDTO.setSdtNguoiNhan(latestOrder.getSdtNguoiNhan());
+
+        // Tính phí vận chuyển
+        BigDecimal phiVanChuyen = calculateShippingFee(latestOrder);
+        thongTinFillDTO.setPhiVanChuyen(phiVanChuyen);
+
+        log.info("Returning latest order: {}", thongTinFillDTO);
+        return ResponseEntity.ok(thongTinFillDTO);
+    }
+
+    private BigDecimal calculateShippingFee(DonHang order) {
+        // Kiểm tra thông tin cần thiết để tính phí vận chuyển
+        if (order.getMaQuan() == null || order.getMaPhuong() == null) {
+            log.warn("Cannot calculate shipping fee: Missing maQuan or maPhuong for order ID: {}", order.getId());
+            return BigDecimal.ZERO;
+        }
+
+        // Tính số lượng sản phẩm từ chi tiết đơn hàng
+        int soLuongSanPham = order.getChiTietDonHangs() != null
+                ? order.getChiTietDonHangs().stream()
+                .mapToInt(ChiTietDonHang::getSoLuong)
+                .sum()
+                : 0;
+
+        if (soLuongSanPham == 0) {
+            log.warn("Cannot calculate shipping fee: No products in order ID: {}", order.getId());
+            return BigDecimal.ZERO;
+        }
+
+        // Tạo PhiVanChuyenRequest từ DonHang
+        PhiVanChuyenRequest phiVanChuyenRequest = new PhiVanChuyenRequest();
+        phiVanChuyenRequest.setIdQuanHuyen(order.getMaQuan());
+        phiVanChuyenRequest.setStringPhuongXa(String.valueOf(order.getMaPhuong()));
+        phiVanChuyenRequest.setSoLuongSanPham(soLuongSanPham);
+
+        // Tính trung bình các cạnh (giả sử trung bình là 20cm nếu không có dữ liệu)
+        int trungBinhCacCanh = order.getTrungBinhCacCanh() != null ? order.getTrungBinhCacCanh() : 20;
+        phiVanChuyenRequest.setTrungBinhCacCanh(trungBinhCacCanh);
+
+        log.info("Calculating shipping fee for order ID: {} with request: {}", order.getId(), phiVanChuyenRequest);
+
+        // Gọi API tính phí vận chuyển
+        try {
+            BigDecimal phiVanChuyen = diaChiApi.getFee(phiVanChuyenRequest);
+            if (phiVanChuyen == null || phiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
+                log.warn("Invalid shipping fee returned for order ID: {}. Fee: {}", order.getId(), phiVanChuyen);
+                return BigDecimal.ZERO;
+            }
+            return phiVanChuyen;
+        } catch (Exception e) {
+            log.error("Error calculating shipping fee for order ID: {}. Error: {}", order.getId(), e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
 }
