@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../service/user.service';
 import { TokenService } from '../service/token.service';
@@ -6,8 +6,10 @@ import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { DonhangService } from '../service/donhang.service';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import { DanhGiaService } from '../service/DanhGiaService';
+import { WebSocketService } from '../service/WebSocketService';
 
 @Component({
   selector: 'app-order-detail-user-id',
@@ -15,9 +17,8 @@ import { DanhGiaService } from '../service/DanhGiaService';
   imports: [CommonModule, HeaderComponent, FooterComponent, FormsModule],
   templateUrl: './order-detail-user-id.component.html',
   styleUrls: ['./order-detail-user-id.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Default
 })
-export class OrderDetailUserIDComponent implements OnInit {
+export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   userId: number = 0;
   selectedOrder: any = null;
@@ -39,24 +40,92 @@ export class OrderDetailUserIDComponent implements OnInit {
   districts: { id: string; name: string }[] = [];
   wards: { id: string; name: string }[] = [];
 
+  private webSocketSubscription: Subscription | undefined;
+
   constructor(
     private userService: UserService,
     private tokenService: TokenService,
     private donhangService: DonhangService,
     private danhGiaService: DanhGiaService,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private webSocketService: WebSocketService
   ) {}
 
   ngOnInit(): void {
     this.userId = this.tokenService.getUserId();
-
-    if (this.userId) {
-      this.loadOrders();
-    } else {
+    if (!this.userId) {
       console.error('Không tìm thấy userId từ token');
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng đăng nhập để xem đơn hàng.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      }).then(() => {
+        // Redirect to login page if needed
+        // this.router.navigate(['/login']);
+      });
+      return;
     }
 
+    this.loadOrders();
     this.loadProvinces();
+
+    // Connect to WebSocket and subscribe to updates
+    this.webSocketService.connect(this.userId);
+    this.webSocketSubscription = this.webSocketService.getMessages().subscribe({
+      next: (update: any) => this.handleWebSocketUpdate(update),
+      error: (error) => console.error('WebSocket subscription error:', error),
+      complete: () => console.log('WebSocket subscription completed'),
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.webSocketSubscription) {
+      this.webSocketSubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
+  }
+
+  private handleWebSocketUpdate(update: any): void {
+    console.log('Received WebSocket update:', update);
+    if (!update || !update.idDonHang || update.trangThai === undefined) {
+      console.error('Invalid WebSocket update:', update);
+      return;
+    }
+
+    const { idDonHang, trangThai } = update;
+    console.log(`Cập nhật trạng thái đơn hàng ${idDonHang}: ${trangThai}`);
+    console.log('Current orders before update:', this.orders);
+    const orderToUpdate = this.orders.find((order) => order.maDonHang === idDonHang);
+    if (orderToUpdate) {
+      console.log('Found order to update:', orderToUpdate);
+      orderToUpdate.trangThai = trangThai;
+      orderToUpdate.statusLabel = this.getStatusLabel(trangThai);
+      this.filteredOrders = [...this.orders];
+
+      if (this.selectedOrder && this.selectedOrder.maDonHang === idDonHang) {
+        console.log('Updating selectedOrder:', this.selectedOrder);
+        this.selectedOrder.trangThai = trangThai;
+        this.selectedOrder.statusLabel = this.getStatusLabel(trangThai);
+      }
+
+      this.cdRef.detectChanges();
+      console.log('Updated orders:', this.orders);
+      console.log('Updated filteredOrders:', this.filteredOrders);
+
+      Swal.fire({
+        title: 'Cập nhật trạng thái',
+        text: `Đơn hàng ${idDonHang} đã được cập nhật thành ${this.getStatusLabel(trangThai)}`,
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } else {
+      console.log('Order not found in orders array:', idDonHang);
+      console.log('Current orders:', this.orders);
+      // Optionally reload orders if the order isn't in the list
+      this.loadOrders();
+    }
   }
 
   loadOrders(): void {
@@ -70,14 +139,20 @@ export class OrderDetailUserIDComponent implements OnInit {
         console.log('Dữ liệu đơn hàng:', this.orders);
 
         if (this.selectedOrder) {
-          const updatedOrder = this.orders.find(order => order.maDonHang === this.selectedOrder.maDonHang);
+          const updatedOrder = this.orders.find((order) => order.maDonHang === this.selectedOrder.maDonHang);
           if (updatedOrder) {
             this.selectedOrder = { ...updatedOrder };
           }
         }
       },
       error: (error) => {
-        console.error('Lỗi khi lấy đơn hàng', error);
+        console.error('Lỗi khi lấy đơn hàng:', error);
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+        });
       },
     });
   }
@@ -97,7 +172,7 @@ export class OrderDetailUserIDComponent implements OnInit {
   }
 
   onProvinceChange(): void {
-    if (this.selectedOrder.maTinh) {
+    if (this.selectedOrder?.maTinh) {
       this.donhangService.getDistricts(this.selectedOrder.maTinh).subscribe({
         next: (response: { result: { [key: string]: string } }) => {
           this.districts = Object.keys(response.result).map((key) => ({
@@ -125,7 +200,7 @@ export class OrderDetailUserIDComponent implements OnInit {
   }
 
   onDistrictChange(): void {
-    if (this.selectedOrder.maQuan) {
+    if (this.selectedOrder?.maQuan) {
       this.donhangService.getWards(this.selectedOrder.maQuan).subscribe({
         next: (response: { result: { [key: string]: string } }) => {
           this.wards = Object.keys(response.result).map((key) => ({
@@ -152,31 +227,8 @@ export class OrderDetailUserIDComponent implements OnInit {
         this.loadProvinces();
       }
 
-      if (this.selectedOrder.maTinh) {
-        this.donhangService.getDistricts(this.selectedOrder.maTinh).subscribe({
-          next: (response: { result: { [key: string]: string } }) => {
-            this.districts = Object.keys(response.result).map((key) => ({
-              id: key,
-              name: response.result[key],
-            }));
-            if (this.selectedOrder.maQuan) {
-              this.donhangService.getWards(this.selectedOrder.maQuan).subscribe({
-                next: (wardsResponse: { result: { [key: string]: string } }) => {
-                  this.wards = Object.keys(wardsResponse.result).map((key) => ({
-                    id: key,
-                    name: wardsResponse.result[key],
-                  }));
-                },
-                error: (error) => {
-                  console.error('Lỗi khi lấy danh sách phường:', error);
-                },
-              });
-            }
-          },
-          error: (error) => {
-            console.error('Lỗi khi lấy danh sách quận:', error);
-          },
-        });
+      if (this.selectedOrder?.maTinh) {
+        this.onProvinceChange();
       }
     }
   }
@@ -196,7 +248,6 @@ export class OrderDetailUserIDComponent implements OnInit {
     this.donhangService.updateOrderAddress(this.selectedOrder.maDonHang, updateData).subscribe({
       next: (response) => {
         console.log('Dữ liệu trả về từ API updateOrderAddress:', response);
-
         this.isUpdateAddressFormVisible = false;
 
         Swal.fire({
@@ -207,59 +258,7 @@ export class OrderDetailUserIDComponent implements OnInit {
           showConfirmButton: false,
         });
 
-        this.userService.getOrders(this.userId).subscribe({
-          next: (data) => {
-            this.orders = data.map((order: { trangThai: number }) => ({
-              ...order,
-              statusLabel: this.getStatusLabel(order.trangThai),
-            }));
-            this.filteredOrders = [...this.orders];
-
-            const updatedOrder = this.orders.find(order => order.maDonHang === this.selectedOrder.maDonHang);
-            if (updatedOrder) {
-              this.selectedOrder = null;
-              setTimeout(() => {
-                this.selectedOrder = { ...updatedOrder };
-                console.log('selectedOrder sau khi gọi lại API getOrders:', this.selectedOrder);
-              }, 0);
-            } else {
-              console.error('Không tìm thấy đơn hàng trong danh sách sau khi cập nhật:', this.selectedOrder.maDonHang);
-            }
-
-            if (this.selectedOrder.maTinh) {
-              this.donhangService.getDistricts(this.selectedOrder.maTinh).subscribe({
-                next: (districtResponse: { result: { [key: string]: string } }) => {
-                  this.districts = Object.keys(districtResponse.result).map((key) => ({
-                    id: key,
-                    name: districtResponse.result[key],
-                  }));
-                  console.log('Danh sách quận/huyện:', this.districts);
-
-                  if (this.selectedOrder.maQuan) {
-                    this.donhangService.getWards(this.selectedOrder.maQuan).subscribe({
-                      next: (wardResponse: { result: { [key: string]: string } }) => {
-                        this.wards = Object.keys(wardResponse.result).map((key) => ({
-                          id: key,
-                          name: wardResponse.result[key],
-                        }));
-                        console.log('Danh sách phường/xã:', this.wards);
-                      },
-                      error: (error) => {
-                        console.error('Lỗi khi lấy danh sách phường:', error);
-                      },
-                    });
-                  }
-                },
-                error: (error) => {
-                  console.error('Lỗi khi lấy danh sách quận:', error);
-                },
-              });
-            }
-          },
-          error: (error) => {
-            console.error('Lỗi khi lấy đơn hàng từ getOrders:', error);
-          },
-        });
+        this.loadOrders();
       },
       error: (error) => {
         const errorMessage = error.error?.message || 'Có lỗi xảy ra khi cập nhật địa chỉ.';
@@ -322,22 +321,47 @@ export class OrderDetailUserIDComponent implements OnInit {
   }
 
   cancelOrder(orderId: number): void {
-    this.donhangService.cancelOrder(orderId).subscribe(
-      (response: { status: string; message: any }) => {
-        if (response.status === 'success') {
-          this.selectedOrder.trangThai = 5;
-          this.selectedOrder.statusLabel = 'Đã hủy';
-          alert(response.message);
-          this.loadOrders();
-        } else {
-          alert(response.message);
-        }
-      },
-      (error) => {
-        alert('Lỗi hệ thống. Không thể hủy đơn hàng.');
-        console.error(error);
+    Swal.fire({
+      title: 'Xác nhận hủy đơn hàng',
+      text: 'Bạn có chắc chắn muốn hủy đơn hàng này?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Hủy đơn hàng',
+      cancelButtonText: 'Không',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.donhangService.cancelOrder(orderId).subscribe({
+          next: (response: { status: string; message: any }) => {
+            if (response.status === 'success') {
+              this.loadOrders();
+              Swal.fire({
+                title: 'Thành công',
+                text: 'Đơn hàng đã được hủy.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false,
+              });
+            } else {
+              Swal.fire({
+                title: 'Lỗi',
+                text: response.message,
+                icon: 'error',
+                confirmButtonText: 'OK',
+              });
+            }
+          },
+          error: (error) => {
+            Swal.fire({
+              title: 'Lỗi',
+              text: 'Không thể hủy đơn hàng. Vui lòng thử lại sau.',
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
+            console.error('Error cancelling order:', error);
+          },
+        });
       }
-    );
+    });
   }
 
   filterOrders(status: string): void {

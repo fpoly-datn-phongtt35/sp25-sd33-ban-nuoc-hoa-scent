@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -10,6 +10,8 @@ import { DonhangService } from '../../../service/donhang.service';
 import { OrderDetaiComponent } from '../order-detail/order-detail.component';
 import { HoadonComponent } from '../../../hoadon/hoadon.component';
 import { TokenService } from '../../../service/token.service';
+import { Subscription } from 'rxjs';
+import { WebSocketService } from '../../../service/WebSocketService';
 
 @Component({
   selector: 'app-invoice',
@@ -19,7 +21,7 @@ import { TokenService } from '../../../service/token.service';
   styleUrls: ['./invoice.component.scss'],
   providers: [NgbActiveModal],
 })
-export class InvoiceComponent implements OnInit {
+export class InvoiceComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   selectedStatus: number | null = null;
   orderId: number | null = null;
@@ -34,7 +36,7 @@ export class InvoiceComponent implements OnInit {
   selectedOrder: any = null;
   userID: number | null = null;
   tenDangNhap: string | null = null;
-  @Input() selectedTab: string = 'online'; // Nhận selectedTab từ HomeAdminComponent
+  @Input() selectedTab: string = 'online';
 
   keyToStatus: Record<string, number> = {
     pending: 1,
@@ -46,18 +48,21 @@ export class InvoiceComponent implements OnInit {
     cancelled: 5,
   };
 
-  // Define allowed statuses for each tab
   private allowedStatuses: { [key: string]: number[] } = {
-    online: [1, 2, 3, 4, 5, 6], // All statuses including 6 for Online
-    offline: [4, 5], // Only "Hoàn thành" (4) and "Hủy" (5) for Offline
+    online: [1, 2, 3, 4, 5, 6],
+    offline: [4, 5],
   };
+
+  private webSocketSubscription: Subscription | undefined;
 
   constructor(
     private http: HttpClient,
     private donHangService: DonhangService,
     private modalService: NgbModal,
     private router: Router,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private webSocketService: WebSocketService,
+    private cdRef: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -67,6 +72,16 @@ export class InvoiceComponent implements OnInit {
       this.tenDangNhap = userInfo.sub;
       console.log('UserID:', this.userID);
       console.log('tenDangNhap:', this.tenDangNhap);
+
+      // Load orders first, then connect to WebSocket for admin
+      this.loadCustomers().then(() => {
+        this.webSocketService.connectAdmin(); // Connect to admin WebSocket
+        this.webSocketSubscription = this.webSocketService.getAdminMessages().subscribe({
+          next: (update: any) => this.handleWebSocketUpdate(update),
+          error: (error) => console.error('WebSocket subscription error:', error),
+          complete: () => console.log('WebSocket subscription completed'),
+        });
+      });
     } else {
       console.error('User not logged in or token invalid');
       this.showErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -75,31 +90,117 @@ export class InvoiceComponent implements OnInit {
       }, 3000);
       return;
     }
-
-    this.loadCustomers();
-    this.applySearch(); // Áp dụng lọc ngay khi khởi tạo với selectedTab
   }
-// Trong InvoiceComponent
-formatOrderId(order: any): string {
-  // Lấy ngày tạo từ order.ngayTao
-  const date = new Date(order.ngayTao);
-  
-  // Định dạng ngày thành YYYYMMDD
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Thêm số 0 nếu tháng < 10
-  const day = date.getDate().toString().padStart(2, '0'); // Thêm số 0 nếu ngày < 10
-  const dateString = `${year}${month}${day}`;
-  
-  // Đảm bảo ID có ít nhất 4 chữ số (pad với số 0 nếu cần)
-  const paddedId = order.id.toString().padStart(4, '0');
-  
-  // Kết hợp ngày và ID
-  return `${dateString}${paddedId}`;
-}
-  // Chuyển tab và lọc đơn hàng
+
+  ngOnDestroy(): void {
+    if (this.webSocketSubscription) {
+      this.webSocketSubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
+  }
+
+  private handleWebSocketUpdate(update: any): void {
+    console.log('Received WebSocket update for admin:', update);
+    if (!update || !update.idDonHang || update.trangThai === undefined) {
+      console.error('Invalid WebSocket update:', update);
+      return;
+    }
+
+    const { idDonHang, trangThai, isNewOrder } = update;
+
+    if (isNewOrder) {
+      // Handle new order
+      console.log(`New order received: ${idDonHang}`);
+      this.fetchOrderDetails(idDonHang);
+    } else {
+      // Handle status update
+      console.log(`Cập nhật trạng thái đơn hàng ${idDonHang}: ${trangThai}`);
+      const orderToUpdate = this.orders.find((order) => order.id === idDonHang);
+      if (orderToUpdate) {
+        orderToUpdate.selectedStatus = trangThai;
+        this.applySearch();
+
+        if (this.selectedOrder && this.selectedOrder.id === idDonHang) {
+          this.selectedOrder.selectedStatus = trangThai;
+        }
+
+        this.cdRef.detectChanges();
+
+        Swal.fire({
+          title: 'Cập nhật trạng thái',
+          text: `Đơn hàng ${idDonHang} đã được cập nhật thành ${this.getStatusText(trangThai)}`,
+          icon: 'info',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        console.log('Order not found in orders array, reloading orders...');
+        this.loadCustomers();
+      }
+    }
+  }
+
+  private fetchOrderDetails(orderId: number): void {
+    this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`).subscribe({
+      next: (orderDetails: any) => {
+        console.log('Fetched order details:', orderDetails);
+        const newOrder = {
+          ...orderDetails,
+          selectedStatus: orderDetails.trangThai,
+        };
+        this.orders.unshift(newOrder); // Add the new order to the top of the list
+        this.orders.sort((a, b) => b.id - a.id); // Re-sort by ID (newest first)
+        this.applySearch();
+
+        this.cdRef.detectChanges();
+
+        Swal.fire({
+          title: 'Đơn hàng mới',
+          text: `Đơn hàng ${orderId} đã được tạo thành công!`,
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      error: (error) => {
+        console.error('Error fetching order details:', error);
+        this.showErrorMessage('Không thể tải thông tin đơn hàng mới.');
+      },
+    });
+  }
+
+  private getStatusText(status: number): string {
+    switch (status) {
+      case 1:
+        return 'Chờ xác nhận';
+      case 2:
+        return 'Đã xác nhận';
+      case 3:
+        return 'Đang giao';
+      case 4:
+        return 'Hoàn thành';
+      case 5:
+        return 'Đã hủy';
+      case 6:
+        return 'Đã thanh toán';
+      default:
+        return 'Không xác định';
+    }
+  }
+
+  formatOrderId(order: any): string {
+    const date = new Date(order.ngayTao);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const dateString = `${year}${month}${day}`;
+    const paddedId = order.id.toString().padStart(4, '0');
+    return `${dateString}${paddedId}`;
+  }
+
   switchTab(tab: string): void {
-    this.selectedTab = tab; // Cập nhật selectedTab
-    this.applySearch(); // Gọi lại applySearch để lọc đơn hàng theo tab
+    this.selectedTab = tab;
+    this.applySearch();
   }
 
   onRowClick(order: any) {
@@ -116,7 +217,6 @@ formatOrderId(order: any): string {
     const allowedStatuses = this.allowedStatuses[this.selectedTab] || [];
 
     this.filteredDonhang = this.orders.filter((order) => {
-      // Lọc theo từ khóa
       const matchesKeyword =
         keyword === '' ||
         order.id?.toString().includes(keyword) ||
@@ -127,18 +227,15 @@ formatOrderId(order: any): string {
         order.phuongThucThanhToan?.toLowerCase().includes(keyword) ||
         order.taiKhoan?.tenDangNhap?.toLowerCase().includes(keyword);
 
-      // Lọc theo trạng thái
       const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
-
-      // Lọc theo tab Online/Offline (luongBan: 1 là Online, 0 là Offline)
       const isOnline = order.luongBan === 1;
       const matchesTab = this.selectedTab === 'online' ? isOnline : !isOnline;
-
-      // Lọc theo trạng thái được phép cho tab hiện tại
       const matchesAllowedStatus = allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
 
       return matchesKeyword && matchesStatus && matchesTab && matchesAllowedStatus;
     });
+
+    this.cdRef.detectChanges();
   }
 
   confirmStatusChange(order: any) {
@@ -189,7 +286,9 @@ formatOrderId(order: any): string {
           this.updateStatus(order.id, 3);
         }
       },
-      (reason) => {}
+      (reason) => {
+        console.log('Modal dismissed:', reason);
+      }
     );
   }
 
@@ -246,21 +345,21 @@ formatOrderId(order: any): string {
     };
 
     const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}`;
-    this.http.put(url, {}, { params }).subscribe(
-      (response) => {
+    this.http.put(url, {}, { params }).subscribe({
+      next: (response) => {
         const order = this.orders.find((o) => o.id === orderId);
         if (order) {
           order.selectedStatus = newStatus;
         }
-        this.applySearch(); // Cập nhật filteredDonhang sau khi thay đổi trạng thái
-        this.filterOrders(this.getFilterKey(newStatus)); // Jump to the new status filter
+        this.applySearch();
+        this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('Cập nhật thành công!', '', 'success');
       },
-      (error) => {
-        console.error('Error updating status', error);
+      error: (error) => {
+        console.error('Error updating status:', error);
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
-      }
-    );
+      },
+    });
   }
 
   updateStatusWithReason(orderId: number, newStatus: number, cancellationReason: string) {
@@ -277,22 +376,22 @@ formatOrderId(order: any): string {
     };
 
     const url = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}`;
-    this.http.put(url, {}, { params }).subscribe(
-      (response) => {
+    this.http.put(url, {}, { params }).subscribe({
+      next: (response) => {
         const order = this.orders.find((o) => o.id === orderId);
         if (order) {
           order.selectedStatus = newStatus;
           order.lyDoHuy = cancellationReason;
         }
-        this.applySearch(); // Cập nhật filteredDonhang sau khi thay đổi trạng thái
-        this.filterOrders(this.getFilterKey(newStatus)); // Jump to the new status filter
+        this.applySearch();
+        this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('✅ Thành công', 'Đơn hàng đã được hủy!', 'success');
       },
-      (error) => {
-        console.error('Error updating status', error);
+      error: (error) => {
+        console.error('Error updating status:', error);
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
-      }
-    );
+      },
+    });
   }
 
   showErrorMessage(message: string): void {
@@ -306,24 +405,25 @@ formatOrderId(order: any): string {
     });
   }
 
-  loadCustomers(): void {
-    this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
-      next: (response) => {
-        this.orders = response.map((order: any) => ({
-          ...order,
-          selectedStatus: order.trangThai,
-        }));
-        // Sắp xếp đơn hàng mới nhất lên đầu (dựa trên id hoặc ngayTao)
-        this.orders.sort((a, b) => {
-          // Dựa trên id (giả sử id lớn hơn là đơn mới hơn)
-          return b.id - a.id;
-          // Hoặc dựa trên ngayTao (nếu có trường này):
-          // return new Date(b.ngayTao).getTime() - new Date(a.ngayTao).getTime();
-        });
-        console.log('Dữ liệu đơn hàng sau khi sắp xếp:', this.orders);
-        this.applySearch(); // Lọc ngay sau khi tải dữ liệu
-      },
-      error: (error: any) => console.error('Error loading orders', error),
+  loadCustomers(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.donHangService.getDonhang(this.selectedStatus ?? -1).subscribe({
+        next: (response) => {
+          this.orders = response.map((order: any) => ({
+            ...order,
+            selectedStatus: order.trangThai,
+          }));
+          this.orders.sort((a, b) => b.id - a.id);
+          console.log('Dữ liệu đơn hàng sau khi sắp xếp:', this.orders);
+          this.applySearch();
+          resolve();
+        },
+        error: (error: any) => {
+          console.error('Error loading orders:', error);
+          this.showErrorMessage('Không thể tải danh sách đơn hàng.');
+          reject(error);
+        },
+      });
     });
   }
 
@@ -438,13 +538,13 @@ formatOrderId(order: any): string {
     const normalized = method?.toLowerCase();
     switch (normalized) {
       case 'ck':
-        return ' Chuyển khoản';
+        return 'Chuyển khoản';
       case 'tienmat':
-        return ' Tiền mặt';
+        return 'Tiền mặt';
       case 'momo':
-        return ' Ví MoMo';
+        return 'Ví MoMo';
       case 'tm':
-        return ' Tiền mặt';
+        return 'Tiền mặt';
       default:
         return '❓ Không rõ';
     }

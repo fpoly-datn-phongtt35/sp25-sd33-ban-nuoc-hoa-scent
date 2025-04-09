@@ -7,6 +7,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    window.global = window;
+    if (typeof global === 'undefined') {
+      window.global = globalThis;
+    }
+  </script>
 </head>
 <body>
   <!-- <app-login></app-login> -->
