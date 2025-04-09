@@ -2,7 +2,6 @@ package com.example.scent.rest;
 
 import com.example.scent.dto.*;
 import com.example.scent.entity.*;
-
 import com.example.scent.repo.DonHangInterface;
 import com.example.scent.repo.LichSuThaoTacInterface;
 import com.example.scent.reques.PhiVanChuyenRequest;
@@ -10,11 +9,15 @@ import com.example.scent.service.DiaChiApi;
 import com.example.scent.service.DonHangSv;
 import com.example.scent.service.JWTSv;
 import com.example.scent.service.LichSuThaoTacService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -24,58 +27,69 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*")
 
+@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*")
 @RestController
 @RequestMapping("/rest/don-hang")
 public class DonHangCtrl {
-    private static final Logger log = LoggerFactory.getLogger(DonHangSv.class);
-@Autowired
-DonHangInterface donHangInterface;
+    private static final Logger log = LoggerFactory.getLogger(DonHangCtrl.class);
+
+    @Autowired
+    private DonHangInterface donHangInterface;
+
     @Autowired
     private DiaChiApi diaChiApi;
-    final
-    DonHangSv dhs;
- @Autowired
- JWTSv jwtSv;
-@Autowired
-    LichSuThaoTacService lichSuThaoTacService;
- @Autowired
-    LichSuThaoTacInterface lichSuThaoTacInterface;
-    public DonHangCtrl(DonHangSv dhs) {
+
+    @Autowired
+    private DonHangSv dhs;
+
+    @Autowired
+    private JWTSv jwtSv;
+
+    @Autowired
+    private LichSuThaoTacService lichSuThaoTacService;
+
+    @Autowired
+    private LichSuThaoTacInterface lichSuThaoTacInterface;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    public DonHangCtrl(DonHangSv dhs, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper) {
         this.dhs = dhs;
+        this.messagingTemplate = messagingTemplate;
+        this.objectMapper = objectMapper;
     }
 
-    @GetMapping("/statistics")
-    public List<SanPhamThongKeDto> getProductStatistics(
+    @GetMapping(value = "/statistics", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<SanPhamThongKeDto>> getProductStatistics(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "month", required = false) Integer month) {
-        return dhs.getProductStatistics(year, month);
+        List<SanPhamThongKeDto> statistics = dhs.getProductStatistics(year, month);
+        return ResponseEntity.ok(statistics);
     }
 
-    @GetMapping("/revenue")
-    public Double getRevenue(
+    @GetMapping(value = "/revenue", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Double> getRevenue(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "month", required = false) Integer month) {
-
-        Double totalRevenue = dhs.getTotalRevenue(year, month);
-
-        return totalRevenue;
+        Double revenue = dhs.getTotalRevenue(year, month);
+        return ResponseEntity.ok(revenue);
     }
 
-    @GetMapping("/getAll")
-    public List<DonHang> getAll() {
-        return dhs.getAll();
+    @GetMapping(value = "/getAll", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<DonHang>> getAll() {
+        List<DonHang> donHangs = dhs.getAll();
+        return ResponseEntity.ok(donHangs);
     }
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> create(@Valid @RequestBody DonHang dh, BindingResult result) {
         if (result.hasErrors()) {
-
             Map<String, String> errorsMap = new HashMap<>();
-
             for (FieldError error : result.getFieldErrors()) {
                 errorsMap.put(error.getField(), error.getDefaultMessage());
             }
@@ -86,12 +100,10 @@ DonHangInterface donHangInterface;
         return ResponseEntity.ok("ok");
     }
 
-    @PutMapping("/update")
+    @PutMapping(value = "/update", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> update(@Valid @RequestBody DonHang dh, BindingResult result) {
         if (result.hasErrors()) {
-
             Map<String, String> errorsMap = new HashMap<>();
-
             for (FieldError error : result.getFieldErrors()) {
                 errorsMap.put(error.getField(), error.getDefaultMessage());
             }
@@ -101,104 +113,79 @@ DonHangInterface donHangInterface;
         dhs.update(dh);
         return ResponseEntity.ok("ok");
     }
+
     @DeleteMapping("/del/{id}")
-    public void delete(@PathVariable Integer id) { dhs.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        dhs.delete(id);
+        return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/update-trang-thai-dh/{id}")
+    @PutMapping(value = "/update-trang-thai-dh/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> updateStatusToProcessing(@PathVariable Integer id) {
-        dhs.updateTrangThaiDonHang(id);
+        DonHang donHang = dhs.updateTrangThaiDonHang(id);
+        sendWebSocketNotification(donHang);
         return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành 'Đang xử lý' thành công");
     }
-    @GetMapping("/get-don-hang-chua-xu-ly")
-    public ResponseEntity<List<DonHang>> getDonHangChoXuLy(Pageable pageable) {
-        // Truy vấn danh sách đơn hàng theo trạng thái 0 và phân trang
-        List<DonHang> donHangs = dhs.getDonHangByTrangThai( 0);
+
+    @GetMapping(value = "/get-don-hang-chua-xu-ly", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<DonHang>> getDonHangChoXuLy() {
+        List<DonHang> donHangs = dhs.getDonHangByTrangThai(0);
         return ResponseEntity.ok(donHangs);
     }
 
-
-    // API lấy danh sách đơn hàng có trạng thái "đang xử lý" (trangThai = 1)
-    @GetMapping("/get-don-hang-dang-xu-ly")
+    @GetMapping(value = "/get-don-hang-dang-xu-ly", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<DonHang>> getDonHangDangXuLy() {
         List<DonHang> donHangs = dhs.getDonHangByTrangThai(1);
         return ResponseEntity.ok(donHangs);
     }
-//    @PostMapping
-//    public ResponseEntity<DonHangDTO> createOrder(@RequestBody DonHangDTO orderRequest) {
-//        DonHang createdOrder = dhs.createOrder(orderRequest);
-//
-//        // 🔥 DEBUG: Kiểm tra có hình ảnh không
-//
-//
-//        return ResponseEntity.ok(orderRequest); // ✅ Trả về DonHangDTO (chứa imageURL)
-//    }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<DonHang> createOrder(@RequestBody DonHangDTO orderRequest) {
-        try{
+        try {
             DonHang createdOrder = dhs.createOrder(orderRequest);
+            sendWebSocketNotification(createdOrder);
             return ResponseEntity.ok(createdOrder);
-        }catch (Exception e){
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("Error creating order: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
-    @GetMapping("/page")
+
+    @GetMapping(value = "/page", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<DonHang>> getDonHangs(
-                                                     @RequestParam(required = false, defaultValue = "-1") int trangThai) {
+            @RequestParam(required = false, defaultValue = "-1") int trangThai) {
         List<DonHang> donHangs = dhs.getDonHangByStatus(trangThai);
         return ResponseEntity.ok(donHangs);
     }
 
-
-    @GetMapping("/{id}")
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<donhangDetailDTO>> getDonHangDetails(@PathVariable Integer id) {
         List<donhangDetailDTO> details = dhs.getDonHangDetailsById(id);
         if (details != null && !details.isEmpty()) {
             return ResponseEntity.ok(details);
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
-//    @PutMapping("/capnhat-trangthai/{id}")
-//    public ResponseEntity<?> capNhatTrangThaiDonHang(@PathVariable Integer id,
-//                                                     @RequestParam Integer trangThai,
-//                                                     @RequestParam(required = false) String lyDoHuy) {
-//        try {
-//            // Kiểm tra nếu trạng thái là "Đã Hủy" (trạng thái 5), yêu cầu lý do hủy
-//            if (trangThai == 5 && (lyDoHuy == null || lyDoHuy.trim().isEmpty())) {
-//                // Nếu lý do hủy không được cung cấp, trả về lỗi
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lý do hủy không thể trống!");
-//            }
-//
-//            // Cập nhật trạng thái đơn hàng
-//            DonHang donHang = dhs.capNhatTrangThaiDonHang(id, trangThai, lyDoHuy);
-//
-//            // Trả về phản hồi thành công với dữ liệu đơn hàng đã cập nhật
-//            return ResponseEntity.ok(donHang);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            System.err.println("❌ Lỗi cập nhật trạng thái: " + e.getMessage());
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi: " + e.getMessage());
-//        }
-//    }
-    @GetMapping("/user/{idTaiKhoan}")
+    @GetMapping(value = "/user/{idTaiKhoan}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<donhangDTOID>> getDonHangsByTaiKhoan(@PathVariable Integer idTaiKhoan) {
         List<donhangDTOID> donHangs = dhs.getDonHangsByTaiKhoan(idTaiKhoan);
-
         if (donHangs.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         return ResponseEntity.ok(donHangs);
     }
 
-    @PutMapping("/capnhat-tu-dong/{id}")
+    @PutMapping(value = "/capnhat-tu-dong/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> capNhatTuDongTheoPhuongThuc(@PathVariable Integer id) {
         try {
             DonHang donHang = dhs.detail(id);
+            if (donHang == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng với ID: " + id);
+            }
+
             String ptThanhToan = donHang.getPhuongThucThanhToan();
             int trangThaiHienTai = donHang.getTrangThai();
             int trangThaiMoi = trangThaiHienTai;
@@ -218,15 +205,15 @@ DonHangInterface donHangInterface;
             }
 
             DonHang updated = dhs.capNhatTrangThaiDonHang(id, trangThaiMoi, null);
+            sendWebSocketNotification(updated);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error auto-updating order status for ID {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi cập nhật tự động: " + e.getMessage());
         }
     }
 
-
-    @PutMapping("/update-trangthai-choxuli/{id}")
+    @PutMapping(value = "/update-trangthai-choxuli/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateDonHangInfo(
             @PathVariable Integer id,
             @RequestParam(required = false) String tenNguoiNhanHang,
@@ -241,17 +228,22 @@ DonHangInterface donHangInterface;
         try {
             DonHang updatedDonHang = dhs.updateDonHang(id, tenNguoiNhanHang, diaChiGiaoHang, sdtNguoiNhan,
                     emailNguoiNhan, tongTien, maTinh, maQuan, maPhuong, phiVanChuyen);
+            sendWebSocketNotification(updatedDonHang);
             return ResponseEntity.ok(updatedDonHang);
         } catch (Exception e) {
+            log.error("Error updating order info for ID {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }
     }
-    @PutMapping("/huy/{orderId}")
+
+    @PutMapping(value = "/huy/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable Integer orderId) {
         Map<String, Object> response = new HashMap<>();
         try {
             boolean isUpdated = dhs.updateOrderStatusToCancelled(orderId);
             if (isUpdated) {
+                DonHang donHang = dhs.detail(orderId);
+                sendWebSocketNotification(donHang);
                 response.put("status", "success");
                 response.put("message", "Đơn hàng đã được huỷ.");
                 return ResponseEntity.ok(response);
@@ -261,14 +253,14 @@ DonHangInterface donHangInterface;
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
         } catch (Exception e) {
+            log.error("Error cancelling order ID {}: {}", orderId, e.getMessage(), e);
             response.put("status", "error");
-            response.put("message", "Lỗi trong quá trình xử lý.");
+            response.put("message", "Lỗi trong quá trình xử lý: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    @PutMapping("/capnhat-trangthai/{maDonHang}")
 
-
+    @PutMapping(value = "/capnhat-trangthai/{maDonHang}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> capNhatTrangThai(
             @PathVariable Integer maDonHang,
             @RequestParam(required = false) String ghiChu,
@@ -276,126 +268,104 @@ DonHangInterface donHangInterface;
             @RequestParam Integer userID,
             @RequestParam String tenDangNhap,
             @RequestParam(required = false) Integer trangThai) {
-        Logger logger = LoggerFactory.getLogger(this.getClass());
-
         try {
-            logger.info("API /capnhat-trangthai-ls/{} được gọi bởi tài khoản: userID={}, tenDangNhap={}",
+            log.info("API /capnhat-trangthai/{} called by user: userID={}, tenDangNhap={}",
                     maDonHang, userID, tenDangNhap);
 
-            // Kiểm tra userID và tenDangNhap có hợp lệ không
             if (userID == null || tenDangNhap == null || tenDangNhap.trim().isEmpty()) {
-                logger.warn("userID hoặc tên đăng nhập không hợp lệ: userID={}, tenDangNhap={}", userID, tenDangNhap);
-                return ResponseEntity.status(400).body("userID hoặc tên đăng nhập không hợp lệ");
+                log.warn("Invalid userID or tenDangNhap: userID={}, tenDangNhap={}", userID, tenDangNhap);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("userID hoặc tên đăng nhập không hợp lệ");
             }
 
-            // Lấy đơn hàng hiện tại
             DonHang donHang = dhs.detail(maDonHang);
             if (donHang == null) {
-                logger.warn("Không tìm thấy đơn hàng với ID: {}", maDonHang);
-                return ResponseEntity.status(404).body("Không tìm thấy đơn hàng với ID: " + maDonHang);
+                log.warn("Order not found with ID: {}", maDonHang);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng với ID: " + maDonHang);
             }
 
-            // Xác định trạng thái mới
-            Integer trangThaiMoi;
-            if (trangThai != null) {
-                trangThaiMoi = trangThai;
-                logger.info("Sử dụng trạng thái được truyền vào: {}", trangThaiMoi);
-            } else {
-                Integer trangThaiCu = donHang.getTrangThai();
-                trangThaiMoi = dhs.tinhTrangThaiMoi(trangThaiCu, donHang.getPhuongThucThanhToan(), lyDoHuy);
-                logger.info("Tính trạng thái mới: trangThaiCu={}, trangThaiMoi={}", trangThaiCu, trangThaiMoi);
-            }
+            Integer trangThaiMoi = determineNewStatus(donHang, trangThai, lyDoHuy);
 
-            // Kiểm tra nếu trạng thái mới là "Đã Hủy" (5) và trạng thái cũ là "Đang Giao" (3)
             Integer trangThaiCu = donHang.getTrangThai();
             if (trangThaiMoi == 5 && trangThaiCu == 3) {
-                // Yêu cầu lý do hủy nếu chuyển từ trạng thái 3 sang 5
                 if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
-                    logger.warn("Lý do hủy không được cung cấp khi chuyển từ trạng thái 3 sang 5");
-                    return ResponseEntity.status(400).body("Lý do hủy không thể trống khi hủy đơn hàng từ trạng thái Đang Giao!");
+                    log.warn("Cancellation reason required when cancelling from status 3 to 5");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Lý do hủy không thể trống khi hủy đơn hàng từ trạng thái Đang Giao!");
                 }
-                // Gán lý do hủy
                 donHang.setLyDoHuy(lyDoHuy);
-                logger.info("Gán lý do hủy: {}", lyDoHuy);
-            } else {
-                // Nếu không phải chuyển từ 3 sang 5, đảm bảo lyDoHuy là null
-                if (trangThaiMoi != 5) {
-                    donHang.setLyDoHuy(null);
-                    logger.info("Không cần lý do hủy, đặt lyDoHuy về null");
-                }
+                log.info("Set cancellation reason: {}", lyDoHuy);
+            } else if (trangThaiMoi != 5) {
+                donHang.setLyDoHuy(null);
+                log.info("No cancellation reason needed, set lyDoHuy to null");
             }
 
-            // Cập nhật trạng thái và ghi log
             String ghiChuHuy = (lyDoHuy != null && !lyDoHuy.isEmpty()) ? lyDoHuy : ghiChu;
-            logger.info("Cập nhật trạng thái đơn hàng {}: trạng thái mới={}, ghiChuHuy={}, bởi userID={}, tenDangNhap={}",
+            log.info("Updating order {}: new status={}, ghiChuHuy={}, by userID={}, tenDangNhap={}",
                     maDonHang, trangThaiMoi, ghiChuHuy, userID, tenDangNhap);
             DonHang updatedDonHang = dhs.capNhatTrangThaiDonHang(maDonHang, trangThaiMoi, userID, tenDangNhap, ghiChuHuy);
 
+            sendWebSocketNotification(updatedDonHang);
+
             return ResponseEntity.ok(updatedDonHang);
         } catch (Exception e) {
-            logger.error("Lỗi khi xử lý cập nhật trạng thái đơn hàng {}: {}", maDonHang, e.getMessage(), e);
-            return ResponseEntity.status(500).body("Lỗi khi xử lý: " + e.getMessage());
+            log.error("Error updating order status for ID {}: {}", maDonHang, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi xử lý: " + e.getMessage());
         }
     }
-    @GetMapping("/lichsu/{maDonHang}")
+
+    @GetMapping(value = "/lichsu/{maDonHang}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<LichSuThaoTac>> getLichSuDonHang(@PathVariable Integer maDonHang) {
         List<LichSuThaoTac> lichSu = lichSuThaoTacInterface.findByMaDonHang(maDonHang);
         return ResponseEntity.ok(lichSu);
     }
 
-    @GetMapping("/lich-su-thao-tac-by-user")
+    @GetMapping(value = "/lich-su-thao-tac-by-user", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<LichSuThaoTac>> getAllLichSuThaoTac() {
         List<LichSuThaoTac> result = lichSuThaoTacService.getAllLichSuThaoTac();
         return ResponseEntity.ok(result);
     }
-    @GetMapping("/by-don-hang/{maDonHang}")
+
+    @GetMapping(value = "/by-don-hang/{maDonHang}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<LichSuThaoTac>> getLichSuThaoTacByMaDonHang(@PathVariable Integer maDonHang) {
         List<LichSuThaoTac> lichSu = lichSuThaoTacService.getLichSuThaoTacByMaDonHang(maDonHang);
         return ResponseEntity.ok(lichSu);
     }
 
-    @GetMapping("/diachi/{orderId}")
-    public ResponseEntity<DonHangResponseDTO> getOrderById(@PathVariable Integer orderId) {
+    @GetMapping(value = "/diachi/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getOrderById(@PathVariable Integer orderId) {
         try {
             DonHangResponseDTO responseDTO = dhs.getOrderById(orderId);
+            if (responseDTO == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Không tìm thấy đơn hàng với ID: " + orderId);
+            }
             return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
+            log.error("Error fetching order by ID {}: {}", orderId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy thông tin đơn hàng: " + e.getMessage());
         }
     }
 
-    @PutMapping("/update-address/{orderId}")
-    public ResponseEntity<DonHangResponseDTO> updateOrderAddress(
-            @PathVariable Integer orderId,
-            @RequestBody UpdateOrderAddressDTO updateRequest) {
-        try {
-            DonHangResponseDTO responseDTO = dhs.updateOrderAddress(orderId, updateRequest);
-            return ResponseEntity.ok(responseDTO);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
-        }
-    }
-    @GetMapping("/latest/{id}")
+    @GetMapping(value = "/latest/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<thongtinFillDTO> getLatestOrderByTaiKhoan(@PathVariable Integer id) {
         log.info("Fetching latest order for idTaiKhoan: {}", id);
 
-        // Tìm đơn hàng gần nhất của tài khoản
         DonHang latestOrder = donHangInterface.findTopByTaiKhoanIdOrderByNgayTaoDesc(id)
                 .orElse(null);
 
         if (latestOrder == null) {
             log.info("No order found for idTaiKhoan: {}", id);
-            return ResponseEntity.ok(null); // Trả về null nếu không có đơn hàng
+            return ResponseEntity.ok(null);
         }
 
-        // Chuyển đổi DonHang thành thongtinFillDTO
         thongtinFillDTO thongTinFillDTO = new thongtinFillDTO();
         thongTinFillDTO.setIdTaiKhoan(latestOrder.getTaiKhoan().getId());
         thongTinFillDTO.setTenNguoiNhanHang(latestOrder.getTenNguoiNhanHang());
         thongTinFillDTO.setDiaChiGiaoHang(latestOrder.getDiaChiGiaoHang());
         thongTinFillDTO.setSdtNguoiNhan(latestOrder.getSdtNguoiNhan());
 
-        // Tính phí vận chuyển
         BigDecimal phiVanChuyen = calculateShippingFee(latestOrder);
         thongTinFillDTO.setPhiVanChuyen(phiVanChuyen);
 
@@ -404,13 +374,11 @@ DonHangInterface donHangInterface;
     }
 
     private BigDecimal calculateShippingFee(DonHang order) {
-        // Kiểm tra thông tin cần thiết để tính phí vận chuyển
         if (order.getMaQuan() == null || order.getMaPhuong() == null) {
             log.warn("Cannot calculate shipping fee: Missing maQuan or maPhuong for order ID: {}", order.getId());
             return BigDecimal.ZERO;
         }
 
-        // Tính số lượng sản phẩm từ chi tiết đơn hàng
         int soLuongSanPham = order.getChiTietDonHangs() != null
                 ? order.getChiTietDonHangs().stream()
                 .mapToInt(ChiTietDonHang::getSoLuong)
@@ -422,19 +390,16 @@ DonHangInterface donHangInterface;
             return BigDecimal.ZERO;
         }
 
-        // Tạo PhiVanChuyenRequest từ DonHang
         PhiVanChuyenRequest phiVanChuyenRequest = new PhiVanChuyenRequest();
         phiVanChuyenRequest.setIdQuanHuyen(order.getMaQuan());
         phiVanChuyenRequest.setStringPhuongXa(String.valueOf(order.getMaPhuong()));
         phiVanChuyenRequest.setSoLuongSanPham(soLuongSanPham);
 
-        // Tính trung bình các cạnh (giả sử trung bình là 20cm nếu không có dữ liệu)
         int trungBinhCacCanh = order.getTrungBinhCacCanh() != null ? order.getTrungBinhCacCanh() : 20;
         phiVanChuyenRequest.setTrungBinhCacCanh(trungBinhCacCanh);
 
         log.info("Calculating shipping fee for order ID: {} with request: {}", order.getId(), phiVanChuyenRequest);
 
-        // Gọi API tính phí vận chuyển
         try {
             BigDecimal phiVanChuyen = diaChiApi.getFee(phiVanChuyenRequest);
             if (phiVanChuyen == null || phiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
@@ -443,8 +408,46 @@ DonHangInterface donHangInterface;
             }
             return phiVanChuyen;
         } catch (Exception e) {
-            log.error("Error calculating shipping fee for order ID: {}. Error: {}", order.getId(), e.getMessage());
+            log.error("Error calculating shipping fee for order ID: {}. Error: {}", order.getId(), e.getMessage(), e);
             return BigDecimal.ZERO;
+        }
+    }
+
+    private Integer determineNewStatus(DonHang donHang, Integer trangThai, String lyDoHuy) {
+        if (trangThai != null) {
+            log.info("Using provided status: {}", trangThai);
+            return trangThai;
+        }
+        Integer trangThaiCu = donHang.getTrangThai();
+        Integer trangThaiMoi = dhs.tinhTrangThaiMoi(trangThaiCu, donHang.getPhuongThucThanhToan(), lyDoHuy);
+        log.info("Calculated new status: trangThaiCu={}, trangThaiMoi={}", trangThaiCu, trangThaiMoi);
+        return trangThaiMoi;
+    }
+    private void sendWebSocketNotification(DonHang donHang) {
+        if (donHang == null || donHang.getTaiKhoan() == null || donHang.getId() == null || donHang.getTrangThai() == null) {
+            log.warn("Cannot send WebSocket notification: DonHang or required fields are null");
+            return;
+        }
+
+        // Create DTO to send order information
+        DonHangUpdateDTO updateDTO = new DonHangUpdateDTO(donHang.getId(), donHang.getTrangThai());
+        updateDTO.setIsNewOrder(true); // Mark as a new order
+
+        try {
+            String payload = objectMapper.writeValueAsString(updateDTO);
+            log.info("Preparing to send WebSocket notification to /topic/admin/orders: {}", payload);
+
+            // Send notification to a topic for admins
+            messagingTemplate.convertAndSend("/topic/admin/orders", updateDTO);
+            log.info("Sent WebSocket notification to /topic/admin/orders: {}", payload);
+
+            // Optionally, still notify the user who placed the order
+            Integer idTaiKhoan = donHang.getTaiKhoan().getId();
+            log.info("Preparing to send WebSocket notification to /topic/donhang/{}: {}", idTaiKhoan, payload);
+            messagingTemplate.convertAndSend("/topic/donhang/" + idTaiKhoan, updateDTO);
+            log.info("Sent WebSocket notification to /topic/donhang/{}: {}", idTaiKhoan, payload);
+        } catch (Exception e) {
+            log.error("Error sending WebSocket notification: {}", e.getMessage(), e);
         }
     }
 }

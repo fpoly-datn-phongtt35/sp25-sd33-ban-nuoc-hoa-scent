@@ -84,8 +84,19 @@ LichSuThaoTacInterface lichSuThaoTacInterface;
     }
 
     @Transactional
-    public void updateTrangThaiDonHang(Integer id) {
+    public DonHang updateTrangThaiDonHang(Integer id) {
+        // Tìm đơn hàng theo ID
+        DonHang donHang = dhi.findById(id)
+                .orElseThrow(() -> new RuntimeException("⚠️ Đơn hàng không tồn tại!"));
+
+        // Cập nhật trạng thái (gọi phương thức updateStatusToProcessing từ DonHangInterface)
         dhi.updateStatusToProcessing(id);
+
+        // Lấy lại đơn hàng sau khi cập nhật (để đảm bảo trạng thái mới được áp dụng)
+        DonHang updatedDonHang = dhi.findById(id)
+                .orElseThrow(() -> new RuntimeException("⚠️ Đơn hàng không tồn tại sau khi cập nhật!"));
+
+        return updatedDonHang;
     }
 
     public List<DonHang> getDonHangByTrangThai(Integer trangThai) {
