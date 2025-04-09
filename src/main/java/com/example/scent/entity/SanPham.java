@@ -1,15 +1,7 @@
 package com.example.scent.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -74,6 +66,61 @@ public class SanPham {
     @JsonIgnore
     @OneToMany(mappedBy = "sanPham")
     private List<DanhGia> danhGias; // Thêm mối quan hệ với DanhGia
+    @ManyToMany
+    @JoinTable(
+            name = "san_pham_phong_cach",
+            joinColumns = @JoinColumn(name = "id_san_pham"),
+            inverseJoinColumns = @JoinColumn(name = "id_phong_cach")
+    )
+    private List<PhongCach> phongCachs;
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public NhomHuong getNhomHuong() {
+        return nhomHuong;
+    }
+
+    public void setNhomHuong(NhomHuong nhomHuong) {
+        this.nhomHuong = nhomHuong;
+    }
+
+    public List<Spct> getSpcts() {
+        return spcts;
+    }
+
+    public void setSpcts(List<Spct> spcts) {
+        this.spcts = spcts;
+    }
+
+    public List<HinhAnh> getHinhAnhs() {
+        return hinhAnhs;
+    }
+
+    public void setHinhAnhs(List<HinhAnh> hinhAnhs) {
+        this.hinhAnhs = hinhAnhs;
+    }
+
+    public List<DanhGia> getDanhGias() {
+        return danhGias;
+    }
+
+    public void setDanhGias(List<DanhGia> danhGias) {
+        this.danhGias = danhGias;
+    }
+
+    public List<PhongCach> getPhongCachs() {
+        return phongCachs;
+    }
+
+    public void setPhongCachs(List<PhongCach> phongCachs) {
+        this.phongCachs = phongCachs;
+    }
 
     public HuongDau getHuongDau() {
         return huongDau;

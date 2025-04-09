@@ -1,18 +1,12 @@
 package com.example.scent.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,11 +18,19 @@ public class HuongCuoi {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Integer id;
+
     @Column(name = "mota")
     private String moTaHuongCuoi;
 
+    @ManyToMany
+    @JoinTable(
+            name = "huong_cuoi_not_huong",
+            joinColumns = @JoinColumn(name = "id_huong_cuoi"),
+            inverseJoinColumns = @JoinColumn(name = "id_not_huong")
+    )
+    private List<NotHuong> notHuongs;
 
-
+    // Getters và setters
     public Integer getId() {
         return id;
     }
@@ -45,5 +47,11 @@ public class HuongCuoi {
         this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
+    public List<NotHuong> getNotHuongs() {
+        return notHuongs;
+    }
 
+    public void setNotHuongs(List<NotHuong> notHuongs) {
+        this.notHuongs = notHuongs;
+    }
 }
