@@ -13,22 +13,22 @@
     <div class="cart-items-scrollable">
       <div class="cart-items">
         <div class="cart-item" *ngFor="let item of cartItems; trackBy: trackByProduct">
-          <input type="checkbox" (change)="onProductSelect(item, $event)" [checked]="selectedProducts.includes(item)" class="item-checkbox">
+          <input type="checkbox" (change)="onProductSelect(item, $event)" [checked]="isProductSelected(item)" class="item-checkbox">
           <div class="item-image">
-            <img [src]="item.product.imageURL[0]" alt="{{ item.product.tenSanPham }}" loading="lazy" />
+            <img [src]="item.product.imageURL || 'assets/placeholder-image.jpg'" alt="{{ item.product.tenSanPham }}" loading="lazy" (error)="onImageError($event)" />
           </div>
           <div class="item-details">
             <h5 class="item-name">{{ item.product.tenSanPham }}</h5>
             <p class="item-capacity">Dung tích: {{ item.product.dungTich }}ml</p>
-            <p class="item-price">{{ item.product?.donGia | number }} VND</p>
+            <p class="item-price">{{ item.product.donGia | number }} VND</p>
           </div>
           <div class="item-actions">
             <div class="quantity-control">
-              <button class="quantity-btn" (click)="updateQuantity(item, item.quantity - 1)" [disabled]="item.quantity <= 1">-</button>
+              <button class="quantity-btn" (click)="updateQuantity(item.key, item.quantity - 1)" [disabled]="item.quantity <= 1">-</button>
               <span class="quantity">{{ item.quantity }}</span>
-              <button class="quantity-btn" (click)="updateQuantity(item, item.quantity + 1)">+</button>
+              <button class="quantity-btn" (click)="updateQuantity(item.key, item.quantity + 1)">+</button>
             </div>
-            <button class="remove-btn" (click)="removeItem(item.product.idSanPham, item.product.dungTich)">
+            <button class="remove-btn" (click)="removeItem(item.key)">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -41,9 +41,9 @@
       <div class="total-container">
         <div class="total-info">
           <span class="total-label">Tổng tiền:</span>
-          <span class="total-amount">{{ totalAmount | number }} VND</span>
+          <span class="total-amount">{{ totalPrice | number }} VND</span>
         </div>
-        <button class="btn-order" (click)="placeOrder()" [disabled]="selectedProducts.length === 0">Đặt Hàng</button>
+        <button class="btn-order" (click)="checkout()" [disabled]="selectedProducts.length === 0">Đặt Hàng</button>
       </div>
     </div>
   </div>

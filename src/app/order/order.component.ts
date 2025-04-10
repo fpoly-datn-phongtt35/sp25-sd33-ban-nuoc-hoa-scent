@@ -34,6 +34,7 @@ interface Order {
   maPhuong?: string;
   trungBinhCacCanh?: number;
   trangThai?: number;
+  totalAmount?: number;
 }
 
 interface DiaChiDonVi {
@@ -112,6 +113,48 @@ export class OrderComponent implements OnInit {
     const idTaiKhoan = this.tokenService.getUserId() || Number(localStorage.getItem('idTaiKhoan'));
     this.orderData.idTaiKhoan = idTaiKhoan ? Number(idTaiKhoan) : null;
 
+    const selectedFromService = this.cartService.selectedCartItems;
+    const stored = localStorage.getItem('selectedProducts');
+
+    if (selectedFromService && selectedFromService.length > 0) {
+      this.selectedProducts = selectedFromService.map((item: any) => ({
+        idSpct: item.product.idSpct,
+        tenSanPham: item.product.tenSanPham,
+        quantity: item.quantity,
+        volume: item.volume,
+        donGia: item.product.donGia,
+        imageUrl: item.product.imageURL,
+      }));
+      this.orderData.chiTietDonHangs = selectedFromService.map((item: any) => ({
+        spctId: item.product.idSpct,
+        quantity: item.quantity,
+      }));
+    } else if (stored) {
+      const parsed = JSON.parse(stored);
+      this.selectedProducts = parsed.map((item: any) => ({
+        idSpct: item.product.idSpct,
+        tenSanPham: item.product.tenSanPham,
+        quantity: item.quantity,
+        volume: item.volume,
+        donGia: item.product.donGia,
+        imageUrl: item.product.imageURL,
+      }));
+      this.orderData.chiTietDonHangs = parsed.map((item: any) => ({
+        spctId: item.product.idSpct,
+        quantity: item.quantity,
+      }));
+    } else {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Không có sản phẩm',
+        text: 'Vui lòng chọn sản phẩm để đặt hàng!',
+        position: 'bottom-end'
+      }).then(() => {
+        this.router.navigate(['/cart']);
+      });
+      return;
+    }
+
     if (this.orderData.idTaiKhoan) {
       this.orderService.getLatestOrder(this.orderData.idTaiKhoan).subscribe(
         (data) => {
@@ -169,26 +212,9 @@ export class OrderComponent implements OnInit {
     } else {
       this.calculateTotals();
     }
-
-    const stored = localStorage.getItem('selectedProducts');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      this.selectedProducts = parsed.map((item: any) => ({
-        tenSanPham: item.product.tenSanPham,
-        quantity: item.quantity,
-        volume: item.volume,
-        donGia: item.product.donGia,
-        imageUrl: item.product.imageURL,
-      }));
-      this.orderData.chiTietDonHangs = parsed.map((item: any) => ({
-        spctId: item.product.idSpct,
-        quantity: item.quantity,
-      }));
-      this.calculateTotals();
-    }
   }
 
-  // Address-related methods (unchanged for brevity)
+  // Address-related methods
   get searchValue(): string {
     if (this.currentTab === 'tinh') return this.searchTinh;
     if (this.currentTab === 'huyen') return this.searchHuyen;
@@ -347,6 +373,7 @@ export class OrderComponent implements OnInit {
         this.shippingFee = 0;
         this.shippingDiscount = 0;
         this.calculateTotals();
+        Swal.fire('Lỗi', 'Không thể tính phí vận chuyển. Vui lòng thử lại!', 'error');
       }
     });
   }
@@ -357,7 +384,6 @@ export class OrderComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  // Updated discount code logic
   onDiscountCodeEntered(code: string) {
     this.discountErrorMessage = '';
     this.isDiscountApplied = false;
@@ -370,15 +396,14 @@ export class OrderComponent implements OnInit {
       return;
     }
 
-    // For logged-in users, fetch the registered phone number from the account
     if (this.orderData.idTaiKhoan) {
       const headers = new HttpHeaders({
-        'Authorization': `Bearer ${this.tokenService.getToken()}` // Add token for authentication
+        'Authorization': `Bearer ${this.tokenService.getToken()}`
       });
-     
+
       this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`, { headers }).subscribe({
         next: (account) => {
-          const registeredSdt = account.sdt; // Get the registered phone number
+          const registeredSdt = account.sdt;
           if (!registeredSdt) {
             this.discountErrorMessage = '⚠️ Tài khoản không có số điện thoại đăng ký!';
             this.resetDiscount();
@@ -394,7 +419,6 @@ export class OrderComponent implements OnInit {
         }
       });
     } else {
-      // For non-logged-in users, use the recipient's phone number
       this.checkDiscountCode(code, this.orderData.sdtNguoiNhan);
     }
   }
@@ -409,7 +433,6 @@ export class OrderComponent implements OnInit {
 
     Swal.fire({ title: 'Đang kiểm tra mã...', text: 'Vui lòng chờ!', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    // Add authentication headers for the discount code check
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${this.tokenService.getToken()}`
     });
@@ -487,11 +510,17 @@ export class OrderComponent implements OnInit {
   }
 
   async onSubmit() {
+    console.log('onSubmit called');
+    console.log('orderData:', this.orderData);
+
     if (!this.orderData.tenNguoiNhanHang || !this.orderData.diachiChiTiet || !this.orderData.sdtNguoiNhan ||
         !this.orderData.phuongThucThanhToan || !this.orderData.diaChiGiaoHang) {
       Swal.fire('Lỗi', 'Vui lòng nhập đầy đủ thông tin giao hàng!', 'error');
       return;
     }
+
+    const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
+    const { length, width, height } = this.getQuyDoiKichThuocVaCanNang(soLuong);
 
     const payload = {
       ...this.orderData,
@@ -506,55 +535,74 @@ export class OrderComponent implements OnInit {
       maTinh: String(this.selectedTinh?.id || ''),
       maQuan: String(this.selectedHuyen?.id || ''),
       maPhuong: String(this.selectedXa?.id || ''),
-      trungBinhCacCanh: Math.round((this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).length +
-        this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).width +
-        this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).height) / 3),
+      trungBinhCacCanh: Math.round((length + width + height) / 3),
       trangThai: this.orderData.phuongThucThanhToan === 'tm' ? 1 : 0,
     };
 
+    console.log('Payload:', payload);
+
     Swal.fire({ title: 'Đang xử lý...', text: 'Vui lòng chờ!', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    this.orderService.createOrder(payload).subscribe({
-      next: async (orderRes) => {
-        Swal.close();
-        this.cartService.clearCartOnClient();
-        localStorage.removeItem('selectedProducts');
+    try {
+      const orderRes = await this.orderService.createOrder(payload).toPromise();
+      console.log('Order created successfully:', orderRes);
+      Swal.close();
 
-        if (this.orderData.phuongThucThanhToan === 'tm') {
-          Swal.fire({ title: 'Thành công!', text: 'Đơn hàng đã được đặt.', icon: 'success', timer: 1500, showConfirmButton: false });
-          this.router.navigate(['/order-success', orderRes.id]);
-          return;
-        }
+      // Remove selected products from cart
+      const productsToRemove = this.selectedProducts.map(product => ({
+        idSpct: product.idSpct,
+        volume: product.volume
+      }));
 
-        const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`, orderId: 'ORDER_' + orderRes.id };
-        const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
+      await this.cartService.removeMultipleFromCart(productsToRemove);
+      this.cartService.setSelectedCartItems([]); // Clear selected items
+      localStorage.removeItem('selectedProducts'); // Clear localStorage
+      console.log('🗑️ Đã xóa các sản phẩm khỏi giỏ hàng và localStorage');
 
-        const momoRequest = {
-          orderId: extraDataObj.orderId,
-          requestId: 'REQ_' + new Date().getTime(),
-          orderInfo: extraDataObj.orderInfo,
-          amount: this.finalAmount.toString(),
-          returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
-          notifyUrl: 'http://localhost:8080/api/momo/callback',
-          requestType: 'captureWallet',
-          extraData,
-        };
+      // Đồng bộ giỏ hàng trước khi điều hướng
+      this.cartService.reloadCart();
 
-        this.momoPaymentService.createPayment(momoRequest).subscribe({
-          next: (res: any) => {
-            if (res.payUrl) window.location.href = res.payUrl;
-            else Swal.fire('Lỗi', 'Không nhận được payUrl từ MoMo.', 'error');
-          },
-          error: (err) => {
-            Swal.close();
-            Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
-          },
+      if (this.orderData.phuongThucThanhToan === 'tm') {
+        Swal.fire({
+          title: 'Thành công!',
+          text: 'Đơn hàng đã được đặt thành công.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
         });
-      },
-      error: (err) => {
-        Swal.close();
-        Swal.fire('Lỗi', err.error?.message || 'Lỗi khi đặt đơn hàng.', 'error');
-      },
-    });
+        this.router.navigate(['/order-success', orderRes.id]);
+        return;
+      }
+
+      const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`, orderId: 'ORDER_' + orderRes.id };
+      const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
+
+      const momoRequest = {
+        orderId: extraDataObj.orderId,
+        requestId: 'REQ_' + new Date().getTime(),
+        orderInfo: extraDataObj.orderInfo,
+        amount: this.finalAmount.toString(),
+        returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
+        notifyUrl: 'http://localhost:8080/api/momo/callback',
+        requestType: 'captureWallet',
+        extraData,
+      };
+
+      this.momoPaymentService.createPayment(momoRequest).subscribe({
+        next: (res: any) => {
+          console.log('MoMo response:', res);
+          if (res.payUrl) window.location.href = res.payUrl;
+          else Swal.fire('Lỗi', 'Không nhận được payUrl từ MoMo.', 'error');
+        },
+        error: (err) => {
+          console.error('MoMo error:', err);
+          Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
+        },
+      });
+    } catch (err) {
+      console.error('Order creation error:', err);
+      Swal.close();
+      Swal.fire('Lỗi', err.error?.message || 'Lỗi khi đặt đơn hàng.', 'error');
+    }
   }
 }
