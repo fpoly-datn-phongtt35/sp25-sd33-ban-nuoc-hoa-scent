@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -16,7 +17,7 @@ public class NotHuong {
 
     @Column(name = "mo_ta")
     private String moTa;
-
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_mui_huong")
     private MuiHuong muiHuong;

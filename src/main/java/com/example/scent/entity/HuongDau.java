@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,7 +22,7 @@ public class HuongDau {
 
     @Column(name = "mota")
     private String moTaHuongDau;
-
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "huong_dau_not_huong",

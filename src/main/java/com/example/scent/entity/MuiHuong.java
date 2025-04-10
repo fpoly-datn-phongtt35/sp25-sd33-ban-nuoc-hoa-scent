@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,10 +23,10 @@ public class MuiHuong {
 
     @Column(name = "mo_ta")
     private String moTa;
-
+    @JsonIgnore
     @OneToMany(mappedBy = "muiHuong")
     private List<NotHuong> notHuongs;
-
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "mui_huong_nhom_huong",

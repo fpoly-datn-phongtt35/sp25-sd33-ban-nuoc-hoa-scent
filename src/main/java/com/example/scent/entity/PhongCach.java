@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,7 +24,7 @@ public class PhongCach {
 
     @Column(name = "mo_ta")
     private String moTa;
-
+    @JsonIgnore
     @ManyToMany(mappedBy = "phongCachs")
     private List<SanPham> sanPhams;
 
