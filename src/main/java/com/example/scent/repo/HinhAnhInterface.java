@@ -13,7 +13,7 @@ import java.util.List;
 public interface HinhAnhInterface extends JpaRepository<HinhAnh, Integer>{
 //    List<HinhAnh> findBySanPhamId(Integer sanPhamId); // 🔥 Phải đúng định danh cột
 
-
+        List<HinhAnh> findBySanPhamIdSanPham(Integer sanPhamId);
 
         @Query("SELECT h FROM HinhAnh h WHERE h.sanPham.idSanPham = :sanPhamId")
         List<HinhAnh> findHinhAnhBySanPhamId(@Param("sanPhamId") Integer sanPhamId);

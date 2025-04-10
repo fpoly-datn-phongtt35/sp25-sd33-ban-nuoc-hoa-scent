@@ -79,7 +79,7 @@ public class SecurityConfig {
                         .requestMatchers("/rest/san-pham/All","/rest/san-pham/detail/**","rest/san-pham/search-product-on-admin","/rest/san-pham/add","/rest/san-pham/update","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
 
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add").permitAll()
-
+                        .requestMatchers("/api/cart/clear/**","/api/cart/remove/**","/api/cart/update/**","/api/cart/add/**","/api/cart/**").permitAll()
 
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
                         .requestMatchers("/api/thong-ke/doanh-thu/nam","/api/thong-ke/doanh-thu/thang","/api/thong-ke/doanh-thu/tuan","/api/thong-ke/doanh-thu/ngay"
@@ -87,7 +87,7 @@ public class SecurityConfig {
                                 ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
                                 "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
-                        .requestMatchers("/rest/don-hang/latest/**","/rest/tai-khoan/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
+                        .requestMatchers("/api/cart/remove-multiple/**","/rest/don-hang/latest/**","/rest/tai-khoan/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
 //                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
 //                        .requestMatchers("rest/huong-dau/getAll").permitAll()
