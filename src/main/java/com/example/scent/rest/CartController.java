@@ -36,50 +36,78 @@ public class CartController {
             @RequestParam Integer idSpct,
             @RequestParam Integer soLuong) {
         logger.info("Adding to cart: idTaiKhoan={}, idSpct={}, soLuong={}", idTaiKhoan, idSpct, soLuong);
-        cartService.addToCart(idTaiKhoan, idSpct, soLuong);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Thêm vào giỏ hàng thành công");
-        return ResponseEntity.ok(response);
+        try {
+            cartService.addToCart(idTaiKhoan, idSpct, soLuong);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Thêm vào giỏ hàng thành công");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
     }
 
     // Cập nhật số lượng
     @PutMapping("/update")
-    public ResponseEntity<String> updateCartItem(
+    public ResponseEntity<Map<String, String>> updateCartItem(
             @RequestParam Integer idTaiKhoan,
             @RequestParam Integer idSpct,
             @RequestParam Integer soLuong) {
-        cartService.updateCartItem(idTaiKhoan, idSpct, soLuong);
-        return ResponseEntity.ok("Cập nhật giỏ hàng thành công");
+        try {
+            cartService.updateCartItem(idTaiKhoan, idSpct, soLuong);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Cập nhật giỏ hàng thành công!");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
     }
 
     // Xóa sản phẩm khỏi giỏ
     @DeleteMapping("/remove")
-    public ResponseEntity<String> removeFromCart(
+    public ResponseEntity<Map<String, String>> removeFromCart(
             @RequestParam Integer idTaiKhoan,
             @RequestParam Integer idSpct) {
-        cartService.removeFromCart(idTaiKhoan, idSpct);
-        return ResponseEntity.ok("Xóa khỏi giỏ hàng thành công");
+        try {
+            cartService.removeFromCart(idTaiKhoan, idSpct);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Xóa khỏi giỏ hàng thành công");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
     }
+
+    // Xóa nhiều sản phẩm khỏi giỏ
     @DeleteMapping("/remove-multiple")
     public ResponseEntity<Map<String, String>> removeMultipleFromCart(
             @RequestParam Integer idTaiKhoan,
-            @RequestParam List<Integer> idSpcts
-    ) {
+            @RequestParam List<Integer> idSpcts) {
         try {
             cartService.removeMultipleFromCart(idTaiKhoan, idSpcts);
             Map<String, String> response = new HashMap<>();
             response.put("message", "Xóa nhiều sản phẩm khỏi giỏ hàng thành công");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", "Không thể xóa sản phẩm khỏi giỏ hàng: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
     // Xóa toàn bộ giỏ
     @DeleteMapping("/clear/{idTaiKhoan}")
     public ResponseEntity<String> clearCart(@PathVariable Integer idTaiKhoan) {
-        cartService.clearCart(idTaiKhoan);
-        return ResponseEntity.ok("Xóa toàn bộ giỏ hàng thành công");
+        try {
+            cartService.clearCart(idTaiKhoan);
+            return ResponseEntity.ok("Xóa toàn bộ giỏ hàng thành công");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 }

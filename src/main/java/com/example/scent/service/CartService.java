@@ -9,7 +9,10 @@ import com.example.scent.repo.ChiTietGioHangnterface;
 import com.example.scent.repo.GioHangInterface;
 import com.example.scent.repo.HinhAnhInterface;
 import com.example.scent.repo.SpctInterface;
+
+import com.example.scent.reques.InventoryUpdateMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,9 @@ public class CartService {
     @Autowired
     private SpctInterface spctInterface;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate; // Thêm để gửi thông báo WebSocket
+
     // Lấy hoặc tạo giỏ hàng cho tài khoản
     @Transactional
     public GioHang getOrCreateCart(Integer idTaiKhoan) {
@@ -46,7 +52,6 @@ public class CartService {
         }
         return gioHang;
     }
-
     // Thêm sản phẩm vào giỏ hàng
     @Transactional
     public void addToCart(Integer idTaiKhoan, Integer spctId, Integer soLuong) {
@@ -54,27 +59,25 @@ public class CartService {
         Spct spct = spctInterface.findById(spctId)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
-        if (soLuong > spct.getSoLuongTonKho()) {
-            throw new RuntimeException("Số lượng vượt quá tồn kho");
+        synchronized (spctId.toString().intern()) { // Khóa theo spctId để tránh xung đột
+            ChiTietGioHang chiTiet = chiTietGioHangInterface.findByGioHangIdAndSpctIdSpct(gioHang.getId(), spctId);
+            if (chiTiet != null) {
+                chiTiet.setSoLuong(chiTiet.getSoLuong() + soLuong);
+                chiTiet.setDonGia(spct.getDonGia());
+            } else {
+                chiTiet = new ChiTietGioHang();
+                chiTiet.setGioHang(gioHang);
+                chiTiet.setSpct(spct);
+                chiTiet.setSoLuong(soLuong);
+                chiTiet.setDonGia(spct.getDonGia());
+            }
+            chiTietGioHangInterface.save(chiTiet);
+            // KHÔNG giảm soLuongTonKho ở đây
+            // KHÔNG gửi thông báo WebSocket ở đây
         }
-
-        ChiTietGioHang chiTiet = chiTietGioHangInterface.findByGioHangIdAndSpctIdSpct(gioHang.getId(), spctId);
-        if (chiTiet != null) {
-            chiTiet.setSoLuong(chiTiet.getSoLuong() + soLuong);
-            chiTiet.setDonGia(spct.getDonGia());
-        } else {
-            chiTiet = new ChiTietGioHang();
-            chiTiet.setGioHang(gioHang);
-            chiTiet.setSpct(spct);
-            chiTiet.setSoLuong(soLuong);
-            chiTiet.setDonGia(spct.getDonGia());
-        }
-        chiTietGioHangInterface.save(chiTiet);
     }
-
     // Lấy danh sách sản phẩm trong giỏ dưới dạng DTO
     public List<CartItemDTO> getCartItems(Integer idTaiKhoan) {
-        // Sửa để sử dụng findByGioHangIdTaiKhoan thay vì findByGioHangId
         List<ChiTietGioHang> cartItems = chiTietGioHangInterface.findByGioHangIdTaiKhoan(idTaiKhoan);
         return cartItems.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
@@ -86,7 +89,7 @@ public class CartService {
             throw new RuntimeException("Sản phẩm chi tiết không tồn tại: id_spct = " + chiTiet.getSpct());
         }
 
-        List<String> imageUrls = Collections.emptyList(); // Mặc định là danh sách rỗng
+        List<String> imageUrls = Collections.emptyList();
         if (spct.getSanPham() != null) {
             imageUrls = hinhAnhInterface.findBySanPhamIdSanPham(spct.getSanPham().getIdSanPham())
                     .stream()
@@ -101,7 +104,8 @@ public class CartService {
                 spct.getIdSpct(),
                 spct.getDungTich(),
                 spct.getSanPham() != null ? spct.getSanPham().getTenSanPham() : "Không xác định",
-                imageUrls
+                imageUrls,
+                spct.getSoLuongTonKho()
         );
     }
 
@@ -116,48 +120,53 @@ public class CartService {
 
         Spct spct = spctInterface.findById(spctId)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
-        if (soLuong > spct.getSoLuongTonKho()) {
-            throw new RuntimeException("Số lượng vượt quá tồn kho");
+
+        synchronized (spctId.toString().intern()) { // Khóa theo spctId
+            chiTiet.setSoLuong(soLuong);
+            chiTiet.setDonGia(spct.getDonGia());
+            chiTietGioHangInterface.save(chiTiet);
+            // KHÔNG cập nhật soLuongTonKho ở đây
+            // KHÔNG gửi thông báo WebSocket ở đây
         }
-
-        chiTiet.setSoLuong(soLuong);
-        chiTiet.setDonGia(spct.getDonGia());
-        chiTietGioHangInterface.save(chiTiet);
     }
-
     // Xóa sản phẩm khỏi giỏ
     @Transactional
     public void removeFromCart(Integer idTaiKhoan, Integer spctId) {
         GioHang gioHang = getOrCreateCart(idTaiKhoan);
         ChiTietGioHang chiTiet = chiTietGioHangInterface.findByGioHangIdAndSpctIdSpct(gioHang.getId(), spctId);
         if (chiTiet != null) {
-            chiTietGioHangInterface.delete(chiTiet);
+            synchronized (spctId.toString().intern()) { // Khóa theo spctId
+                chiTietGioHangInterface.delete(chiTiet);
+                // KHÔNG tăng soLuongTonKho ở đây
+                // KHÔNG gửi thông báo WebSocket ở đây
+            }
         }
     }
-
     // Xóa toàn bộ giỏ hàng
     @Transactional
     public void clearCart(Integer idTaiKhoan) {
         GioHang gioHang = getOrCreateCart(idTaiKhoan);
-        chiTietGioHangInterface.deleteAll(chiTietGioHangInterface.findByGioHangId(gioHang.getId()));
+        List<ChiTietGioHang> cartItems = chiTietGioHangInterface.findByGioHangId(gioHang.getId());
+        chiTietGioHangInterface.deleteAll(cartItems);
+        // KHÔNG cập nhật soLuongTonKho ở đây
+        // KHÔNG gửi thông báo WebSocket ở đây
     }
+    // Xóa nhiều sản phẩm khỏi giỏ
     @Transactional
     public void removeMultipleFromCart(Integer idTaiKhoan, List<Integer> spctIds) {
         if (spctIds == null || spctIds.isEmpty()) {
-            return; // Không có gì để xóa
+            return;
         }
 
         GioHang gioHang = getOrCreateCart(idTaiKhoan);
         List<ChiTietGioHang> itemsToRemove = chiTietGioHangInterface.findByGioHangIdAndSpctIdSpctIn(gioHang.getId(), spctIds);
 
         if (itemsToRemove.isEmpty()) {
-            return; // Không tìm thấy sản phẩm nào trong giỏ để xóa
+            return;
         }
 
-        try {
-            chiTietGioHangInterface.deleteAll(itemsToRemove);
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi xóa nhiều sản phẩm khỏi giỏ hàng: " + e.getMessage(), e);
-        }
+        chiTietGioHangInterface.deleteAll(itemsToRemove);
+        // KHÔNG cập nhật soLuongTonKho ở đây
+        // KHÔNG gửi thông báo WebSocket ở đây
     }
 }

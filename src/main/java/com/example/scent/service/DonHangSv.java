@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.*;
 import com.example.scent.entity.*;
 import com.example.scent.repo.*;
+import com.example.scent.reques.InventoryUpdateMessage;
 import com.example.scent.reques.OrderOfflineRequest;
 import com.example.scent.reques.PhiVanChuyenRequest;
 import com.example.scent.reques.UpdateOrderStatusRequest;
@@ -364,7 +365,7 @@ public class DonHangSv {
                 chiTiet.setDonHang(savedOrder);
                 // Cập nhật số lượng tồn kho
                 Spct spct = chiTiet.getSpct();
-                spct.setSoLuongTonKho(spct.getSoLuongTonKho() - chiTiet.getSoLuong());
+
                 spc.save(spct);
             }
             cdh.saveAll(chiTietList);
@@ -519,26 +520,44 @@ public class DonHangSv {
         DonHang donHang = dhi.findById(id)
                 .orElseThrow(() -> new Exception("Không tìm thấy đơn hàng với ID: " + id));
 
-        // Nếu trạng thái là "Đã Thanh Toán" (trạng thái 4), kiểm tra và cập nhật tồn kho
-        if (trangThai == 3) {
+        System.out.println("🔍 Giá trị trạng thái: " + trangThai);
+
+        // Nếu trạng thái là "Đã Xác Nhận" (trạng thái 2), kiểm tra và cập nhật tồn kho
+        if (trangThai == 2) {
             System.out.println("⚠️ Đang cập nhật tồn kho...");
+            List<ChiTietDonHang> chiTietDonHangs = donHang.getChiTietDonHangs();
+            if (chiTietDonHangs == null || chiTietDonHangs.isEmpty()) {
+                System.out.println("❌ Đơn hàng không có chi tiết đơn hàng!");
+                throw new Exception("Đơn hàng không có chi tiết đơn hàng!");
+            }
 
-            for (ChiTietDonHang chiTiet : donHang.getChiTietDonHangs()) {
+            for (ChiTietDonHang chiTiet : chiTietDonHangs) {
                 Spct spct = chiTiet.getSpct();
-                if (spct != null) {
-                    int soLuongTonKhoCu = spct.getSoLuongTonKho();
-                    int soLuongTru = chiTiet.getSoLuong();
-                    int soLuongMoi = soLuongTonKhoCu - soLuongTru;
+                if (spct == null) {
+                    System.out.println("❌ Sản phẩm chi tiết (Spct) không tồn tại trong chi tiết đơn hàng!");
+                    throw new Exception("Sản phẩm chi tiết (Spct) không tồn tại trong chi tiết đơn hàng!");
+                }
+                int soLuongTonKhoCu = spct.getSoLuongTonKho();
+                int soLuongTru = chiTiet.getSoLuong();
+                int soLuongMoi = soLuongTonKhoCu - soLuongTru;
 
-                    System.out.println("🛒 Sản phẩm: " + spct.getIdSpct() + " | Tồn kho trước: " + soLuongTonKhoCu + " | Trừ: " + soLuongTru + " | Tồn kho sau: " + soLuongMoi);
+                System.out.println("🛒 Sản phẩm: " + spct.getIdSpct() + " | Tồn kho trước: " + soLuongTonKhoCu + " | Trừ: " + soLuongTru + " | Tồn kho sau: " + soLuongMoi);
 
-                    if (soLuongMoi < 0) {
-                        System.out.println("❌ Không đủ tồn kho, rollback transaction!");
-                        throw new Exception("Không đủ tồn kho cho sản phẩm ID: " + spct.getIdSpct());
-                    }
+                if (soLuongMoi < 0) {
+                    System.out.println("❌ Không đủ tồn kho, rollback transaction!");
+                    throw new Exception("Không đủ tồn kho cho sản phẩm ID: " + spct.getIdSpct());
+                }
 
-                    spct.setSoLuongTonKho(soLuongMoi);
-                    spc.save(spct);
+                spct.setSoLuongTonKho(soLuongMoi);
+                spc.save(spct);
+
+                // Gửi thông báo WebSocket qua /topic/inventory
+                try {
+                    messagingTemplate.convertAndSend("/topic/inventory",
+                            new InventoryUpdateMessage(spct.getIdSpct(), soLuongMoi));
+                    System.out.println("📡 Gửi thông báo WebSocket: productId=" + spct.getIdSpct() + ", newStock=" + soLuongMoi);
+                } catch (Exception e) {
+                    System.out.println("❌ Lỗi khi gửi thông báo WebSocket: " + e.getMessage());
                 }
             }
         }
@@ -548,21 +567,21 @@ public class DonHangSv {
             if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
                 throw new Exception("Lý do hủy không thể trống!");
             }
-            donHang.setLyDoHuy(lyDoHuy);  // Lưu lý do hủy vào đối tượng đơn hàng
+            donHang.setLyDoHuy(lyDoHuy); // Lưu lý do hủy vào đối tượng đơn hàng
         }
 
         // Cập nhật trạng thái của đơn hàng
-        donHang.setTrangThai(trangThai);
-        DonHang updatedOrder = dhi.save(donHang);
-
-        System.out.println("✅ Đơn hàng ID " + id + " cập nhật thành công. Trạng thái mới: " + trangThai);
-
-        // ✅ Thêm log xác nhận transaction
-        System.out.println("🔄 Commit transaction thành công!");
-
-        return updatedOrder;
+        try {
+            donHang.setTrangThai(trangThai);
+            DonHang updatedOrder = dhi.save(donHang);
+            System.out.println("✅ Đơn hàng ID " + id + " cập nhật thành công. Trạng thái mới: " + trangThai);
+            System.out.println("🔄 Commit transaction thành công!");
+            return updatedOrder;
+        } catch (Exception e) {
+            System.out.println("❌ Lỗi khi lưu đơn hàng: " + e.getMessage());
+            throw e;
+        }
     }
-
     //    public Page<DonHang> getDonHangByTrangThai(Integer trangThai, int page, int size) {
 //        Pageable pageable = PageRequest.of(page, size, Sort.by("ngayTao").descending());
 //        return (trangThai == null) ? dhi.findAll(pageable) : dhi.findByTrangThai(trangThai, pageable);
@@ -829,16 +848,68 @@ public class DonHangSv {
         }
     }
 
+    @Transactional
     public DonHang capNhatTrangThaiDonHang(Integer maDonHang, Integer trangThaiMoi, Integer userId, String tenDangNhap, String ghiChuHuy) {
+        // Tìm đơn hàng từ database
         DonHang donHang = dhi.findById(maDonHang)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + maDonHang));
+        System.out.println("🔍 Tìm thấy đơn hàng: ID=" + donHang.getId());
 
         // Lưu trạng thái cũ trước khi cập nhật
         Integer trangThaiCu = donHang.getTrangThai();
+        System.out.println("🔍 Trạng thái cũ: " + trangThaiCu + " | Trạng thái mới: " + trangThaiMoi);
 
         // Kiểm tra nếu trạng thái không thay đổi
         if (trangThaiCu.equals(trangThaiMoi)) {
+            System.out.println("ℹ️ Trạng thái không thay đổi, không cần cập nhật.");
             return donHang; // Không cần cập nhật
+        }
+
+        // Nếu trạng thái mới là "Đã xác nhận" (trangThaiMoi = 2), cập nhật tồn kho
+        if (trangThaiMoi == 2) {
+            System.out.println("⚠️ Đang cập nhật tồn kho...");
+            List<ChiTietDonHang> chiTietDonHangs = donHang.getChiTietDonHangs();
+            System.out.println("🔍 Số lượng chi tiết đơn hàng: " + (chiTietDonHangs != null ? chiTietDonHangs.size() : "null"));
+            if (chiTietDonHangs == null || chiTietDonHangs.isEmpty()) {
+                System.out.println("❌ Đơn hàng không có chi tiết đơn hàng!");
+                throw new RuntimeException("Đơn hàng không có chi tiết đơn hàng!");
+            }
+
+            for (ChiTietDonHang chiTiet : chiTietDonHangs) {
+                Spct spct = chiTiet.getSpct();
+                if (spct == null) {
+                    System.out.println("❌ Sản phẩm chi tiết (Spct) không tồn tại trong chi tiết đơn hàng!");
+                    throw new RuntimeException("Sản phẩm chi tiết (Spct) không tồn tại trong chi tiết đơn hàng!");
+                }
+                int soLuongTonKhoCu = spct.getSoLuongTonKho();
+                int soLuongTru = chiTiet.getSoLuong();
+                int soLuongMoi = soLuongTonKhoCu - soLuongTru;
+
+                System.out.println("🛒 Sản phẩm: " + spct.getIdSpct() + " | Tồn kho trước: " + soLuongTonKhoCu + " | Trừ: " + soLuongTru + " | Tồn kho sau: " + soLuongMoi);
+
+                if (soLuongMoi < 0) {
+                    System.out.println("❌ Không đủ tồn kho, rollback transaction!");
+                    throw new RuntimeException("Không đủ tồn kho cho sản phẩm ID: " + spct.getIdSpct());
+                }
+
+                spct.setSoLuongTonKho(soLuongMoi);
+                try {
+                    spc.save(spct);
+                    System.out.println("✅ Lưu Spct thành công: " + spct.getIdSpct());
+                } catch (Exception e) {
+                    System.out.println("❌ Lỗi khi lưu Spct: " + e.getMessage());
+                    throw new RuntimeException("Lỗi khi lưu Spct: " + e.getMessage(), e);
+                }
+
+                // Gửi thông báo WebSocket qua /topic/inventory
+                try {
+                    messagingTemplate.convertAndSend("/topic/inventory",
+                            new InventoryUpdateMessage(spct.getIdSpct(), soLuongMoi));
+                    System.out.println("📡 Gửi thông báo WebSocket: productId=" + spct.getIdSpct() + ", newStock=" + soLuongMoi);
+                } catch (Exception e) {
+                    System.out.println("❌ Lỗi khi gửi thông báo WebSocket: " + e.getMessage());
+                }
+            }
         }
 
         // Cập nhật trạng thái mới cho đơn hàng
@@ -846,7 +917,13 @@ public class DonHangSv {
         if (ghiChuHuy != null && !ghiChuHuy.isEmpty()) {
             donHang.setGhiChu(ghiChuHuy);
         }
-        dhi.save(donHang);
+        try {
+            dhi.save(donHang);
+            System.out.println("✅ Lưu DonHang thành công: " + donHang.getId());
+        } catch (Exception e) {
+            System.out.println("❌ Lỗi khi lưu DonHang: " + e.getMessage());
+            throw new RuntimeException("Lỗi khi lưu DonHang: " + e.getMessage(), e);
+        }
 
         // Lưu lịch sử thao tác
         LichSuThaoTac lichSu = new LichSuThaoTac();
@@ -860,17 +937,23 @@ public class DonHangSv {
 
         // Định dạng thông điệp thao tác mới
         String thaoTacMessage = String.format(
-                "Cập nhật trạng thái đơn hàng từ trạng thái %s  sang trạng thái %s ",
+                "Cập nhật trạng thái đơn hàng từ trạng thái %s sang trạng thái %s",
                 getStatusName(trangThaiCu),
                 getStatusName(trangThaiMoi)
         );
         lichSu.setThaoTac(thaoTacMessage);
 
-        lichSuThaoTacInterface.save(lichSu);
+        try {
+            lichSuThaoTacInterface.save(lichSu);
+            System.out.println("✅ Lưu lịch sử thao tác thành công: MaDonHang=" + maDonHang);
+        } catch (Exception e) {
+            System.out.println("❌ Lỗi khi lưu lịch sử thao tác: " + e.getMessage());
+            throw new RuntimeException("Lỗi khi lưu lịch sử thao tác: " + e.getMessage(), e);
+        }
 
+        System.out.println("🔄 Commit transaction thành công!");
         return donHang;
     }
-
     public Integer tinhTrangThaiMoi(Integer trangThaiCu, String phuongThucThanhToan, String lyDoHuy) {
 
         if (lyDoHuy != null && !lyDoHuy.isEmpty()) {
