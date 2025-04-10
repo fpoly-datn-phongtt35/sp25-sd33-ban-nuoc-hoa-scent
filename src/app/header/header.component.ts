@@ -1,12 +1,14 @@
-import { CartService } from './../service/cart.Service';
+
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ShoppingCartComponent } from '../shopping-cart/shopping-cart.component';
+
 import { Router } from '@angular/router';
 import { TokenService } from '../service/token.service';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap'; // Import NgbModal
-import { ChangePasswordModalComponent } from '../change-password/change-password.component'; // Import the ChangePasswordModalComponent
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ChangePasswordModalComponent } from '../change-password/change-password.component';
+import { ShoppingCartComponent } from '../shopping-cart/shopping-cart.component';
+import { CartService } from '../service/cart.Service';
 
 @Component({
   selector: 'app-header',
@@ -25,17 +27,12 @@ export class HeaderComponent {
     private router: Router,
     private tokenService: TokenService,
     private cartService: CartService,
-    private modalService: NgbModal // Inject NgbModal
+    private modalService: NgbModal
   ) {
     this.checkLoginStatus();
   }
 
   toggleShoppingCart() {
-    const token = this.tokenService.getToken();
-    if (!token || this.tokenService.isTokenExpired()) {
-      this.router.navigate(['/login']);
-      return;
-    }
     this.isShoppingCartOpen = !this.isShoppingCartOpen;
   }
 
@@ -66,16 +63,17 @@ export class HeaderComponent {
       if (confirmLogout) {
         this.tokenService.removeToken();
         this.cartService.setUserId(null);
-        this.cartService.clearCartOnClient();
+        this.checkLoginStatus(); // Call this to update the login status
         alert('Bạn đã đăng xuất thành công!');
-        this.router.navigate(['/login']);
+        this.router.navigate(['/']).then(() => {
+          window.location.reload(); // Optional: Force a page reload if needed
+        });
       }
     } else {
       alert('Bạn chưa đăng nhập!');
     }
   }
 
-  // Dropdown hover functionality
   showDropdown(): void {
     this.isDropdownOpen = true;
   }
@@ -84,10 +82,9 @@ export class HeaderComponent {
     this.isDropdownOpen = false;
   }
 
-  // Open Change Password Modal using NgbModal
   openChangePasswordModal(): void {
-    this.isDropdownOpen = false; // Close the dropdown
-    const modalRef = this.modalService.open(ChangePasswordModalComponent, {
+    this.isDropdownOpen = false;
+    const modalService = this.modalService.open(ChangePasswordModalComponent, {
       centered: true,
       backdrop: 'static',
       keyboard: false,

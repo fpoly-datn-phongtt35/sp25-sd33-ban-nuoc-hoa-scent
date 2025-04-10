@@ -113,13 +113,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       console.log('Updated orders:', this.orders);
       console.log('Updated filteredOrders:', this.filteredOrders);
 
-      Swal.fire({
-        title: 'Cập nhật trạng thái',
-        text: `Đơn hàng ${idDonHang} đã được cập nhật thành ${this.getStatusLabel(trangThai)}`,
-        icon: 'info',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+     
     } else {
       console.log('Order not found in orders array:', idDonHang);
       console.log('Current orders:', this.orders);

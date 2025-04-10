@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import jwt_decode from 'jwt-decode';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +10,7 @@ export class TokenService {
   private readonly TOKEN_KEY = 'access_token';
   private readonly USER_KEY = 'user';
   private jwtHelper = new JwtHelperService();
-
+  private userInfoSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   constructor() {}
 
   private isLocalStorageAvailable(): boolean {
@@ -106,8 +107,11 @@ getTenDangNhap(): string {
         return null;
       }
     }
-    console.warn('Token không tồn tại hoặc rỗng.');
-    return null;
+    else{
+      console.log("Token tu localStorage: null");
+      return null;
+    }
+    
   }
 
   // Lấy vai trò người dùng từ token
@@ -127,7 +131,9 @@ getTenDangNhap(): string {
       return null;
     }
   }
-  
+  getUserInfoObservable(): Observable<any> {
+    return this.userInfoSubject.asObservable();
+  }
 
   
 }

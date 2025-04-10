@@ -121,6 +121,7 @@ name="searchBox"
       <input type="text" id="ghichu" class="form-control" [(ngModel)]="orderData.ghichu" name="ghichu" #ghichu="ngModel">
     </div>
 <!-- Mã Giảm Giá -->
+<!-- Mã Giảm Giá -->
 <div class="mb-3">
   <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
   <div class="input-group">
@@ -130,18 +131,24 @@ name="searchBox"
       class="form-control"
       [(ngModel)]="orderData.maGiamGia"
       name="maGiamGia"
+      [disabled]="isDiscountApplied"
     >
-    <button  id="discountCodeInput" class="btn btn-primary" type="button" (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')">
+    <button
+      class="btn btn-primary"
+      type="button"
+      (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')"
+      [disabled]="!orderData.maGiamGia || isDiscountApplied"
+    >
       Áp dụng
     </button>
   </div>
 
-  <!-- ✅ Thông báo lỗi -->
+  <!-- Thông báo lỗi -->
   <div *ngIf="discountErrorMessage" class="text-danger mt-1">
     {{ discountErrorMessage }}
   </div>
 
-  <!-- ✅ Thông báo số tiền được giảm -->
+  <!-- Thông báo số tiền được giảm -->
   <div *ngIf="discountAmount > 0" class="text-success mt-1">
     ✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!
   </div>
@@ -153,6 +160,7 @@ name="searchBox"
         <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
         <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
         <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
+       
         <small *ngIf="shippingDiscount > 0" class="shipping-discount-note">
           🔥 Bạn nhận ưu đãi giảm {{ shippingDiscount | number }}₫ phí ship!
         </small>

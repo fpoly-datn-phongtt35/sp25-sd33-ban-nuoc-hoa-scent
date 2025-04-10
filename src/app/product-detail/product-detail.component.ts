@@ -27,12 +27,16 @@ export class ProductDetailComponent implements OnInit {
   quantity: number = 1;
   selectedImageIndex: number = 0;
   isLoading: boolean = true;
+
   danhGias: any[] = []; // Danh sách đánh giá gốc
   filteredDanhGias: any[] = []; // Danh sách đánh giá đã lọc
   selectedStarFilter: number | null = null; // Bộ lọc sao được chọn (null = tất cả)
   newRating: number = 0; // Rating người dùng chọn
   newComment: string = ''; // Bình luận người dùng nhập
   averageRating: number = 0; // Thêm thuộc tính để lưu trung bình sao
+
+
+
 
   constructor(
     private route: ActivatedRoute,
@@ -118,8 +122,10 @@ export class ProductDetailComponent implements OnInit {
           next: (res) => {
             this.danhGias = res;
             this.applyFilter();
+
             // Tính trung bình sao
             this.calculateAverageRating();
+
           },
           error: (err) => {
             console.error('Lỗi khi lấy danh sách đánh giá:', err);
@@ -165,18 +171,6 @@ export class ProductDetailComponent implements OnInit {
   }
 
   addToCart(): void {
-    const token = this.tokenService.getToken();
-    if (!token || this.tokenService.isTokenExpired()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!',
-        position: 'bottom-end',
-      });
-      this.router.navigate(['/login']);
-      return;
-    }
-
     if (!this.selectedVolume) {
       Swal.fire({
         icon: 'warning',
@@ -332,16 +326,14 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
-  // Phương thức để lọc đánh giá theo số sao
   filterByStars(stars: number | null): void {
     this.selectedStarFilter = stars;
     this.applyFilter();
   }
 
-  // Áp dụng bộ lọc
   applyFilter(): void {
     if (this.selectedStarFilter === null) {
-      this.filteredDanhGias = [...this.danhGias]; // Hiển thị tất cả đánh giá
+      this.filteredDanhGias = [...this.danhGias];
     } else {
       this.filteredDanhGias = this.danhGias.filter(
         (danhGia) => danhGia.rating === this.selectedStarFilter

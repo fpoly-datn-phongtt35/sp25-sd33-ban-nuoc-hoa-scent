@@ -37,8 +37,8 @@ import { ChangePasswordModalComponent } from '../../change-password/change-passw
   styleUrls: ['./home-admin.component.scss'],
 })
 export class HomeAdminComponent implements OnInit, OnDestroy {
-  selectedComponent: string = 'invoice';
-  selectedNav: string = 'invoice';
+  selectedComponent: string = 'bho';
+  selectedNav: string = 'bho';
   userRole: string | null = null;
   tenDangNhap: any = null;
   userID: number | null = null;
