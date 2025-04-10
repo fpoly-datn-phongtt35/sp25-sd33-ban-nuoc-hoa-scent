@@ -79,5 +79,13 @@ public class PhieuGiamGiaCtrl {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    @GetMapping("/check")
+    public ResponseEntity<PhieuGiamGia> getDiscountCodeDetails(
+            @RequestParam("code") String code,
+            @RequestParam(value = "sdt", required = false) String sdt,
+            @RequestParam(value = "idTaiKhoan", required = false) Integer id) {
+        PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id);
+        return ResponseEntity.ok(phieuGiamGia);
+    }
 }
 

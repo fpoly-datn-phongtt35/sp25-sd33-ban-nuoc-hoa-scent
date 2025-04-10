@@ -25,7 +25,8 @@ import java.util.Optional;
 @Repository
 
 public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
-
+    List<DonHang> findByPhieuGiamGiaMaGiamGiaAndSdtNguoiNhan(String maGiamGia, String sdtNguoiNhan);
+    List<DonHang> findByPhieuGiamGiaMaGiamGiaAndIdAndTaiKhoanSdt(String maGiamGia,Integer id,String sdt);
     @Query(value = "SELECT SUM(o.tong_tien) FROM don_hang o WHERE "
             + "(:year IS NULL OR YEAR(o.ngay_van_chuyen) = :year) "
             + "AND (:month IS NULL OR MONTH(o.ngay_van_chuyen) = :month)", nativeQuery = true)

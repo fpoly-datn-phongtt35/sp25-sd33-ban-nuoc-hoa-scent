@@ -45,7 +45,7 @@ public class SecurityConfig {
                         yêu cầu xác thực mới cho đăng ký hay đăng nhập là ngu*/
                         .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login","rest/tai-khoan/getAll"
                                 ,"rest/tai-khoan/page","rest/tai-khoan/update","rest/tai-khoan/del/**"
-                        ,"rest/tai-khoan/get-staff-accounts","rest/tai-khoan/get-user-accounts").permitAll()
+                                ,"rest/tai-khoan/get-staff-accounts","rest/tai-khoan/get-user-accounts").permitAll()
                         .requestMatchers("/rest/danh-muc/getAll").permitAll()
                         .requestMatchers("rest/thuong-hieu/getAll","rest/thuong-hieu/add").permitAll()
                         .requestMatchers("rest/huong-dau/add","rest/huong-giua/add","rest/huong-cuoi/add").permitAll()
@@ -62,7 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("rest/otp/send",
                                 "rest/otp/verify").permitAll()
                         .requestMatchers("rest/offline-orders"
-                        ,"rest/offline-orders/getAll-sptq").permitAll()
+                                ,"rest/offline-orders/getAll-sptq").permitAll()
                         .requestMatchers("/rest/phieu-giam-gia/**").permitAll()
                         .requestMatchers("/rest/san-pham/**","/rest/san-pham/detail/**","/rest/san-pham/volums/**","/rest/san-pham/search-price/**","/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**","rest/san-pham/sorted").permitAll()
                         .requestMatchers("rest/nhom-huong","rest/nhom-huong/**").permitAll()
@@ -82,10 +82,10 @@ public class SecurityConfig {
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
                         .requestMatchers("/api/thong-ke/doanh-thu/nam","/api/thong-ke/doanh-thu/thang","/api/thong-ke/doanh-thu/tuan","/api/thong-ke/doanh-thu/ngay"
                                 ,"/api/thong-ke/so-luong-don/nam","/api/thong-ke/so-luong-don/thang","/api/thong-ke/so-luong-don/tuan","/api/thong-ke/so-luong-don/ngay","/api/thong-ke/tong-quan","/api/thong-ke/count-by-luong-ban-trang-thai"
-                        ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
+                                ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
                                 "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
-                        .requestMatchers("/rest/don-hang/latest/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
+                        .requestMatchers("/rest/don-hang/latest/**","/rest/tai-khoan/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
 //                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
 //                        .requestMatchers("rest/huong-dau/getAll").permitAll()

@@ -5,6 +5,7 @@ import com.example.scent.dto.TaiKhoanUpdateRequestDTO;
 import com.example.scent.entity.AccountDetail;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -120,10 +121,10 @@ public class TaiKhoanSv implements UserDetailsService {
     }
 
     public Page<TaiKhoan> getUserAccounts(
-        String keyword, int page, int size) {
+            String keyword, int page, int size) {
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-            return tki.searchByRoleAndKeyword("USER", keyword, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return tki.searchByRoleAndKeyword("USER", keyword, pageable);
     }
     public Page<TaiKhoan> getStaffAccounts(
             String keyword, int page, int size) {
@@ -131,13 +132,16 @@ public class TaiKhoanSv implements UserDetailsService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return tki.searchByRoleAndKeyword("STAFF", keyword, pageable);
     }
-        public Optional<TaiKhoan> findByEmail(String email) {
-            return tki.findAll().stream().filter(
-                    t -> t.getEmail().equalsIgnoreCase(email)
-            && t.getVaiTro().equalsIgnoreCase("USER")
-            ).findFirst();
-        }
-
+    public Optional<TaiKhoan> findByEmail(String email) {
+        return tki.findAll().stream().filter(
+                t -> t.getEmail().equalsIgnoreCase(email)
+                        && t.getVaiTro().equalsIgnoreCase("USER")
+        ).findFirst();
+    }
+    public TaiKhoan getTaiKhoanById(Integer id) {
+        return tki.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Tài khoản không tồn tại với ID: " + id));
+    }
     public TaiKhoan findByUsername(String username) {
         return tki.findByUsername(username);
     }
