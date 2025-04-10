@@ -6,79 +6,95 @@
       <div class="main-image">
         <img [src]="imageUrls[selectedImageIndex]" [alt]="product.tenSanPham" class="main-img"/>
       </div>
-      <div class="image-thumbnails">
+      <div class="thumbnail-container">
         <div *ngFor="let image of imageUrls; let i = index" class="thumbnail" (click)="setMainImage(i)">
           <img [src]="image" [alt]="product.tenSanPham" class="thumb-img"/>
         </div>
       </div>
     </div>
 
-    <!-- Cột giữa: Thông tin chi tiết sản phẩm -->
+    <!-- Cột giữa: Thông tin sản phẩm -->
     <div class="product-info">
-      <h1>{{ product['tenSanPham'] || 'Không có tên' }}</h1>
-      <p class="brand">
-        <strong>Hãng:</strong> {{ product.tenThuongHieu }}
-      </p>
-      <div class="fragrance-notes">
-        <p>
-          <strong>Hương Đầu:</strong> {{ product.moTaHuongDau }}
-        </p>
-        <p>
-          <strong>Hương giữa:</strong> {{ product.moTaHuongGiua }}
-        </p>
-        <p>
-          <strong>Hương cuối:</strong> {{ product.moTaHuongCuoi }}
-        </p>
-      </div>
-      <p class="volume">
-        <strong>Dung tích:</strong> {{ product.dungTich }}ml
-      </p>
-      <p class="volume">
-        Số lượng: <strong>{{ product.soLuongTonKho }}</strong>
-      </p>
-      <p class="price">
-        Giá: <strong>{{ product.donGia | number }}</strong> VND
-      </p>
+      <h1 class="product-title">{{ product.tenSanPham || 'Không có tên' }}</h1>
+      <p class="brand">Thương hiệu: <span>{{ product.tenThuongHieu }}</span></p>
 
-      <!-- Volume selection buttons -->
-      <p *ngFor="let volume of volumes">
-        <button type="button" class="volume-button" [ngClass]="{'selected': selectedVolume === volume}" (click)="selectVolume(volume)">
-          {{ volume.dungTich }}ml - {{ volume.donGia | currency:'VND':'symbol':'1.0-0' }}
+      <!-- Đánh giá trung bình -->
+      <div class="rating-summary" *ngIf="danhGias.length > 0">
+        <span class="stars">
+          <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.active]="averageRating >= star">★</span>
+        </span>
+        <span class="rating-text">{{ averageRating | number:'1.1-1' }} ({{ danhGias.length }} đánh giá)</span>
+      </div>
+
+      <!-- Thông tin chi tiết -->
+      <div class="product-specs">
+        <p><strong>Phong cách:</strong> {{ product.phongCachs }}</p>
+        <div class="fragrance-notes">
+          <p><strong>Hương đầu:</strong> {{ product.moTaHuongDau }}</p>
+          <p><strong>Hương giữa:</strong> {{ product.moTaHuongGiua }}</p>
+          <p><strong>Hương cuối:</strong> {{ product.moTaHuongCuoi }}</p>
+        </div>
+      </div>
+
+      <!-- Nút chọn dung tích -->
+      <div class="volume-options">
+        <button *ngFor="let volume of volumes"
+                [class.selected]="selectedVolume === volume"
+                (click)="selectVolume(volume)">
+          {{ volume.dungTich }}ml - {{ volume.donGia | number }}đ
         </button>
-      </p>
-
-      <!-- Quantity input -->
-      <div class="quantity-container">
-        <label for="quantity" class="quantity-label">Số lượng:</label>
-        <input
-          type="number"
-          id="quantity"
-          [(ngModel)]="quantity"
-          min="1"
-          (ngModelChange)="quantity = $event < 1 ? 1 : $event"
-          class="quantity-input"
-        />
       </div>
 
-      <button [disabled]="!product || !selectedVolume" class="add-to-cart-btn" (click)="addToCart()">
-        Thêm vào giỏ hàng
-      </button>
+      <!-- Giá hiện tại (nổi bật) -->
+      <div class="current-price" *ngIf="selectedVolume">
+        <span class="price">{{ selectedVolume.donGia | number }}đ</span>
+      </div>
 
-      <p class="shipping-note">Miễn phí vận chuyển cho đơn hàng từ 750.000đ.</p>
-      <ul class="benefits-list">
-        <li>Đổi trả miễn phí trong 7 ngày.</li>
-        <li>Hàng chính hãng 100%.</li>
-        <li>Hỗ trợ thanh toán linh hoạt.</li>
-      </ul>
+      <!-- Số lượng và thêm vào giỏ -->
+      <div class="add-to-cart-section">
+        <div class="quantity">
+          <label>Số lượng:</label>
+          <input type="number" [(ngModel)]="quantity" min="1" (ngModelChange)="quantity = $event < 1 ? 1 : $event"/>
+        </div>
+        <button class="add-btn" [disabled]="!product || !selectedVolume" (click)="addToCart()">Thêm vào giỏ</button>
+      </div>
+
+      <!-- Thông tin bổ sung -->
+      <div class="extra-info">
+        <p class="shipping">Miễn phí vận chuyển cho đơn từ 750.000đ</p>
+        <ul>
+          <li>Đổi trả miễn phí trong 7 ngày</li>
+          <li>Hàng chính hãng 100%</li>
+          <li>Thanh toán linh hoạt</li>
+        </ul>
+      </div>
     </div>
 
-    <!-- Cột phải: Sản phẩm liên quan -->
-    <div class="related-products">
-      <h3>Có thể bạn quan tâm</h3>
-      <div class="related-products-scroll">
-        <div class="related-product-item" *ngFor="let relatedProduct of recommendedProducts" (click)="updateProductDetails(relatedProduct)">
-          <img [src]="relatedProduct.imageURL" [alt]="relatedProduct.tenSanPham" />
-          <div>
+    <!-- Cột phải: Nhóm hương, Mùi hương chính và Sản phẩm liên quan -->
+    <div class="right-column">
+      <!-- Nhóm hương và Mùi hương chính -->
+      <div class="fragrance-section">
+        <div class="fragrance-group">
+          <h3>Nhóm hương</h3>
+          <p>{{ product.tenNhomHuong }}</p>
+        </div>
+        <div class="fragrance-main">
+          <h3>Mùi hương chính (Accords)</h3>
+          <div class="fragrance-item" *ngFor="let muiHuong of product.muiHuongs">
+            <span class="fragrance-name">{{ muiHuong.tenMuiHuong }}</span>
+            <div class="progress-bar">
+              <div class="progress" [style.width]="muiHuong.prominence * 100 + '%'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sản phẩm liên quan -->
+      <div class="related-products">
+        <h3>Sản phẩm liên quan</h3>
+        <div class="related-items">
+          <div *ngFor="let relatedProduct of recommendedProducts" (click)="updateProductDetails(relatedProduct)" class="related-item">
+            <img [src]="relatedProduct.imageURL" [alt]="relatedProduct.tenSanPham"/>
             <p>{{ relatedProduct.tenSanPham }}</p>
             <span>{{ relatedProduct.donGia | number }} VND</span>
           </div>
@@ -87,69 +103,41 @@
     </div>
   </div>
 
-  <!-- Phần mô tả sản phẩm -->
-  <div class="product-description">
-    <h2>Mô tả chi tiết</h2>
+  <!-- Mô tả sản phẩm -->
+  <div class="description">
+    <h2>Mô tả sản phẩm</h2>
     <p>{{ product.moTaSanPham }}</p>
   </div>
 
-  <!-- Phần hiển thị danh sách đánh giá -->
-  <div class="danh-gia-section">
+  <!-- Đánh giá -->
+  <div class="reviews">
     <h2>Đánh giá sản phẩm</h2>
-    <!-- Bộ lọc theo số sao -->
-    <div class="star-filter">
-      <button
-        class="filter-btn"
-        [ngClass]="{'active': selectedStarFilter === null}"
-        (click)="filterByStars(null)"
-      >
-        Tất cả
-      </button>
-      <button
-        *ngFor="let star of [1, 2, 3, 4, 5]"
-        class="filter-btn"
-        [ngClass]="{'active': selectedStarFilter === star}"
-        (click)="filterByStars(star)"
-      >
+    <div class="filter-stars">
+      <button [class.active]="selectedStarFilter === null" (click)="filterByStars(null)">Tất cả</button>
+      <button *ngFor="let star of [1, 2, 3, 4, 5]" [class.active]="selectedStarFilter === star" (click)="filterByStars(star)">
         {{ star }} sao
       </button>
     </div>
-    <div class="danh-gia-list">
-      <div *ngIf="filteredDanhGias.length === 0">
-        <p>Chưa có đánh giá nào cho sản phẩm này.</p>
-      </div>
-      <div *ngFor="let danhGia of filteredDanhGias" class="danh-gia-item">
-        <div class="danh-gia-header">
-          <span class="ten-nguoi-dung">{{ danhGia.tenNguoiDung }}</span>
-          <span class="rating">
-            <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.selected]="danhGia.rating >= star">
-              ★
-            </span>
+    <div class="review-list">
+      <p *ngIf="filteredDanhGias.length === 0">Chưa có đánh giá nào.</p>
+      <div *ngFor="let danhGia of filteredDanhGias" class="review-item">
+        <div class="review-header">
+          <span class="user">{{ danhGia.tenNguoiDung }}</span>
+          <span class="stars">
+            <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.active]="danhGia.rating >= star">★</span>
           </span>
-          <span class="ngay-tao">{{ danhGia.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</span>
+          <span class="date">{{ danhGia.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</span>
         </div>
-        <p class="comment">{{ danhGia.comment }}</p>
+        <p>{{ danhGia.comment }}</p>
       </div>
     </div>
-
-    <!-- Form gửi đánh giá -->
-    <div class="danh-gia-form">
-      <h3>Gửi đánh giá của bạn</h3>
-      <div class="rating">
-        <span
-          *ngFor="let star of [1, 2, 3, 4, 5]"
-          (click)="setRating(star)"
-          [class.selected]="newRating >= star"
-        >
-          ★
-        </span>
+    <div class="review-form">
+      <h3>Viết đánh giá</h3>
+      <div class="stars-input">
+        <span *ngFor="let star of [1, 2, 3, 4, 5]" (click)="setRating(star)" [class.active]="newRating >= star">★</span>
       </div>
-      <textarea
-        [(ngModel)]="newComment"
-        placeholder="Nhập bình luận của bạn..."
-        rows="4"
-      ></textarea>
-      <button (click)="submitReview()">Gửi đánh giá</button>
+      <textarea [(ngModel)]="newComment" placeholder="Nhập đánh giá của bạn..." rows="4"></textarea>
+      <button (click)="submitReview()">Gửi</button>
     </div>
   </div>
 </div>

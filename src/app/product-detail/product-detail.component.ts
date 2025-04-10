@@ -32,6 +32,7 @@ export class ProductDetailComponent implements OnInit {
   selectedStarFilter: number | null = null; // Bộ lọc sao được chọn (null = tất cả)
   newRating: number = 0; // Rating người dùng chọn
   newComment: string = ''; // Bình luận người dùng nhập
+  averageRating: number = 0; // Thêm thuộc tính để lưu trung bình sao
 
   constructor(
     private route: ActivatedRoute,
@@ -116,7 +117,9 @@ export class ProductDetailComponent implements OnInit {
         this.danhGiaService.getDanhGiaBySanPham(numericProductId).subscribe({
           next: (res) => {
             this.danhGias = res;
-            this.applyFilter(); // Áp dụng bộ lọc ngay sau khi tải dữ liệu
+            this.applyFilter();
+            // Tính trung bình sao
+            this.calculateAverageRating();
           },
           error: (err) => {
             console.error('Lỗi khi lấy danh sách đánh giá:', err);
@@ -125,7 +128,14 @@ export class ProductDetailComponent implements OnInit {
       }
     }
   }
-
+  calculateAverageRating(): void {
+    if (this.danhGias.length > 0) {
+      const totalRating = this.danhGias.reduce((sum, danhGia) => sum + danhGia.rating, 0);
+      this.averageRating = totalRating / this.danhGias.length;
+    } else {
+      this.averageRating = 0; // Nếu không có đánh giá
+    }
+  }
   scrollImages(direction: string): void {
     if (direction === 'up' && this.selectedImageIndex > 0) {
       this.selectedImageIndex--;
