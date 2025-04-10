@@ -46,7 +46,7 @@
 /* Cart Content */
 .cart-content {
   position: relative;
-  max-height: 70vh; /* Adjust based on your needs */
+  max-height: 70vh;
   display: flex;
   flex-direction: column;
 }
@@ -55,7 +55,7 @@
 .cart-items-scrollable {
   flex: 1;
   overflow-y: auto;
-  padding-right: 10px; /* Prevent scrollbar from overlapping content */
+  padding-right: 10px;
 }
 
 /* Customize scrollbar */
@@ -91,6 +91,8 @@
   margin-bottom: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative; /* Để item-stock có thể định vị tuyệt đối */
+  min-height: 120px; /* Đảm bảo đủ không gian cho item-stock */
 }
 
 .cart-item:hover {
@@ -193,11 +195,21 @@
   transform: scale(1.1);
 }
 
+/* Số lượng tồn kho */
+.item-stock {
+  position: absolute;
+  right: 15px; /* Căn phải */
+  bottom: 10px; /* Đặt dưới cùng của cart-item */
+  font-size: 12px;
+  color: #718096;
+  margin: 0;
+}
+
 /* Total Wrapper */
 .total-wrapper {
   position: sticky;
   bottom: 0;
-  background: #ffffff; /* Ensure the background covers the scrollable content */
+  background: #ffffff;
   padding-top: 10px;
   z-index: 1;
 }
@@ -258,12 +270,13 @@
 /* Responsive */
 @media (max-width: 576px) {
   .cart-content {
-    max-height: 60vh; /* Adjust for smaller screens */
+    max-height: 60vh;
   }
 
   .cart-item {
     flex-wrap: wrap;
     gap: 10px;
+    min-height: 150px; /* Tăng chiều cao tối thiểu để có chỗ cho item-stock */
   }
 
   .item-image img {
@@ -279,6 +292,12 @@
   .item-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .item-stock {
+    right: 10px; /* Giảm khoảng cách bên phải trên mobile */
+    bottom: 5px; /* Giảm khoảng cách dưới trên mobile */
+    font-size: 10px; /* Giảm kích thước chữ */
   }
 
   .total-container {

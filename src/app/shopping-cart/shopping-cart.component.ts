@@ -1,29 +1,19 @@
-
-import { Component,OnInit,ChangeDetectorRef,OnDestroy } from '@angular/core';
-
-
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { TokenService } from '../service/token.service';
-
 import { RouterModule, Router } from '@angular/router';
 import { CartService, CartItem, CartItemWithKey } from '../service/cart.Service';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 
-
 @Component({
   selector: 'app-shopping-cart',
   standalone: true,
-  imports: [CommonModule,FormsModule,RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './shopping-cart.component.html',
-  styleUrls: ['./shopping-cart.component.scss'] // Sửa thành "styleUrls"
+  styleUrls: ['./shopping-cart.component.scss']
 })
-
-
-
-
 export class ShoppingCartComponent implements OnInit, OnDestroy {
   cartItems: CartItemWithKey[] = [];
   totalPrice: number = 0;
@@ -64,6 +54,19 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       this.removeItem(key);
       return;
     }
+  
+    const item = this.cartItems.find(i => i.key === key);
+    if (item && item.product.soLuongTonKho !== undefined && quantity > item.product.soLuongTonKho) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Số lượng vượt quá tồn kho',
+        text: `"${item.product.tenSanPham}" chỉ còn ${item.product.soLuongTonKho} sản phẩm trong kho!`,
+        position: 'bottom-end'
+      });
+      return;
+    }
+  
+    console.log('📝 Gọi updateCartItem: productId=', productId, 'volume=', volume, 'quantity=', quantity); // Thêm log
     this.cartService.updateCartItem(Number(productId), volume, quantity);
   }
 
@@ -111,6 +114,32 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       });
       return;
     }
+
+    // Kiểm tra số lượng tồn kho
+    const overStockItems = this.selectedProducts.filter(item => {
+      const soLuongTonKho = item.product.soLuongTonKho ?? 0; // Nếu soLuongTonKho là undefined, mặc định là 0
+      return item.quantity > soLuongTonKho;
+    });
+
+    if (overStockItems.length > 0) {
+      // Tạo thông báo liệt kê các sản phẩm vượt quá tồn kho
+      const message = overStockItems
+        .map(item => {
+          const soLuongTonKho = item.product.soLuongTonKho ?? 0;
+          return `"${item.product.tenSanPham}" (Số lượng: ${item.quantity}, Tồn kho: ${soLuongTonKho})`;
+        })
+        .join('<br>');
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Số lượng vượt quá tồn kho',
+        html: `Các sản phẩm sau đã vượt quá số lượng tồn kho:<br>${message}`,
+        position: 'bottom-end'
+      });
+      return;
+    }
+
+    // Nếu không có sản phẩm nào vượt quá tồn kho, tiếp tục đặt hàng
     this.cartService.setSelectedCartItems(this.selectedProducts);
     localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
     this.router.navigate(['/app-order']);
@@ -146,4 +175,3 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
     };
   }
 }
-

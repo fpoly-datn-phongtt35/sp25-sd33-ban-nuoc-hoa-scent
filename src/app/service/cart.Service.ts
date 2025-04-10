@@ -14,6 +14,7 @@ export interface CartItem {
     donGia: number;
     dungTich: string;
     imageURL?: string;
+    soLuongTonKho?: number; // Thêm trường soLuongTonKho
   };
   quantity: number;
   volume: string;
@@ -31,6 +32,7 @@ export interface BackendCartItem {
   dungTich: string;
   tenSanPham: string;
   imageUrl: string[];
+  soLuongTonKho: number; // Thêm trường soLuongTonKho
 }
 
 @Injectable({
@@ -102,7 +104,15 @@ export class CartService {
         if (Array.isArray(item) && item.length === 2 && item[1]?.product?.idSpct && item[1]?.volume) {
           const [productKey, value] = item;
           this.cart.set(productKey, {
-            product: value.product,
+            product: {
+              idSanPham: value.product.idSanPham,
+              idSpct: value.product.idSpct,
+              tenSanPham: value.product.tenSanPham,
+              donGia: value.product.donGia,
+              dungTich: value.product.dungTich,
+              imageURL: value.product.imageURL,
+              soLuongTonKho: value.product.soLuongTonKho, // Thêm soLuongTonKho
+            },
             quantity: value.quantity,
             volume: String(value.volume).trim(),
           });
@@ -142,17 +152,18 @@ export class CartService {
                 tenSanPham: item.tenSanPham,
                 donGia: item.donGia,
                 dungTich: item.dungTich,
-                imageURL: item.imageUrl && item.imageUrl.length > 0 ? item.imageUrl[0] : ''
+                imageURL: item.imageUrl && item.imageUrl.length > 0 ? item.imageUrl[0] : '',
+                soLuongTonKho: item.soLuongTonKho, // Ánh xạ soLuongTonKho
               },
               quantity: item.soLuong,
-              volume: String(item.dungTich)
+              volume: String(item.dungTich),
             });
           });
           console.log('✅ Giỏ hàng từ backend:', Array.from(this.cart.entries()));
         }
 
         this.mergeTempCart(userId);
-        this.cartSubject.next(new Map(this.cart)); // Đảm bảo cập nhật cartSubject
+        this.cartSubject.next(new Map(this.cart));
       }),
       catchError(err => {
         console.error('❌ Lỗi khi tải giỏ hàng từ backend:', err);
@@ -192,7 +203,7 @@ export class CartService {
           const params = {
             idTaiKhoan: userId,
             idSpct: value.product.idSpct,
-            soLuong: value.quantity
+            soLuong: value.quantity,
           };
           this.http.post(`${this.apiUrl}/add`, null, { params }).pipe(
             tap(() => {
@@ -223,6 +234,17 @@ export class CartService {
         icon: 'error',
         title: 'Lỗi',
         text: 'Sản phẩm không hợp lệ!',
+        position: 'bottom-end'
+      });
+      return;
+    }
+
+    // Kiểm tra số lượng tồn kho
+    if (product.soLuongTonKho !== undefined && product.soLuongTonKho < quantity) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: `Số lượng tồn kho không đủ! Chỉ còn ${product.soLuongTonKho} sản phẩm.`,
         position: 'bottom-end'
       });
       return;
@@ -260,7 +282,18 @@ export class CartService {
       if (this.cart.has(productKey)) {
         const existingProduct = this.cart.get(productKey);
         if (existingProduct) {
-          existingProduct.quantity += quantity;
+          const newQuantity = existingProduct.quantity + quantity;
+          // Kiểm tra số lượng tồn kho cho giỏ hàng tạm
+          if (product.soLuongTonKho !== undefined && newQuantity > product.soLuongTonKho) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: `Số lượng tồn kho không đủ! Chỉ còn ${product.soLuongTonKho} sản phẩm.`,
+              position: 'bottom-end'
+            });
+            return;
+          }
+          existingProduct.quantity = newQuantity;
           this.cart.set(productKey, existingProduct);
         }
       } else {
@@ -271,10 +304,11 @@ export class CartService {
             tenSanPham: product.tenSanPham,
             donGia: product.donGia,
             dungTich: product.dungTich,
-            imageURL: product.imageURL || ''
+            imageURL: product.imageURL || '',
+            soLuongTonKho: product.soLuongTonKho, // Thêm soLuongTonKho
           },
           quantity,
-          volume: String(product.dungTich).trim()
+          volume: String(product.dungTich).trim(),
         });
       }
       this.saveCart();
@@ -293,21 +327,23 @@ export class CartService {
   updateCartItem(productId: number, volume: string, quantity: number): void {
     const userId = this.getUserId();
     const productKey = this.createProductKey(productId, volume);
-
+  
     if (userId) {
       const params = { idTaiKhoan: userId, idSpct: productId, soLuong: quantity };
-      this.http.put(`${this.apiUrl}/update`, null, { params }).pipe(
-        tap(() => {
-          this.loadCartFromDB(userId);
+      console.log('📤 Gửi yêu cầu cập nhật: ', params);
+      this.http.put<{ message: string }>(`${this.apiUrl}/update`, null, { params }).pipe(
+        tap(response => {
+          console.log('✅ Response từ update:', response);
+          // Hiển thị thông báo thành công
+          
+          this.loadCartFromDB(userId); // Đồng bộ giỏ hàng từ backend
         }),
         catchError(err => {
           console.error('❌ Lỗi khi cập nhật giỏ:', err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Lỗi',
-            text: err.error?.message || 'Lỗi khi cập nhật giỏ hàng',
-            position: 'bottom-end'
-          });
+          // Hiển thị thông báo lỗi từ backend (nếu có)
+          const errorMessage = err.error?.message || 'Lỗi khi cập nhật giỏ hàng';
+         
+          this.loadCartFromDB(userId); // Đồng bộ lại giỏ hàng nếu có lỗi
           return throwError(err);
         })
       ).subscribe();
@@ -315,6 +351,16 @@ export class CartService {
       if (this.cart.has(productKey)) {
         const item = this.cart.get(productKey);
         if (item) {
+          // Kiểm tra số lượng tồn kho
+          if (item.product.soLuongTonKho !== undefined && quantity > item.product.soLuongTonKho) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: `Số lượng tồn kho không đủ! Chỉ còn ${item.product.soLuongTonKho} sản phẩm.`,
+              position: 'bottom-end'
+            });
+            return;
+          }
           item.quantity = quantity;
           this.cart.set(productKey, item);
           this.saveCart();
@@ -323,7 +369,6 @@ export class CartService {
       }
     }
   }
-
   removeFromCart(productKey: string): void {
     const userId = this.getUserId();
     if (userId) {
@@ -332,8 +377,8 @@ export class CartService {
       this.http.delete(`${this.apiUrl}/remove`, { params }).pipe(
         tap(() => {
           this.cart.delete(productKey);
-          this.cartSubject.next(new Map(this.cart)); // Cập nhật ngay lập tức
-          this.loadCartFromDB(userId); // Đồng bộ với backend
+          this.cartSubject.next(new Map(this.cart));
+          this.loadCartFromDB(userId);
         }),
         catchError(err => {
           console.error('❌ Lỗi khi xóa khỏi giỏ:', err);
@@ -420,7 +465,7 @@ export class CartService {
   getCart(): CartItemWithKey[] {
     const cartItems = Array.from(this.cart.entries()).map(([key, value]) => ({
       key,
-      ...value
+      ...value,
     }));
     console.log('🛒 Trả về giỏ hàng:', cartItems);
     return cartItems;
@@ -436,8 +481,8 @@ export class CartService {
       this.http.delete(`${this.apiUrl}/clear/${userId}`).pipe(
         tap(() => {
           this.cart.clear();
-          this.cartSubject.next(new Map(this.cart)); // Cập nhật ngay lập tức
-          this.loadCartFromDB(userId); // Đồng bộ với backend
+          this.cartSubject.next(new Map(this.cart));
+          this.loadCartFromDB(userId);
         }),
         catchError(err => {
           console.error('❌ Lỗi khi xóa giỏ:', err);
@@ -480,10 +525,4 @@ export class CartService {
   public reloadCart(): void {
     this.loadCart();
   }
-
-
-  
 }
-
-
-
