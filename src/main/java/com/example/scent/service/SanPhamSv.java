@@ -75,18 +75,31 @@
             // Lấy danh sách mùi hương
             List<MuiHuongDto> muiHuongs = spi.getMuiHuongsBySanPhamId(idSanPham);
 
+            // Gộp danh sách hình ảnh duy nhất từ tất cả bản ghi SanPhamDto
+            Set<String> uniqueImageURLs = new LinkedHashSet<>();
+            for (SanPhamDto sanPhamDto : sanPhamDtos) {
+                String imageURLs = sanPhamDto.getimageURL();
+                if (imageURLs != null) {
+                    uniqueImageURLs.addAll(Arrays.asList(imageURLs.split(", ")));
+                }
+            }
+            String finalImageURLs = String.join(", ", uniqueImageURLs);
+
             // Tạo danh sách SanPhamDetailDto
             List<SanPhamDetailDto> sanPhamDetailDtos = new ArrayList<>();
             for (SanPhamDto sanPhamDto : sanPhamDtos) {
                 // Tạo đối tượng SanPhamDetailDto mới
                 SanPhamDetailDto detailDto = new SanPhamDetailDto(sanPhamDto, muiHuongs);
 
+                // Gắn danh sách hình ảnh đã gộp
+                detailDto.setImageURL(finalImageURLs);
+
                 // Loại bỏ phong cách trùng lặp
                 String phongCachs = sanPhamDto.getPhongCachs();
                 if (phongCachs != null) {
                     String[] styles = phongCachs.split(", ");
                     phongCachs = String.join(", ", new LinkedHashSet<>(Arrays.asList(styles)));
-                    detailDto.setPhongCachs(phongCachs); // Sử dụng detailDto thay vì ép kiểu sanPhamDto
+                    detailDto.setPhongCachs(phongCachs);
                 }
 
                 sanPhamDetailDtos.add(detailDto);
