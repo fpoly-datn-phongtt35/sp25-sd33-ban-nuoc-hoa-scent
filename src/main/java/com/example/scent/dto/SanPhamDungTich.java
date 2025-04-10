@@ -13,7 +13,7 @@ public class SanPhamDungTich {
     private Integer dungTich ;
     private BigDecimal DonGia;
     private Integer idSpct;
-private Integer soLuongTonKho;
+    private Integer soLuongTonKho;
 
     public Integer getSoLuongTonKho() {
         return soLuongTonKho;

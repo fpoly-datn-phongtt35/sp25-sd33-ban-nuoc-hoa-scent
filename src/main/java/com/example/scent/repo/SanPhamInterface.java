@@ -49,28 +49,36 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    hd.mota as moTaHuongDau,\n" +
             "    hg.mota as moTaHuongGiua,\n" +
             "    hc.mota as moTaHuongCuoi,\n" +
+            "    nh.ten_nhom as tenNhomHuong,\n" + // Sửa từ nh.ten_nhom_huong thành nh.ten_nhom
+            "    STRING_AGG(pc.ten_phong_cach, ', ') as phongCachs,\n" +
             "    STRING_AGG(ha.link, ', ') as imageURL\n" +
             "from \n" +
             "    san_pham sp\n" +
             "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +
-            "left join \n" +
-            "    spct spct on sp.id = spct.id_san_pham\n" +
-            "left join \n" +
-            "    thuong_hieu th on sp.id_thuong_hieu = th.id\n" +
-            "left join \n" +
-            "    danh_muc dm on sp.id_danh_muc = dm.id\n" +
-            "left join \n" +
-            "    huong_dau hd on sp.id_huong_dau = hd.id\n" +
-            "left join \n" +
-            "    huong_giua hg on sp.id_huong_giua = hg.id\n" +
-            "left join \n" +
-            "    huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
+            "LEFT JOIN spct spct on sp.id = spct.id_san_pham\n" +
+            "LEFT JOIN thuong_hieu th on sp.id_thuong_hieu = th.id\n" +
+            "LEFT JOIN danh_muc dm on sp.id_danh_muc = dm.id\n" +
+            "LEFT JOIN huong_dau hd on sp.id_huong_dau = hd.id\n" +
+            "LEFT JOIN huong_giua hg on sp.id_huong_giua = hg.id\n" +
+            "LEFT JOIN huong_cuoi hc on sp.id_huong_cuoi = hc.id\n" +
+            "LEFT JOIN nhom_huong nh on sp.id_nhom_huong = nh.id\n" +
+            "LEFT JOIN san_pham_phong_cach sppc on sp.id = sppc.id_san_pham\n" +
+            "LEFT JOIN phong_cach pc on sppc.id_phong_cach = pc.id\n" +
             "where\n" +
-            "    sp.id = :idSanPham\n " +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich, th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota ",  // Ensure to group by all selected columns
-    nativeQuery = true)
+            "    sp.id = :idSanPham\n" +
+            "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich, th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota, nh.ten_nhom", // Sửa từ nh.ten_nhom_huong thành nh.ten_nhom
+            nativeQuery = true)
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
-
+    @Query(value = "select\n" +
+            "    mh.ten_mui_huong as tenMuiHuong,\n" +
+            "    spmh.prominence as prominence\n" +
+            "from \n" +
+            "    san_pham_mui_huong spmh\n" +
+            "JOIN mui_huong mh on spmh.id_mui_huong = mh.id\n" +
+            "where\n" +
+            "    spmh.id_san_pham = :idSanPham",
+            nativeQuery = true)
+    List<MuiHuongDto> getMuiHuongsBySanPhamId(@Param("idSanPham") Integer idSanPham);
 
     @Query(value = "SELECT TOP 10 " +
             "sp.id AS idSanPham, " +

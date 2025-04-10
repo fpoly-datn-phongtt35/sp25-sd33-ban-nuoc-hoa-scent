@@ -22,4 +22,7 @@ public interface SanPhamDto {
     String getMoTaHuongGiua();
     String getMoTaHuongCuoi();
     String getimageURL();
+    String getTenNhomHuong(); // Tên nhóm hương
+
+    String getPhongCachs(); // Danh sách phong cách (chuỗi, phân tách bởi dấu phẩy)
 }

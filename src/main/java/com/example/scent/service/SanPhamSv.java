@@ -16,10 +16,7 @@
 
 
     import java.math.BigDecimal;
-    import java.util.Arrays;
-    import java.util.Map;
-    import java.util.List;
-    import java.util.Optional;
+    import java.util.*;
 
 
     @Service
@@ -68,12 +65,35 @@
         }
 
 
-        public List<SanPhamDto> detail(Integer idSanPham) {
-            return spi.getDetail(idSanPham);
+        public List<SanPhamDetailDto> detail(Integer idSanPham) {
+            // Lấy thông tin chi tiết sản phẩm
+            List<SanPhamDto> sanPhamDtos = spi.getDetail(idSanPham);
+            if (sanPhamDtos.isEmpty()) {
+                throw new RuntimeException("Không tìm thấy sản phẩm với ID: " + idSanPham);
+            }
+
+            // Lấy danh sách mùi hương
+            List<MuiHuongDto> muiHuongs = spi.getMuiHuongsBySanPhamId(idSanPham);
+
+            // Tạo danh sách SanPhamDetailDto
+            List<SanPhamDetailDto> sanPhamDetailDtos = new ArrayList<>();
+            for (SanPhamDto sanPhamDto : sanPhamDtos) {
+                // Tạo đối tượng SanPhamDetailDto mới
+                SanPhamDetailDto detailDto = new SanPhamDetailDto(sanPhamDto, muiHuongs);
+
+                // Loại bỏ phong cách trùng lặp
+                String phongCachs = sanPhamDto.getPhongCachs();
+                if (phongCachs != null) {
+                    String[] styles = phongCachs.split(", ");
+                    phongCachs = String.join(", ", new LinkedHashSet<>(Arrays.asList(styles)));
+                    detailDto.setPhongCachs(phongCachs); // Sử dụng detailDto thay vì ép kiểu sanPhamDto
+                }
+
+                sanPhamDetailDtos.add(detailDto);
+            }
+
+            return sanPhamDetailDtos;
         }
-    //    public List<Spct> detail(Integer id){
-    //        return spi.getAllSpctByIdSp(id);
-    //    }
 
 
         public List<SanPham> searchByName(String tenSanPham) {

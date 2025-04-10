@@ -127,7 +127,7 @@ public class SanPhamCtrl {
     public void delete(@PathVariable Integer id) { sps.delete(id);
     }
     @GetMapping("/detail/{idSanPham}")
-    public List<SanPhamDto> detail(@PathVariable Integer idSanPham){
+    public List<SanPhamDetailDto> detail(@PathVariable Integer idSanPham){
         return sps.detail(idSanPham);
     }
     @GetMapping("/filter")
