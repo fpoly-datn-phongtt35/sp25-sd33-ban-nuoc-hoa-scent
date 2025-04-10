@@ -2,11 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MomoPaymentService } from '../service/momoPayment.service';
 import { CommonModule } from '@angular/common';
+import { HeaderComponent } from "../header/header.component";
+import { TokenService } from '../service/token.service';
 
 @Component({
   selector: 'app-order-success',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent],
   templateUrl: './order-success.component.html',
   styleUrls: ['./order-success.component.scss'],
 })
@@ -21,7 +23,8 @@ export class OrderSuccessComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private momoService: MomoPaymentService
+    private momoService: MomoPaymentService,
+    private tokenService:TokenService
   ) {}
 
   ngOnInit(): void {
@@ -63,24 +66,40 @@ export class OrderSuccessComponent implements OnInit {
   }
 
   updateOrderStatusToPaid() {
-    if (!this.orderId) return;
+    if (!this.orderId) {
+        console.error('❌ orderId không tồn tại');
+        return;
+    }
 
-    const apiUrl = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${this.orderId}?trangThai=6`;
+    // Giả sử bạn đã có userID và tenDangNhap từ trạng thái người dùng (ví dụ: từ localStorage hoặc context)
+    const userInfo=this.tokenService.getUserInfo();
+    const userID = userInfo.UserID; // Thay bằng giá trị thực tế
+    const tenDangNhap =userInfo.sub; // Thay bằng giá trị thực tế
+    console.log('tendangnhap:',tenDangNhap+'\n'+'userId:',userID)
+    // Tạo URL với các query parameters
+    const apiUrl = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${this.orderId}?trangThai=6&userID=${userID}&tenDangNhap=${tenDangNhap}`;
 
     fetch(apiUrl, {
-      method: 'PUT',
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
     })
-      .then((res) => {
+    .then((res) => {
         if (res.ok) {
-          console.log('✅ Đã cập nhật trạng thái đơn hàng thành "Đã thanh toán"');
+            return res.json().then((data) => {
+                console.log('✅ Đã cập nhật trạng thái đơn hàng thành "Đã thanh toán"', data);
+            });
         } else {
-          console.error('❌ Cập nhật trạng thái thất bại');
+            return res.text().then((errorMessage) => {
+                console.error('❌ Cập nhật trạng thái thất bại:', errorMessage);
+            });
         }
-      })
-      .catch((err) => {
+    })
+    .catch((err) => {
         console.error('❌ Lỗi khi gọi API cập nhật trạng thái:', err);
-      });
-  }
+    });
+}
 
   goToHomePage() {
     this.router.navigate(['/']);

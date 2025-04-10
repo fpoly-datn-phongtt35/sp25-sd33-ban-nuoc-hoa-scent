@@ -105,7 +105,6 @@ export class OrderComponent implements OnInit {
     this.orderService.getLatestOrder(idTaiKhoan).subscribe(
       (data) => {
         if (data) {
-          console.log('Latest order data:', data);
           this.orderData.tenNguoiNhanHang = data.tenNguoiNhanHang || '';
           this.orderData.sdtNguoiNhan = data.sdtNguoiNhan || '';
           this.shippingFee = data.phiVanChuyen || 0;
@@ -496,34 +495,6 @@ export class OrderComponent implements OnInit {
     }
   }
 
-  generateVietQRString(orderId: string, amount: number, orderInfo: string): Promise<string> {
-    const vietQRData = {
-      accountNo: '0855616615',
-      accountName: 'Lại Văn Quang',
-      acqId: '970422',
-      addInfo: orderInfo,
-      amount: amount.toString(),
-      template: 'compact',
-    };
-
-    return new Promise((resolve, reject) => {
-      this.vietQRService.generateQRCode(vietQRData).subscribe({
-        next: (response: any) => {
-          console.log('Response từ API VietQR:', response);
-          if (response && response.code === '00' && response.data && response.data.qrDataURL) {
-            resolve(response.data.qrDataURL);
-          } else {
-            reject(new Error(`Không nhận được qrDataURL từ API VietQR. Response: ${JSON.stringify(response)}`));
-          }
-        },
-        error: (err) => {
-          console.error('Lỗi khi gọi API VietQR:', err);
-          reject(new Error(`Lỗi khi gọi API VietQR: ${err.message || JSON.stringify(err)}`));
-        },
-      });
-    });
-  }
-
   async onSubmit() {
     if (
       !this.orderData.tenNguoiNhanHang ||
@@ -566,7 +537,7 @@ export class OrderComponent implements OnInit {
         this.getQuyDoiKichThuocVaCanNang(this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0)).height) / 3),
       trangThai: this.orderData.phuongThucThanhToan === 'tm' ? 1 : 0,
     };
-
+    console.log('Đơn hàng gửi đi:',payload)
     this.orderService.createOrder(payload).subscribe({
       next: async (orderRes) => {
         Swal.close();
@@ -594,15 +565,15 @@ export class OrderComponent implements OnInit {
 
         const momoRequest = {
           orderId: extraDataObj.orderId,
-          requestId: 'REQ_' + new Date().getTime(),
+          // requestId: 'REQ_' + new Date().getTime(),
           orderInfo: extraDataObj.orderInfo,
           amount: this.finalAmount.toString(),
           returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
           notifyUrl: 'http://localhost:8080/api/momo/callback',
           requestType: 'captureWallet',
-          extraData,
-        };
 
+        };
+        console.log('momoRequest:',momoRequest)
         this.momoPaymentService.createPayment(momoRequest).subscribe({
           next: (res: any) => {
             if (res.payUrl) {
