@@ -70,7 +70,9 @@ public class SecurityConfig {
                                 "/rest/san-pham/search/**","/rest/san-pham/search-danhmuc/**",
                                 "rest/san-pham/sorted","san-pham/getAll",
                                 "rest/san-pham/findAllHinhAnhById","rest/san-pham/findById").permitAll()
-
+                        .requestMatchers("rest/mui-huong/getAll","rest/not-huong/getAll","rest/phong-cach/getAll"
+                        ,"rest/not-huong/add","rest/phong-cach/add","rest/mui-huong/add"
+                        ,"rest/mui-huong/updateMuiHuongs/**","rest/not-huong/updateNotHuongs/**","rest/phong-cach/updatePhongCachs/**").permitAll()
                         .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","/all/dia-chi/get-tinh-thanh","/rest/don-hang/importData").permitAll()
                         .requestMatchers("/rest/dia-chi/get-tinh-thanh","/rest/dia-chi/tinh-phi-van-chuyen","/rest/dia-chi/get-phuong-xa/**","/rest/dia-chi/get-quan-huyen/**").permitAll()
 

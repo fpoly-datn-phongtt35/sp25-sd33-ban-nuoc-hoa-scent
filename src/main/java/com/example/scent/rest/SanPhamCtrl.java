@@ -6,6 +6,7 @@ import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.repo.SanPhamBanChayDto;
 import com.example.scent.service.SanPhamSv;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -78,21 +79,31 @@ public class SanPhamCtrl {
             @RequestParam("moTa") String moTaSanPham,
             @RequestParam("idThuongHieu") Integer idThuongHieu,
             @RequestParam("idDanhMuc") Integer idDanhMuc,
-            @RequestParam("idHuongDau") Integer idHuongDau,
-            @RequestParam("idHuongGiua") Integer idHuongGiua,
-            @RequestParam("idHuongCuoi") Integer idHuongCuoi,
-            @RequestParam(value = "image", required = false) MultipartFile[] image,Integer idNhomHuong) {
+            @RequestParam("idNhomHuong") Integer idNhomHuong,
+            @RequestParam(value = "notHuongDauIds") List<Integer> notHuongDauIds,
+            @RequestParam(value = "notHuongGiuaIds") List<Integer> notHuongGiuaIds,
+            @RequestParam(value = "notHuongCuoiIds") List<Integer> notHuongCuoiIds,
+            @RequestParam(value = "phongCachIds") List<Integer> phongCachIds,
+            @RequestParam(value = "muiHuongSelections") String muiHuongSelectionsJson,
+            @RequestParam(value = "images", required = false) MultipartFile[] images) {
         try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<MuiHuongSelectionDTO> muiHuongSelections = objectMapper.readValue(
+                    muiHuongSelectionsJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, MuiHuongSelectionDTO.class)
+            );
+
             SanPham savedSanPham = sps.addProductWithDetails(
-                    tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, image
-            ,idNhomHuong);
+                    tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idNhomHuong,
+                    muiHuongSelections, notHuongDauIds, notHuongGiuaIds, notHuongCuoiIds,
+                    phongCachIds, images
+            );
             return ResponseEntity.ok(savedSanPham);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi thêm sản phẩm: " + e.getMessage());
         }
     }
-
 
 
     @PutMapping("/update")

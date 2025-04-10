@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -74,8 +75,28 @@ public class SanPham {
     )
     private List<PhongCach> phongCachs;
     @JsonIgnore
-    @OneToMany(mappedBy = "sanPham")
+    @OneToMany(mappedBy = "sanPham",cascade = CascadeType.ALL)
     private List<SanPhamMuiHuong> sanPhamMuiHuongs;
+    public void updateFragranceDescriptions() {
+        if (huongDau != null) {
+            String moTaHuongDau = huongDau.getNotHuongs().stream()
+                    .map(NotHuong::getTenNotHuong) // Chỉ lấy tên nốt hương
+                    .collect(Collectors.joining(","));
+            huongDau.setMoTaHuongDau(moTaHuongDau);
+        }
+        if (huongGiua != null) {
+            String moTaHuongGiua = huongGiua.getNotHuongs().stream()
+                    .map(NotHuong::getTenNotHuong) // Chỉ lấy tên nốt hương
+                    .collect(Collectors.joining(","));
+            huongGiua.setMoTaHuongGiua(moTaHuongGiua);
+        }
+        if (huongCuoi != null) {
+            String moTaHuongCuoi = huongCuoi.getNotHuongs().stream()
+                    .map(NotHuong::getTenNotHuong) // Chỉ lấy tên nốt hương
+                    .collect(Collectors.joining(","));
+            huongCuoi.setMoTaHuongCuoi(moTaHuongCuoi);
+        }
+    }
     public Integer getTrangThai() {
         return trangThai;
     }

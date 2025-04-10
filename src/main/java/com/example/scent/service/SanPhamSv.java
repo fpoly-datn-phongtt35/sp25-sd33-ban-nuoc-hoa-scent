@@ -1,7 +1,6 @@
     package com.example.scent.service;
     import com.example.scent.dto.*;
-    import com.example.scent.entity.HinhAnh;
-    import com.example.scent.entity.SanPham;
+    import com.example.scent.entity.*;
     import com.example.scent.repo.*;
     import com.example.scent.spec.SanPhamSpec;
     import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +43,14 @@
         @Autowired
         private HuongCuoiInterface huongCuoiRepo;
 
-
+        @Autowired
+        private NotHuongInterface notHuongInterface;
+        @Autowired
+        private PhongCachInterface phongCachInterface;
+        @Autowired
+        private MuiHuongInterface muiHuongInterface;
+        @Autowired
+        private SanPhamMuiHuongInterface sanPhamMuiHuongInterface;
         public List<SanPham> getAll() {
             return spi.findAll();
         }
@@ -214,8 +220,10 @@
         }
 
         public SanPham addProductWithDetails(
-                String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
-                Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images,Integer idNhomHuong) {
+                String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc, Integer idNhomHuong,
+                List<MuiHuongSelectionDTO> muiHuongSelections,
+                List<Integer> notHuongDauIds, List<Integer> notHuongGiuaIds, List<Integer> notHuongCuoiIds,
+                List<Integer> phongCachIds, MultipartFile[] images) {
 
             SanPham sanPham = new SanPham();
             sanPham.setTenSanPham(tenSanPham);
@@ -225,13 +233,54 @@
                     .orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại")));
             sanPham.setDanhMuc(danhMucRepo.findById(idDanhMuc)
                     .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
-            sanPham.setHuongDau(huongDauRepo.findById(idHuongDau).orElse(null));
-            sanPham.setHuongGiua(huongGiuaRepo.findById(idHuongGiua).orElse(null));
-            sanPham.setHuongCuoi(huongCuoiRepo.findById(idHuongCuoi).orElse(null));
-           sanPham.setNhomHuong(nhi.findById(idNhomHuong).orElse(null));
-            SanPham savedSanPham = spi.save(sanPham);
-            int uploadedImages = 0;
+            sanPham.setNhomHuong(nhi.findById(idNhomHuong)
+                    .orElseThrow(() -> new RuntimeException("Nhóm hương không tồn tại")));
 
+            // Handle HuongDau, HuongGiua, HuongCuoi (unchanged)
+            HuongDau huongDau = new HuongDau();
+            if (notHuongDauIds != null && !notHuongDauIds.isEmpty()) {
+                huongDau.setNotHuongs(notHuongInterface.findAllById(notHuongDauIds));
+            }
+            huongDauRepo.save(huongDau);
+            sanPham.setHuongDau(huongDau);
+
+            HuongGiua huongGiua = new HuongGiua();
+            if (notHuongGiuaIds != null && !notHuongGiuaIds.isEmpty()) {
+                huongGiua.setNotHuongs(notHuongInterface.findAllById(notHuongGiuaIds));
+            }
+            huongGiuaRepo.save(huongGiua);
+            sanPham.setHuongGiua(huongGiua);
+
+            HuongCuoi huongCuoi = new HuongCuoi();
+            if (notHuongCuoiIds != null && !notHuongCuoiIds.isEmpty()) {
+                huongCuoi.setNotHuongs(notHuongInterface.findAllById(notHuongCuoiIds));
+            }
+            huongCuoiRepo.save(huongCuoi);
+            sanPham.setHuongCuoi(huongCuoi);
+
+            sanPham.updateFragranceDescriptions();
+            sanPham.setPhongCachs(phongCachInterface.findAllById(phongCachIds));
+
+            SanPham savedSanPham = spi.save(sanPham);
+
+            // Add scents with prominence
+            if (muiHuongSelections != null && !muiHuongSelections.isEmpty()) {
+                List<SanPhamMuiHuong> sanPhamMuiHuongs = new ArrayList<>();
+                for (MuiHuongSelectionDTO selection : muiHuongSelections) {
+                    MuiHuong muiHuong = muiHuongInterface.findById(selection.getId())
+                            .orElseThrow(() -> new RuntimeException("Mùi hương không tồn tại: " + selection.getId()));
+                    SanPhamMuiHuong spmh = new SanPhamMuiHuong();
+                    spmh.setId(new SanPhamMuiHuongId(savedSanPham.getIdSanPham(), muiHuong.getId()));
+                    spmh.setSanPham(savedSanPham);
+                    spmh.setMuiHuong(muiHuong);
+                    spmh.setProminence(selection.getProminence());
+                    sanPhamMuiHuongs.add(spmh);
+                }
+                savedSanPham.setSanPhamMuiHuongs(sanPhamMuiHuongInterface.saveAll(sanPhamMuiHuongs));
+            }
+
+            // Handle image uploads (unchanged)
+            int uploadedImages = 0;
             if (images != null && images.length > 0) {
                 for (MultipartFile image : images) {
                     if (!image.isEmpty()) {
@@ -254,7 +303,6 @@
 
             return savedSanPham;
         }
-
         public List<SanPhamDungTich> getProductVolumesByProductId(Integer productId) {
             return spi.findByIdSanPham(productId);
         }
