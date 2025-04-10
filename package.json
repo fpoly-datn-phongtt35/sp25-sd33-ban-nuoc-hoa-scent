@@ -27,6 +27,7 @@
     "@auth0/angular-jwt": "^5.2.0",
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@ng-bootstrap/ng-bootstrap": "^18.0.0",
+    "@ng-select/ng-select": "^14.2.8",
     "@popperjs/core": "^2.11.8",
     "@stomp/stompjs": "^7.1.1",
     "bootstrap": "^5.3.3",

@@ -1,206 +1,182 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component,OnInit,ChangeDetectorRef } from '@angular/core';
+// import { FooterComponent } from '../footer/footer.component';
+// import { HeaderComponent } from '../header/header.component';
 import { CommonModule } from '@angular/common';
 import { CartService } from '../service/cart.Service';
 import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { TokenService } from '../service/token.service';
-import { RouterModule, Router, NavigationEnd } from '@angular/router';
-import Swal from 'sweetalert2';
-
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-shopping-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule,FormsModule,RouterModule],
   templateUrl: './shopping-cart.component.html',
-  styleUrls: ['./shopping-cart.component.scss']
+  styleUrls: ['./shopping-cart.component.scss'] // Sửa thành "styleUrls"
 })
-export class ShoppingCartComponent implements OnInit, OnDestroy {
+
+export class ShoppingCartComponent implements OnInit{
   cartItems: any[] = [];
-  isAllSelected: boolean = false;
-  selectedProducts: any[] = [];
-  totalAmount: number = 0;
+  isAllSelected: boolean = false; // Trạng thái chọn tất cả
+
   userId: string | null = null;
   private subscriptions: Subscription = new Subscription();
-
-  constructor(
-    private cartService: CartService,
-    private cdr: ChangeDetectorRef,
-    private tokenService: TokenService,
-    private router: Router
-  ) {}
+  selectedProducts: any[] = [];
+  totalAmount: number = 0; // Tổng tiền của sản phẩm đã chọn
+  constructor(private cartService: CartService,private cdr: ChangeDetectorRef,private tokenService: TokenService,private router: Router) {}
 
   ngOnInit() {
-    // Lấy thông tin người dùng từ TokenService
-    this.updateUserId();
-
-    // Đặt userId cho CartService
-    this.cartService.setUserId(this.userId);
-
-    // Đăng ký observable để cập nhật giỏ hàng
+    // Đăng ký Observable để nhận thông tin cập nhật giỏ hàng và userId
     this.subscriptions.add(
-      this.cartService.getCartObservable().subscribe({
-        next: (cart) => {
-          console.log('📥 Cart updated via observable:', Array.from(cart.entries()));
-          this.loadCartItems();
-        },
-        error: (err) => {
-          console.error('❌ Lỗi khi đăng ký giỏ hàng observable:', err);
-        }
+      this.cartService.getCartObservable().subscribe(() => {
+        this.loadCartItemsFromLocalStorage();
       })
     );
-
-    // Listen for login/logout events
-    this.subscriptions.add(
-      this.tokenService.getUserInfoObservable().subscribe((userInfo) => {
-        console.log('👤 User info change detected:', userInfo);
-        const newUserId = userInfo && userInfo.UserID ? String(userInfo.UserID) : null;
-        if (newUserId !== this.userId) {
-          this.userId = newUserId;
-          console.log('🔄 UserID updated in ShoppingCart:', this.userId);
-          this.cartService.setUserId(this.userId);
-          this.cartService.reloadCart();
-        }
-      })
-    );
-
-    // Listen for navigation events to re-load the cart
-    this.subscriptions.add(
-      this.router.events.subscribe(event => {
-        if (event instanceof NavigationEnd) {
-          this.updateUserId();
-          this.cartService.setUserId(this.userId);
-          this.cartService.reloadCart();
-        }
-      })
-    );
-
-    // Tải giỏ hàng ban đầu
-    this.cartService.reloadCart();
   }
-
-  private updateUserId(): void {
-    const userId = this.tokenService.getUserId();
-    this.userId = userId > 0 ? String(userId) : null;
-    console.log('👤 UserID trong ShoppingCart:', this.userId);
-  }
-
-  loadCartItems() {
-    this.cartItems = this.cartService.getCart().map(item => ({
-      ...item,
-      selected: this.selectedProducts.some(
-        p => p.product.idSanPham === item.product.idSanPham && p.volume === item.volume
-      )
-    }));
-
-    this.isAllSelected = this.cartItems.length > 0 && this.cartItems.every(item => item.selected);
-    this.calculateTotal();
-    console.log('🛒 Giỏ hàng đã tải:', this.cartItems);
-    this.cdr.detectChanges();
-  }
-
   onProductSelect(product: any, event: Event) {
     const isChecked = (event.target as HTMLInputElement).checked;
-    product.selected = isChecked;
 
     if (isChecked) {
-      if (!this.selectedProducts.includes(product)) {
         this.selectedProducts.push(product);
-      }
     } else {
-      this.selectedProducts = this.selectedProducts.filter(
-        p => p.product.idSanPham !== product.product.idSanPham || p.volume !== product.volume
-      );
+        this.selectedProducts = this.selectedProducts.filter(p => p.product.idSanPham !== product.product.idSanPham);
     }
-
     this.selectedProducts.forEach(item => {
       console.log(`🛒 SP: ${item.product.tenSanPham} | SL: ${item.quantity} | Giá: ${item.product.donGia}`);
-    });
+  });
 
-    this.isAllSelected = this.cartItems.length > 0 && this.cartItems.every(item => item.selected);
+
+    // Cập nhật trạng thái "Chọn tất cả" dựa trên số lượng sản phẩm được chọn
+    this.isAllSelected = this.selectedProducts.length === this.cartItems.length;
     this.calculateTotal();
-    this.cdr.detectChanges();
+}
+
+
+
+  placeOrder() {
+    // Lưu danh sách sản phẩm đã chọn vào localStorage để sử dụng ở trang đặt hàng
+    localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
+    this.router.navigate(['/app-order']);
   }
 
-  toggleSelectAll() {
-    this.isAllSelected = !this.isAllSelected;
-    this.cartItems.forEach(item => (item.selected = this.isAllSelected));
+  ngOnDestroy() {
+    // Hủy đăng ký để tránh memory leaks
+    this.subscriptions.unsubscribe();
+  }
 
-    if (this.isAllSelected) {
-      this.selectedProducts = [...this.cartItems];
-    } else {
-      this.selectedProducts = [];
+  trackByProduct(index: number, item: any): number | null {
+    return item?.product?.idSanPham ?? null;
+  }
+
+
+  loadCartItemsFromLocalStorage() {
+    const userId = this.tokenService.getUserId();
+    if (!userId) {
+        console.warn("⚠️ Không có userId, không thể tải giỏ hàng từ localStorage!");
+        this.cartItems = [];
+        return;
     }
 
-    this.calculateTotal();
-    this.cdr.detectChanges();
-  }
-
-  calculateTotal() {
-    this.totalAmount = this.selectedProducts.reduce((sum, item) => {
-      return sum + (Number(item.quantity) * Number(item.product.donGia));
-    }, 0);
-    console.log('💰 Tổng tiền:', this.totalAmount);
-  }
-
-  updateQuantity(item: any, newQuantity: number) {
-    if (newQuantity < 1) {
-      newQuantity = 1;
-      item.quantity = 1;
-    } else {
-      item.quantity = newQuantity;
+    const storedCartData = localStorage.getItem(`cart-${userId}`);
+    if (!storedCartData) {
+        console.log("📭 Không có giỏ hàng nào trong localStorage.");
+        this.cartItems = [];
+        return;
     }
 
-    console.log(`🔔 Cập nhật số lượng - Sản phẩm: ${item.product.tenSanPham}, Số lượng: ${newQuantity}`);
-    this.cartService.updateCartItem(item.product.idSanPham, item.volume, newQuantity);
+    try {
+        const parsedCart = JSON.parse(storedCartData);
+        console.log("📥 Dữ liệu giỏ hàng từ localStorage:", parsedCart);
 
-    if (this.selectedProducts.includes(item)) {
-      this.calculateTotal();
+        this.cartItems = parsedCart
+            .map((item: any) => {
+                if (!item || !item[1] || !item[1].product) {
+                    console.warn("⚠️ Mục giỏ hàng không hợp lệ:", item);
+                    return null;
+                }
+                if (item[1].product.imageURL) {
+                  item[1].product.imageURL = item[1].product.imageURL.split(',').map((url: string) => url.trim());
+                }
+                return {
+                    product: item[1].product,
+                    quantity: item[1].quantity,
+                    volume: item[1].volume
+                };
+            })
+            .filter((item: any) => item !== null); // Loại bỏ các mục không hợp lệ
+
+        console.log("✅ Giỏ hàng sau khi load:", this.cartItems);
+        this.cdr.detectChanges(); // Cập nhật giao diện
+
+    } catch (error) {
+        console.error("❌ Lỗi khi parse JSON giỏ hàng từ localStorage:", error);
+        this.cartItems = [];
     }
-    this.cdr.detectChanges();
-  }
+}
 
-  logQuantityChange(item: any, newValue: number) {
-    console.log(`📝 ngModelChange - Sản phẩm: ${item.product.tenSanPham}, Giá trị mới: ${newValue}`);
-  }
+
+
+
+
 
   removeItem(productId: number, volume: string): void {
     const productKey = `${productId}_${volume}`;
     this.cartService.removeFromCart(productKey);
-    this.selectedProducts = this.selectedProducts.filter(
-      p => p.product.idSanPham !== productId || p.volume !== volume
-    );
-    this.calculateTotal();
-    this.isAllSelected = this.cartItems.length > 0 && this.cartItems.every(item => item.selected);
+    console.log('Giỏ hàng sau khi xóa:', this.cartItems);
+  }
+
+
+  updateLocalStorage() {
+    const userId = this.tokenService.getUserId();
+    localStorage.setItem(`cart-${userId}`, JSON.stringify(this.cartItems));
     this.cdr.detectChanges();
   }
 
-  placeOrder() {
-    if (this.selectedProducts.length === 0) {
-      Swal.fire({
-        title: 'Lỗi',
-        text: 'Vui lòng chọn ít nhất một sản phẩm để đặt hàng!',
-        icon: 'error',
-        confirmButtonText: 'OK',
-      });
-      return;
+  getTotal(): number {
+    return this.cartItems.reduce((acc, item) => acc + (item.quantity * item.product.donGia), 0);
+  }
+
+  selectAll(isChecked: boolean) {
+    this.cartItems.forEach(item => item.selected = isChecked);
+    this.cdr.detectChanges();
+  }
+  toggleSelectAll() {
+    this.isAllSelected = !this.isAllSelected; // Đảo trạng thái chọn tất cả
+
+    if (this.isAllSelected) {
+        this.selectedProducts = [...this.cartItems]; // Chọn tất cả sản phẩm
+    } else {
+        this.selectedProducts = []; // Bỏ chọn tất cả
     }
 
-    localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
-    this.cartService.setSelectedCartItems(this.selectedProducts);
-    this.router.navigate(['/app-order']);
-  }
+    // Cập nhật trạng thái checkbox của từng sản phẩm
+    this.cartItems.forEach(item => item.selected = this.isAllSelected);
+    this.calculateTotal();
+    this.cdr.detectChanges(); // Cập nhật giao diện
+}
+calculateTotal() {
+  this.totalAmount = this.selectedProducts.reduce((sum, item) => {
 
-  getTotal(): number {
-    const total = this.cartItems.reduce((acc, item) => acc + (item.quantity * item.product.donGia), 0);
-    console.log('💰 Tổng tiền giỏ hàng:', total);
-    return total;
+      return sum + (Number(item.quantity) * Number(item.product.donGia));
+  }, 0);
+}
+updateQuantity(item: any, newQuantity: number) {
+  if (newQuantity < 1) {
+    newQuantity = 1;
+    item.quantity = 1; // Đồng bộ item.quantity với giá trị mới
+  } else {
+    item.quantity = newQuantity; // Đồng bộ item.quantity với giá trị mới
   }
-
-  trackByProduct(index: number, item: any): string {
-    return `${item?.product?.idSanPham}_${item?.volume}` ?? `${index}`;
+  console.log(`🔔 Cập nhật số lượng - Sản phẩm: ${item.product.tenSanPham}, Số lượng: ${newQuantity}`);
+  this.cartService.updateCartItem(item.product.idSanPham, item.volume, newQuantity);
+  console.log(`🔔 Đã gọi updateCartItem - Sản phẩm: ${item.product.tenSanPham}, Số lượng: ${newQuantity}`);
+  if (this.selectedProducts.includes(item)) {
+    this.calculateTotal();
   }
-
-  ngOnDestroy() {
-    this.subscriptions.unsubscribe();
-  }
+  this.cdr.detectChanges();
+}
+logQuantityChange(item: any, newValue: number) {
+  console.log(`📝 ngModelChange - Sản phẩm: ${item.product.tenSanPham}, Giá trị mới: ${newValue}`);
+}
 }

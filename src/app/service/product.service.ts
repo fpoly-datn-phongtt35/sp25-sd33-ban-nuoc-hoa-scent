@@ -10,6 +10,7 @@ export class SanPhamService {
   searchcccccascacProducts(searchKeyword: string) {
     throw new Error('Method not implemented.');
   }
+  private bassseUrl = 'http://localhost:8080/rest';
   private apiURL = 'http://localhost:8080/rest/san-pham/All'; // URL của API
   private baseUrl = 'http://localhost:8080/rest/san-pham';
   private apiSearch = 'http://localhost:8080/rest/san-pham/search';
@@ -105,5 +106,18 @@ getSanPhamById(id: number) {
 getImagesByProductId(id: number) {
   return this.http.get<any[]>(`http://localhost:8080/rest/san-pham/findAllHinhAnhById?id=${id}`);
 }
+// Lấy danh sách mùi hương
+getMuiHuong(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.bassseUrl}/mui-huong/getAll`);
+}
 
+// Lấy danh sách nốt hương
+getNotHuong(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.bassseUrl}/not-huong/getAll`);
+}
+
+// Lấy danh sách phong cách
+getPhongCach(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.bassseUrl}/phong-cach/getAll`);
+}
 }

@@ -1,10 +1,48 @@
-::ng-deep .modal-dialog.custom-modal {
-  max-width: 65vw !important;
-  width: 65vw !important;
-  margin: auto !important;
+.custom-modal {
+  max-width: 800px;
+  width: 100%;
 }
-::ng-deep .modal {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+.ng-select {
+  .ng-value {
+    background-color: #e9ecef;
+    border-radius: 12px;
+    padding: 2px 8px;
+    margin: 2px;
+  }
+
+  .ng-value-icon {
+    cursor: pointer;
+    margin-left: 5px;
+  }
+}
+
+.text-danger {
+  font-size: 0.875rem;
+}
+
+.preview-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.btn-close.bg-danger {
+  background-color: #dc3545 !important;
+  color: white;
+  padding: 2px;
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
 }
