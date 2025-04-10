@@ -34,7 +34,9 @@ public class MuiHuong {
             inverseJoinColumns = @JoinColumn(name = "id_nhom_huong")
     )
     private List<NhomHuong> nhomHuongOnMuiHuongs;
-
+    @JsonIgnore
+    @OneToMany(mappedBy = "muiHuong")
+    private List<SanPhamMuiHuong> sanPhamMuiHuongs;
     // Getters và setters
     public Integer getId() {
         return id;

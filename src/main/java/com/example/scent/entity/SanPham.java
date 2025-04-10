@@ -73,7 +73,9 @@ public class SanPham {
             inverseJoinColumns = @JoinColumn(name = "id_phong_cach")
     )
     private List<PhongCach> phongCachs;
-
+    @JsonIgnore
+    @OneToMany(mappedBy = "sanPham")
+    private List<SanPhamMuiHuong> sanPhamMuiHuongs;
     public Integer getTrangThai() {
         return trangThai;
     }
