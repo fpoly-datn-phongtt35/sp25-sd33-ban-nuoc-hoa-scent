@@ -166,40 +166,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     Page<SanPhamInfoDTO> findAllProductsWithImages(Pageable pageable);
 
     //
-    @Query("""
-    SELECT new com.example.scent.dto.SanPhammDTO(
-        sp.idSanPham,
-        sp.tenSanPham,
-        MIN(ha.link),
-        th.tenThuongHieu,
-        dm.tenDanhMuc,
-        hd.moTaHuongDau,
-        hg.moTaHuongGiua,
-        hc.moTaHuongCuoi,
-        nh.tenNhomHuong,
-        (SELECT COALESCE(SUM(spct2.soLuongTonKho), 0)
-         FROM Spct spct2
-         WHERE spct2.sanPham.idSanPham = sp.idSanPham)
-    )
-    FROM SanPham sp
-    LEFT JOIN sp.nhomHuong nh 
-    LEFT JOIN sp.hinhAnhs ha
-    LEFT JOIN sp.thuongHieu th
-    LEFT JOIN sp.danhMuc dm
-    LEFT JOIN sp.huongDau hd
-    LEFT JOIN sp.huongGiua hg
-    LEFT JOIN sp.huongCuoi hc
-    WHERE (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       OR LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :keyword, '%')))
-    GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc,
-             hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.tenNhomHuong
-""")
-    Page<SanPhammDTO> searchAllFields(@Param("keyword") String keyword, Pageable pageable);
+
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
@@ -365,6 +332,16 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia,spct.dungTich,spct.idSpct")
     List<SPTQDTO> getALLSPQT(@Param("keyword") String keyword);
 
+    @Query("SELECT sp FROM SanPham sp " +
+            "LEFT JOIN FETCH sp.thuongHieu th " +
+            "LEFT JOIN FETCH sp.danhMuc dm " +
+            "LEFT JOIN FETCH sp.nhomHuong nh " +
+            "LEFT JOIN FETCH sp.huongDau hd " +
+            "LEFT JOIN FETCH sp.huongGiua hg " +
+            "LEFT JOIN FETCH sp.huongCuoi hc " +
+            "LEFT JOIN FETCH sp.hinhAnhs ha " + // Chỉ fetch một "bag"
+            "WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<SanPham> findByTenContainingIgnoreCase(@Param("keyword") String keyword, Pageable pageable);
 }
 
 

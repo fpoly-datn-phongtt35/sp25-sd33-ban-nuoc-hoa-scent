@@ -5,6 +5,7 @@
     import com.example.scent.spec.SanPhamSpec;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.data.domain.Page;
+    import org.springframework.data.domain.PageImpl;
     import org.springframework.data.domain.Pageable;
     import org.springframework.http.*;
     import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@
 
     import java.math.BigDecimal;
     import java.util.*;
+    import java.util.stream.Collectors;
 
 
     @Service
@@ -306,9 +308,95 @@
         public List<SanPhamDungTich> getProductVolumesByProductId(Integer productId) {
             return spi.findByIdSanPham(productId);
         }
+        public Page<SanPhammDTO> detailOnAdmin(String keyword, Pageable pageable) {
+            // Tìm kiếm sản phẩm theo keyword
+            Page<SanPham> sanPhamPage = spi.findByTenContainingIgnoreCase(keyword, pageable);
 
-        public Page<SanPhammDTO> detailOnAdmin(String searchQuery, Pageable pageable) {
-            return spi.searchAllFields(searchQuery,pageable);
+            // Chuyển đổi từ SanPham sang SanPhammDTO
+            List<SanPhammDTO> sanPhammDTOList = sanPhamPage.getContent().stream().map(sanPham -> {
+                // Lấy danh sách mùi hương và độ nổi hương
+                List<MuiHuongSelectionDTO> muiHuongSelections = sanPham.getSanPhamMuiHuongs() != null
+                        ? sanPham.getSanPhamMuiHuongs().stream().map(sanPhamMuiHuong -> {
+                    return new MuiHuongSelectionDTO(
+                            sanPhamMuiHuong.getMuiHuong().getId(),
+                            sanPhamMuiHuong.getMuiHuong().getTenMuiHuong(),
+                            sanPhamMuiHuong.getProminence()
+                    );
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                // Lấy danh sách nốt hương đầu
+                List<NotHuongDTO> huongDau = sanPham.getHuongDau() != null && sanPham.getHuongDau().getNotHuongs() != null
+                        ? sanPham.getHuongDau().getNotHuongs().stream().map(notHuong -> {
+                    return new NotHuongDTO(
+                            notHuong.getId(),
+                            notHuong.getTenNotHuong(),
+                            notHuong.getMoTa()
+                    );
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                // Lấy danh sách nốt hương giữa
+                List<NotHuongDTO> huongGiua = sanPham.getHuongGiua() != null && sanPham.getHuongGiua().getNotHuongs() != null
+                        ? sanPham.getHuongGiua().getNotHuongs().stream().map(notHuong -> {
+                    return new NotHuongDTO(
+                            notHuong.getId(),
+                            notHuong.getTenNotHuong(),
+                            notHuong.getMoTa()
+                    );
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                // Lấy danh sách nốt hương cuối
+                List<NotHuongDTO> huongCuoi = sanPham.getHuongCuoi() != null && sanPham.getHuongCuoi().getNotHuongs() != null
+                        ? sanPham.getHuongCuoi().getNotHuongs().stream().map(notHuong -> {
+                    return new NotHuongDTO(
+                            notHuong.getId(),
+                            notHuong.getTenNotHuong(),
+                            notHuong.getMoTa()
+                    );
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                // Lấy danh sách phong cách
+                List<PhongCachDTO> phongCach = sanPham.getPhongCachs() != null
+                        ? sanPham.getPhongCachs().stream().map(phongCachEntity -> {
+                    return new PhongCachDTO(
+                            phongCachEntity.getId(),
+                            phongCachEntity.getTenPhongCach(),
+                            phongCachEntity.getMoTa()
+                    );
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                // Tính tổng số lượng từ spcts
+                Long tongSoLuong = sanPham.getSpcts() != null
+                        ? sanPham.getSpcts().stream().mapToLong(Spct::getSoLuongTonKho).sum()
+                        : 0L;
+
+                // Lấy imageURL (giả sử lấy ảnh đầu tiên từ danh sách hinh_anh)
+                String imageURL = sanPham.getHinhAnhs() != null && !sanPham.getHinhAnhs().isEmpty()
+                        ? sanPham.getHinhAnhs().get(0).getLink()
+                        : "";
+
+                // Tạo DTO
+                return new SanPhammDTO(
+                        sanPham.getIdSanPham(),
+                        sanPham.getTenSanPham(),
+                        imageURL,
+                        sanPham.getThuongHieu() != null ? sanPham.getThuongHieu().getTenThuongHieu() : "",
+                        sanPham.getDanhMuc() != null ? sanPham.getDanhMuc().getTenDanhMuc() : "",
+                        sanPham.getNhomHuong() != null ? sanPham.getNhomHuong().getTenNhomHuong() : "",
+                        tongSoLuong,
+                        huongDau,
+                        huongGiua,
+                        huongCuoi,
+                        phongCach,
+                        muiHuongSelections
+                );
+            }).collect(Collectors.toList());
+
+            return new PageImpl<>(sanPhammDTOList, pageable, sanPhamPage.getTotalElements());
         }
         public List<HinhAnh> findAllImageBySanPhamId(Integer idSanPham) {
             return hai.findHinhAnhBySanPhamId(idSanPham);
