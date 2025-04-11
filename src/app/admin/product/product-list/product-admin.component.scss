@@ -388,3 +388,14 @@
     font-size: 13px;
   }
 }
+body.modal-open {
+  overflow: hidden !important;
+}
+
+body {
+  overflow: auto !important;
+}
+
+.modal.prominence-modal {
+  z-index: 1055; /* Đảm bảo modal con nằm trên modal chính */
+}

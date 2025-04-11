@@ -7,9 +7,73 @@
 }
 
 .custom-modal {
-  max-width: 700px;
+  max-width: 900px; // Increased width for better layout
+  width: 100%;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.form-label {
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.form-control,
+.form-select,
+ng-select {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+}
+
+textarea.form-control {
+  resize: none;
+}
+
+.ng-select .ng-select-container {
+  min-height: 38px;
+}
+
+.ng-value {
+  background-color: #e9ecef;
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin: 2px;
+}
+
+.ng-value-icon {
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.text-danger {
+  font-size: 0.8rem;
 }
 
 .prominence-modal {
   z-index: 1060 !important;
+}
+
+.modal-footer {
+  padding: 0.75rem;
+}
+
+.btn {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.d-flex.gap-2 {
+  gap: 0.5rem !important;
+}
+
+img {
+  border-radius: 4px;
+}
+
+.btn-close {
+  width: 0.75rem;
+  height: 0.75rem;
+  padding: 0.25rem;
 }

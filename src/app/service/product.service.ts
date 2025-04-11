@@ -120,4 +120,17 @@ getNotHuong(): Observable<any[]> {
 getPhongCach(): Observable<any[]> {
   return this.http.get<any[]>(`${this.bassseUrl}/phong-cach/getAll`);
 }
+// Thêm các phương thức để gọi API thêm mới
+addNotHuong(body: any): Observable<any> {
+  return this.http.post<any>(`${this.bassseUrl}/not-huong/add`, body);
+}
+
+addMuiHuong(body: any): Observable<any> {
+  return this.http.post<any>(`${this.bassseUrl}/mui-huong/add`, body);
+}
+
+addPhongCach(body: any): Observable<any> {
+  return this.http.post<any>(`${this.bassseUrl}/phong-cach/add`, body);
+}
+
 }

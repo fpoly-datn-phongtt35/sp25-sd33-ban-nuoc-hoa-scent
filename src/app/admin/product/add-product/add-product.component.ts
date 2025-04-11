@@ -9,8 +9,8 @@ import { DanhMucService } from '../../../service/danhmuc.service';
 import { NhomHuongService } from '../../../service/nhomhuong.service';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgSelectModule, NgSelectComponent } from '@ng-select/ng-select';
+import { ToastrService } from 'ngx-toastr';
 
-// Định nghĩa interface cho dữ liệu
 interface MuiHuong {
   id: number;
   tenMuiHuong: string;
@@ -76,7 +76,8 @@ export class AddProductComponent implements OnInit {
     private thuongHieuService: ThuongHieuService,
     private sanPhamService: SanPhamService,
     public activeModal: NgbActiveModal,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastr: ToastrService
   ) {
     this.productForm = this.fb.group({
       ten: ['', [Validators.required, Validators.minLength(3)]],
@@ -88,7 +89,7 @@ export class AddProductComponent implements OnInit {
       notHuongGiuaIds: [[], Validators.required],
       notHuongCuoiIds: [[], Validators.required],
       phongCachIds: [[], Validators.required],
-      muiHuongIds: [[]] // Không bắt buộc để tránh lỗi ban đầu
+      muiHuongIds: [[]]
     });
   }
 
@@ -115,7 +116,7 @@ export class AddProductComponent implements OnInit {
   async getAllDanhMuc() {
     try {
       const data = await firstValueFrom(this.danhMucService.getAllDanhMucDanhMuc());
-      this.danhMucList = data;
+      this.danhMucList = data || [];
     } catch (err) {
       console.error('Lỗi lấy danh mục:', err);
     }
@@ -124,7 +125,7 @@ export class AddProductComponent implements OnInit {
   async getAllThuongHieu() {
     try {
       const data = await firstValueFrom(this.thuongHieuService.getThuonghieu());
-      this.thuongHieuList = data;
+      this.thuongHieuList = data || [];
       this.productForm.get('idThuongHieu')?.valueChanges.subscribe(val => {
         if (val === '-1') this.handleAddThuongHieu();
       });
@@ -136,7 +137,7 @@ export class AddProductComponent implements OnInit {
   async getAllNhomHuong() {
     try {
       const data = await firstValueFrom(this.nhomHuongService.getnhomHuong());
-      this.nhomHuongList = data;
+      this.nhomHuongList = data || [];
       this.productForm.get('idNhomHuong')?.valueChanges.subscribe(val => {
         if (val === '-1') this.handleAddNhomHuong();
       });
@@ -145,16 +146,26 @@ export class AddProductComponent implements OnInit {
     }
   }
 
+  async getAllNotHuong() {
+    try {
+      const data = await firstValueFrom(this.sanPhamService.getNotHuong());
+      this.notHuongList = data || [];
+      this.notHuongList.push({ id: -1, tenNotHuong: 'Thêm nốt hương mới...' });
+    } catch (err) {
+      console.error('Lỗi lấy nốt hương:', err);
+    }
+  }
+
   async getAllMuiHuong() {
     try {
       const data = await firstValueFrom(this.sanPhamService.getMuiHuong());
       this.muiHuongList = data || [];
-      // Kiểm tra và lọc dữ liệu không hợp lệ
       this.muiHuongList = this.muiHuongList.filter(item => typeof item.id === 'number' && item.id > 0);
       console.log('muiHuongList loaded:', this.muiHuongList);
       if (!data || data.length === 0) {
         console.warn('No muiHuong data returned');
       }
+      this.muiHuongList.push({ id: -1, tenMuiHuong: 'Thêm mùi hương mới...' });
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
     } catch (err) {
@@ -164,19 +175,11 @@ export class AddProductComponent implements OnInit {
     }
   }
 
-  async getAllNotHuong() {
-    try {
-      const data = await firstValueFrom(this.sanPhamService.getNotHuong());
-      this.notHuongList = data;
-    } catch (err) {
-      console.error('Lỗi lấy nốt hương:', err);
-    }
-  }
-
   async getAllPhongCach() {
     try {
       const data = await firstValueFrom(this.sanPhamService.getPhongCach());
-      this.phongCachList = data;
+      this.phongCachList = data || [];
+      this.phongCachList.push({ id: -1, tenPhongCach: 'Thêm phong cách mới...' });
     } catch (err) {
       console.error('Lỗi lấy phong cách:', err);
     }
@@ -185,7 +188,7 @@ export class AddProductComponent implements OnInit {
   async handleAddThuongHieu() {
     const tenThuongHieu = prompt('📝 Nhập tên thương hiệu mới:');
     if (!tenThuongHieu || tenThuongHieu.trim().length < 2) {
-      alert('⚠️ Tên thương hiệu không hợp lệ!');
+      this.toastr.warning('Tên thương hiệu không hợp lệ!', 'Cảnh báo');
       this.productForm.get('idThuongHieu')?.setValue('');
       return;
     }
@@ -194,12 +197,12 @@ export class AddProductComponent implements OnInit {
     const body = { tenThuongHieu: tenThuongHieu.trim(), quocGia: quocGia.trim(), moTa: moTa.trim() };
     try {
       const response = (await firstValueFrom(this.thuongHieuService.addThuongHieu(body))) as { id: number };
-      alert('✅ Đã thêm thương hiệu mới!');
+      this.toastr.success('Đã thêm thương hiệu mới!', 'Thành công');
       await this.getAllThuongHieu();
       this.productForm.get('idThuongHieu')?.setValue(response.id);
     } catch (err) {
       console.error('❌ Lỗi khi thêm thương hiệu:', err);
-      alert('❌ Không thể thêm thương hiệu mới!');
+      this.toastr.error('Không thể thêm thương hiệu mới!', 'Lỗi');
       this.productForm.get('idThuongHieu')?.setValue('');
     }
   }
@@ -207,7 +210,7 @@ export class AddProductComponent implements OnInit {
   async handleAddNhomHuong() {
     const tenNhomHuong = prompt('📝 Nhập tên nhóm hương mới:');
     if (!tenNhomHuong || tenNhomHuong.trim().length < 2) {
-      alert('⚠️ Tên nhóm hương không hợp lệ!');
+      this.toastr.warning('Tên nhóm hương không hợp lệ!', 'Cảnh báo');
       this.productForm.get('idNhomHuong')?.setValue('');
       return;
     }
@@ -215,20 +218,122 @@ export class AddProductComponent implements OnInit {
     const body = { tenNhomHuong: tenNhomHuong.trim(), moTa: moTa.trim() };
     try {
       const response = (await firstValueFrom(this.nhomHuongService.createnhomHuong(body))) as { id: number };
-      alert('✅ Đã thêm nhóm hương mới!');
+      this.toastr.success('Đã thêm nhóm hương mới!', 'Thành công');
       await this.getAllNhomHuong();
       this.productForm.get('idNhomHuong')?.setValue(response.id);
     } catch (err) {
       console.error('❌ Lỗi khi thêm nhóm hương:', err);
-      alert('❌ Không thể thêm nhóm hương mới!');
+      this.toastr.error('Không thể thêm nhóm hương mới!', 'Lỗi');
       this.productForm.get('idNhomHuong')?.setValue('');
     }
+  }
+
+  async handleAddNotHuong(controlName: string) {
+    const tenNotHuong = prompt('📝 Nhập tên nốt hương mới:');
+    if (!tenNotHuong || tenNotHuong.trim().length < 2) {
+      this.toastr.warning('Tên nốt hương không hợp lệ!', 'Cảnh báo');
+      this.removeNotHuongSelection(controlName, -1);
+      return;
+    }
+    const moTa = prompt('📄 Nhập mô tả cho nốt hương (nếu có):') || '';
+    const body = { tenNotHuong: tenNotHuong.trim(), moTa: moTa.trim() };
+    try {
+      const response = (await firstValueFrom(this.sanPhamService.addNotHuong(body))) as { id: number };
+      this.toastr.success('Đã thêm nốt hương mới!', 'Thành công');
+      await this.getAllNotHuong();
+      const currentIds = this.productForm.get(controlName)?.value || [];
+      if (!currentIds.includes(response.id)) {
+        this.productForm.get(controlName)?.setValue([...currentIds, response.id]);
+      }
+    } catch (err) {
+      console.error('❌ Lỗi khi thêm nốt hương:', err);
+      this.toastr.error('Không thể thêm nốt hương mới!', 'Lỗi');
+      this.removeNotHuongSelection(controlName, -1);
+    }
+  }
+
+  async handleAddMuiHuong() {
+    const tenMuiHuong = prompt('📝 Nhập tên mùi hương mới:');
+    if (!tenMuiHuong || tenMuiHuong.trim().length < 2) {
+      this.toastr.warning('Tên mùi hương không hợp lệ!', 'Cảnh báo');
+      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== -1));
+      return;
+    }
+    const moTa = prompt('📄 Nhập mô tả cho mùi hương (nếu có):') || '';
+    const body = { tenMuiHuong: tenMuiHuong.trim(), moTa: moTa.trim() };
+    try {
+      const response = (await firstValueFrom(this.sanPhamService.addMuiHuong(body))) as { id: number };
+      this.toastr.success('Đã thêm mùi hương mới!', 'Thành công');
+      await this.getAllMuiHuong();
+      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+      if (!currentMuiHuongIds.includes(response.id)) {
+        this.productForm.get('muiHuongIds')?.setValue([...currentMuiHuongIds, response.id]);
+        this.onMuiHuongAdd(response.id);
+      }
+    } catch (err) {
+      console.error('❌ Lỗi khi thêm mùi hương:', err);
+      this.toastr.error('Không thể thêm mùi hương mới!', 'Lỗi');
+      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== -1));
+    }
+  }
+
+  async handleAddPhongCach() {
+    const tenPhongCach = prompt('📝 Nhập tên phong cách mới:');
+    if (!tenPhongCach || tenPhongCach.trim().length < 2) {
+      this.toastr.warning('Tên phong cách không hợp lệ!', 'Cảnh báo');
+      const currentPhongCachIds = this.productForm.get('phongCachIds')?.value || [];
+      this.productForm.get('phongCachIds')?.setValue(currentPhongCachIds.filter((id: number) => id !== -1));
+      return;
+    }
+    const moTa = prompt('📄 Nhập mô tả cho phong cách (nếu có):') || '';
+    const body = { tenPhongCach: tenPhongCach.trim(), moTa: moTa.trim() };
+    try {
+      const response = (await firstValueFrom(this.sanPhamService.addPhongCach(body))) as { id: number };
+      this.toastr.success('Đã thêm phong cách mới!', 'Thành công');
+      await this.getAllPhongCach();
+      const currentPhongCachIds = this.productForm.get('phongCachIds')?.value || [];
+      if (!currentPhongCachIds.includes(response.id)) {
+        this.productForm.get('phongCachIds')?.setValue([...currentPhongCachIds, response.id]);
+      }
+    } catch (err) {
+      console.error('❌ Lỗi khi thêm phong cách:', err);
+      this.toastr.error('Không thể thêm phong cách mới!', 'Lỗi');
+      const currentPhongCachIds = this.productForm.get('phongCachIds')?.value || [];
+      this.productForm.get('phongCachIds')?.setValue(currentPhongCachIds.filter((id: number) => id !== -1));
+    }
+  }
+
+  onNotHuongChange(controlName: string, event: any) {
+    const selectedIds = this.productForm.get(controlName)?.value || [];
+    if (selectedIds.includes(-1)) {
+      this.handleAddNotHuong(controlName);
+    }
+  }
+
+  onMuiHuongChange(event: any) {
+    const selectedIds = this.productForm.get('muiHuongIds')?.value || [];
+    if (selectedIds.includes(-1)) {
+      this.handleAddMuiHuong();
+    }
+  }
+
+  onPhongCachChange(event: any) {
+    const selectedIds = this.productForm.get('phongCachIds')?.value || [];
+    if (selectedIds.includes(-1)) {
+      this.handleAddPhongCach();
+    }
+  }
+
+  private removeNotHuongSelection(controlName: string, idToRemove: number) {
+    const currentIds = this.productForm.get(controlName)?.value || [];
+    this.productForm.get(controlName)?.setValue(currentIds.filter((id: number) => id !== idToRemove));
   }
 
   onMuiHuongAdd(event: any) {
     console.log('onMuiHuongAdd triggered with event:', event);
 
-    // Xử lý event để lấy ID
     let id: number;
     if (typeof event === 'object' && event !== null && 'id' in event) {
       id = Number(event.id);
@@ -259,7 +364,6 @@ export class AddProductComponent implements OnInit {
   onMuiHuongRemove(event: any) {
     console.log('onMuiHuongRemove triggered with event:', event);
 
-    // Xử lý event để lấy ID
     let id: number;
     if (typeof event === 'object' && event !== null && 'id' in event) {
       id = Number(event.id);
@@ -283,7 +387,7 @@ export class AddProductComponent implements OnInit {
 
     const prominenceLevel = Number(this.tempProminenceLevel);
     if (isNaN(prominenceLevel) || prominenceLevel < 0 || prominenceLevel > 1) {
-      alert('Độ nổi hương phải từ 0 đến 1!');
+      this.toastr.warning('Độ nổi hương phải từ 0 đến 1!', 'Cảnh báo');
       return;
     }
 
@@ -308,13 +412,36 @@ export class AddProductComponent implements OnInit {
   }
 
   closeProminenceModal() {
+    console.log('🔄 Đóng modal con (prominenceModal)...');
+
     this.showProminenceModal = false;
     this.tempMuiHuongId = null;
     this.tempProminenceLevel = 0.5;
-    document.body.classList.remove('modal-open');
-    const backdrop = document.querySelector('.modal-backdrop');
-    if (backdrop) backdrop.remove();
+
+    // Xóa backdrop của modal con
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    if (backdrops.length > 1) {
+      // Chỉ xóa backdrop của modal con, giữ lại backdrop của modal chính
+      console.log('🗑️ Xóa backdrop của modal con:', backdrops[backdrops.length - 1]);
+      backdrops[backdrops.length - 1].remove();
+    }
+
+    // Nếu không còn modal con nào mở, kiểm tra modal chính
+    const openModals = document.querySelectorAll('.modal.show:not(.prominence-modal)');
+    if (openModals.length === 0) {
+      console.log('🔄 Không còn modal nào mở, xóa lớp modal-open');
+      document.body.classList.remove('modal-open');
+      const remainingBackdrops = document.querySelectorAll('.modal-backdrop');
+      remainingBackdrops.forEach(backdrop => {
+        console.log('🗑️ Xóa backdrop còn lại:', backdrop);
+        backdrop.remove();
+      });
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '';
+    }
+
     this.cdr.detectChanges();
+    console.log('✅ Đã đóng modal con');
   }
 
   getMuiHuongName(item: number | MuiHuong): string {
@@ -337,16 +464,17 @@ export class AddProductComponent implements OnInit {
   async addProduct() {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
+      this.toastr.warning('Vui lòng điền đầy đủ thông tin hợp lệ!', 'Cảnh báo');
       return;
     }
 
     if (this.muiHuongSelections.length === 0) {
-      alert('Vui lòng chọn ít nhất một mùi hương và nhập độ nổi hương!');
+      this.toastr.warning('Vui lòng chọn ít nhất một mùi hương và nhập độ nổi hương!', 'Cảnh báo');
       return;
     }
 
     if (this.selectedFiles.length === 0) {
-      alert('Vui lòng chọn ít nhất một hình ảnh!');
+      this.toastr.warning('Vui lòng chọn ít nhất một hình ảnh!', 'Cảnh báo');
       return;
     }
 
@@ -368,21 +496,28 @@ export class AddProductComponent implements OnInit {
     formData.append('muiHuongSelections', JSON.stringify(this.muiHuongSelections));
     this.selectedFiles.forEach((file) => formData.append('images', file));
 
-    this.sanPhamService.addProductOnAdmin(formData).subscribe({
-      next: (response) => {
-        alert('✅ Thêm sản phẩm thành công!');
-        this.productAdd.emit(response);
-        this.closeModal();
-      },
-      error: (err) => {
-        console.error('❌ Lỗi khi thêm sản phẩm:', err);
-        alert('❌ Thêm sản phẩm thất bại!');
-      },
-      complete: () => {
-        this.isSubmitting = false;
-        this.cdr.detectChanges();
+    try {
+      const response = await firstValueFrom(this.sanPhamService.addProductOnAdmin(formData));
+      this.toastr.success('Thêm sản phẩm thành công!', 'Thành công');
+      this.productAdd.emit(response);
+      this.closeModal();
+    } catch (err: any) {
+      console.error('❌ Lỗi khi thêm sản phẩm:', err);
+      let errorMessage = 'Thêm sản phẩm thất bại!';
+      if (err.status === 400) {
+        errorMessage += ' Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+      } else if (err.status === 500) {
+        errorMessage += ' Lỗi server. Vui lòng thử lại sau.';
       }
-    });
+      if (err.error?.message) {
+        errorMessage += ` Chi tiết: ${err.error.message}`;
+      }
+      this.toastr.error(errorMessage, 'Lỗi');
+      this.closeModal();
+    } finally {
+      this.isSubmitting = false;
+      this.cdr.detectChanges();
+    }
   }
 
   onFileChange(event: any) {
@@ -408,14 +543,52 @@ export class AddProductComponent implements OnInit {
   }
 
   closeModal() {
+    console.log('🛑 Đang cố đóng modal chính...');
+
+    // Đóng modal con nếu còn mở
+    if (this.showProminenceModal) {
+      console.log('🔄 Đóng modal con (prominenceModal) trước...');
+      this.closeProminenceModal();
+    }
+
+    // Đóng modal chính
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
+      console.log('✅ Đã gọi dismiss trên modal chính');
+    } else {
+      console.error('❌ ActiveModal không khả dụng');
     }
-    const modalElement = document.querySelector('.modal');
-    if (modalElement) modalElement.remove();
-    const backdrop = document.querySelector('.modal-backdrop');
-    if (backdrop) backdrop.remove();
+
+    // Dọn dẹp trạng thái giao diện
+    this.finalizeModalClose();
+  }
+
+  private finalizeModalClose() {
+    console.log('🧹 Dọn dẹp trạng thái modal...');
+
+    // Xóa lớp modal-open khỏi body
     document.body.classList.remove('modal-open');
+
+    // Xóa tất cả backdrop còn sót lại
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+      console.log('🗑️ Xóa backdrop:', backdrop);
+      backdrop.remove();
+    });
+
+    // Xóa lớp show khỏi tất cả modal
+    const modals = document.querySelectorAll('.modal.show');
+    modals.forEach(modal => {
+      console.log('🗑️ Xóa lớp show khỏi modal:', modal);
+      modal.classList.remove('show');
+      modal.remove();
+    });
+
+    // Khôi phục trạng thái body
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '';
+
     this.cdr.detectChanges();
+    console.log('✅ Đã dọn dẹp trạng thái modal');
   }
 }

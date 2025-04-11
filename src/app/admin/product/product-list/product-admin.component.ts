@@ -8,6 +8,7 @@ import { UpdateProductComponent } from '../update-product/update-product.compone
 import { SpctComponent } from '../product-detail/spct-list/spct.component';
 import { SanPhamService } from '../../../service/product.service';
 import { TokenService } from '../../../service/token.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-product-admin',
@@ -39,7 +40,8 @@ export class ProductAdminComponent implements OnInit {
     private sanPhamService: SanPhamService,
     private router: Router,
     private modalService: NgbModal,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -48,7 +50,6 @@ export class ProductAdminComponent implements OnInit {
     this.loadProducts();
   }
 
-  // Helper method to get concatenated notes for huongDau, huongGiua, huongCuoi
   getNotesString(notes: any[]): string {
     if (!notes || !Array.isArray(notes)) {
       return 'Không xác định';
@@ -63,12 +64,11 @@ export class ProductAdminComponent implements OnInit {
     return phongCach.map(style => style.tenPhongCach).join(', ');
   }
 
-  loadProducts() {
+  loadProducts(): void {
     console.log('📌 Gọi API với:', this.page, this.size);
     this.sanPhamService.getSanPhamDetailonAdmin(this.searchTerm, this.page, this.size).subscribe({
       next: (response) => {
-        // Preprocess the products to add huongDauString, huongGiuaString, and huongCuoiString
-        this.products = (response.content || []).map(product => ({
+        this.products = (response.content || []).map((product: any) => ({
           ...product,
           huongDauString: this.getNotesString(product.huongDau),
           huongGiuaString: this.getNotesString(product.huongGiua),
@@ -83,19 +83,103 @@ export class ProductAdminComponent implements OnInit {
     });
   }
 
-  openUpdateProductModal(productId: number) {
-    const modalRef = this.modalService.open(UpdateProductComponent, {
-      centered: true,
+  openAddModal(): void {
+    const modalRef = this.modalService.open(AddProductComponent, {
+      size: 'lg',
       backdrop: 'static',
-      keyboard: false
+      keyboard: false,
     });
-    modalRef.componentInstance.productId = productId;
-    modalRef.componentInstance.productUpdate.subscribe(() => {
-      this.loadProducts();
+
+    modalRef.componentInstance.productAdd.subscribe((newProduct: any) => {
+      console.log('Sản phẩm mới:', newProduct);
+      this.refreshProductList();
     });
+
+    modalRef.result
+      .then(
+        (result) => {
+          console.log('Modal đóng với kết quả:', result);
+          this.restorePageState();
+        },
+        (reason) => {
+          console.log('Modal bị hủy với lý do:', reason);
+          this.restorePageState();
+        }
+      )
+      .catch((error) => {
+        console.error('Lỗi khi đóng modal:', error);
+        this.restorePageState();
+      });
   }
 
-  deleteProduct(id: number) {
+  openUpdateProductModal(productId: number): void {
+    const modalRef = this.modalService.open(UpdateProductComponent, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false,
+    });
+    modalRef.componentInstance.productId = productId;
+
+    modalRef.componentInstance.productUpdate.subscribe((updatedProduct: any) => {
+      console.log('Sản phẩm cập nhật:', updatedProduct);
+      this.refreshProductList();
+    });
+
+    modalRef.result
+      .then(
+        (result) => {
+          console.log('Modal đóng với kết quả:', result);
+          this.restorePageState();
+        },
+        (reason) => {
+          console.log('Modal bị hủy với lý do:', reason);
+          this.restorePageState();
+        }
+      )
+      .catch((error) => {
+        console.error('Lỗi khi đóng modal:', error);
+        this.restorePageState();
+      });
+  }
+
+  private restorePageState(): void {
+    console.log('🔄 Khôi phục trạng thái trang...');
+
+    // Xóa lớp modal-open khỏi body
+    document.body.classList.remove('modal-open');
+
+    // Xóa tất cả backdrop còn sót lại
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+      console.log('🗑️ Xóa backdrop:', backdrop);
+      backdrop.remove();
+    });
+
+    // Xóa lớp show và phần tử modal khỏi DOM
+    const modals = document.querySelectorAll('.modal.show');
+    modals.forEach(modal => {
+      console.log('🗑️ Xóa modal:', modal);
+      modal.classList.remove('show');
+      modal.remove();
+    });
+
+    // Khôi phục trạng thái body
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '';
+
+    // Đặt lại trạng thái giao diện
+    this.selectedProductId = null;
+    this.refreshProductList();
+    this.cdr.detectChanges();
+
+    console.log('✅ Đã khôi phục trạng thái trang');
+  }
+
+  private refreshProductList(): void {
+    this.loadProducts();
+  }
+
+  deleteProduct(id: number): void {
     alert('Chưa làm nha\n idSP:' + id);
   }
 
@@ -105,37 +189,18 @@ export class ProductAdminComponent implements OnInit {
     this.loadProducts();
   }
 
-  onRowClick(id: number) {
+  onRowClick(id: number): void {
     console.log(`🔎 Chọn sản phẩm ID: ${id}`);
     this.selectedProductId = id;
   }
 
-  closeProductDetail() {
+  closeProductDetail(): void {
     this.selectedProductId = null;
     console.log("🔄 Đã đóng chi tiết sản phẩm.");
+    this.restorePageState();
   }
 
-  openAddModal() {
-    const modalRef = this.modalService.open(AddProductComponent, {
-      centered: true,
-      backdrop: 'static',
-      keyboard: false
-    });
-    modalRef.componentInstance.productAdd.subscribe((newproduct: any) => {
-      console.log('🎉 Sản phẩm mới:', newproduct);
-      // Preprocess the new product to add the string properties
-      const processedProduct = {
-        ...newproduct,
-        huongDauString: this.getNotesString(newproduct.huongDau),
-        huongGiuaString: this.getNotesString(newproduct.huongGiua),
-        huongCuoiString: this.getNotesString(newproduct.huongCuoi)
-      };
-      this.products.unshift(processedProduct);
-      this.loadProducts();
-    });
-  }
-
-  goToPage(p: number) {
+  goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
@@ -143,14 +208,14 @@ export class ProductAdminComponent implements OnInit {
     }
   }
 
-  prevPage() {
+  prevPage(): void {
     if (this.page > 0) {
       this.page--;
       this.loadProducts();
     }
   }
 
-  nextPage() {
+  nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
       this.loadProducts();

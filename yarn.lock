@@ -128,10 +128,10 @@
     rxjs "^7.8.1"
     tslib "^2.3.0"
 
-"@angular/animations@^18.2.13":
-  version "18.2.13"
-  resolved "https://registry.npmjs.org/@angular/animations/-/animations-18.2.13.tgz"
-  integrity sha512-rG5J5Ek5Hg+Tz2NjkNOaG6PupiNK/lPfophXpsR1t/nWujqnMWX2krahD/i6kgD+jNWNKCJCYSOVvCx/BHOtKA==
+"@angular/animations@^19.2.6":
+  version "19.2.6"
+  resolved "https://registry.yarnpkg.com/@angular/animations/-/animations-19.2.6.tgz#ebc0ef0e07e6819160985836a4cf6b25f0982d8e"
+  integrity sha512-0Ei7pKXpq0eoijakRB+TQCh2EB02ReYUzRkhdw5kbQLOlTftBWWnMNn2qRfKU6cra+RyRXU8c34ZkEw6K7hZAw==
   dependencies:
     tslib "^2.3.0"
 
