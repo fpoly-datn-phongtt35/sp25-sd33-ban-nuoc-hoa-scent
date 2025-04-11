@@ -273,7 +273,7 @@
                     spmh.setId(new SanPhamMuiHuongId(savedSanPham.getIdSanPham(), muiHuong.getId()));
                     spmh.setSanPham(savedSanPham);
                     spmh.setMuiHuong(muiHuong);
-                    spmh.setProminence(selection.getProminence());
+                    spmh.setProminence(selection.getProminenceLevel());
                     sanPhamMuiHuongs.add(spmh);
                 }
                 savedSanPham.setSanPhamMuiHuongs(sanPhamMuiHuongInterface.saveAll(sanPhamMuiHuongs));

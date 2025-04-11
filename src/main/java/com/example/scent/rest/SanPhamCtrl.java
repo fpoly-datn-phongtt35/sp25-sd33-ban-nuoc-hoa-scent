@@ -8,6 +8,9 @@ import com.example.scent.repo.SanPhamBanChayDto;
 import com.example.scent.service.SanPhamSv;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -75,29 +78,56 @@ public class SanPhamCtrl {
 
     @PostMapping("/add")
     public ResponseEntity<?> createSanPham(
-            @RequestParam("ten") String tenSanPham,
+            @RequestParam("ten") @NotBlank(message = "Tên sản phẩm không được để trống") String tenSanPham,
             @RequestParam("moTa") String moTaSanPham,
-            @RequestParam("idThuongHieu") Integer idThuongHieu,
-            @RequestParam("idDanhMuc") Integer idDanhMuc,
-            @RequestParam("idNhomHuong") Integer idNhomHuong,
-            @RequestParam(value = "notHuongDauIds") List<Integer> notHuongDauIds,
-            @RequestParam(value = "notHuongGiuaIds") List<Integer> notHuongGiuaIds,
-            @RequestParam(value = "notHuongCuoiIds") List<Integer> notHuongCuoiIds,
-            @RequestParam(value = "phongCachIds") List<Integer> phongCachIds,
-            @RequestParam(value = "muiHuongSelections") String muiHuongSelectionsJson,
+            @RequestParam("idThuongHieu") @NotNull(message = "ID thương hiệu là bắt buộc") Integer idThuongHieu,
+            @RequestParam("idDanhMuc") @NotNull(message = "ID danh mục là bắt buộc") Integer idDanhMuc,
+            @RequestParam("idNhomHuong") @NotNull(message = "ID nhóm hương là bắt buộc") Integer idNhomHuong,
+            @RequestParam(value = "notHuongDauIds") @NotEmpty(message = "Phải có ít nhất một nốt hương đầu") List<Integer> notHuongDauIds,
+            @RequestParam(value = "notHuongGiuaIds") @NotEmpty(message = "Phải có ít nhất một nốt hương giữa") List<Integer> notHuongGiuaIds,
+            @RequestParam(value = "notHuongCuoiIds") @NotEmpty(message = "Phải có ít nhất một nốt hương cuối") List<Integer> notHuongCuoiIds,
+            @RequestParam(value = "phongCachIds") @NotEmpty(message = "Phải có ít nhất một phong cách") List<Integer> phongCachIds,
+            @RequestParam(value = "muiHuongSelections") @NotBlank(message = "Mùi hương không được để trống") String muiHuongSelectionsJson,
             @RequestParam(value = "images", required = false) MultipartFile[] images) {
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            List<MuiHuongSelectionDTO> muiHuongSelections = objectMapper.readValue(
-                    muiHuongSelectionsJson,
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, MuiHuongSelectionDTO.class)
-            );
+            // Kiểm tra dữ liệu đầu vào
+            if (muiHuongSelectionsJson == null || muiHuongSelectionsJson.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Danh sách mùi hương không được để trống!");
+            }
 
+            // Parse muiHuongSelections từ JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<MuiHuongSelectionDTO> muiHuongSelections;
+            try {
+                muiHuongSelections = objectMapper.readValue(
+                        muiHuongSelectionsJson,
+                        objectMapper.getTypeFactory().constructCollectionType(List.class, MuiHuongSelectionDTO.class)
+                );
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Lỗi khi parse dữ liệu mùi hương: " + e.getMessage());
+            }
+
+            // Kiểm tra muiHuongSelections
+            if (muiHuongSelections == null || muiHuongSelections.isEmpty()) {
+                return ResponseEntity.badRequest().body("Phải có ít nhất một mùi hương!");
+            }
+
+            for (MuiHuongSelectionDTO selection : muiHuongSelections) {
+                if (selection.getId() == null || selection.getProminenceLevel() == null) {
+                    return ResponseEntity.badRequest().body("Dữ liệu mùi hương không hợp lệ: ID và độ nổi hương không được để trống!");
+                }
+                if (selection.getProminenceLevel() < 0 || selection.getProminenceLevel() > 1) {
+                    return ResponseEntity.badRequest().body("Độ nổi hương phải nằm trong khoảng từ 0 đến 1!");
+                }
+            }
+
+            // Gọi service để lưu sản phẩm
             SanPham savedSanPham = sps.addProductWithDetails(
                     tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idNhomHuong,
                     muiHuongSelections, notHuongDauIds, notHuongGiuaIds, notHuongCuoiIds,
                     phongCachIds, images
             );
+
             return ResponseEntity.ok(savedSanPham);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

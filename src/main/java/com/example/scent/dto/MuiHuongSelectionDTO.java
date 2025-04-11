@@ -2,17 +2,23 @@ package com.example.scent.dto;
 
 public class MuiHuongSelectionDTO {
     private Integer id;
-    private Float prominence;
+    private Double prominenceLevel;
 
-    // Getters, setters, and constructors
-    public MuiHuongSelectionDTO() {}
-    public MuiHuongSelectionDTO(Integer id, Float prominence) {
-        this.id = id;
-        this.prominence = prominence;
+    // Getters và setters
+    public Integer getId() {
+        return id;
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public Float getProminence() { return prominence; }
-    public void setProminence(Float prominence) { this.prominence = prominence; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Double getProminenceLevel() {
+        return prominenceLevel;
+    }
+
+    public void setProminenceLevel(Double prominenceLevel) {
+        this.prominenceLevel = prominenceLevel;
+    }
+
 }

@@ -28,5 +28,5 @@ public class SanPhamMuiHuong implements Serializable {
     private MuiHuong muiHuong;
 
     @Column(name = "prominence")
-    private Float prominence;
+    private Double prominence;
 }
