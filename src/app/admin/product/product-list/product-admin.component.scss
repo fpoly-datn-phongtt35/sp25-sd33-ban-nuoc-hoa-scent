@@ -67,15 +67,18 @@
 }
 
 .table-container {
-  overflow-x: auto; // Cho phép cuộn ngang nếu bảng quá rộng
+  overflow-x: auto; // Cho phép cuộn ngang
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  -webkit-overflow-scrolling: touch; // Cải thiện cuộn trên thiết bị di động
+  max-height: calc(100vh - 300px); // Giới hạn chiều cao để thanh cuộn hiển thị
+  position: relative; // Để hỗ trợ sticky scrollbar
 }
 
 .table {
   width: 100%;
-  min-width: 1600px; // Tăng min-width để đảm bảo tất cả cột hiển thị
+  min-width: 2000px; // Tăng min-width để đảm bảo tất cả cột hiển thị
   border-collapse: separate;
   border-spacing: 0;
   font-size: 14px;
@@ -94,6 +97,9 @@
     text-transform: uppercase;
     font-size: 13px;
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1; // Đảm bảo tiêu đề không bị che
   }
 
   td {
@@ -139,12 +145,12 @@
   }
 
   th:nth-child(2), td:nth-child(2) { // Hình ảnh
-    width: 5%;
+    width: 4%;
     text-align: center;
   }
 
   th:nth-child(3), td:nth-child(3) { // Tên
-    width: 18%;
+    width: 22%;
     white-space: normal; // Cho phép xuống dòng
   }
 
@@ -162,17 +168,17 @@
   }
 
   th:nth-child(7), td:nth-child(7) { // Mùi hương
-    width: 18%;
+    width: 22%;
     white-space: normal;
   }
 
   th:nth-child(8), td:nth-child(8) { // Phong cách
-    width: 18%;
+    width: 22%;
     white-space: normal;
   }
 
   th:nth-child(9), td:nth-child(9) { // Mùi hương nổi bật
-    width: 18%;
+    width: 22%;
     white-space: normal;
   }
 
