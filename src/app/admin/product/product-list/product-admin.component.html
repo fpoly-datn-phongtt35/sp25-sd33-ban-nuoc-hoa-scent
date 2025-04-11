@@ -37,8 +37,8 @@
             <th>Nhóm hương</th>
             <th>Mùi hương</th>
             <th>Phong cách</th>
-            <th>Mùi hương nổi bật</th>
-            <th>Tổng số lượng tồn kho</th>
+            <th>Mùi hương</th>
+            <th>Tồn kho</th>
             <th *ngIf="userRole !== 'STAFF'">Action</th>
           </tr>
         </thead>
@@ -64,22 +64,22 @@
             <td (click)="onRowClick(product.idSanPham)">{{ product.tenNhomHuong }}</td>
             <td (click)="onRowClick(product.idSanPham)">
               <ul class="text-start">
-                <li><strong>Tầng đầu:</strong> {{ product.huongDau[0]?.moTa || 'Không xác định' }}</li>
-                <li><strong>Tầng giữa:</strong> {{ product.huongGiua[0]?.moTa || 'Không xác định' }}</li>
-                <li><strong>Tầng cuối:</strong> {{ product.huongCuoi[0]?.moTa || 'Không xác định' }}</li>
+                <li><strong>Tầng đầu:</strong> {{ product.huongDauString }}</li>
+                <li><strong>Tầng giữa:</strong> {{ product.huongGiuaString }}</li>
+                <li><strong>Tầng cuối:</strong> {{ product.huongCuoiString }}</li>
               </ul>
             </td>
             <td (click)="onRowClick(product.idSanPham)">
               <ul class="text-start">
-                <li *ngFor="let style of product.phongCach">
-                  <strong>{{ style.tenPhongCach }}:</strong> {{ style.moTa }}
+                <li>
+                  <strong>{{ getPhongCachString(product.phongCach) }}</strong>
                 </li>
               </ul>
             </td>
             <td (click)="onRowClick(product.idSanPham)">
               <ul class="text-start">
                 <li *ngFor="let scent of product.muiHuongSelections">
-                  <strong>{{ scent.tenMuiHuong }}</strong> (Mức độ nổi bật: {{ scent.prominenceLevel }})
+                  <strong>{{ scent.tenMuiHuong }} ({{ scent.prominenceLevel }})</strong>
                 </li>
               </ul>
             </td>
@@ -107,42 +107,58 @@
       </table>
     </div>
 
-    <!-- Phân trang -->
-    <nav aria-label="Page navigation">
-      <ul class="pagination justify-content-center">
-        <!-- Trang đầu -->
-        <li class="page-item" [class.disabled]="page === 0">
-          <button class="page-link" (click)="goToPage(0)">«</button>
-        </li>
-        <!-- Trang trước -->
-        <li class="page-item" [class.disabled]="page === 0">
-          <button class="page-link" (click)="prevPage()">‹</button>
-        </li>
-        <!-- Số trang -->
-        <li class="page-item" *ngIf="page > 2">
-          <button class="page-link" (click)="goToPage(0)">1</button>
-        </li>
-        <li class="page-item disabled" *ngIf="page > 3">
-          <span class="page-link">...</span>
-        </li>
-        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-        </li>
-        <li class="page-item disabled" *ngIf="page < totalPages - 4">
-          <span class="page-link">...</span>
-        </li>
-        <li class="page-item" *ngIf="page < totalPages - 3">
-          <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-        </li>
-        <!-- Trang sau -->
-        <li class="page-item" [class.disabled]="page >= totalPages - 1">
-          <button class="page-link" (click)="nextPage()">›</button>
-        </li>
-        <!-- Trang cuối -->
-        <li class="page-item" [class.disabled]="page >= totalPages - 1">
-          <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-        </li>
-      </ul>
-    </nav>
+    <!-- Pagination -->
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang với Bootstrap -->
+<!-- ✅ Phân trang đẹp với Bootstrap -->
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+
+    <!-- Nút "Trang đầu" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="goToPage(0)">«</button>
+    </li>
+
+    <!-- Nút "Trước" -->
+    <li class="page-item" [class.disabled]="page === 0">
+      <button class="page-link" (click)="prevPage()">‹</button>
+    </li>
+
+    <!-- Hiển thị trang đầu nếu page > 2 -->
+    <li class="page-item" *ngIf="page > 2">
+      <button class="page-link" (click)="goToPage(0)">1</button>
+    </li>
+
+    <!-- Dấu "..." nếu cần -->
+    <li class="page-item disabled" *ngIf="page > 3">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị các trang gần nhất -->
+    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+    </li>
+
+    <!-- Dấu "..." nếu có nhiều trang -->
+    <li class="page-item disabled" *ngIf="page < totalPages - 4">
+      <span class="page-link">...</span>
+    </li>
+
+    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
+    <li class="page-item" *ngIf="page < totalPages - 3">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+    </li>
+
+    <!-- Nút "Sau" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="nextPage()">›</button>
+    </li>
+
+    <!-- Nút "Trang cuối" -->
+    <li class="page-item" [class.disabled]="page >= totalPages - 1">
+      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+    </li>
+  </ul>
+</nav>
   </div>
 </div>
