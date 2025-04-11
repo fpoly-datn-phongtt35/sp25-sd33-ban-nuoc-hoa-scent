@@ -164,51 +164,140 @@
             return null;
         }
 
+        @Transactional
         public SanPham updateProductWithDetails(
                 Integer idSanPham,
-                String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc,
-                Integer idHuongDau, Integer idHuongGiua, Integer idHuongCuoi, MultipartFile[] images,
-                Integer[] idHinhAnhDelete, Integer idNhomHuong
+                String tenSanPham,
+                String moTaSanPham,
+                Integer idThuongHieu,
+                Integer idDanhMuc,
+                Integer idNhomHuong,
+                List<MuiHuongSelectionDTO> muiHuongSelections,
+                List<Integer> notHuongDauIds,
+                List<Integer> notHuongGiuaIds,
+                List<Integer> notHuongCuoiIds,
+                List<Integer> phongCachIds,
+                MultipartFile[] images,
+                Integer[] idHinhAnhDelete
         ) {
-
             // Tìm sản phẩm cần cập nhật
             SanPham sanPham = spi.findById(idSanPham)
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
-            // 🧼 Xóa tầng hương cũ
-            // Gỡ liên kết cũ
+
+            // Bước 1: Gỡ các tham chiếu khóa ngoại trong bảng san_pham
+            // Đặt id_huong_dau, id_huong_giua, id_huong_cuoi thành null
             sanPham.setHuongDau(null);
             sanPham.setHuongGiua(null);
             sanPham.setHuongCuoi(null);
-            spi.save(sanPham); // Gỡ khóa ngoại trong DB
+            spi.save(sanPham); // Lưu để gỡ liên kết khóa ngoại
 
-            if (sanPham.getHuongDau() != null) {
-                huongDauRepo.deleteById(sanPham.getHuongDau().getId());
+            // Bước 2: Xóa các bản ghi con (HuongDau, HuongGiua, HuongCuoi)
+            // Lấy ID của các tầng hương cũ để xóa
+            Integer oldHuongDauId = sanPham.getHuongDau() != null ? sanPham.getHuongDau().getId() : null;
+            Integer oldHuongGiuaId = sanPham.getHuongGiua() != null ? sanPham.getHuongGiua().getId() : null;
+            Integer oldHuongCuoiId = sanPham.getHuongCuoi() != null ? sanPham.getHuongCuoi().getId() : null;
+
+            if (oldHuongDauId != null) {
+                huongDauRepo.deleteById(oldHuongDauId);
             }
-            if (sanPham.getHuongGiua() != null) {
-                huongGiuaRepo.deleteById(sanPham.getHuongGiua().getId());
+            if (oldHuongGiuaId != null) {
+                huongGiuaRepo.deleteById(oldHuongGiuaId);
             }
-            if (sanPham.getHuongCuoi() != null) {
-                huongCuoiRepo.deleteById(sanPham.getHuongCuoi().getId());
+            if (oldHuongCuoiId != null) {
+                huongCuoiRepo.deleteById(oldHuongCuoiId);
             }
-            //Xóa hình ảnh
+
+            // Bước 3: Xóa các bản ghi con khác
+            // Xóa mùi hương cũ (SanPhamMuiHuong)
+            if (sanPham.getSanPhamMuiHuongs() != null && !sanPham.getSanPhamMuiHuongs().isEmpty()) {
+                sanPhamMuiHuongInterface.deleteAll(sanPham.getSanPhamMuiHuongs());
+                sanPham.setSanPhamMuiHuongs(null);
+            }
+
+            // Xóa hình ảnh cũ nếu có
             if (idHinhAnhDelete != null && idHinhAnhDelete.length > 0) {
                 hai.deleteAllById(Arrays.asList(idHinhAnhDelete));
             }
-            // Cập nhật thông tin sản phẩm
+
+            // Bước 4: Cập nhật thông tin cơ bản của sản phẩm
             sanPham.setTenSanPham(tenSanPham);
             sanPham.setMoTaSanPham(moTaSanPham);
             sanPham.setThuongHieu(thuongHieuRepo.findById(idThuongHieu)
                     .orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại")));
             sanPham.setDanhMuc(danhMucRepo.findById(idDanhMuc)
                     .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
-            sanPham.setHuongDau(huongDauRepo.findById(idHuongDau).orElse(null));
-            sanPham.setHuongGiua(huongGiuaRepo.findById(idHuongGiua).orElse(null));
-            sanPham.setHuongCuoi(huongCuoiRepo.findById(idHuongCuoi).orElse(null));
-            sanPham.setNhomHuong(nhi.findById(idNhomHuong).orElse(null));
-            // Lưu sản phẩm đã cập nhật
+            sanPham.setNhomHuong(nhi.findById(idNhomHuong)
+                    .orElseThrow(() -> new RuntimeException("Nhóm hương không tồn tại")));
+
+            // Bước 5: Tạo mới các tầng hương
+            if (notHuongDauIds != null && !notHuongDauIds.isEmpty()) {
+                HuongDau huongDau = new HuongDau();
+                List<NotHuong> notHuongsDau = notHuongInterface.findAllById(notHuongDauIds);
+                if (notHuongsDau.size() != notHuongDauIds.size()) {
+                    throw new RuntimeException("Một số nốt hương đầu không tồn tại");
+                }
+                huongDau.setNotHuongs(notHuongsDau);
+                huongDauRepo.save(huongDau);
+                sanPham.setHuongDau(huongDau);
+            }
+
+            if (notHuongGiuaIds != null && !notHuongGiuaIds.isEmpty()) {
+                HuongGiua huongGiua = new HuongGiua();
+                List<NotHuong> notHuongsGiua = notHuongInterface.findAllById(notHuongGiuaIds);
+                if (notHuongsGiua.size() != notHuongGiuaIds.size()) {
+                    throw new RuntimeException("Một số nốt hương giữa không tồn tại");
+                }
+                huongGiua.setNotHuongs(notHuongsGiua);
+                huongGiuaRepo.save(huongGiua);
+                sanPham.setHuongGiua(huongGiua);
+            }
+
+            if (notHuongCuoiIds != null && !notHuongCuoiIds.isEmpty()) {
+                HuongCuoi huongCuoi = new HuongCuoi();
+                List<NotHuong> notHuongsCuoi = notHuongInterface.findAllById(notHuongCuoiIds);
+                if (notHuongsCuoi.size() != notHuongCuoiIds.size()) {
+                    throw new RuntimeException("Một số nốt hương cuối không tồn tại");
+                }
+                huongCuoi.setNotHuongs(notHuongsCuoi);
+                huongCuoiRepo.save(huongCuoi);
+                sanPham.setHuongCuoi(huongCuoi);
+            }
+
+            // Cập nhật mô tả tầng hương
+            sanPham.updateFragranceDescriptions();
+
+            // Bước 6: Cập nhật phong cách
+            if (phongCachIds != null) {
+                List<PhongCach> phongCachs = phongCachInterface.findAllById(phongCachIds);
+                if (phongCachs.size() != phongCachIds.size()) {
+                    throw new RuntimeException("Một số phong cách không tồn tại");
+                }
+                sanPham.setPhongCachs(phongCachs);
+            } else {
+                sanPham.setPhongCachs(new ArrayList<>());
+            }
+
+            // Lưu sản phẩm trước khi thêm mùi hương và hình ảnh
             SanPham updatedSanPham = spi.save(sanPham);
 
-            // Kiểm tra nếu có ảnh mới
+            // Bước 7: Cập nhật mùi hương (SanPhamMuiHuong)
+            if (muiHuongSelections != null && !muiHuongSelections.isEmpty()) {
+                List<SanPhamMuiHuong> sanPhamMuiHuongs = new ArrayList<>();
+                for (MuiHuongSelectionDTO selection : muiHuongSelections) {
+                    MuiHuong muiHuong = muiHuongInterface.findById(selection.getId())
+                            .orElseThrow(() -> new RuntimeException("Mùi hương không tồn tại: " + selection.getId()));
+                    SanPhamMuiHuong spmh = new SanPhamMuiHuong();
+                    spmh.setId(new SanPhamMuiHuongId(updatedSanPham.getIdSanPham(), muiHuong.getId()));
+                    spmh.setSanPham(updatedSanPham);
+                    spmh.setMuiHuong(muiHuong);
+                    spmh.setProminence(selection.getProminenceLevel());
+                    sanPhamMuiHuongs.add(spmh);
+                }
+                updatedSanPham.setSanPhamMuiHuongs(sanPhamMuiHuongInterface.saveAll(sanPhamMuiHuongs));
+            }
+
+            // Bước 8: Xử lý hình ảnh mới
+            int uploadedImages = 0;
             if (images != null && images.length > 0) {
                 for (MultipartFile image : images) {
                     if (!image.isEmpty()) {
@@ -218,9 +307,17 @@
                             hinhAnh.setLink(imageUrl);
                             hinhAnh.setSanPham(updatedSanPham);
                             hai.save(hinhAnh);
+                            uploadedImages++;
                         }
                     }
                 }
+            }
+
+            // Kiểm tra nếu không có ảnh nào được tải lên và cũng không còn ảnh cũ
+            List<HinhAnh> remainingImages = hai.findHinhAnhBySanPhamId(updatedSanPham.getIdSanPham());
+            if (remainingImages.isEmpty() && uploadedImages == 0) {
+                spi.delete(updatedSanPham);
+                throw new RuntimeException("Không thể cập nhật sản phẩm vì không có ảnh nào tồn tại.");
             }
 
             return updatedSanPham;
@@ -477,9 +574,33 @@
         }
 
         public Optional<SanPham> findById(Integer id) {
-             return spi.findById(id);
+            Optional<SanPham> sanPham = spi.findById(id);
+            sanPham.ifPresent(sp -> {
+                // Khởi tạo các mối quan hệ LAZY
+                Hibernate.initialize(sp.getSanPhamMuiHuongs());
+                if (sp.getSanPhamMuiHuongs() != null) {
+                    sp.getSanPhamMuiHuongs().forEach(sanPhamMuiHuong -> {
+                        if (sanPhamMuiHuong != null) {
+                            Hibernate.initialize(sanPhamMuiHuong.getMuiHuong());
+                        }
+                    });
+                }
+                Hibernate.initialize(sp.getHuongDau());
+                if (sp.getHuongDau() != null) {
+                    Hibernate.initialize(sp.getHuongDau().getNotHuongs());
+                }
+                Hibernate.initialize(sp.getHuongGiua());
+                if (sp.getHuongGiua() != null) {
+                    Hibernate.initialize(sp.getHuongGiua().getNotHuongs());
+                }
+                Hibernate.initialize(sp.getHuongCuoi());
+                if (sp.getHuongCuoi() != null) {
+                    Hibernate.initialize(sp.getHuongCuoi().getNotHuongs());
+                }
+                Hibernate.initialize(sp.getPhongCachs());
+            });
+            return sanPham;
         }
-
         ///
         public Page<SanPhamInfoDTO> searchSanPhamCombined(String searchQuery,
                                                           BigDecimal minPrice,

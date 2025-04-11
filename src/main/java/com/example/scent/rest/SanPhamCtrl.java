@@ -18,16 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -37,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @CrossOrigin("*")
 @RestController
@@ -136,23 +128,24 @@ public class SanPhamCtrl {
     }
 
 
-    @PutMapping("/update")
-    public ResponseEntity<?> updateSanPham(
-            @RequestParam("idSanPham") Integer idSanPham,
-            @RequestParam("ten") String tenSanPham,
-            @RequestParam("moTa") String moTaSanPham,
-            @RequestParam("idThuongHieu") Integer idThuongHieu,
-            @RequestParam("idDanhMuc") Integer idDanhMuc,
-            @RequestParam("idHuongDau") Integer idHuongDau,
-            @RequestParam("idHuongGiua") Integer idHuongGiua,
-            @RequestParam("idHuongCuoi") Integer idHuongCuoi,
-            @RequestParam(value = "image", required = false) MultipartFile[] images,
-            @RequestParam(value = "idHinhAnhDelete",required = false) Integer[] idHinhAnhDelete,Integer idNhomHuong)
-    {
+    @PutMapping(value = "/update", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> updateSanPham(@ModelAttribute UpdateSanPhamRequestDTO request) {
         try {
             SanPham updatedSanPham = sps.updateProductWithDetails(
-                    idSanPham, tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idHuongDau, idHuongGiua, idHuongCuoi, images
-            ,idHinhAnhDelete,idNhomHuong);
+                    request.getIdSanPham(),
+                    request.getTen(),
+                    request.getMoTa(),
+                    request.getIdThuongHieu(),
+                    request.getIdDanhMuc(),
+                    request.getIdNhomHuong(),
+                    request.getMuiHuongSelections(),
+                    request.getNotHuongDauIds(),
+                    request.getNotHuongGiuaIds(),
+                    request.getNotHuongCuoiIds(),
+                    request.getPhongCachIds(),
+                    request.getImages(),
+                    request.getIdHinhAnhDelete()
+            );
             return ResponseEntity.ok(updatedSanPham);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -236,13 +229,131 @@ public class SanPhamCtrl {
     }
     @GetMapping("/findById")
     public ResponseEntity<?> findById(@RequestParam("id") Integer id) {
-        Optional<SanPham> sanPham = sps.findById(id);
+        Optional<SanPham> sanPham = sps.findById(id); // `sps` is your service
         if (sanPham.isPresent()) {
-            return ResponseEntity.ok(sanPham.get());
+            SanPham sp = sanPham.get();
+            SanPhamReponseUpdateAdminDTO sanPhamDTO = new SanPhamReponseUpdateAdminDTO();
+
+            // Map basic fields
+            sanPhamDTO.setId(sp.getIdSanPham());
+            sanPhamDTO.setTenSanPham(sp.getTenSanPham());
+            sanPhamDTO.setMoTaSanPham(sp.getMoTaSanPham());
+
+            // Map ThuongHieu, DanhMuc, and NhomHuong IDs
+            if (sp.getThuongHieu() != null) {
+                sanPhamDTO.setIdThuongHieu(sp.getThuongHieu().getId());
+            }
+            if (sp.getDanhMuc() != null) {
+                sanPhamDTO.setIdDanhMuc(sp.getDanhMuc().getId());
+            }
+            if (sp.getNhomHuong() != null) {
+                sanPhamDTO.setIdNhomHuong(sp.getNhomHuong().getId());
+            }
+
+            // Map SanPhamMuiHuongs and MuiHuongSelections
+            if (sp.getSanPhamMuiHuongs() != null) {
+                // Map to sanPhamMuiHuongs (as before)
+                List<MuiHuongReponseUpdateDTO> muiHuongDTOs = sp.getSanPhamMuiHuongs().stream()
+                        .filter(sanPhamMuiHuong -> sanPhamMuiHuong.getMuiHuong() != null)
+                        .map(sanPhamMuiHuong -> {
+                            MuiHuongReponseUpdateDTO muiHuongDTO = new MuiHuongReponseUpdateDTO();
+                            muiHuongDTO.setId(sanPhamMuiHuong.getMuiHuong().getId());
+                            muiHuongDTO.setTenMuiHuong(sanPhamMuiHuong.getMuiHuong().getTenMuiHuong());
+                            return muiHuongDTO;
+                        }).collect(Collectors.toList());
+                sanPhamDTO.setSanPhamMuiHuongs(muiHuongDTOs);
+
+                // Map to muiHuongSelections (for frontend)
+                List<MuiHuongSelectionDTO> muiHuongSelections = sp.getSanPhamMuiHuongs().stream()
+                        .filter(sanPhamMuiHuong -> sanPhamMuiHuong.getMuiHuong() != null)
+                        .map(sanPhamMuiHuong -> {
+                            MuiHuongSelectionDTO selectionDTO = new MuiHuongSelectionDTO();
+                            selectionDTO.setTenMuiHuong(sanPhamMuiHuong.getMuiHuong().getTenMuiHuong());
+                            selectionDTO.setProminenceLevel(sanPhamMuiHuong.getProminence() != null ? sanPhamMuiHuong.getProminence() : 0.5); // Default to 0.5 if null
+                            return selectionDTO;
+                        }).collect(Collectors.toList());
+                sanPhamDTO.setMuiHuongSelections(muiHuongSelections);
+            }
+
+            // Map HuongDau and its NotHuongs
+            if (sp.getHuongDau() != null) {
+                TangHuongDTO huongDauDTO = new TangHuongDTO();
+                huongDauDTO.setId(sp.getHuongDau().getId());
+                huongDauDTO.setTenHuong(sp.getHuongDau().getMoTaHuongDau());
+                if (sp.getHuongDau().getNotHuongs() != null) {
+                    List<NotHuongUpdateReponseDTO> notHuongDTOs = sp.getHuongDau().getNotHuongs().stream()
+                            .map(notHuong -> {
+                                NotHuongUpdateReponseDTO notHuongDTO = new NotHuongUpdateReponseDTO();
+                                notHuongDTO.setId(notHuong.getId());
+                                notHuongDTO.setTenNotHuong(notHuong.getTenNotHuong());
+                                return notHuongDTO;
+                            }).collect(Collectors.toList());
+                    huongDauDTO.setNotHuongs(notHuongDTOs);
+                }
+                sanPhamDTO.setHuongDau(huongDauDTO);
+            }
+
+            // Map HuongGiua and its NotHuongs
+            if (sp.getHuongGiua() != null) {
+                TangHuongDTO huongGiuaDTO = new TangHuongDTO();
+                huongGiuaDTO.setId(sp.getHuongGiua().getId());
+                huongGiuaDTO.setTenHuong(sp.getHuongGiua().getMoTaHuongGiua());
+                if (sp.getHuongGiua().getNotHuongs() != null) {
+                    List<NotHuongUpdateReponseDTO> notHuongDTOs = sp.getHuongGiua().getNotHuongs().stream()
+                            .map(notHuong -> {
+                                NotHuongUpdateReponseDTO notHuongDTO = new NotHuongUpdateReponseDTO();
+                                notHuongDTO.setId(notHuong.getId());
+                                notHuongDTO.setTenNotHuong(notHuong.getTenNotHuong());
+                                return notHuongDTO;
+                            }).collect(Collectors.toList());
+                    huongGiuaDTO.setNotHuongs(notHuongDTOs);
+                }
+                sanPhamDTO.setHuongGiua(huongGiuaDTO);
+            }
+
+            // Map HuongCuoi and its NotHuongs
+            if (sp.getHuongCuoi() != null) {
+                TangHuongDTO huongCuoiDTO = new TangHuongDTO();
+                huongCuoiDTO.setId(sp.getHuongCuoi().getId());
+                huongCuoiDTO.setTenHuong(sp.getHuongCuoi().getMoTaHuongCuoi());
+                if (sp.getHuongCuoi().getNotHuongs() != null) {
+                    List<NotHuongUpdateReponseDTO> notHuongDTOs = sp.getHuongCuoi().getNotHuongs().stream()
+                            .map(notHuong -> {
+                                NotHuongUpdateReponseDTO notHuongDTO = new NotHuongUpdateReponseDTO();
+                                notHuongDTO.setId(notHuong.getId());
+                                notHuongDTO.setTenNotHuong(notHuong.getTenNotHuong());
+                                return notHuongDTO;
+                            }).collect(Collectors.toList());
+                    huongCuoiDTO.setNotHuongs(notHuongDTOs);
+                }
+                sanPhamDTO.setHuongCuoi(huongCuoiDTO);
+            }
+
+            // Map PhongCachs
+            if (sp.getPhongCachs() != null) {
+                List<PhongCachDTO> phongCachDTOs = sp.getPhongCachs().stream()
+                        .map(phongCach -> {
+                            PhongCachDTO phongCachDTO = new PhongCachDTO();
+                            phongCachDTO.setId(phongCach.getId());
+                            phongCachDTO.setTenPhongCach(phongCach.getTenPhongCach());
+                            phongCachDTO.setMoTa(phongCach.getMoTa());
+                            return phongCachDTO;
+                        }).collect(Collectors.toList());
+                sanPhamDTO.setPhongCachs(phongCachDTOs);
+            }
+
+            // Map HinhAnh IDs
+            if (sp.getHinhAnhs() != null) {
+                List<Integer> idHinhAnhs = sp.getHinhAnhs().stream()
+                        .map(hinhAnh -> hinhAnh.getId())
+                        .collect(Collectors.toList());
+                sanPhamDTO.setIdHinhAnhs(idHinhAnhs);
+            }
+
+            return ResponseEntity.ok(sanPhamDTO);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
     }
-
 }
 
 
