@@ -9,7 +9,7 @@ import { FooterComponent } from '../footer/footer.component';
 import { DiaChiService } from '../service/diachi.service';
 import { MomoPaymentService } from '../service/momoPayment.service';
 import { PhieugiamgiaService } from '../service/phieugiamgia.service';
-import { CartService } from '../service/cart.Service';
+import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { VietQRService } from '../service/VietQR.Service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -71,9 +71,9 @@ export class OrderComponent implements OnInit {
   };
   discountErrorMessage: string = '';
   discountAmount: number = 0;
-  selectedProducts: any[] = [];
+  selectedProducts: CartItemWithKey[] = [];
   totalProductPrice = 0;
-  discount: number = 0;
+  discount = 0;
   shippingFee = 0;
   shippingDiscount = 0;
   finalAmount = 0;
@@ -113,33 +113,11 @@ export class OrderComponent implements OnInit {
     const idTaiKhoan = this.tokenService.getUserId() || Number(localStorage.getItem('idTaiKhoan'));
     this.orderData.idTaiKhoan = idTaiKhoan ? Number(idTaiKhoan) : null;
 
-    const selectedFromService = this.cartService.selectedCartItems;
-    const stored = localStorage.getItem('selectedProducts');
+    // Lấy selectedProducts từ CartService
+    this.selectedProducts = this.cartService.getSelectedCartItems();
 
-    if (selectedFromService && selectedFromService.length > 0) {
-      this.selectedProducts = selectedFromService.map((item: any) => ({
-        idSpct: item.product.idSpct,
-        tenSanPham: item.product.tenSanPham,
-        quantity: item.quantity,
-        volume: item.volume,
-        donGia: item.product.donGia,
-        imageUrl: item.product.imageURL,
-      }));
-      this.orderData.chiTietDonHangs = selectedFromService.map((item: any) => ({
-        spctId: item.product.idSpct,
-        quantity: item.quantity,
-      }));
-    } else if (stored) {
-      const parsed = JSON.parse(stored);
-      this.selectedProducts = parsed.map((item: any) => ({
-        idSpct: item.product.idSpct,
-        tenSanPham: item.product.tenSanPham,
-        quantity: item.quantity,
-        volume: item.volume,
-        donGia: item.product.donGia,
-        imageUrl: item.product.imageURL,
-      }));
-      this.orderData.chiTietDonHangs = parsed.map((item: any) => ({
+    if (this.selectedProducts.length > 0) {
+      this.orderData.chiTietDonHangs = this.selectedProducts.map((item) => ({
         spctId: item.product.idSpct,
         quantity: item.quantity,
       }));
@@ -379,7 +357,7 @@ export class OrderComponent implements OnInit {
   }
 
   calculateTotals() {
-    this.totalProductPrice = this.selectedProducts.reduce((total, item) => total + (item.quantity || 0) * (item.donGia || 0), 0);
+    this.totalProductPrice = this.selectedProducts.reduce((total, item) => total + (item.quantity || 0) * (item.product.donGia || 0), 0);
     this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
     this.cdr.markForCheck();
   }
@@ -493,7 +471,8 @@ export class OrderComponent implements OnInit {
 
     this.selectedProducts[index].quantity = newQty;
     this.orderData.chiTietDonHangs[index].quantity = newQty;
-    localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
+    // Cập nhật selectedProducts trong CartService
+    this.cartService.setSelectedCartItems([...this.selectedProducts]);
     this.calculateTotals();
     this.tinhPhiVanChuyen();
     if (this.isDiscountApplied) this.onDiscountCodeEntered(this.orderData.maGiamGia!);
@@ -502,20 +481,35 @@ export class OrderComponent implements OnInit {
   removeProduct(index: number) {
     this.selectedProducts.splice(index, 1);
     this.orderData.chiTietDonHangs.splice(index, 1);
-    localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
+    // Cập nhật selectedProducts trong CartService
+    this.cartService.setSelectedCartItems([...this.selectedProducts]);
     this.calculateTotals();
     this.tinhPhiVanChuyen();
     if (this.isDiscountApplied) this.onDiscountCodeEntered(this.orderData.maGiamGia!);
-    if (this.selectedProducts.length === 0) this.router.navigate(['/']);
+    if (this.selectedProducts.length === 0) {
+      this.router.navigate(['/cart']);
+    }
   }
 
   async onSubmit() {
     console.log('onSubmit called');
     console.log('orderData:', this.orderData);
 
-    if (!this.orderData.tenNguoiNhanHang || !this.orderData.diachiChiTiet || !this.orderData.sdtNguoiNhan ||
-        !this.orderData.phuongThucThanhToan || !this.orderData.diaChiGiaoHang) {
-      Swal.fire('Lỗi', 'Vui lòng nhập đầy đủ thông tin giao hàng!', 'error');
+    // Kiểm tra dữ liệu đầu vào
+    if (!this.orderData.tenNguoiNhanHang) {
+      Swal.fire('Lỗi', 'Vui lòng nhập tên người nhận hàng!', 'error');
+      return;
+    }
+    if (!this.orderData.diachiChiTiet || !this.orderData.diaChiGiaoHang) {
+      Swal.fire('Lỗi', 'Vui lòng nhập đầy đủ địa chỉ giao hàng!', 'error');
+      return;
+    }
+    if (!this.orderData.sdtNguoiNhan || !/^0[0-9]{9}$/.test(this.orderData.sdtNguoiNhan)) {
+      Swal.fire('Lỗi', 'Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)!', 'error');
+      return;
+    }
+    if (!this.orderData.phuongThucThanhToan) {
+      Swal.fire('Lỗi', 'Vui lòng chọn phương thức thanh toán!', 'error');
       return;
     }
 
@@ -550,14 +544,13 @@ export class OrderComponent implements OnInit {
 
       // Remove selected products from cart
       const productsToRemove = this.selectedProducts.map(product => ({
-        idSpct: product.idSpct,
+        idSpct: product.product.idSpct,
         volume: product.volume
       }));
 
       await this.cartService.removeMultipleFromCart(productsToRemove);
       this.cartService.setSelectedCartItems([]); // Clear selected items
-      localStorage.removeItem('selectedProducts'); // Clear localStorage
-      console.log('🗑️ Đã xóa các sản phẩm khỏi giỏ hàng và localStorage');
+      console.log('🗑️ Đã xóa các sản phẩm khỏi giỏ hàng');
 
       // Đồng bộ giỏ hàng trước khi điều hướng
       this.cartService.reloadCart();

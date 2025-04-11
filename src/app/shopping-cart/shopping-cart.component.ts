@@ -23,7 +23,7 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cartSubscription = this.cartService.getCartObservable().subscribe(cart => {
-      console.log('🛒 Received cart update from observable:', Array.from(cart.entries()));
+      console.log('🛒 Nhận cập nhật giỏ hàng từ observable:', Array.from(cart.entries()));
       this.cartItems = Array.from(cart.entries()).map(([key, value]) => ({
         key,
         ...value
@@ -137,8 +137,8 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Lưu vào CartService và chuyển hướng
     this.cartService.setSelectedCartItems(this.selectedProducts);
-    localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
     this.router.navigate(['/app-order']);
   }
 

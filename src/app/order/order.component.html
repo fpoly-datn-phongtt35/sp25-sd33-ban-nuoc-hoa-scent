@@ -28,25 +28,21 @@
 
     <!-- Thanh chọn Tỉnh / Huyện / Xã -->
     <div class="d-flex justify-content-between align-items-center border rounded px-3 py-2 bg-light mb-2"
-    style="cursor: pointer; color: #212529;" (click)="toggleAddressPicker()">
- <span>{{ fullAddress || 'Chọn Tỉnh/Thành phố, Quận/Huyện, Phường/Xã' }}</span>
- <i class="fa" [ngClass]="showAddressPicker ? 'fa-eye-slash' : 'fa-eye'"></i>
-</div>
-
-
-
+      style="cursor: pointer; color: #212529;" (click)="toggleAddressPicker()">
+      <span>{{ fullAddress || 'Chọn Tỉnh/Thành phố, Quận/Huyện, Phường/Xã' }}</span>
+      <i class="fa" [ngClass]="showAddressPicker ? 'fa-eye-slash' : 'fa-eye'"></i>
+    </div>
 
     <!-- Khu vực chọn Tỉnh / Huyện / Xã -->
-
     <div *ngIf="showAddressPicker" class="border rounded p-3 mb-3">
       <!-- Thanh tìm kiếm -->
-<input
-type="text"
-class="form-control"
-placeholder="🔍 Tìm kiếm..."
-[(ngModel)]="searchValue"
-name="searchBox"
-/>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="🔍 Tìm kiếm..."
+        [(ngModel)]="searchValue"
+        name="searchBox"
+      />
       <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
           <a class="nav-link" [class.active]="currentTab === 'tinh'" (click)="selectTab('tinh')">Tỉnh/Thành phố</a>
@@ -59,17 +55,16 @@ name="searchBox"
         </li>
       </ul>
 
-     <!-- Danh sách -->
-<div class="list-group" style="max-height: 250px; overflow-y: auto;">
-  <div
-    class="list-group-item"
-    *ngFor="let item of currentList"
-    (click)="onSelect(item)"
-    [ngClass]="{ 'active': isSelected(item) }">
-    {{ item.name }}
-  </div>
-</div>
-
+      <!-- Danh sách -->
+      <div class="list-group" style="max-height: 250px; overflow-y: auto;">
+        <div
+          class="list-group-item"
+          *ngFor="let item of currentList"
+          (click)="onSelect(item)"
+          [ngClass]="{ 'active': isSelected(item) }">
+          {{ item.name }}
+        </div>
+      </div>
     </div>
 
     <!-- Số điện thoại -->
@@ -83,76 +78,76 @@ name="searchBox"
       </div>
     </div>
 
- <!-- Phương thức thanh toán -->
-<div class="mb-3">
-  <label class="form-label">Phương thức thanh toán:</label>
-  <div class="d-flex gap-4 flex-wrap">
-    <!-- MoMo -->
-    <label class="payment-option d-flex align-items-center gap-2">
-      <input
-        type="radio"
-        name="phuongThucThanhToan"
-        [(ngModel)]="orderData.phuongThucThanhToan"
-        value="ck"
-        required
-      />
-      <img src="momo.png" alt="MoMo" width="20" height="20" />
-      <span>Chuyển khoản MoMo</span>
-    </label>
+    <!-- Phương thức thanh toán -->
+    <div class="mb-3">
+      <label class="form-label">Phương thức thanh toán:</label>
+      <div class="d-flex gap-4 flex-wrap">
+        <!-- MoMo -->
+        <label class="payment-option d-flex align-items-center gap-2">
+          <input
+            type="radio"
+            name="phuongThucThanhToan"
+            [(ngModel)]="orderData.phuongThucThanhToan"
+            value="ck"
+            required
+          />
+          <img src="momo.png" alt="MoMo" width="20" height="20" />
+          <span>Chuyển khoản MoMo</span>
+        </label>
 
+        <!-- Tiền mặt -->
+        <label class="payment-option d-flex align-items-center gap-2">
+          <input
+            type="radio"
+            name="phuongThucThanhToan"
+            [(ngModel)]="orderData.phuongThucThanhToan"
+            value="tm"
+            required
+          />
+          <span>💵 Thanh toán tiền mặt</span>
+        </label>
+      </div>
+    </div>
 
-
-    <!-- Tiền mặt -->
-    <label class="payment-option d-flex align-items-center gap-2">
-      <input
-        type="radio"
-        name="phuongThucThanhToan"
-        [(ngModel)]="orderData.phuongThucThanhToan"
-        value="tm"
-        required
-      />
-      <span>💵 Thanh toán tiền mặt</span>
-    </label>
-  </div>
-</div>
     <!-- Ghi chú -->
     <div class="mb-3">
       <label for="ghichu" class="form-label">Ghi chú:</label>
       <input type="text" id="ghichu" class="form-control" [(ngModel)]="orderData.ghichu" name="ghichu" #ghichu="ngModel">
     </div>
-<!-- Mã Giảm Giá -->
-<!-- Mã Giảm Giá -->
-<div class="mb-3">
-  <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
-  <div class="input-group">
-    <input
-      type="text"
-      id="maGiamGia"
-      class="form-control"
-      [(ngModel)]="orderData.maGiamGia"
-      name="maGiamGia"
-      [disabled]="isDiscountApplied"
-    >
-    <button
-      class="btn btn-primary"
-      type="button"
-      (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')"
-      [disabled]="!orderData.maGiamGia || isDiscountApplied"
-    >
-      Áp dụng
-    </button>
-  </div>
 
-  <!-- Thông báo lỗi -->
-  <div *ngIf="discountErrorMessage" class="text-danger mt-1">
-    {{ discountErrorMessage }}
-  </div>
+    <!-- Mã Giảm Giá -->
+    <div class="mb-3">
+      <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
+      <div class="input-group">
+        <input
+          type="text"
+          id="maGiamGia"
+          class="form-control"
+          [(ngModel)]="orderData.maGiamGia"
+          name="maGiamGia"
+          [disabled]="isDiscountApplied"
+        >
+        <button
+          class="btn btn-primary"
+          type="button"
+          (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')"
+          [disabled]="!orderData.maGiamGia || isDiscountApplied"
+        >
+          Áp dụng
+        </button>
+      </div>
 
-  <!-- Thông báo số tiền được giảm -->
-  <div *ngIf="discountAmount > 0" class="text-success mt-1">
-    ✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!
-  </div>
-</div>
+      <!-- Thông báo lỗi -->
+      <div *ngIf="discountErrorMessage" class="text-danger mt-1">
+        {{ discountErrorMessage }}
+      </div>
+
+      <!-- Thông báo số tiền được giảm -->
+      <div *ngIf="discountAmount > 0" class="text-success mt-1">
+        ✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!
+      </div>
+    </div>
+
     <!-- Tổng tiền -->
     <div class="payment-info mb-4">
       <h5>Thông tin thanh toán</h5>
@@ -160,15 +155,16 @@ name="searchBox"
         <p><strong>Tổng Tiền:</strong> {{ totalProductPrice | number }} đ</p>
         <p><strong>Giảm Giá:</strong> {{ discount | number }} đ</p>
         <p><strong>Phí Vận Chuyển:</strong> {{ shippingFee | number }} đ</p>
-       
         <small *ngIf="shippingDiscount > 0" class="shipping-discount-note">
           🔥 Bạn nhận ưu đãi giảm {{ shippingDiscount | number }}₫ phí ship!
         </small>
         <p><strong>Thành Tiền:</strong> {{ finalAmount | number }} đ</p>
       </div>
     </div>
+
     <button type="submit" class="btn btn-primary" [disabled]="orderForm.invalid">Đặt hàng</button>
   </form>
+
   <!-- Danh Sách Sản Phẩm Đã Chọn -->
   <div class="order-summary mt-5">
     <h4>Sản phẩm đã chọn</h4>
@@ -185,8 +181,8 @@ name="searchBox"
       </thead>
       <tbody>
         <tr *ngFor="let item of selectedProducts; let i = index">
-          <td><img [src]="item.imageUrl" alt="Ảnh sản phẩm" width="80"></td>
-          <td>{{ item.tenSanPham }}</td>
+          <td><img [src]="item.product.imageURL" alt="Ảnh sản phẩm" width="80"></td>
+          <td>{{ item.product.tenSanPham }}</td>
           <td>
             <div class="btn-group">
               <button class="btn btn-sm btn-outline-secondary" (click)="updateQuantity(i, -1)">-</button>
@@ -195,7 +191,7 @@ name="searchBox"
             </div>
           </td>
           <td>{{ item.volume }}</td>
-          <td>{{ item.donGia | number }} VND</td>
+          <td>{{ item.product.donGia | number }} VND</td>
           <td>
             <button class="btn btn-sm btn-danger" (click)="removeProduct(i)">X</button>
           </td>

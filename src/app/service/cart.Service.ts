@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { TokenService } from '../service/token.service';
 import { WebSocketService } from '../service/WebSocketService';
 import { tap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
 import Swal from 'sweetalert2';
 
 export interface CartItem {
@@ -44,13 +45,14 @@ export class CartService {
   private cartSubject: BehaviorSubject<Map<string, CartItem>> = new BehaviorSubject(new Map());
   private apiUrl = 'http://localhost:8080/api/cart';
   private userId: string | null = null;
-  selectedCartItems: CartItemWithKey[] = [];
-  private inventorySubscription: Subscription;
+  private selectedCartItems: CartItemWithKey[] = []; // Lưu trữ selectedCartItems
+  private inventorySubscription: Subscription | undefined;
 
   constructor(
     private tokenService: TokenService,
     private http: HttpClient,
-    private webSocketService: WebSocketService
+    private webSocketService: WebSocketService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.loadCart();
     this.setupWebSocket();
@@ -106,9 +108,27 @@ export class CartService {
       return;
     }
 
-    if (this.cart.size > 0 && !this.userId) {
+    if (this.cart.size > 0 && !this.userId && isPlatformBrowser(this.platformId)) {
       console.log('💾 Lưu giỏ hàng hiện tại vào temp-cart trước khi đăng nhập:', Array.from(this.cart.entries()));
-      localStorage.setItem('temp-cart', JSON.stringify(Array.from(this.cart.entries())));
+      const cartArray = Array.from(this.cart.entries());
+      const dataToStore = JSON.stringify(cartArray);
+      const sizeInBytes = new Blob([dataToStore]).size;
+      console.log(`📏 Kích thước của temp-cart cần lưu: ${sizeInBytes} bytes`);
+
+      try {
+        if (sizeInBytes > 5 * 1024 * 1024) {
+          throw new Error('Dữ liệu temp-cart quá lớn cho localStorage');
+        }
+        localStorage.setItem('temp-cart', dataToStore);
+      } catch (e) {
+        console.error('❌ Lỗi khi lưu temp-cart vào localStorage:', e);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi lưu trữ',
+          text: 'Dữ liệu giỏ hàng tạm quá lớn để lưu trữ. Một số dữ liệu có thể bị mất!',
+          position: 'bottom-end'
+        });
+      }
     }
 
     if (this.inventorySubscription) {
@@ -133,6 +153,13 @@ export class CartService {
   }
 
   private loadTempCart(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.log('⛔ Running on server, skipping localStorage access for temp-cart');
+      this.cart = new Map();
+      this.cartSubject.next(new Map(this.cart));
+      return;
+    }
+
     const storedCart = localStorage.getItem('temp-cart');
     if (!storedCart) {
       console.log('📭 Không có giỏ hàng tạm trong localStorage.');
@@ -227,6 +254,11 @@ export class CartService {
   }
 
   private mergeTempCart(userId: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.log('⛔ Running on server, skipping temp-cart merge');
+      return;
+    }
+
     const tempCart = localStorage.getItem('temp-cart');
     if (!tempCart) {
       console.log('📭 Không có giỏ hàng tạm để gộp.');
@@ -508,6 +540,11 @@ export class CartService {
     console.log('🛒 Đã đặt danh sách sản phẩm được chọn:', this.selectedCartItems);
   }
 
+  // Thêm phương thức để lấy selectedCartItems
+  getSelectedCartItems(): CartItemWithKey[] {
+    return this.selectedCartItems;
+  }
+
   getCart(): CartItemWithKey[] {
     const cartItems = Array.from(this.cart.entries()).map(([key, value]) => ({
       key,
@@ -548,27 +585,46 @@ export class CartService {
     }
   }
 
-    clearCartOnClient(): void {
-      this.cart.clear();
-      this.saveCart();
-      this.cartSubject.next(new Map(this.cart));
-      console.log('🗑️ Cart has been cleared on the client-side.');
-    }
+  clearCartOnClient(): void {
+    this.cart.clear();
+    this.saveCart();
+    this.cartSubject.next(new Map(this.cart));
+    console.log('🗑️ Cart has been cleared on the client-side.');
+  }
 
-    private saveCart(): void {
-      const userId = this.getUserId();
-      if (!userId) {
-        const cartArray = Array.from(this.cart.entries());
-        console.log('💾 Lưu giỏ hàng vào temp-cart:', cartArray);
-        localStorage.setItem('temp-cart', JSON.stringify(cartArray));
+  private saveCart(): void {
+    const userId = this.getUserId();
+    if (!userId && isPlatformBrowser(this.platformId)) {
+      const cartArray = Array.from(this.cart.entries());
+      console.log('💾 Lưu giỏ hàng vào temp-cart:', cartArray);
+      const dataToStore = JSON.stringify(cartArray);
+      const sizeInBytes = new Blob([dataToStore]).size;
+      console.log(`📏 Kích thước của temp-cart cần lưu: ${sizeInBytes} bytes`);
+
+      try {
+        if (sizeInBytes > 5 * 1024 * 1024) {
+          throw new Error('Dữ liệu temp-cart quá lớn cho localStorage');
+        }
+        localStorage.setItem('temp-cart', dataToStore);
+      } catch (e) {
+        console.error('❌ Lỗi khi lưu temp-cart vào localStorage:', e);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi lưu trữ',
+          text: 'Dữ liệu giỏ hàng tạm quá lớn để lưu trữ. Một số dữ liệu có thể bị mất!',
+          position: 'bottom-end'
+        });
       }
-    }
-
-    private createProductKey(productId: number, volume: string | number): string {
-      return `${productId}_${String(volume).trim()}`;
-    }
-
-    public reloadCart(): void {
-      this.loadCart();
+    } else if (!isPlatformBrowser(this.platformId)) {
+      console.log('⛔ Running on server, skipping localStorage save');
     }
   }
+
+  private createProductKey(productId: number, volume: string | number): string {
+    return `${productId}_${String(volume).trim()}`;
+  }
+
+  public reloadCart(): void {
+    this.loadCart();
+  }
+}
