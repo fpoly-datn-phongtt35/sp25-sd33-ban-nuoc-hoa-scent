@@ -332,14 +332,13 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia,spct.dungTich,spct.idSpct")
     List<SPTQDTO> getALLSPQT(@Param("keyword") String keyword);
 
-    @Query("SELECT sp FROM SanPham sp " +
+    @Query("SELECT DISTINCT sp FROM SanPham sp " +
             "LEFT JOIN FETCH sp.thuongHieu th " +
             "LEFT JOIN FETCH sp.danhMuc dm " +
             "LEFT JOIN FETCH sp.nhomHuong nh " +
             "LEFT JOIN FETCH sp.huongDau hd " +
             "LEFT JOIN FETCH sp.huongGiua hg " +
             "LEFT JOIN FETCH sp.huongCuoi hc " +
-            "LEFT JOIN FETCH sp.hinhAnhs ha " + // Chỉ fetch một "bag"
             "WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<SanPham> findByTenContainingIgnoreCase(@Param("keyword") String keyword, Pageable pageable);
 }
