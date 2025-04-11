@@ -31,10 +31,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   danhGias: any[] = [];
   filteredDanhGias: any[] = [];
+  displayedDanhGias: any[] = []; // New array for limiting displayed reviews
   selectedStarFilter: number | null = null;
   newRating: number = 0;
   newComment: string = '';
   averageRating: number = 0;
+  activeTab: string = 'details';
+  showAllReviews: boolean = false; // Flag to toggle showing all reviews
   private inventorySubscription: Subscription | undefined;
   private subscriptions: Subscription[] = [];
 
@@ -104,7 +107,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }
-              // Tải danh sách sản phẩm liên quan sau khi có sản phẩm
               this.loadRecommendedProducts();
             } else {
               Swal.fire('Không tìm thấy sản phẩm', '', 'error');
@@ -162,6 +164,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
             this.danhGias = res;
             this.applyFilter();
             this.calculateAverageRating();
+            this.updateDisplayedDanhGias(); // Update displayed reviews after loading
           },
           error: (err) => console.error('Lỗi khi lấy danh sách đánh giá:', err),
         });
@@ -278,47 +281,36 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  // Hàm lấy ảnh đầu tiên của sản phẩm liên quan
   getFirstImage(product: any): string {
     if (product.imageURL) {
       const images = product.imageURL.split(',').map((url: string) => url.trim());
-      return images[0] || 'https://via.placeholder.com/150'; // Trả về ảnh đầu tiên hoặc ảnh mặc định nếu không có
+      return images[0] || 'https://via.placeholder.com/150';
     }
     return 'https://via.placeholder.com/150';
   }
 
-  // Hàm lấy giá của phiên bản dung tích đầu tiên
   getFirstVolumePrice(product: any): number {
     if (product.volumes && product.volumes.length > 0) {
-      return product.volumes[0].donGia; // Lấy giá của phiên bản dung tích đầu tiên
+      return product.volumes[0].donGia;
     }
-    return product.donGia || 0; // Nếu không có volumes, lấy donGia mặc định
+    return product.donGia || 0;
   }
 
-  // Hàm xử lý khi nhấp vào sản phẩm liên quan
   viewRelatedProduct(relatedProduct: any): void {
-    // Cập nhật thông tin sản phẩm chính
     this.updateProductDetails(relatedProduct);
-
-    // Cập nhật URL mà không tải lại trang
     const productId = relatedProduct.idSanPham;
     this.router.navigate(['/product/detail', productId], { replaceUrl: true });
-
-    // Tải lại các đánh giá, volumes và sản phẩm liên quan
     this.loadDanhGias();
     this.loadVolumes();
     this.loadRecommendedProducts();
-
-    // Cuộn trang lên đầu
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   updateProductDetails(product: any): void {
-    this.product = { ...product }; // Sao chép thông tin sản phẩm
+    this.product = { ...product };
     if (product.imageURL) {
       this.imageUrls = product.imageURL.split(',').map((url: string) => url.trim());
     }
-    // Cập nhật danh sách volumes
     this.volumes = product.volumes?.length
       ? product.volumes
       : [{
@@ -328,8 +320,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           soLuongTonKho: product.soLuongTonKho,
         }];
     this.selectedVolume = this.volumes.length > 0 ? this.volumes[0] : null;
-    this.selectedImageIndex = 0; // Đặt lại ảnh chính về ảnh đầu tiên
-    this.quantity = 1; // Đặt lại số lượng về 1
+    this.selectedImageIndex = 0;
+    this.quantity = 1;
   }
 
   setRating(rating: number): void {
@@ -407,6 +399,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   filterByStars(stars: number | null): void {
     this.selectedStarFilter = stars;
     this.applyFilter();
+    this.updateDisplayedDanhGias(); // Update displayed reviews after filtering
   }
 
   applyFilter(): void {
@@ -417,5 +410,23 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         (danhGia) => danhGia.rating === this.selectedStarFilter
       );
     }
+  }
+
+  updateDisplayedDanhGias(): void {
+    if (this.showAllReviews) {
+      this.displayedDanhGias = [...this.filteredDanhGias];
+    } else {
+      this.displayedDanhGias = this.filteredDanhGias.slice(0, 2); // Limit to 2 reviews
+    }
+  }
+
+  toggleShowAllReviews(): void {
+    this.showAllReviews = !this.showAllReviews;
+    this.updateDisplayedDanhGias();
+  }
+
+  setActiveTab(tab: string): void {
+    this.activeTab = tab;
+    console.log('Active tab set to:', this.activeTab);
   }
 }

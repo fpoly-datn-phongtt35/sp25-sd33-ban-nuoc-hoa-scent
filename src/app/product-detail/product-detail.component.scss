@@ -1,341 +1,466 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
+/* Product Detail Layout */
 .product-detail {
   display: flex;
   gap: 20px;
-  padding: 20px 0;
+  margin-bottom: 40px;
 }
 
+/* Product Images (Left Column) */
 .product-images {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
-.main-image img {
+.main-image {
   width: 100%;
   max-height: 400px;
-  object-fit: contain;
+  overflow: hidden;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .thumbnail-container {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 10px;
   overflow-x: auto;
-  padding: 5px 0;
 }
 
-.thumbnail img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 6px;
+.thumbnail {
+  width: 80px;
+  height: 80px;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: all 0.3s ease;
+  border-radius: 4px;
 }
 
-/* Cập nhật style cho product-description */
-.product-description {
-  width: 100%; /* Chiếm toàn bộ chiều rộng của container */
-  max-width: 1200px; /* Giới hạn chiều rộng tối đa giống container */
-  margin: 20px auto; /* Căn giữa div trong container */
-  padding: 15px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.thumbnail:hover {
+  border-color: #007bff;
 }
 
-.product-description h3 {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 10px;
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.product-description p {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #555;
-}
-
+/* Product Info (Middle Column) */
 .product-info {
   flex: 2;
-  padding: 15px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
 }
 
-.right-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
 .product-title {
-  font-size: 22px; /* Giảm font-size */
-  color: #333;
+  font-size: 24px;
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
 .brand {
-  font-size: 14px;
-  color: #666;
+  font-size: 16px;
+  color: #555;
   margin-bottom: 10px;
 }
 
-.brand span {
-  font-weight: 500;
-}
-
-.product-specs p {
-  margin: 8px 0;
-  color: #555;
-  font-size: 14px;
-}
-
-.product-specs strong {
-  color: #333;
-}
-
-.fragrance-notes p {
-  font-size: 14px;
-  line-height: 1.5;
-}
 .volume-options {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px; /* Khoảng cách giữa các nút */
-  margin: 15px 0;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .volume-options button {
-  flex: 0 0 150px; /* Chiều rộng cố định 150px, không co giãn */
-  padding: 8px 12px; /* Padding đồng đều */
-  border: 2px solid #ddd; /* Viền đồng nhất */
-  border-radius: 20px; /* Bo góc đồng nhất */
-  background: #fff; /* Màu nền trắng cho tất cả các nút */
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 14px; /* Font size đồng nhất */
-  font-weight: 500; /* Font weight đồng nhất */
-  color: #333; /* Màu chữ đồng nhất */
-  text-align: center;
-  transition: all 0.3s ease;
-  box-sizing: border-box; /* Đảm bảo padding không làm tăng kích thước */
-  white-space: nowrap; /* Ngăn chữ xuống dòng */
-  overflow: hidden; /* Ẩn nội dung thừa */
-  text-overflow: ellipsis; /* Thêm dấu ... nếu nội dung quá dài */
-}
-
-.volume-options button:hover {
-  background: #f0f0f0; /* Hiệu ứng hover nhẹ */
-  border-color: #4A90E2; /* Viền đổi màu khi hover */
+  transition: all 0.3s;
 }
 
 .volume-options button.selected {
-  background: #4A90E2; /* Màu nền xanh khi được chọn */
-  color: white; /* Chữ trắng khi được chọn */
-  border-color: #4A90E2; /* Viền xanh khi được chọn */
+  border-color: #007bff;
+  background: #e6f0ff;
+}
+
+.volume-options button:hover {
+  background: #f0f0f0;
 }
 
 .current-price {
-  margin: 10px 0;
+  margin-bottom: 20px;
 }
 
-.current-price .price {
-  font-size: 24px;
-  color: #E94E77;
-  font-weight: 600;
+.price {
+  font-size: 28px;
+  font-weight: bold;
+  color: #e74c3c;
 }
 
 .add-to-cart-section {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin: 15px 0;
+  margin-bottom: 20px;
 }
 
 .quantity {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 .quantity label {
-  color: #333;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .quantity input {
-  width: 50px;
-  padding: 6px;
-  border: 2px solid #ddd;
-  border-radius: 5px;
+  width: 60px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   text-align: center;
-  font-size: 14px;
 }
 
-.add-btn, .btn-success {
-  flex: 1;
-  padding: 10px;
+.add-btn,
+.buy-now-btn {
+  padding: 10px 20px;
   border: none;
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 16px;
+  transition: background 0.3s;
 }
 
 .add-btn {
-  background: #4A90E2;
-  color: white;
+  background: #007bff;
+  color: #fff;
 }
 
 .add-btn:hover {
-  background: #6AA8F7;
+  background: #0056b3;
 }
 
-.add-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.btn-success {
+.buy-now-btn {
   background: #28a745;
-  color: white;
+  color: #fff;
 }
 
-.btn-success:hover {
-  background: #34c759;
+.buy-now-btn:hover {
+  background: #218838;
 }
 
 .extra-info {
-  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
 }
 
-.shipping {
-  color: #28a745;
-  font-size: 13px;
-  margin-bottom: 8px;
+.extra-info .shipping {
+  margin-bottom: 10px;
 }
 
 .extra-info ul {
   list-style: none;
-  padding: 0;
-  color: #666;
-  font-size: 13px;
 }
 
 .extra-info li {
-  margin: 6px 0;
+  margin-bottom: 5px;
 }
 
-/* Right column: Nhóm hương, Mùi hương chính và Sản phẩm liên quan */
+/* Right Column (Fragrance Info) */
 .right-column {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* Nhóm hương và Mùi hương chính */
-.fragrance-section {
-  background: #fff;
-  padding: 15px;
+  padding: 10px;
+  background: #f9f9f9;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.fragrance-group h3, .fragrance-main h3 {
-  font-size: 16px;
-  color: #333;
+.fragrance-section {
+  padding: 10px;
+}
+
+.fragrance-group,
+.fragrance-main {
+  margin-bottom: 20px;
+}
+
+.fragrance-group h3,
+.fragrance-main h3 {
+  font-size: 18px;
   margin-bottom: 10px;
 }
 
-.fragrance-group p {
-  font-size: 14px;
-  color: #555;
-  margin: 0;
-}
-
-.fragrance-main {
-  margin-top: 15px;
-}
-
 .fragrance-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .fragrance-name {
-  width: 150px;
+  display: block;
   font-size: 14px;
-  color: #555;
+  margin-bottom: 5px;
 }
 
 .progress-bar {
-  flex: 1;
-  height: 6px;
-  background: #f0f0f0;
-  border-radius: 3px;
+  width: 100%;
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .progress {
   height: 100%;
-  background: #4A90E2;
-  transition: width 0.3s ease;
+  background: #007bff;
+  transition: width 0.3s;
 }
 
-/* Related products */
-.related-products {
+/* Tabs Section */
+.tabs {
+  margin-bottom: 40px;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.tab-buttons button {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.tab-buttons button:hover {
+  color: #007bff;
+}
+
+.tab-buttons button.active {
+  color: #007bff;
+  font-weight: bold;
+}
+
+.tab-buttons button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #007bff;
+}
+
+.tab-content {
+  padding: 20px;
   background: #fff;
-  padding: 15px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 200px; /* Ensure the tab content has a minimum height */
+}
+
+.tab-pane {
+  display: block; /* Ensure the tab content is visible when *ngIf is true */
+}
+
+.product-specs p,
+.fragrance-notes p {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.product-description h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.usage-section,
+.policy-section {
+  margin-bottom: 20px;
+}
+
+.usage-section h3,
+.policy-section h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.usage-section ul,
+.policy-section ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.usage-section li,
+.policy-section li {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+/* Reviews Section */
+.reviews {
+  margin-bottom: 40px;
+}
+
+.reviews h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.filter-stars {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-stars button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-stars button.active {
+  background: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+.filter-stars button:hover {
+  background: #f0f0f0;
+}
+
+.review-list {
+  margin-bottom: 20px;
+}
+
+.review-item {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.review-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.user {
+  font-weight: bold;
+}
+
+.stars {
+  color: #ddd;
+}
+
+.stars span.active {
+  color: #f1c40f;
+}
+
+.date {
+  font-size: 12px;
+  color: #999;
+}
+
+.review-form h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.stars-input {
+  margin-bottom: 10px;
+}
+
+.stars-input span {
+  font-size: 20px;
+  cursor: pointer;
+  color: #ddd;
+}
+
+.stars-input span.active {
+  color: #f1c40f;
+}
+
+.review-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  resize: vertical;
+}
+
+.review-form button {
+  padding: 10px 20px;
+  border: none;
+  background: #007bff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.review-form button:hover {
+  background: #0056b3;
+}
+
+/* Related Products Section */
+.related-products {
+  margin-bottom: 40px;
 }
 
 .related-products h3 {
-  font-size: 16px;
-  margin-bottom: 10px;
-  color: #333;
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .related-product-list {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 20px;
+  overflow-x: auto;
 }
 
 .related-product-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  flex: 0 0 200px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  transition: transform 0.3s;
 }
 
 .related-product-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
 }
 
 .related-product-image {
-  width: 60px;
-  height: 60px;
+  width: 100%;
+  height: 150px;
   overflow: hidden;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 
 .related-img {
@@ -345,95 +470,176 @@
 }
 
 .related-product-info {
-  flex: 1;
+  padding: 10px 0;
 }
 
 .related-product-title {
-  font-size: 14px;
-  margin: 0;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 16px;
+  margin-bottom: 5px;
 }
 
 .related-product-price {
-  font-size: 13px;
-  color: #e91e63;
-  margin: 2px 0 0;
+  font-size: 14px;
+  color: #e74c3c;
 }
 
-.related-products p {
-  color: #666;
-  font-size: 13px;
-  font-style: italic;
-}
-
-/* Responsive */
+/* Responsive Design */
 @media (max-width: 768px) {
   .product-detail {
     flex-direction: column;
-    gap: 15px;
   }
 
-  .main-image img {
+  .product-images,
+  .product-info,
+  .right-column {
+    flex: 1;
+  }
+
+  .main-image {
     max-height: 300px;
   }
 
-  .thumbnail img {
-    width: 50px;
-    height: 50px;
+  .thumbnail {
+    width: 60px;
+    height: 60px;
   }
 
-  .product-info {
-    padding: 10px;
-  }
-
-  .volume-options button {
-    flex: 1 1 calc(50% - 8px); /* 2 nút trên một hàng trên mobile */
-    font-size: 12px;
-    padding: 6px 8px;
-  }
-
-  .add-to-cart-section {
+  .tab-buttons {
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .quantity input {
-    width: 50px;
-  }
-
-  .add-btn, .btn-success {
-    width: 100%;
-    padding: 8px;
-  }
-
-  .fragrance-section {
-    padding: 10px;
-  }
-
-  .fragrance-name {
-    width: 120px;
-  }
-
-  .related-product-list {
-    flex-direction: row;
-    overflow-x: auto;
+    gap: 5px;
   }
 
   .related-product-item {
-    flex: 0 0 120px;
-    flex-direction: column;
-    align-items: flex-start;
+    flex: 0 0 150px;
   }
+}
+/* Reviews Section */
+.reviews {
+  margin-bottom: 40px;
+}
 
-  .related-product-image {
-    width: 100%;
-    height: 100px;
-  }
+.reviews h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
 
-  .related-product-info {
-    text-align: center;
-  }
+.filter-stars {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-stars button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-stars button.active {
+  background: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+.filter-stars button:hover {
+  background: #f0f0f0;
+}
+
+.review-list {
+  margin-bottom: 20px;
+}
+
+.review-item {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.review-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.user {
+  font-weight: bold;
+}
+
+.stars {
+  color: #ddd;
+}
+
+.stars span.active {
+  color: #f1c40f;
+}
+
+.date {
+  font-size: 12px;
+  color: #999;
+}
+
+.view-more-btn {
+  display: block;
+  margin: 10px auto;
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.view-more-btn::after {
+  content: '♥'; /* Heart icon */
+  margin-left: 5px;
+  color: #e74c3c;
+}
+
+.view-more-btn:hover {
+  color: #c0392b;
+}
+
+.review-form h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.stars-input {
+  margin-bottom: 10px;
+}
+
+.stars-input span {
+  font-size: 20px;
+  cursor: pointer;
+  color: #ddd;
+}
+
+.stars-input span.active {
+  color: #f1c40f;
+}
+
+.review-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  resize: vertical;
+}
+
+.review-form button {
+  padding: 10px 20px;
+  border: none;
+  background: #007bff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.review-form button:hover {
+  background: #0056b3;
 }

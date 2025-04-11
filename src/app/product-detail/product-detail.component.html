@@ -18,17 +18,6 @@
       <h1 class="product-title">{{ product.tenSanPham || 'Không có tên' }}</h1>
       <p class="brand">Thương hiệu: <span>{{ product.tenThuongHieu }}</span></p>
 
-      <!-- Thông tin chi tiết -->
-      <div class="product-specs">
-        <p><strong>Phong cách:</strong> {{ product.phongCachs }}</p>
-        <div class="fragrance-notes">
-          <p><strong>Hương đầu:</strong> {{ product.moTaHuongDau }}</p>
-          <p><strong>Hương giữa:</strong> {{ product.moTaHuongGiua }}</p>
-          <p><strong>Hương cuối:</strong> {{ product.moTaHuongCuoi }}</p>
-          <p><strong>Số lượng tồn kho:</strong> {{ product.soLuongTonKho }}</p>
-        </div>
-      </div>
-
       <!-- Nút chọn dung tích -->
       <div class="volume-options">
         <button *ngFor="let volume of volumes"
@@ -50,7 +39,7 @@
           <input type="number" [(ngModel)]="quantity" min="1" (ngModelChange)="quantity = $event < 1 ? 1 : $event"/>
         </div>
         <button class="add-btn" [disabled]="!product || !selectedVolume" (click)="addToCart()">Thêm vào giỏ</button>
-        <button (click)="buyNow()" class="btn btn-success">Mua ngay</button>
+        <button (click)="buyNow()" class="buy-now-btn">Mua ngay</button>
       </div>
 
       <!-- Thông tin bổ sung -->
@@ -64,9 +53,8 @@
       </div>
     </div>
 
-    <!-- Cột phải: Nhóm hương, Mùi hương chính và Sản phẩm liên quan -->
+    <!-- Cột phải: Nhóm hương và Mùi hương chính -->
     <div class="right-column">
-      <!-- Nhóm hương và Mùi hương chính -->
       <div class="fragrance-section">
         <div class="fragrance-group">
           <h3>Nhóm hương</h3>
@@ -82,32 +70,108 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Sản phẩm liên quan -->
-      <div class="related-products">
-        <h3>Sản phẩm liên quan</h3>
-        <div class="related-product-list" *ngIf="recommendedProducts.length > 0; else noRelatedProducts">
-          <div *ngFor="let relatedProduct of recommendedProducts" class="related-product-item" (click)="viewRelatedProduct(relatedProduct)">
-            <div class="related-product-image">
-              <img [src]="getFirstImage(relatedProduct)" [alt]="relatedProduct.tenSanPham" class="related-img"/>
-            </div>
-            <div class="related-product-info">
-              <h4 class="related-product-title">{{ relatedProduct.tenSanPham }}</h4>
-              <p class="related-product-price">{{ getFirstVolumePrice(relatedProduct) | number }}đ</p>
-            </div>
+  <!-- Tabs: Chi tiết sản phẩm và Sử dụng & bảo quản -->
+  <div class="tabs">
+    <!-- Nút tab -->
+    <div class="tab-buttons">
+      <button [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Chi tiết sản phẩm</button>
+      <button [class.active]="activeTab === 'usage'" (click)="setActiveTab('usage')">Sử dụng và bảo quản</button>
+    </div>
+
+    <!-- Nội dung tab -->
+    <div class="tab-content">
+      <!-- Tab 1: Chi tiết sản phẩm -->
+      <div class="tab-pane" *ngIf="activeTab === 'details'">
+        <div class="product-specs">
+          <p><strong>Thương hiệu:</strong> {{ product.tenThuongHieu || 'Không có thông tin' }}</p>
+          <p><strong>Phong cách:</strong> {{ product.phongCachs || 'Không có thông tin' }}</p>
+          <p><strong>Nhóm hương:</strong> {{ product.tenNhomHuong || 'Không có thông tin' }}</p>
+          <div class="fragrance-notes">
+            <p><strong>Hương đầu:</strong> {{ product.moTaHuongDau || 'Không có thông tin' }}</p>
+            <p><strong>Hương giữa:</strong> {{ product.moTaHuongGiua || 'Không có thông tin' }}</p>
+            <p><strong>Hương cuối:</strong> {{ product.moTaHuongCuoi || 'Không có thông tin' }}</p>
           </div>
         </div>
-        <ng-template #noRelatedProducts>
-          <p>Không có sản phẩm liên quan.</p>
-        </ng-template>
+        <div class="product-description" *ngIf="product.moTaSanPham">
+          <h3>Mô tả sản phẩm</h3>
+          <p>{{ product.moTaSanPham }}</p>
+        </div>
+      </div>
+
+      <!-- Tab 2: Sử dụng và bảo quản -->
+      <div class="tab-pane" *ngIf="activeTab === 'usage'">
+        <div class="usage-section">
+          <h3>Sử dụng và bảo quản</h3>
+          <ul>
+            <li>Nước hoa mang lại mùi hương cho cơ thể bạn thông qua việc tiếp xúc lên làn da và phản ứng với hơi ấm trên cơ thể của bạn.</li>
+            <li>Việc sử dụng nước hoa sẽ có tác dụng tốt nhất khi bạn sử dụng ngay sau khi tắm, sau khi tắm tay, hoặc sau khi cạo râu.</li>
+            <li>Sau khi sử dụng, xịt nước hoa lên cơ thể, tránh chà xát hoặc làm khô bằng những vật dụng khác, điều này sẽ làm phá hủy các phân tử hương.</li>
+            <li>Để chai nước hoa ở nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp và nhiệt độ cao.</li>
+            <li>Phần cổ tay được xịt nước hoa thường có nhiều mạch máu, để nước hoa ở vị trí này sẽ giúp khuếch tán hương thơm tốt hơn.</li>
+            <li>Nước hoa có thể bảo quản tốt nhất trong khoảng từ 6 đến 8 năm, nhưng nếu bạn không sử dụng thường xuyên, hãy bảo quản nước hoa ở nơi thoáng mát, tránh ánh nắng trực tiếp để giữ mùi hương lâu dài.</li>
+          </ul>
+        </div>
+        <div class="policy-section">
+          <h3>Vận chuyển và đổi trả</h3>
+          <ul>
+            <li><strong>Đổi trả sản phẩm:</strong> Sản phẩm được đổi trả trong vòng 7 ngày kể từ ngày nhận hàng nếu sản phẩm còn nguyên vẹn, chưa qua sử dụng và có hóa đơn mua hàng.</li>
+            <li><strong>Chính sách vận chuyển:</strong> Miễn phí vận chuyển cho đơn hàng từ 1.000.000đ trở lên. Thời gian giao hàng từ 2-5 ngày tùy khu vực.</li>
+            <li><strong>Đổi trả do lỗi sản phẩm:</strong> Nếu sản phẩm bị lỗi do nhà sản xuất (hư hỏng, rò rỉ, sai mẫu), chúng tôi sẽ hỗ trợ đổi trả miễn phí.</li>
+            <li><strong>Liên hệ hỗ trợ:</strong> Vui lòng liên hệ qua hotline hoặc email để được hỗ trợ đổi trả nhanh nhất.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Mô tả sản phẩm (di chuyển ra ngoài product-detail) -->
-  <div class="product-description" *ngIf="product.moTaSanPham">
-    <h3>Mô tả sản phẩm</h3>
-    <p>{{ product.moTaSanPham }}</p>
+  <!-- Phần Đánh giá sản phẩm (ngoài tab) -->
+  <div class="reviews">
+    <h2>Đánh giá sản phẩm</h2>
+    <div class="filter-stars">
+      <button [class.active]="selectedStarFilter === null" (click)="filterByStars(null)">Tất cả</button>
+      <button *ngFor="let star of [1, 2, 3, 4, 5]" [class.active]="selectedStarFilter === star" (click)="filterByStars(star)">
+        {{ star }} sao
+      </button>
+    </div>
+    <div class="review-list">
+      <p *ngIf="displayedDanhGias.length === 0">Chưa có đánh giá nào.</p>
+      <div *ngFor="let danhGia of displayedDanhGias" class="review-item">
+        <div class="review-header">
+          <span class="user">{{ danhGia.tenNguoiDung }}</span>
+          <span class="stars">
+            <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.active]="danhGia.rating >= star">★</span>
+          </span>
+          <span class="date">{{ danhGia.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <p>{{ danhGia.comment }}</p>
+      </div>
+      <button *ngIf="filteredDanhGias.length > 2" class="view-more-btn" (click)="toggleShowAllReviews()">
+        {{ showAllReviews ? 'Ẩn bớt' : 'Xem thêm' }}
+      </button>
+    </div>
+   
+  </div>
+
+  <!-- Sản phẩm liên quan (đặt dưới cùng) -->
+  <div class="related-products">
+    <h3>Sản phẩm liên quan</h3>
+    <div class="related-product-list" *ngIf="recommendedProducts.length > 0; else noRelatedProducts">
+      <div *ngFor="let relatedProduct of recommendedProducts" class="related-product-item" (click)="viewRelatedProduct(relatedProduct)">
+        <div class="related-product-image">
+          <img [src]="getFirstImage(relatedProduct)" [alt]="relatedProduct.tenSanPham" class="related-img"/>
+        </div>
+        <div class="related-product-info">
+          <h4 class="related-product-title">{{ relatedProduct.tenSanPham }}</h4>
+          <p class="related-product-price">{{ getFirstVolumePrice(relatedProduct) | number }}đ</p>
+        </div>
+      </div>
+    </div>
+    <ng-template #noRelatedProducts>
+      <p>Không có sản phẩm liên quan.</p>
+    </ng-template>
   </div>
 </div>
 <app-footer></app-footer>
