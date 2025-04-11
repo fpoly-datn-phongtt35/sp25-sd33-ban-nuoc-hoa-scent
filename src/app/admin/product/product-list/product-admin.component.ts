@@ -1,3 +1,4 @@
+// src/app/product-admin/product-admin.component.ts
 import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -82,7 +83,28 @@ export class ProductAdminComponent implements OnInit {
       }
     });
   }
+  formatScent(huongDau: string, huongGiua: string, huongCuoi: string): string {
+    const parts = [
+      huongDau || 'N/A',
+      huongGiua || 'N/A',
+      huongCuoi || 'N/A'
+    ].filter(part => part !== 'N/A');
+    return parts.join(' / ') || 'Không xác định';
+  }
 
+  getMuiChonString(selections: any[]): string {
+    if (!selections?.length) return 'Không xác định';
+    return selections
+      .map(scent => `${scent.tenMuiHuong || 'N/A'} (${scent.prominenceLevel || 0})`)
+      .join(', ');
+  }
+  getMuiHuongTitle(product: any): string {
+    return `Đầu: ${product.huongDauString}\nGiữa: ${product.huongGiuaString}\nCuối: ${product.huongCuoiString}`;
+  }
+
+  getMuiChonTitle(muiHuongSelections: any[]): string {
+    return muiHuongSelections?.map(scent => `${scent.tenMuiHuong} (${scent.prominenceLevel})`).join(', ') || '';
+  }
   openAddModal(): void {
     const modalRef = this.modalService.open(AddProductComponent, {
       size: 'lg',
@@ -142,45 +164,49 @@ export class ProductAdminComponent implements OnInit {
       });
   }
 
+// src/app/product-admin/product-admin.component.ts
+toggleProductStatus(id: number, currentTrangThai: number): void {
+  const action = currentTrangThai === 1 ? 'ngưng bán' : 'tiếp tục bán';
+  const confirmed = window.confirm(`Bạn có chắc muốn ${action} sản phẩm này không?`);
+  if (confirmed) {
+    const newTrangThai = currentTrangThai === 1 ? 0 : 1;
+    this.sanPhamService.updateSanPhamTrangThai(id, newTrangThai).subscribe({
+      next: (response) => {
+        console.log('✅ Cập nhật trạng thái SanPham:', response);
+        this.loadProducts();
+      },
+      error: (error) => {
+        console.error('❌ Lỗi khi cập nhật trạng thái:', error);
+        alert('Cập nhật trạng thái thất bại!');
+      }
+    });
+  }
+}
+
   private restorePageState(): void {
     console.log('🔄 Khôi phục trạng thái trang...');
-
-    // Xóa lớp modal-open khỏi body
     document.body.classList.remove('modal-open');
-
-    // Xóa tất cả backdrop còn sót lại
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => {
       console.log('🗑️ Xóa backdrop:', backdrop);
       backdrop.remove();
     });
-
-    // Xóa lớp show và phần tử modal khỏi DOM
     const modals = document.querySelectorAll('.modal.show');
     modals.forEach(modal => {
       console.log('🗑️ Xóa modal:', modal);
       modal.classList.remove('show');
       modal.remove();
     });
-
-    // Khôi phục trạng thái body
     document.body.style.overflow = 'auto';
     document.body.style.paddingRight = '';
-
-    // Đặt lại trạng thái giao diện
     this.selectedProductId = null;
     this.refreshProductList();
     this.cdr.detectChanges();
-
     console.log('✅ Đã khôi phục trạng thái trang');
   }
 
   private refreshProductList(): void {
     this.loadProducts();
-  }
-
-  deleteProduct(id: number): void {
-    alert('Chưa làm nha\n idSP:' + id);
   }
 
   onSearch(): void {
@@ -239,4 +265,5 @@ export class ProductAdminComponent implements OnInit {
     console.log('📌 Pagination range:', range);
     return range;
   }
+
 }

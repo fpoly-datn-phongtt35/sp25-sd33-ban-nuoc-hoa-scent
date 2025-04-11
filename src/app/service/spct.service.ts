@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable,throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TokenService } from './token.service';
@@ -24,5 +24,8 @@ export class SpctService {
   }
   updateSpctOnAdmin(spct:any):Observable<any>{
     return this.http.put<any>(`${this.apiUrl}/update`,spct);
+  }
+  updateSpctTrangThai(id: number, trangThai: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/updateTrangThai/${id}?trangThai=${trangThai}`, null);
   }
 }

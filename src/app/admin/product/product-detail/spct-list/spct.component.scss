@@ -73,3 +73,12 @@
 .table tr:hover {
   background-color: #f1f1f1;
 }
+/* src/app/product-detail/spct-list/spct.component.scss */
+.btn-success {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+}

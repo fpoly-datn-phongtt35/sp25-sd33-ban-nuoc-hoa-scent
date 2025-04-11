@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient,HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 
 
 @Injectable({
@@ -132,5 +132,7 @@ addMuiHuong(body: any): Observable<any> {
 addPhongCach(body: any): Observable<any> {
   return this.http.post<any>(`${this.bassseUrl}/phong-cach/add`, body);
 }
-
+updateSanPhamTrangThai(id: number, trangThai: number): Observable<any> {
+  return this.http.put(`${this.baseUrl}/updateTrangThai/${id}?trangThai=${trangThai}`, null);
+}
 }
