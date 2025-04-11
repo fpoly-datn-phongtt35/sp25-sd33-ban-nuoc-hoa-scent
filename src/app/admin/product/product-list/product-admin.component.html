@@ -1,129 +1,148 @@
-
 <div class="product-admin-container">
+  <!-- Component chi tiết sản phẩm -->
   <app-spct
-  *ngIf="selectedProductId !== null"
-  [productId]="selectedProductId"
-  (closeSpct)="closeProductDetail()"></app-spct>
+    *ngIf="selectedProductId !== null"
+    [productId]="selectedProductId"
+    (closeSpct)="closeProductDetail()"
+  ></app-spct>
 
+  <!-- Danh sách sản phẩm -->
   <div *ngIf="selectedProductId === null">
-  <div class="header-section">
-    <div class="actions">
-      <button class="btn btn-primary" (click)="openAddModal()" *ngIf="userRole !== 'STAFF'">Thêm mới</button>
-      <div class="search-box">
-        <input
-          type="text"
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="onSearch()"
-          placeholder="Tìm kiếm" />
+    <!-- Phần tiêu đề -->
+    <div class="header-section">
+      <div class="actions">
+        <button class="btn btn-primary" (click)="openAddModal()" *ngIf="userRole !== 'STAFF'">Thêm mới</button>
+        <div class="search-box">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearch()"
+            placeholder="Tìm kiếm"
+          />
+        </div>
+        <button class="export-btn">Export Excel</button>
       </div>
-      <button class="export-btn">Export Excel</button>
     </div>
+
+    <!-- Bảng sản phẩm -->
+    <div class="table-container">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Hình ảnh</th>
+            <th>Tên</th>
+            <th>Thương hiệu</th>
+            <th>Danh mục</th>
+            <th>Nhóm hương</th>
+            <th>Mùi hương</th>
+            <th>Phong cách</th>
+            <th>Mùi hương nổi bật</th>
+            <th>Tổng số lượng tồn kho</th>
+            <th *ngIf="userRole !== 'STAFF'">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Lặp qua danh sách sản phẩm từ products -->
+          <tr *ngFor="let product of products; let i = index">
+            <td (click)="onRowClick(product.idSanPham)">{{ i + 1 + (page * size) }}</td>
+            <td (click)="onRowClick(product.idSanPham)">
+              <img
+                *ngIf="product.imageURL; else noImage"
+                [src]="product.imageURL"
+                [alt]="product.tenSanPham"
+                width="60"
+                height="90"
+              />
+              <ng-template #noImage>
+                <p class="text-muted">Không có hình ảnh</p>
+              </ng-template>
+            </td>
+            <td (click)="onRowClick(product.idSanPham)">{{ product.tenSanPham }}</td>
+            <td (click)="onRowClick(product.idSanPham)">{{ product.tenThuongHieu }}</td>
+            <td (click)="onRowClick(product.idSanPham)">{{ product.tenDanhMuc }}</td>
+            <td (click)="onRowClick(product.idSanPham)">{{ product.tenNhomHuong }}</td>
+            <td (click)="onRowClick(product.idSanPham)">
+              <ul class="text-start">
+                <li><strong>Tầng đầu:</strong> {{ product.huongDau[0]?.moTa || 'Không xác định' }}</li>
+                <li><strong>Tầng giữa:</strong> {{ product.huongGiua[0]?.moTa || 'Không xác định' }}</li>
+                <li><strong>Tầng cuối:</strong> {{ product.huongCuoi[0]?.moTa || 'Không xác định' }}</li>
+              </ul>
+            </td>
+            <td (click)="onRowClick(product.idSanPham)">
+              <ul class="text-start">
+                <li *ngFor="let style of product.phongCach">
+                  <strong>{{ style.tenPhongCach }}:</strong> {{ style.moTa }}
+                </li>
+              </ul>
+            </td>
+            <td (click)="onRowClick(product.idSanPham)">
+              <ul class="text-start">
+                <li *ngFor="let scent of product.muiHuongSelections">
+                  <strong>{{ scent.tenMuiHuong }}</strong> (Mức độ nổi bật: {{ scent.prominenceLevel }})
+                </li>
+              </ul>
+            </td>
+            <td (click)="onRowClick(product.idSanPham)">{{ product.tongSoLuong }}</td>
+            <td *ngIf="userRole !== 'STAFF'">
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-warning btn-sm me-1"
+                  (click)="openUpdateProductModal(product.idSanPham)"
+                  *ngIf="userRole !== 'STAFF'"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  class="btn btn-danger btn-sm me-1"
+                  (click)="deleteProduct(product.idSanPham)"
+                  *ngIf="userRole !== 'STAFF'"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Phân trang -->
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        <!-- Trang đầu -->
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="goToPage(0)">«</button>
+        </li>
+        <!-- Trang trước -->
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="prevPage()">‹</button>
+        </li>
+        <!-- Số trang -->
+        <li class="page-item" *ngIf="page > 2">
+          <button class="page-link" (click)="goToPage(0)">1</button>
+        </li>
+        <li class="page-item disabled" *ngIf="page > 3">
+          <span class="page-link">...</span>
+        </li>
+        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+        </li>
+        <li class="page-item disabled" *ngIf="page < totalPages - 4">
+          <span class="page-link">...</span>
+        </li>
+        <li class="page-item" *ngIf="page < totalPages - 3">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+        </li>
+        <!-- Trang sau -->
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="nextPage()">›</button>
+        </li>
+        <!-- Trang cuối -->
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+        </li>
+      </ul>
+    </nav>
   </div>
-  <div class="table-container">
-    <table class="table table-hover">
-        <tr>
-          <th>STT</th>
-          <th>Hình ảnh</th>
-          <th>Tên</th>
-          <th>Thương hiệu</th>
-          <th>Danh mục</th>
-          <th>Nhóm hương</th>
-          <th>Mùi hương</th>
-          <th>Tổng số lượng tồn kho</th>
-          <th *ngIf="userRole !== 'STAFF'">Action</th>
-        </tr>
-      <tbody>
-        <tr *ngFor="let product of products; let i = index" >
-          <td (click)="onRowClick(product.idSanPham)">{{ i + 1 }}</td>
-          <td (click)="onRowClick(product.idSanPham)">
-            <img *ngIf="product.imageURL; else noImage"
-                 [src]="product.imageURL"
-                 [alt]="product.tenSanPham"
-                  width="100" height="150"/>
-            <ng-template #noImage><p class="text-muted">Không có hình ảnh</p></ng-template>
-          </td>
-          <td (click)="onRowClick(product.idSanPham)">{{ product.tenSanPham }}</td>
-          <td (click)="onRowClick(product.idSanPham)">{{ product.tenThuongHieu }}</td>
-          <td (click)="onRowClick(product.idSanPham)">{{ product.tenDanhMuc }}</td>
-          <td (click)="onRowClick(product.idSanPham)">{{ product.tenNhomHuong }}</td>
-          <td (click)="onRowClick(product.idSanPham)">
-            <ul class="text-start">
-              <li><strong>Tầng đầu:</strong> {{ product.moTaHuongDau }}</li>
-              <li><strong>Tầng giữa:</strong> {{ product.moTaHuongGiua }}</li>
-              <li><strong>Tầng cuối:</strong> {{ product.moTaHuongCuoi }}</li>
-            </ul>
-          </td>
-          <td (click)="onRowClick(product.idSanPham)">{{ product.tongSoLuong }}</td>
-          <td *ngIf="userRole !== 'STAFF'">
-            <div class="d-flex gap-2" >
-            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateProductModal(product.idSanPham)" *ngIf="userRole !== 'STAFF'">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-danger btn-sm me-1" (click)="deleteProduct(product.idSanPham)" *ngIf="userRole !== 'STAFF'">
-              <i class="bi bi-trash"></i>
-            </button>
-            <!-- <button class="btn btn-primary btn-sm" (click)="viewProduct(product.idSanPham)">
-              <i class="bi bi-eye"></i>
-            </button> -->
-          </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
- <!-- ✅ Phân trang với Bootstrap -->
-<!-- ✅ Phân trang với Bootstrap -->
-<!-- ✅ Phân trang đẹp với Bootstrap -->
-<nav aria-label="Page navigation">
-  <ul class="pagination justify-content-center">
-
-    <!-- Nút "Trang đầu" -->
-    <li class="page-item" [class.disabled]="page === 0">
-      <button class="page-link" (click)="goToPage(0)">«</button>
-    </li>
-
-    <!-- Nút "Trước" -->
-    <li class="page-item" [class.disabled]="page === 0">
-      <button class="page-link" (click)="prevPage()">‹</button>
-    </li>
-
-    <!-- Hiển thị trang đầu nếu page > 2 -->
-    <li class="page-item" *ngIf="page > 2">
-      <button class="page-link" (click)="goToPage(0)">1</button>
-    </li>
-
-    <!-- Dấu "..." nếu cần -->
-    <li class="page-item disabled" *ngIf="page > 3">
-      <span class="page-link">...</span>
-    </li>
-
-    <!-- Hiển thị các trang gần nhất -->
-    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-    </li>
-
-    <!-- Dấu "..." nếu có nhiều trang -->
-    <li class="page-item disabled" *ngIf="page < totalPages - 4">
-      <span class="page-link">...</span>
-    </li>
-
-    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
-    <li class="page-item" *ngIf="page < totalPages - 3">
-      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-    </li>
-
-    <!-- Nút "Sau" -->
-    <li class="page-item" [class.disabled]="page >= totalPages - 1">
-      <button class="page-link" (click)="nextPage()">›</button>
-    </li>
-
-    <!-- Nút "Trang cuối" -->
-    <li class="page-item" [class.disabled]="page >= totalPages - 1">
-      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-    </li>
-  </ul>
-</nav>
-
-
-</div>
 </div>

@@ -103,7 +103,10 @@
   }
 }
 
-.col-md-10 {
-  margin-left: 250px;
-  background: #ecf0f1;
+.col-md-10.col-lg-10 {
+  margin-left: 250px; // Đảm bảo nội dung không bị che bởi sidebar
+  width: calc(100% - 250px); // Tăng độ rộng của nội dung chính
+  padding: 20px;
+  overflow-x: auto; // Cho phép cuộn ngang toàn bộ nội dung
+  -webkit-overflow-scrolling: touch; // Cải thiện cuộn trên thiết bị di động
 }

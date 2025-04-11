@@ -1,87 +1,269 @@
+.product-admin-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
 .header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-}
 
-.header-section h2 {
-  margin: 0;
-}
+  .actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: background-color 0.3s;
 
-.search-box {
-  display: flex;
-  align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 5px 10px;
-}
+      &:hover {
+        background-color: #0056b3;
+      }
+    }
 
-.search-box input {
-  border: none;
-  outline: none;
-}
+    .search-box {
+      flex: 1;
+      max-width: 300px;
 
-.search-box button {
-  background: none;
-  border: none;
-  cursor: pointer;
-}
+      input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.3s;
 
-.export-btn {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
+        &:focus {
+          border-color: #007bff;
+        }
+      }
+    }
 
-.export-btn:hover {
-  background-color: #218838;
+    .export-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+
+      &:hover {
+        background-color: #218838;
+      }
+    }
+  }
 }
 
 .table-container {
-  overflow-x: auto;
+  overflow-x: auto; // Cho phép cuộn ngang nếu bảng quá rộng
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 1600px; // Tăng min-width để đảm bảo tất cả cột hiển thị
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+
+  th, td {
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  th {
+    background-color: #f1f3f5;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  td {
+    color: #212529;
+
+    img {
+      object-fit: cover;
+      border-radius: 4px;
+      transition: transform 0.3s;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+
+    .text-muted {
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      list-style-type: disc;
+
+      li {
+        margin-bottom: 5px;
+        line-height: 1.4;
+        white-space: normal; // Cho phép xuống dòng nếu nội dung dài
+
+        strong {
+          font-weight: 600;
+          color: #343a40;
+        }
+      }
+    }
+  }
+
+  // Điều chỉnh độ rộng cột để tối ưu không gian
+  th:nth-child(1), td:nth-child(1) { // STT
+    width: 2%;
+    text-align: center;
+  }
+
+  th:nth-child(2), td:nth-child(2) { // Hình ảnh
+    width: 5%;
+    text-align: center;
+  }
+
+  th:nth-child(3), td:nth-child(3) { // Tên
+    width: 18%;
+    white-space: normal; // Cho phép xuống dòng
+  }
+
+  th:nth-child(4), td:nth-child(4) { // Thương hiệu
+    width: 5%;
+  }
+
+  th:nth-child(5), td:nth-child(5) { // Danh mục
+    width: 5%;
+  }
+
+  th:nth-child(6), td:nth-child(6) { // Nhóm hương
+    width: 10%;
+    white-space: normal;
+  }
+
+  th:nth-child(7), td:nth-child(7) { // Mùi hương
+    width: 18%;
+    white-space: normal;
+  }
+
+  th:nth-child(8), td:nth-child(8) { // Phong cách
+    width: 18%;
+    white-space: normal;
+  }
+
+  th:nth-child(9), td:nth-child(9) { // Mùi hương nổi bật
+    width: 18%;
+    white-space: normal;
+  }
+
+  th:nth-child(10), td:nth-child(10) { // Tổng số lượng tồn kho
+    width: 4%;
+    text-align: center;
+  }
+
+  th:nth-child(11), td:nth-child(11) { // Action
+    width: 5%;
+    text-align: center;
+  }
+
+  // Hiệu ứng hover cho hàng
+  tr {
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #f8f9fa;
+      cursor: pointer;
+    }
+  }
+
+  // Nút hành động
+  .d-flex.gap-2 {
+    justify-content: center;
+
+    .btn {
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+
+      &.btn-warning {
+        background-color: #ffc107;
+        border: none;
+        color: white;
+
+        &:hover {
+          background-color: #e0a800;
+        }
+      }
+
+      &.btn-danger {
+        background-color: #dc3545;
+        border: none;
+        color: white;
+
+        &:hover {
+          background-color: #c82333;
+        }
+      }
+
+      i {
+        font-size: 14px;
+      }
+    }
+  }
 }
 
-.table th, .table td {
-  padding: 12px 15px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-}
+// Phân trang
+nav {
+  margin-top: 20px;
 
-.table th {
-  background-color: #f8f9fa;
-}
+  .pagination {
+    .page-item {
+      .page-link {
+        padding: 8px 12px;
+        font-size: 14px;
+        color: #007bff;
+        border: 1px solid #dee2e6;
+        background-color: white;
+        transition: all 0.3s;
 
-.table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
+        &:hover {
+          background-color: #e9ecef;
+          color: #0056b3;
+        }
+      }
 
-.table tr:hover {
-  background-color: #f1f1f1;
-}
+      &.active .page-link {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
 
-// .btn-action {
-//   background-color: transparent;
-//   border: none;
-//   padding: 5px;
-//   margin: 0 3px;
-//   cursor: pointer;
-//   color: #555;
-// }
-// .btn-action:hover {
-//   opacity: 0.8;
-// }
+      &.disabled .page-link {
+        color: #6c757d;
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
