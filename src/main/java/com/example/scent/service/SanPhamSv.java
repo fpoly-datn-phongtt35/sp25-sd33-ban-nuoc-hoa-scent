@@ -548,7 +548,7 @@
                                     huongGiua,
                                     huongCuoi,
                                     phongCach,
-                                    muiHuongSelections
+                                    muiHuongSelections,sanPham.getTrangThai()
                             );
                         } catch (Exception e) {
                             // Ghi log lỗi và bỏ qua bản ghi này để tránh phá vỡ toàn bộ trang
@@ -628,5 +628,11 @@
         }
         public List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoAsc() {
             return spi.findTop5BySoLuongTonKhoAsc();
+        }
+        public SanPham updateTrangThai(Integer id, Integer trangThai) {
+            SanPham sanPham = spi.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+            sanPham.setTrangThai(trangThai);
+            return spi.save(sanPham);
         }
     }

@@ -43,6 +43,8 @@ public class Spct {
 
     @Column(name = "dung_tich")
     private Integer dungTich;
+    @Column(name = "trang_thai")
+    private Integer trangThai;
 
     @ManyToOne
     @JoinColumn(name = "id_san_pham")
@@ -70,7 +72,13 @@ public class Spct {
         this.soLuongTonKho = soLuongTonKho;
     }
 
+    public Integer getTrangThai() {
+        return trangThai;
+    }
 
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
 
     public SanPham getSanPham() {
         return sanPham;

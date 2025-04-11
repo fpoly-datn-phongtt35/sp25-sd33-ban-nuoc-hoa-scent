@@ -6,11 +6,13 @@ import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.repo.SanPhamBanChayDto;
 import com.example.scent.service.SanPhamSv;
+import com.example.scent.service.SpctSv;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -36,7 +38,8 @@ import java.util.stream.Collectors;
 public class SanPhamCtrl {
     final
     SanPhamSv sps;
-
+    @Autowired
+    SpctSv spcts;
 
     public SanPhamCtrl(SanPhamSv sps) {
         this.sps = sps;
@@ -353,6 +356,20 @@ public class SanPhamCtrl {
             return ResponseEntity.ok(sanPhamDTO);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
+    }
+    @PutMapping("/updateTrangThai/{id}")
+    public ResponseEntity<SanPham> updateSanPhamTrangThai(
+            @PathVariable Integer id,
+            @RequestParam("trangThai") Integer trangThai
+    ) {
+        if (trangThai ==0){
+            List<Spct> ListSpct=spcts.findByidSanPham(id);
+            for (Spct spct : ListSpct) {
+                spcts.updateTrangThai(spct.getIdSpct(), 0);
+            }
+        }
+        SanPham updatedSanPham = sps.updateTrangThai(id, trangThai);
+        return ResponseEntity.ok(updatedSanPham);
     }
 }
 

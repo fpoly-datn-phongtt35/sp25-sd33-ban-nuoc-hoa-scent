@@ -40,4 +40,13 @@ public class SpctSv {
     public List<Spct> findByidSanPham(Integer id_san_pham){
         return spcti.findByidSanPham(id_san_pham);
     }
+        public void deleteAllSpct(List<Integer> spctsId) {
+            spcti.deleteAllById(spctsId);
+        }
+        public Spct updateTrangThai(Integer id, Integer trangThai) {
+            Spct spct = spcti.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm chi tiết không tồn tại"));
+            spct.setTrangThai(trangThai);
+            return spcti.save(spct);
+        }
 }

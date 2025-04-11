@@ -17,13 +17,19 @@ public class SanPhammDTO {
     private List<NotHuongDTO> huongCuoi; // Danh sách nốt hương cuối
     private List<PhongCachDTO> phongCach; // Danh sách phong cách
     private List<MuiHuongSelectionDTO> muiHuongSelections; // Danh sách mùi hương và độ nổi hương
-
+    private Integer trangThai;
     public SanPhammDTO() {
     }
 
-    public SanPhammDTO(Integer idSanPham, String tenSanPham, String imageURL, String tenThuongHieu, String tenDanhMuc,
-                       String tenNhomHuong, Long tongSoLuong, List<NotHuongDTO> huongDau, List<NotHuongDTO> huongGiua,
-                       List<NotHuongDTO> huongCuoi, List<PhongCachDTO> phongCach, List<MuiHuongSelectionDTO> muiHuongSelections) {
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public SanPhammDTO(Integer idSanPham, String tenSanPham, String imageURL, String tenThuongHieu, String tenDanhMuc, String tenNhomHuong, Long tongSoLuong, List<NotHuongDTO> huongDau, List<NotHuongDTO> huongGiua, List<NotHuongDTO> huongCuoi, List<PhongCachDTO> phongCach, List<MuiHuongSelectionDTO> muiHuongSelections, Integer trangThai) {
         this.idSanPham = idSanPham;
         this.tenSanPham = tenSanPham;
         this.imageURL = imageURL;
@@ -36,6 +42,7 @@ public class SanPhammDTO {
         this.huongCuoi = huongCuoi;
         this.phongCach = phongCach;
         this.muiHuongSelections = muiHuongSelections;
+        this.trangThai = trangThai;
     }
 
     // Getters và Setters
