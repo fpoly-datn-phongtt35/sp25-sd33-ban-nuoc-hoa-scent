@@ -52,9 +52,10 @@ export class ProductAdminComponent implements OnInit {
     console.log('📌 Gọi API với:', this.page, this.size);
     this.sanPhamService.getSanPhamDetailonAdmin(this.searchTerm, this.page, this.size).subscribe({
       next: (response) => {
-        console.log('✅ API response:', response);
+        
         this.products = response.content || [];
         this.totalPages = response.page?.totalPages || 1;
+        console.log('✅ Sản phẩm response:', response);
       },
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu sản phẩm:', error);

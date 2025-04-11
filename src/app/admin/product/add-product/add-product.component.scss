@@ -1,48 +1,15 @@
-.custom-modal {
-  max-width: 800px;
-  width: 100%;
-}
-
-.modal-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.form-label {
-  font-weight: 600;
-}
-
-.ng-select {
-  .ng-value {
-    background-color: #e9ecef;
-    border-radius: 12px;
-    padding: 2px 8px;
-    margin: 2px;
-  }
-
-  .ng-value-icon {
-    cursor: pointer;
-    margin-left: 5px;
-  }
-}
-
-.text-danger {
-  font-size: 0.875rem;
-}
-
-.preview-image {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 5px;
-}
-
-.btn-close.bg-danger {
-  background-color: #dc3545 !important;
-  color: white;
-  padding: 2px;
+.modal {
+  z-index: 1050;
 }
 
 .modal-backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.custom-modal {
+  max-width: 700px;
+}
+
+.prominence-modal {
+  z-index: 1060 !important;
 }

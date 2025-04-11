@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,8 @@ import { CartService } from '../service/cart.Service';
 import { SanPhamService } from '../service/product.service';
 import { TokenService } from '../service/token.service';
 import { DanhGiaService } from '../service/DanhGiaService';
+import { WebSocketService } from '../service/WebSocketService';
+import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -18,7 +20,7 @@ import Swal from 'sweetalert2';
   templateUrl: './product-detail.component.html',
   styleUrls: ['./product-detail.component.scss'],
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, OnDestroy {
   product: any;
   recommendedProducts: any[] = [];
   selectedVolume: any;
@@ -27,16 +29,13 @@ export class ProductDetailComponent implements OnInit {
   quantity: number = 1;
   selectedImageIndex: number = 0;
   isLoading: boolean = true;
-
-  danhGias: any[] = []; // Danh sách đánh giá gốc
-  filteredDanhGias: any[] = []; // Danh sách đánh giá đã lọc
-  selectedStarFilter: number | null = null; // Bộ lọc sao được chọn (null = tất cả)
-  newRating: number = 0; // Rating người dùng chọn
-  newComment: string = ''; // Bình luận người dùng nhập
-  averageRating: number = 0; // Thêm thuộc tính để lưu trung bình sao
-
-
-
+  danhGias: any[] = [];
+  filteredDanhGias: any[] = [];
+  selectedStarFilter: number | null = null;
+  newRating: number = 0;
+  newComment: string = '';
+  averageRating: number = 0;
+  private inventorySubscription: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -45,14 +44,50 @@ export class ProductDetailComponent implements OnInit {
     private cartService: CartService,
     private sanPhamService: SanPhamService,
     private tokenService: TokenService,
-    private danhGiaService: DanhGiaService
+    private danhGiaService: DanhGiaService,
+    private webSocketService: WebSocketService
   ) {}
 
   ngOnInit(): void {
+    const userId = this.tokenService.getUserId();
+    if (userId > 0) {
+      this.webSocketService.connect(userId);
+      this.inventorySubscription = this.webSocketService.getInventoryUpdates().subscribe(
+        (update: { productId: number; stock: number }) => {
+          console.log('📥 Received inventory update in ProductDetailComponent:', update);
+          this.updateStock(update.productId, update.stock);
+        },
+        (error) => console.error('WebSocket error in ProductDetailComponent:', error)
+      );
+    }
+
     this.loadProductDetail();
     this.loadRecommendedProducts();
     this.loadVolumes();
     this.loadDanhGias();
+  }
+
+  ngOnDestroy(): void {
+    if (this.inventorySubscription) {
+      this.inventorySubscription.unsubscribe();
+    }
+    // Không gọi disconnect ở đây vì WebSocketService là singleton, dùng chung toàn app
+  }
+
+  private updateStock(productId: number, newStock: number): void {
+    if (this.volumes) {
+      this.volumes = this.volumes.map(volume => {
+        if (volume.idSpct === productId) {
+          volume.soLuongTonKho = newStock;
+          if (this.selectedVolume && this.selectedVolume.idSpct === productId) {
+            this.selectedVolume.soLuongTonKho = newStock;
+            this.product.soLuongTonKho = newStock;
+          }
+        }
+        return volume;
+      });
+      console.log('🛒 Updated volumes with new stock:', this.volumes);
+    }
   }
 
   loadProductDetail(): void {
@@ -122,10 +157,7 @@ export class ProductDetailComponent implements OnInit {
           next: (res) => {
             this.danhGias = res;
             this.applyFilter();
-
-            // Tính trung bình sao
             this.calculateAverageRating();
-
           },
           error: (err) => {
             console.error('Lỗi khi lấy danh sách đánh giá:', err);
@@ -134,14 +166,16 @@ export class ProductDetailComponent implements OnInit {
       }
     }
   }
+
   calculateAverageRating(): void {
     if (this.danhGias.length > 0) {
       const totalRating = this.danhGias.reduce((sum, danhGia) => sum + danhGia.rating, 0);
       this.averageRating = totalRating / this.danhGias.length;
     } else {
-      this.averageRating = 0; // Nếu không có đánh giá
+      this.averageRating = 0;
     }
   }
+
   scrollImages(direction: string): void {
     if (direction === 'up' && this.selectedImageIndex > 0) {
       this.selectedImageIndex--;
@@ -166,7 +200,7 @@ export class ProductDetailComponent implements OnInit {
 
   updateDisplayedPrice(): void {
     if (this.selectedVolume) {
-      console.log(`Giá: ${this.selectedVolume.gia} cho dung tích ${this.selectedVolume.dungTich}ml`);
+      console.log(`Giá: ${this.selectedVolume.donGia} cho dung tích ${this.selectedVolume.dungTich}ml`);
     }
   }
 
@@ -214,13 +248,6 @@ export class ProductDetailComponent implements OnInit {
     };
 
     this.cartService.addToCart(productCopy, this.quantity);
-    Swal.fire({
-      icon: 'success',
-      title: 'Đã thêm vào giỏ hàng',
-      text: `✅ ${this.quantity} sản phẩm đã được thêm!`,
-      position: 'bottom-end',
-    });
-
     this.quantity = 1;
   }
 
@@ -268,7 +295,7 @@ export class ProductDetailComponent implements OnInit {
         text: 'Bạn cần đăng nhập để gửi đánh giá!',
         position: 'bottom-end',
       });
-      this.router.navigate(['/login']);
+      this.router.navigate(['login']);
       return;
     }
 

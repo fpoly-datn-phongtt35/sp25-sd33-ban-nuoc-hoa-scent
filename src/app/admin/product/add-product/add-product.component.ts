@@ -66,8 +66,8 @@ export class AddProductComponent implements OnInit {
   showProminenceModal: boolean = false;
   tempMuiHuongId: number | null = null;
   tempProminenceLevel: number = 0.5;
-  selectedMuiHuongIds: number[] = [];
-  loadingMuiHuong: boolean = true; // Biến để kiểm soát trạng thái tải dữ liệu
+  loadingMuiHuong: boolean = true;
+  isSubmitting: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -84,10 +84,11 @@ export class AddProductComponent implements OnInit {
       idThuongHieu: ['', Validators.required],
       idDanhMuc: ['', Validators.required],
       idNhomHuong: ['', Validators.required],
-      notHuongDauIds: [[]],
-      notHuongGiuaIds: [[]],
-      notHuongCuoiIds: [[]],
-      phongCachIds: [[]]
+      notHuongDauIds: [[], Validators.required],
+      notHuongGiuaIds: [[], Validators.required],
+      notHuongCuoiIds: [[], Validators.required],
+      phongCachIds: [[], Validators.required],
+      muiHuongIds: [[]] // Không bắt buộc để tránh lỗi ban đầu
     });
   }
 
@@ -102,12 +103,8 @@ export class AddProductComponent implements OnInit {
         this.getAllNotHuong(),
         this.getAllPhongCach()
       ]);
-      this.loadingMuiHuong = false; // Dữ liệu đã tải xong
-      console.log('muiHuongList after ngOnInit:', this.muiHuongList);
-      if (!this.muiHuongList || this.muiHuongList.length === 0) {
-        console.warn('muiHuongList is empty after loading');
-      }
-      this.cdr.detectChanges(); // Kích hoạt change detection
+      this.loadingMuiHuong = false;
+      this.cdr.detectChanges();
     } catch (err) {
       console.error('Error in ngOnInit:', err);
       this.loadingMuiHuong = false;
@@ -151,11 +148,19 @@ export class AddProductComponent implements OnInit {
   async getAllMuiHuong() {
     try {
       const data = await firstValueFrom(this.sanPhamService.getMuiHuong());
-      this.muiHuongList = data;
-      console.log('Danh sách mùi hương:', this.muiHuongList);
-      this.cdr.detectChanges(); // Kích hoạt change detection sau khi tải dữ liệu
+      this.muiHuongList = data || [];
+      // Kiểm tra và lọc dữ liệu không hợp lệ
+      this.muiHuongList = this.muiHuongList.filter(item => typeof item.id === 'number' && item.id > 0);
+      console.log('muiHuongList loaded:', this.muiHuongList);
+      if (!data || data.length === 0) {
+        console.warn('No muiHuong data returned');
+      }
+      this.loadingMuiHuong = false;
+      this.cdr.detectChanges();
     } catch (err) {
       console.error('Lỗi lấy mùi hương:', err);
+      this.loadingMuiHuong = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -221,11 +226,20 @@ export class AddProductComponent implements OnInit {
   }
 
   onMuiHuongAdd(event: any) {
-    const id = event?.id;
-    console.log('Thêm mùi hương với ID:', id);
+    console.log('onMuiHuongAdd triggered with event:', event);
 
-    if (typeof id !== 'number') {
-      console.error('ID không hợp lệ:', id);
+    // Xử lý event để lấy ID
+    let id: number;
+    if (typeof event === 'object' && event !== null && 'id' in event) {
+      id = Number(event.id);
+    } else {
+      id = Number(event);
+    }
+
+    if (isNaN(id) || id <= 0) {
+      console.error('Invalid ID:', id);
+      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((sId: number) => sId !== id));
       return;
     }
 
@@ -233,23 +247,34 @@ export class AddProductComponent implements OnInit {
       this.tempMuiHuongId = id;
       this.tempProminenceLevel = 0.5;
       this.showProminenceModal = true;
+      console.log('showProminenceModal set to true:', this.showProminenceModal);
+      document.body.classList.add('modal-open');
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop fade show';
+      document.body.appendChild(backdrop);
       this.cdr.detectChanges();
     }
   }
 
   onMuiHuongRemove(event: any) {
-    const id = event?.id;
-    console.log('Xóa mùi hương với ID:', id);
+    console.log('onMuiHuongRemove triggered with event:', event);
 
-    if (typeof id !== 'number') {
-      console.error('ID không hợp lệ:', id);
+    // Xử lý event để lấy ID
+    let id: number;
+    if (typeof event === 'object' && event !== null && 'id' in event) {
+      id = Number(event.id);
+    } else {
+      id = Number(event);
+    }
+
+    if (isNaN(id) || id <= 0) {
+      console.error('Invalid ID:', id);
       return;
     }
 
     this.muiHuongSelections = this.muiHuongSelections.filter((s) => s.id !== id);
-    this.selectedMuiHuongIds = this.selectedMuiHuongIds.filter((sId) => sId !== id);
-    console.log('muiHuongSelections sau khi xóa:', this.muiHuongSelections);
-    console.log('selectedMuiHuongIds sau khi xóa:', this.selectedMuiHuongIds);
+    const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+    this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((sId: number) => sId !== id));
     this.cdr.detectChanges();
   }
 
@@ -257,30 +282,27 @@ export class AddProductComponent implements OnInit {
     if (this.tempMuiHuongId === null) return;
 
     const prominenceLevel = Number(this.tempProminenceLevel);
-    console.log('Xác nhận độ nổi hương - ID:', this.tempMuiHuongId, 'Độ nổi hương:', prominenceLevel);
-
     if (isNaN(prominenceLevel) || prominenceLevel < 0 || prominenceLevel > 1) {
       alert('Độ nổi hương phải từ 0 đến 1!');
-      this.selectedMuiHuongIds = this.selectedMuiHuongIds.filter((id) => id !== this.tempMuiHuongId);
-      this.closeProminenceModal();
       return;
     }
 
+    this.muiHuongSelections = this.muiHuongSelections.filter((s) => s.id !== this.tempMuiHuongId);
     this.muiHuongSelections.push({ id: this.tempMuiHuongId, prominenceLevel });
-    if (!this.selectedMuiHuongIds.includes(this.tempMuiHuongId)) {
-      this.selectedMuiHuongIds.push(this.tempMuiHuongId);
+
+    const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+    if (!currentMuiHuongIds.includes(this.tempMuiHuongId)) {
+      this.productForm.get('muiHuongIds')?.setValue([...currentMuiHuongIds, this.tempMuiHuongId]);
     }
 
-    console.log('muiHuongSelections sau khi thêm:', this.muiHuongSelections);
-    console.log('selectedMuiHuongIds sau khi thêm:', this.selectedMuiHuongIds);
     this.closeProminenceModal();
     this.cdr.detectChanges();
   }
 
   cancelProminenceModal() {
     if (this.tempMuiHuongId !== null) {
-      console.log('Hủy độ nổi hương - ID:', this.tempMuiHuongId);
-      this.selectedMuiHuongIds = this.selectedMuiHuongIds.filter((id) => id !== this.tempMuiHuongId);
+      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
+      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== this.tempMuiHuongId));
     }
     this.closeProminenceModal();
   }
@@ -289,33 +311,26 @@ export class AddProductComponent implements OnInit {
     this.showProminenceModal = false;
     this.tempMuiHuongId = null;
     this.tempProminenceLevel = 0.5;
+    document.body.classList.remove('modal-open');
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
     this.cdr.detectChanges();
   }
 
-  getMuiHuongName(id: number): string {
-    console.log('Tìm tên mùi hương với ID:', id);
-    console.log('muiHuongList hiện tại:', this.muiHuongList);
-
-    if (!this.muiHuongList || this.muiHuongList.length === 0) {
-      console.warn('muiHuongList rỗng hoặc chưa tải!');
-      return `Không tìm thấy (ID: ${id})`;
-    }
-
+  getMuiHuongName(item: number | MuiHuong): string {
+    const id = typeof item === 'number' ? item : item.id;
     const muiHuong = this.muiHuongList.find((mh) => mh.id === id);
     return muiHuong ? muiHuong.tenMuiHuong : `Không tìm thấy (ID: ${id})`;
   }
 
-  getProminenceLevel(id: number): number {
+  getProminenceLevel(item: number | MuiHuong): number {
+    const id = typeof item === 'number' ? item : item.id;
     const selection = this.muiHuongSelections.find((s) => s.id === id);
-    if (!selection) {
-      console.warn(`Không tìm thấy độ nổi hương cho ID: ${id}`);
-      return 0;
-    }
-    const prominenceLevel = Number(selection.prominenceLevel);
-    return isNaN(prominenceLevel) ? 0 : prominenceLevel;
+    return selection ? Number(selection.prominenceLevel) : 0;
   }
 
-  hasProminenceLevel(id: number): boolean {
+  hasProminenceLevel(item: number | MuiHuong): boolean {
+    const id = typeof item === 'number' ? item : item.id;
     return this.muiHuongSelections.some(s => s.id === id);
   }
 
@@ -325,6 +340,17 @@ export class AddProductComponent implements OnInit {
       return;
     }
 
+    if (this.muiHuongSelections.length === 0) {
+      alert('Vui lòng chọn ít nhất một mùi hương và nhập độ nổi hương!');
+      return;
+    }
+
+    if (this.selectedFiles.length === 0) {
+      alert('Vui lòng chọn ít nhất một hình ảnh!');
+      return;
+    }
+
+    this.isSubmitting = true;
     const formValues = this.productForm.value;
     const formData = new FormData();
 
@@ -351,6 +377,10 @@ export class AddProductComponent implements OnInit {
       error: (err) => {
         console.error('❌ Lỗi khi thêm sản phẩm:', err);
         alert('❌ Thêm sản phẩm thất bại!');
+      },
+      complete: () => {
+        this.isSubmitting = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -378,7 +408,14 @@ export class AddProductComponent implements OnInit {
   }
 
   closeModal() {
-    this.activeModal.dismiss('cancel');
+    if (this.activeModal) {
+      this.activeModal.dismiss('cancel');
+    }
+    const modalElement = document.querySelector('.modal');
+    if (modalElement) modalElement.remove();
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
+    document.body.classList.remove('modal-open');
     this.cdr.detectChanges();
   }
 }

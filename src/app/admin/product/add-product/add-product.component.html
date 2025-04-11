@@ -66,6 +66,9 @@
                 placeholder="Chọn nốt hương đầu..."
                 formControlName="notHuongDauIds">
               </ng-select>
+              <div *ngIf="productForm.get('notHuongDauIds')?.touched && productForm.get('notHuongDauIds')?.invalid" class="text-danger small mt-1">
+                Vui lòng chọn ít nhất một nốt hương đầu.
+              </div>
             </div>
 
             <div class="col-md-12 mb-3">
@@ -79,6 +82,9 @@
                 placeholder="Chọn nốt hương giữa..."
                 formControlName="notHuongGiuaIds">
               </ng-select>
+              <div *ngIf="productForm.get('notHuongGiuaIds')?.touched && productForm.get('notHuongGiuaIds')?.invalid" class="text-danger small mt-1">
+                Vui lòng chọn ít nhất một nốt hương giữa.
+              </div>
             </div>
 
             <div class="col-md-12 mb-3">
@@ -92,6 +98,9 @@
                 placeholder="Chọn nốt hương cuối..."
                 formControlName="notHuongCuoiIds">
               </ng-select>
+              <div *ngIf="productForm.get('notHuongCuoiIds')?.touched && productForm.get('notHuongCuoiIds')?.invalid" class="text-danger small mt-1">
+                Vui lòng chọn ít nhất một nốt hương cuối.
+              </div>
             </div>
 
             <!-- Mùi hương và độ nổi hương -->
@@ -100,8 +109,11 @@
               <div *ngIf="loadingMuiHuong" class="text-muted">
                 Đang tải danh sách mùi hương...
               </div>
+              <div *ngIf="!loadingMuiHuong && (!muiHuongList || muiHuongList.length === 0)" class="text-danger small mt-1">
+                Không có mùi hương nào để chọn. Vui lòng kiểm tra dữ liệu.
+              </div>
               <ng-select
-                *ngIf="!loadingMuiHuong"
+                *ngIf="!loadingMuiHuong && muiHuongList && muiHuongList.length > 0"
                 #muiHuongSelect
                 [items]="muiHuongList"
                 bindLabel="tenMuiHuong"
@@ -109,8 +121,7 @@
                 [multiple]="true"
                 [searchable]="true"
                 placeholder="Chọn mùi hương..."
-                [(ngModel)]="selectedMuiHuongIds"
-                [ngModelOptions]="{ standalone: true }"
+                formControlName="muiHuongIds"
                 (add)="onMuiHuongAdd($event)"
                 (remove)="onMuiHuongRemove($event)">
                 <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
@@ -122,16 +133,19 @@
                 <ng-template ng-option-tmp let-item="item">
                   <div>
                     {{ item.tenMuiHuong }}
-                    <span *ngIf="hasProminenceLevel(item.id)" class="text-muted small">
-                      (Độ nổi hương: {{ getProminenceLevel(item.id) }})
+                    <span *ngIf="hasProminenceLevel(item)" class="text-muted small">
+                      (Độ nổi hương: {{ getProminenceLevel(item) }})
                     </span>
                   </div>
                 </ng-template>
               </ng-select>
+              <div *ngIf="productForm.get('muiHuongIds')?.touched && productForm.get('muiHuongIds')?.invalid" class="text-danger small mt-1">
+                Vui lòng chọn ít nhất một mùi hương.
+              </div>
             </div>
 
             <!-- Prominence Modal -->
-            <div *ngIf="showProminenceModal" class="modal fade show" style="display: block;" tabindex="-1">
+            <div *ngIf="showProminenceModal" class="modal fade show" style="display: block; z-index: 1060;" tabindex="-1">
               <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                   <div class="modal-header">
@@ -139,11 +153,14 @@
                     <button type="button" class="btn-close" (click)="cancelProminenceModal()"></button>
                   </div>
                   <div class="modal-body">
-                    <input type="number" step="0.1" min="0" max="1" class="form-control" [(ngModel)]="tempProminenceLevel" [ngModelOptions]="{ standalone: true }">
+                    <input type="number" step="0.1" min="0" max="1" class="form-control" [(ngModel)]="tempProminenceLevel" [ngModelOptions]="{ standalone: true }" required>
+                    <div *ngIf="tempProminenceLevel < 0 || tempProminenceLevel > 1" class="text-danger small mt-1">
+                      Độ nổi hương phải từ 0 đến 1.
+                    </div>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" (click)="cancelProminenceModal()">Hủy</button>
-                    <button type="button" class="btn btn-primary" (click)="confirmProminence()">OK</button>
+                    <button type="button" class="btn btn-primary" (click)="confirmProminence()" [disabled]="tempProminenceLevel < 0 || tempProminenceLevel > 1">OK</button>
                   </div>
                 </div>
               </div>
@@ -161,6 +178,9 @@
                 placeholder="Chọn phong cách..."
                 formControlName="phongCachIds">
               </ng-select>
+              <div *ngIf="productForm.get('phongCachIds')?.touched && productForm.get('phongCachIds')?.invalid" class="text-danger small mt-1">
+                Vui lòng chọn ít nhất một phong cách.
+              </div>
             </div>
 
             <!-- Mô tả -->
@@ -176,6 +196,9 @@
             <div class="col-md-12 mb-2">
               <label class="form-label fw-semibold">Hình ảnh</label>
               <input type="file" class="form-control" id="fileInput" (change)="onFileChange($event)" multiple>
+              <div *ngIf="selectedFiles.length === 0 && productForm.touched" class="text-danger small mt-1">
+                Vui lòng chọn ít nhất một hình ảnh.
+              </div>
             </div>
 
             <!-- Preview ảnh -->
@@ -189,8 +212,11 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-        <button type="button" class="btn btn-primary" (click)="addProduct()">Lưu</button>
+        <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSubmitting">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="addProduct()" [disabled]="isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Lưu
+        </button>
       </div>
     </div>
   </div>

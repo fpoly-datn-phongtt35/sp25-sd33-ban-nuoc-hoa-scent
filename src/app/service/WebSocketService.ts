@@ -8,8 +8,9 @@ import SockJS from 'sockjs-client';
 })
 export class WebSocketService {
   private stompClient: Client;
-  private messageSubject: Subject<any> = new Subject<any>();
-  private adminMessageSubject: Subject<any> = new Subject<any>();
+  private messageSubject: Subject<any> = new Subject<any>(); // Cho đơn hàng user
+  private adminMessageSubject: Subject<any> = new Subject<any>(); // Cho admin
+  private inventorySubject: Subject<any> = new Subject<any>(); // Cho tồn kho
   private isConnected: boolean = false;
 
   constructor() {
@@ -34,6 +35,7 @@ export class WebSocketService {
       console.log('Connected to WebSocket:', frame);
       this.isConnected = true;
 
+      // Subscribe cho đơn hàng của user
       this.stompClient.subscribe(`/topic/donhang/${userId}`, (message) => {
         console.log('Raw WebSocket message received for user:', message);
         if (message.body) {
@@ -44,34 +46,27 @@ export class WebSocketService {
           } catch (error) {
             console.error('Error parsing WebSocket message body:', error);
           }
-        } else {
-          console.log('WebSocket message has no body:', message);
         }
       });
 
-      console.log(`Subscribed to /topic/donhang/${userId}`);
+      // Subscribe cho cập nhật tồn kho
+      this.stompClient.subscribe('/topic/inventory', (message) => {
+        console.log('Raw WebSocket message received for inventory:', message);
+        if (message.body) {
+          try {
+            const update = JSON.parse(message.body);
+            console.log('Parsed WebSocket message for inventory:', update);
+            this.inventorySubject.next(update);
+          } catch (error) {
+            console.error('Error parsing WebSocket message body:', error);
+          }
+        }
+      });
+
+      console.log(`Subscribed to /topic/donhang/${userId} and /topic/inventory`);
     };
 
-    this.stompClient.onStompError = (error) => {
-      console.error('STOMP error:', error);
-      this.isConnected = false;
-      this.messageSubject.error('STOMP error: ' + error);
-      this.adminMessageSubject.error('STOMP error: ' + error);
-    };
-
-    this.stompClient.onWebSocketClose = (event) => {
-      console.log('WebSocket closed:', event);
-      this.isConnected = false;
-      this.messageSubject.complete();
-      this.adminMessageSubject.complete();
-    };
-
-    this.stompClient.onWebSocketError = (error) => {
-      console.error('WebSocket error:', error);
-      this.messageSubject.error('WebSocket error: ' + error);
-      this.adminMessageSubject.error('WebSocket error: ' + error);
-    };
-
+    this.handleErrorsAndEvents();
     this.stompClient.activate();
     console.log('Initiating WebSocket connection for userId:', userId);
   }
@@ -96,19 +91,38 @@ export class WebSocketService {
           } catch (error) {
             console.error('Error parsing WebSocket message body:', error);
           }
-        } else {
-          console.log('WebSocket message has no body:', message);
         }
       });
 
-      console.log('Subscribed to /topic/admin/orders');
+      // Subscribe cho cập nhật tồn kho (cả admin cũng cần thấy tồn kho)
+      this.stompClient.subscribe('/topic/inventory', (message) => {
+        console.log('Raw WebSocket message received for inventory (admin):', message);
+        if (message.body) {
+          try {
+            const update = JSON.parse(message.body);
+            console.log('Parsed WebSocket message for inventory (admin):', update);
+            this.inventorySubject.next(update);
+          } catch (error) {
+            console.error('Error parsing WebSocket message body:', error);
+          }
+        }
+      });
+
+      console.log('Subscribed to /topic/admin/orders and /topic/inventory');
     };
 
+    this.handleErrorsAndEvents();
+    this.stompClient.activate();
+    console.log('Initiating WebSocket connection for admin');
+  }
+
+  private handleErrorsAndEvents(): void {
     this.stompClient.onStompError = (error) => {
       console.error('STOMP error:', error);
       this.isConnected = false;
       this.messageSubject.error('STOMP error: ' + error);
       this.adminMessageSubject.error('STOMP error: ' + error);
+      this.inventorySubject.error('STOMP error: ' + error);
     };
 
     this.stompClient.onWebSocketClose = (event) => {
@@ -116,16 +130,15 @@ export class WebSocketService {
       this.isConnected = false;
       this.messageSubject.complete();
       this.adminMessageSubject.complete();
+      this.inventorySubject.complete();
     };
 
     this.stompClient.onWebSocketError = (error) => {
       console.error('WebSocket error:', error);
       this.messageSubject.error('WebSocket error: ' + error);
       this.adminMessageSubject.error('WebSocket error: ' + error);
+      this.inventorySubject.error('WebSocket error: ' + error);
     };
-
-    this.stompClient.activate();
-    console.log('Initiating WebSocket connection for admin');
   }
 
   disconnect(): void {
@@ -142,6 +155,10 @@ export class WebSocketService {
 
   getAdminMessages(): Observable<any> {
     return this.adminMessageSubject.asObservable();
+  }
+
+  getInventoryUpdates(): Observable<any> {
+    return this.inventorySubject.asObservable();
   }
 
   isWebSocketConnected(): boolean {

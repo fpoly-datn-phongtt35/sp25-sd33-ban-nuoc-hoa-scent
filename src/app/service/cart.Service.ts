@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { TokenService } from '../service/token.service';
+import { WebSocketService } from '../service/WebSocketService';
 import { tap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -14,7 +15,7 @@ export interface CartItem {
     donGia: number;
     dungTich: string;
     imageURL?: string;
-    soLuongTonKho?: number; // Thêm trường soLuongTonKho
+    soLuongTonKho?: number;
   };
   quantity: number;
   volume: string;
@@ -32,7 +33,7 @@ export interface BackendCartItem {
   dungTich: string;
   tenSanPham: string;
   imageUrl: string[];
-  soLuongTonKho: number; // Thêm trường soLuongTonKho
+  soLuongTonKho: number;
 }
 
 @Injectable({
@@ -44,12 +45,51 @@ export class CartService {
   private apiUrl = 'http://localhost:8080/api/cart';
   private userId: string | null = null;
   selectedCartItems: CartItemWithKey[] = [];
+  private inventorySubscription: Subscription;
 
   constructor(
     private tokenService: TokenService,
-    private http: HttpClient
+    private http: HttpClient,
+    private webSocketService: WebSocketService
   ) {
     this.loadCart();
+    this.setupWebSocket();
+  }
+
+  private setupWebSocket(): void {
+    const userId = this.getUserId();
+    if (userId) {
+      console.log('🔌 Setting up WebSocket for userId:', userId);
+      this.webSocketService.connect(Number(userId));
+      this.inventorySubscription = this.webSocketService.getInventoryUpdates().subscribe(
+        (update: { productId: number; stock: number }) => {
+          console.log('📥 Processing inventory update in CartService:', update);
+          this.updateStockInCart(update.productId, update.stock);
+        },
+        (error) => console.error('❌ WebSocket error in CartService:', error)
+      );
+    } else {
+      console.log('⛔ No userId, skipping WebSocket setup');
+    }
+  }
+
+  private updateStockInCart(productId: number, newStock: number): void {
+    console.log('🔄 Updating stock for productId:', productId, 'newStock:', newStock);
+    let updated = false;
+    this.cart.forEach((item, key) => {
+      if (item.product.idSpct === productId) {
+        console.log('🔍 Found matching item in cart:', item);
+        item.product.soLuongTonKho = newStock;
+        this.cart.set(key, item);
+        updated = true;
+      }
+    });
+    if (updated) {
+      console.log('✅ Cart updated with new stock:', Array.from(this.cart.entries()));
+      this.cartSubject.next(new Map(this.cart));
+    } else {
+      console.log('⚠️ No items in cart matched productId:', productId);
+    }
   }
 
   private getUserId(): string | null {
@@ -71,9 +111,15 @@ export class CartService {
       localStorage.setItem('temp-cart', JSON.stringify(Array.from(this.cart.entries())));
     }
 
+    if (this.inventorySubscription) {
+      this.inventorySubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
+
     this.userId = userId;
     console.log('👤 user đăng nhập:', userId);
     this.loadCart();
+    this.setupWebSocket();
   }
 
   private loadCart(): void {
@@ -111,7 +157,7 @@ export class CartService {
               donGia: value.product.donGia,
               dungTich: value.product.dungTich,
               imageURL: value.product.imageURL,
-              soLuongTonKho: value.product.soLuongTonKho, // Thêm soLuongTonKho
+              soLuongTonKho: value.product.soLuongTonKho,
             },
             quantity: value.quantity,
             volume: String(value.volume).trim(),
@@ -153,7 +199,7 @@ export class CartService {
                 donGia: item.donGia,
                 dungTich: item.dungTich,
                 imageURL: item.imageUrl && item.imageUrl.length > 0 ? item.imageUrl[0] : '',
-                soLuongTonKho: item.soLuongTonKho, // Ánh xạ soLuongTonKho
+                soLuongTonKho: item.soLuongTonKho,
               },
               quantity: item.soLuong,
               volume: String(item.dungTich),
@@ -228,6 +274,7 @@ export class CartService {
   }
 
   addToCart(product: any, quantity: number = 1): void {
+    console.log('➕ Adding to cart:', product, 'quantity:', quantity);
     if (!product || !product.idSpct || !product.dungTich) {
       console.error('❌ Không thể thêm sản phẩm không hợp lệ vào giỏ hàng!', product);
       Swal.fire({
@@ -239,7 +286,6 @@ export class CartService {
       return;
     }
 
-    // Kiểm tra số lượng tồn kho
     if (product.soLuongTonKho !== undefined && product.soLuongTonKho < quantity) {
       Swal.fire({
         icon: 'error',
@@ -283,7 +329,6 @@ export class CartService {
         const existingProduct = this.cart.get(productKey);
         if (existingProduct) {
           const newQuantity = existingProduct.quantity + quantity;
-          // Kiểm tra số lượng tồn kho cho giỏ hàng tạm
           if (product.soLuongTonKho !== undefined && newQuantity > product.soLuongTonKho) {
             Swal.fire({
               icon: 'error',
@@ -305,7 +350,7 @@ export class CartService {
             donGia: product.donGia,
             dungTich: product.dungTich,
             imageURL: product.imageURL || '',
-            soLuongTonKho: product.soLuongTonKho, // Thêm soLuongTonKho
+            soLuongTonKho: product.soLuongTonKho,
           },
           quantity,
           volume: String(product.dungTich).trim(),
@@ -325,25 +370,28 @@ export class CartService {
   }
 
   updateCartItem(productId: number, volume: string, quantity: number): void {
+    console.log('📝 Updating cart item: productId:', productId, 'volume:', volume, 'quantity:', quantity);
     const userId = this.getUserId();
     const productKey = this.createProductKey(productId, volume);
-  
+
     if (userId) {
       const params = { idTaiKhoan: userId, idSpct: productId, soLuong: quantity };
       console.log('📤 Gửi yêu cầu cập nhật: ', params);
       this.http.put<{ message: string }>(`${this.apiUrl}/update`, null, { params }).pipe(
         tap(response => {
           console.log('✅ Response từ update:', response);
-          // Hiển thị thông báo thành công
-          
-          this.loadCartFromDB(userId); // Đồng bộ giỏ hàng từ backend
+          this.loadCartFromDB(userId);
         }),
         catchError(err => {
           console.error('❌ Lỗi khi cập nhật giỏ:', err);
-          // Hiển thị thông báo lỗi từ backend (nếu có)
           const errorMessage = err.error?.message || 'Lỗi khi cập nhật giỏ hàng';
-         
-          this.loadCartFromDB(userId); // Đồng bộ lại giỏ hàng nếu có lỗi
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: errorMessage,
+            position: 'bottom-end'
+          });
+          this.loadCartFromDB(userId);
           return throwError(err);
         })
       ).subscribe();
@@ -351,7 +399,6 @@ export class CartService {
       if (this.cart.has(productKey)) {
         const item = this.cart.get(productKey);
         if (item) {
-          // Kiểm tra số lượng tồn kho
           if (item.product.soLuongTonKho !== undefined && quantity > item.product.soLuongTonKho) {
             Swal.fire({
               icon: 'error',
@@ -369,6 +416,7 @@ export class CartService {
       }
     }
   }
+
   removeFromCart(productKey: string): void {
     const userId = this.getUserId();
     if (userId) {
@@ -410,7 +458,6 @@ export class CartService {
 
       const userId = this.getUserId();
       if (!userId) {
-        // Guest user: Remove from temp-cart
         products.forEach(product => {
           const productKey = this.createProductKey(product.idSpct, product.volume);
           if (this.cart.has(productKey)) {
@@ -424,7 +471,6 @@ export class CartService {
         return;
       }
 
-      // Logged-in user: Call backend remove-multiple endpoint
       const idSpcts = products.map(p => p.idSpct).join(',');
       const params = new HttpParams()
         .set('idTaiKhoan', userId)
@@ -437,8 +483,8 @@ export class CartService {
             this.cart.delete(productKey);
             console.log(`🗑️ Đã xóa sản phẩm ${productKey} khỏi giỏ hàng`);
           });
-          this.cartSubject.next(new Map(this.cart)); // Cập nhật ngay lập tức
-          this.loadCartFromDB(userId); // Đồng bộ với backend
+          this.cartSubject.next(new Map(this.cart));
+          this.loadCartFromDB(userId);
         }),
         catchError(err => {
           console.error('❌ Lỗi khi xóa nhiều sản phẩm khỏi giỏ:', err);
@@ -502,27 +548,27 @@ export class CartService {
     }
   }
 
-  clearCartOnClient(): void {
-    this.cart.clear();
-    this.saveCart();
-    this.cartSubject.next(new Map(this.cart));
-    console.log('🗑️ Cart has been cleared on the client-side.');
-  }
+    clearCartOnClient(): void {
+      this.cart.clear();
+      this.saveCart();
+      this.cartSubject.next(new Map(this.cart));
+      console.log('🗑️ Cart has been cleared on the client-side.');
+    }
 
-  private saveCart(): void {
-    const userId = this.getUserId();
-    if (!userId) {
-      const cartArray = Array.from(this.cart.entries());
-      console.log('💾 Lưu giỏ hàng vào temp-cart:', cartArray);
-      localStorage.setItem('temp-cart', JSON.stringify(cartArray));
+    private saveCart(): void {
+      const userId = this.getUserId();
+      if (!userId) {
+        const cartArray = Array.from(this.cart.entries());
+        console.log('💾 Lưu giỏ hàng vào temp-cart:', cartArray);
+        localStorage.setItem('temp-cart', JSON.stringify(cartArray));
+      }
+    }
+
+    private createProductKey(productId: number, volume: string | number): string {
+      return `${productId}_${String(volume).trim()}`;
+    }
+
+    public reloadCart(): void {
+      this.loadCart();
     }
   }
-
-  private createProductKey(productId: number, volume: string | number): string {
-    return `${productId}_${String(volume).trim()}`;
-  }
-
-  public reloadCart(): void {
-    this.loadCart();
-  }
-}

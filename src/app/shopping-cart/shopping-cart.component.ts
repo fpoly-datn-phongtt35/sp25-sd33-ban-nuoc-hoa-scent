@@ -1,9 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TokenService } from '../service/token.service';
 import { RouterModule, Router } from '@angular/router';
-import { CartService, CartItem, CartItemWithKey } from '../service/cart.Service';
+import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -24,6 +23,7 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cartSubscription = this.cartService.getCartObservable().subscribe(cart => {
+      console.log('🛒 Received cart update from observable:', Array.from(cart.entries()));
       this.cartItems = Array.from(cart.entries()).map(([key, value]) => ({
         key,
         ...value
@@ -54,7 +54,7 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       this.removeItem(key);
       return;
     }
-  
+
     const item = this.cartItems.find(i => i.key === key);
     if (item && item.product.soLuongTonKho !== undefined && quantity > item.product.soLuongTonKho) {
       Swal.fire({
@@ -65,8 +65,8 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       });
       return;
     }
-  
-    console.log('📝 Gọi updateCartItem: productId=', productId, 'volume=', volume, 'quantity=', quantity); // Thêm log
+
+    console.log('📝 Gọi updateCartItem: productId=', productId, 'volume=', volume, 'quantity=', quantity);
     this.cartService.updateCartItem(Number(productId), volume, quantity);
   }
 
@@ -115,14 +115,12 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Kiểm tra số lượng tồn kho
     const overStockItems = this.selectedProducts.filter(item => {
-      const soLuongTonKho = item.product.soLuongTonKho ?? 0; // Nếu soLuongTonKho là undefined, mặc định là 0
+      const soLuongTonKho = item.product.soLuongTonKho ?? 0;
       return item.quantity > soLuongTonKho;
     });
 
     if (overStockItems.length > 0) {
-      // Tạo thông báo liệt kê các sản phẩm vượt quá tồn kho
       const message = overStockItems
         .map(item => {
           const soLuongTonKho = item.product.soLuongTonKho ?? 0;
@@ -139,7 +137,6 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Nếu không có sản phẩm nào vượt quá tồn kho, tiếp tục đặt hàng
     this.cartService.setSelectedCartItems(this.selectedProducts);
     localStorage.setItem('selectedProducts', JSON.stringify(this.selectedProducts));
     this.router.navigate(['/app-order']);
