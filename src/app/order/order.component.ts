@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OrderService } from '../service/order.service';
@@ -13,6 +13,7 @@ import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { VietQRService } from '../service/VietQR.Service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { Subscription } from 'rxjs';
 
 interface OrderDetail {
   spctId: number;
@@ -57,7 +58,7 @@ interface DiscountResponse {
   templateUrl: './order.component.html',
   styleUrls: ['./order.component.scss'],
 })
-export class OrderComponent implements OnInit {
+export class OrderComponent implements OnInit, OnDestroy {
   orderData: Order = {
     idTaiKhoan: null,
     tenNguoiNhanHang: '',
@@ -94,6 +95,7 @@ export class OrderComponent implements OnInit {
   orderId: string | null = null;
   isAddressChanged = false;
   isDiscountApplied: boolean = false;
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private cartService: CartService,
@@ -109,87 +111,125 @@ export class OrderComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.initializeOrderData();
+    this.loadSelectedProducts();
     this.layTinhThanh();
+    this.loadLatestOrder();
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  private initializeOrderData() {
     const idTaiKhoan = this.tokenService.getUserId() || Number(localStorage.getItem('idTaiKhoan'));
     this.orderData.idTaiKhoan = idTaiKhoan ? Number(idTaiKhoan) : null;
+  }
 
-    // Lấy selectedProducts từ CartService
+  private loadSelectedProducts() {
     this.selectedProducts = this.cartService.getSelectedCartItems();
-
-    if (this.selectedProducts.length > 0) {
-      this.orderData.chiTietDonHangs = this.selectedProducts.map((item) => ({
-        spctId: item.product.idSpct,
-        quantity: item.quantity,
-      }));
-    } else {
+    if (this.selectedProducts.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'Không có sản phẩm',
         text: 'Vui lòng chọn sản phẩm để đặt hàng!',
-        position: 'bottom-end'
+        position: 'bottom-end',
       }).then(() => {
         this.router.navigate(['/cart']);
       });
       return;
     }
+    this.orderData.chiTietDonHangs = this.selectedProducts.map(item => ({
+      spctId: item.product.idSpct,
+      quantity: item.quantity,
+    }));
+    this.calculateTotals();
+  }
 
-    if (this.orderData.idTaiKhoan) {
-      this.orderService.getLatestOrder(this.orderData.idTaiKhoan).subscribe(
-        (data) => {
-          if (data) {
-            this.orderData.tenNguoiNhanHang = data.tenNguoiNhanHang || '';
-            this.orderData.sdtNguoiNhan = data.sdtNguoiNhan || '';
-            this.shippingFee = data.phiVanChuyen || 0;
-            this.shippingDiscount = 0;
-
-            if (data.diaChiGiaoHang) {
-              const addressParts = data.diaChiGiaoHang.split(', ');
-              if (addressParts.length >= 4) {
-                this.orderData.diachiChiTiet = addressParts[0];
-                this.fullAddress = addressParts.slice(1).join(', ');
-                this.orderData.diaChiGiaoHang = this.fullAddress;
-
-                const xaName = addressParts[1];
-                const huyenName = addressParts[2];
-                const tinhName = addressParts[3];
-
-                this.diaChiService.getTinhThanh().subscribe((res) => {
-                  const tinhList = this.mapDiaChiObjectToArray(res.result);
-                  const tinh = tinhList.find((t) => t.name === tinhName);
-                  if (tinh) {
-                    this.selectedTinh = tinh;
-                    this.diaChiService.getQuanHuyen(tinh.id).subscribe((huyenRes) => {
-                      const huyenList = this.mapDiaChiObjectToArray(huyenRes.result);
-                      const huyen = huyenList.find((h) => h.name === huyenName);
-                      if (huyen) {
-                        this.selectedHuyen = huyen;
-                        this.diaChiService.getPhuongXa(huyen.id).subscribe((xaRes) => {
-                          const xaList = this.mapDiaChiObjectToArray(xaRes.result);
-                          const xa = xaList.find((x) => x.name === xaName);
-                          if (xa) {
-                            this.selectedXa = xa;
-                            this.tinhPhiVanChuyen();
-                          }
-                        });
-                      }
-                    });
-                  }
-                });
-              } else {
-                this.orderData.diachiChiTiet = data.diaChiGiaoHang;
-              }
-            }
-          }
-          this.calculateTotals();
-        },
-        (error) => {
-          console.error('Lỗi khi lấy đơn hàng gần nhất:', error);
-          this.calculateTotals();
-        }
-      );
-    } else {
+  private loadLatestOrder() {
+    if (!this.orderData.idTaiKhoan) {
       this.calculateTotals();
+      return;
     }
+
+    const sub = this.orderService.getLatestOrder(this.orderData.idTaiKhoan).subscribe({
+      next: (data) => {
+        if (data) {
+          this.orderData.tenNguoiNhanHang = data.tenNguoiNhanHang || '';
+          this.orderData.sdtNguoiNhan = data.sdtNguoiNhan || '';
+          this.shippingFee = data.phiVanChuyen || 0;
+          this.shippingDiscount = 0;
+
+          if (data.diaChiGiaoHang) {
+            this.processAddress(data.diaChiGiaoHang);
+          }
+        }
+        this.calculateTotals();
+      },
+      error: (error) => {
+        console.error('Lỗi khi lấy đơn hàng gần nhất:', error);
+        this.calculateTotals();
+      },
+    });
+    this.subscriptions.push(sub);
+  }
+
+  private processAddress(diaChiGiaoHang: string) {
+    const addressParts = diaChiGiaoHang.split(', ');
+    if (addressParts.length >= 4) {
+      this.orderData.diachiChiTiet = addressParts[0];
+      this.fullAddress = addressParts.slice(1).join(', ');
+      this.orderData.diaChiGiaoHang = this.fullAddress;
+
+      const xaName = addressParts[1];
+      const huyenName = addressParts[2];
+      const tinhName = addressParts[3];
+
+      const sub = this.diaChiService.getTinhThanh().subscribe({
+        next: (res) => {
+          const tinhList = this.mapDiaChiObjectToArray(res.result);
+          const tinh = tinhList.find(t => t.name === tinhName);
+          if (tinh) {
+            this.selectedTinh = tinh;
+            this.loadQuanHuyenForAddress(tinh.id, huyenName, xaName);
+          }
+        },
+        error: (err) => console.error('Lỗi khi lấy danh sách tỉnh:', err),
+      });
+      this.subscriptions.push(sub);
+    } else {
+      this.orderData.diachiChiTiet = diaChiGiaoHang;
+    }
+  }
+
+  private loadQuanHuyenForAddress(tinhId: string, huyenName: string, xaName: string) {
+    const sub = this.diaChiService.getQuanHuyen(tinhId).subscribe({
+      next: (huyenRes) => {
+        const huyenList = this.mapDiaChiObjectToArray(huyenRes.result);
+        const huyen = huyenList.find(h => h.name === huyenName);
+        if (huyen) {
+          this.selectedHuyen = huyen;
+          this.loadPhuongXaForAddress(huyen.id, xaName);
+        }
+      },
+      error: (err) => console.error('Lỗi khi lấy danh sách huyện:', err),
+    });
+    this.subscriptions.push(sub);
+  }
+
+  private loadPhuongXaForAddress(huyenId: string, xaName: string) {
+    const sub = this.diaChiService.getPhuongXa(huyenId).subscribe({
+      next: (xaRes) => {
+        const xaList = this.mapDiaChiObjectToArray(xaRes.result);
+        const xa = xaList.find(x => x.name === xaName);
+        if (xa) {
+          this.selectedXa = xa;
+          this.tinhPhiVanChuyen();
+        }
+      },
+      error: (err) => console.error('Lỗi khi lấy danh sách xã:', err),
+    });
+    this.subscriptions.push(sub);
   }
 
   // Address-related methods
@@ -223,14 +263,14 @@ export class OrderComponent implements OnInit {
     let list: DiaChiDonVi[] = [];
     if (this.currentTab === 'tinh') {
       list = this.danhSachTinh;
-      return list.filter((item) => item.name.toLowerCase().includes(this.searchTinh.toLowerCase()));
+      return list.filter(item => item.name.toLowerCase().includes(this.searchTinh.toLowerCase()));
     }
     if (this.currentTab === 'huyen') {
       list = this.danhSachHuyen;
-      return list.filter((item) => item.name.toLowerCase().includes(this.searchHuyen.toLowerCase()));
+      return list.filter(item => item.name.toLowerCase().includes(this.searchHuyen.toLowerCase()));
     }
     list = this.danhSachXa;
-    return list.filter((item) => item.name.toLowerCase().includes(this.searchXa.toLowerCase()));
+    return list.filter(item => item.name.toLowerCase().includes(this.searchXa.toLowerCase()));
   }
 
   selectTab(tab: 'tinh' | 'huyen' | 'xa') {
@@ -274,21 +314,42 @@ export class OrderComponent implements OnInit {
   }
 
   layTinhThanh() {
-    this.diaChiService.getTinhThanh().subscribe((res) => {
-      this.danhSachTinh = this.mapDiaChiObjectToArray(res.result);
+    const sub = this.diaChiService.getTinhThanh().subscribe({
+      next: (res) => {
+        this.danhSachTinh = this.mapDiaChiObjectToArray(res.result);
+      },
+      error: (err) => {
+        console.error('Lỗi khi lấy danh sách tỉnh:', err);
+        Swal.fire('Lỗi', 'Không thể tải danh sách tỉnh. Vui lòng thử lại!', 'error');
+      },
     });
+    this.subscriptions.push(sub);
   }
 
   layQuanHuyen(idTinh: string) {
-    this.diaChiService.getQuanHuyen(idTinh).subscribe((res) => {
-      this.danhSachHuyen = this.mapDiaChiObjectToArray(res.result);
+    const sub = this.diaChiService.getQuanHuyen(idTinh).subscribe({
+      next: (res) => {
+        this.danhSachHuyen = this.mapDiaChiObjectToArray(res.result);
+      },
+      error: (err) => {
+        console.error('Lỗi khi lấy danh sách huyện:', err);
+        Swal.fire('Lỗi', 'Không thể tải danh sách huyện. Vui lòng thử lại!', 'error');
+      },
     });
+    this.subscriptions.push(sub);
   }
 
   layPhuongXa(idHuyen: string) {
-    this.diaChiService.getPhuongXa(idHuyen).subscribe((res) => {
-      this.danhSachXa = this.mapDiaChiObjectToArray(res.result);
+    const sub = this.diaChiService.getPhuongXa(idHuyen).subscribe({
+      next: (res) => {
+        this.danhSachXa = this.mapDiaChiObjectToArray(res.result);
+      },
+      error: (err) => {
+        console.error('Lỗi khi lấy danh sách xã:', err);
+        Swal.fire('Lỗi', 'Không thể tải danh sách xã. Vui lòng thử lại!', 'error');
+      },
     });
+    this.subscriptions.push(sub);
   }
 
   getQuyDoiKichThuocVaCanNang(soLuong: number) {
@@ -340,7 +401,7 @@ export class OrderComponent implements OnInit {
       trungBinhCacCanh: Math.round((length + width + height) / 3),
     };
 
-    this.diaChiService.tinhPhiVanChuyen(body).subscribe({
+    const sub = this.diaChiService.tinhPhiVanChuyen(body).subscribe({
       next: (fee) => {
         const giamPhi = Math.round(fee * discountRate);
         this.shippingDiscount = giamPhi;
@@ -352,8 +413,9 @@ export class OrderComponent implements OnInit {
         this.shippingDiscount = 0;
         this.calculateTotals();
         Swal.fire('Lỗi', 'Không thể tính phí vận chuyển. Vui lòng thử lại!', 'error');
-      }
+      },
     });
+    this.subscriptions.push(sub);
   }
 
   calculateTotals() {
@@ -367,19 +429,16 @@ export class OrderComponent implements OnInit {
     this.isDiscountApplied = false;
 
     if (!code) {
-      this.discount = 0;
-      this.discountAmount = 0;
-      this.orderData.maGiamGia = '';
-      this.calculateTotals();
+      this.resetDiscount();
       return;
     }
 
     if (this.orderData.idTaiKhoan) {
       const headers = new HttpHeaders({
-        'Authorization': `Bearer ${this.tokenService.getToken()}`
+        'Authorization': `Bearer ${this.tokenService.getToken()}`,
       });
 
-      this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`, { headers }).subscribe({
+      const sub = this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`, { headers }).subscribe({
         next: (account) => {
           const registeredSdt = account.sdt;
           if (!registeredSdt) {
@@ -394,8 +453,9 @@ export class OrderComponent implements OnInit {
           this.discountErrorMessage = '⚠️ Không thể lấy thông tin tài khoản!';
           this.resetDiscount();
           Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
-        }
+        },
       });
+      this.subscriptions.push(sub);
     } else {
       this.checkDiscountCode(code, this.orderData.sdtNguoiNhan);
     }
@@ -412,10 +472,10 @@ export class OrderComponent implements OnInit {
     Swal.fire({ title: 'Đang kiểm tra mã...', text: 'Vui lòng chờ!', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.tokenService.getToken()}`
+      'Authorization': `Bearer ${this.tokenService.getToken()}`,
     });
 
-    this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan, headers).subscribe({
+    const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan, headers).subscribe({
       next: (response: DiscountResponse) => {
         const now = new Date();
         const startDate = new Date(response.ngayBatDau);
@@ -449,6 +509,7 @@ export class OrderComponent implements OnInit {
         this.handleDiscountError(err.error?.message || '⚠️ Mã giảm giá không hợp lệ!');
       },
     });
+    this.subscriptions.push(sub);
   }
 
   private handleDiscountError(message: string) {
@@ -471,7 +532,6 @@ export class OrderComponent implements OnInit {
 
     this.selectedProducts[index].quantity = newQty;
     this.orderData.chiTietDonHangs[index].quantity = newQty;
-    // Cập nhật selectedProducts trong CartService
     this.cartService.setSelectedCartItems([...this.selectedProducts]);
     this.calculateTotals();
     this.tinhPhiVanChuyen();
@@ -481,7 +541,6 @@ export class OrderComponent implements OnInit {
   removeProduct(index: number) {
     this.selectedProducts.splice(index, 1);
     this.orderData.chiTietDonHangs.splice(index, 1);
-    // Cập nhật selectedProducts trong CartService
     this.cartService.setSelectedCartItems([...this.selectedProducts]);
     this.calculateTotals();
     this.tinhPhiVanChuyen();
@@ -492,26 +551,7 @@ export class OrderComponent implements OnInit {
   }
 
   async onSubmit() {
-    console.log('onSubmit called');
-    console.log('orderData:', this.orderData);
-
-    // Kiểm tra dữ liệu đầu vào
-    if (!this.orderData.tenNguoiNhanHang) {
-      Swal.fire('Lỗi', 'Vui lòng nhập tên người nhận hàng!', 'error');
-      return;
-    }
-    if (!this.orderData.diachiChiTiet || !this.orderData.diaChiGiaoHang) {
-      Swal.fire('Lỗi', 'Vui lòng nhập đầy đủ địa chỉ giao hàng!', 'error');
-      return;
-    }
-    if (!this.orderData.sdtNguoiNhan || !/^0[0-9]{9}$/.test(this.orderData.sdtNguoiNhan)) {
-      Swal.fire('Lỗi', 'Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)!', 'error');
-      return;
-    }
-    if (!this.orderData.phuongThucThanhToan) {
-      Swal.fire('Lỗi', 'Vui lòng chọn phương thức thanh toán!', 'error');
-      return;
-    }
+    if (!this.validateOrderData()) return;
 
     const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
     const { length, width, height } = this.getQuyDoiKichThuocVaCanNang(soLuong);
@@ -521,7 +561,7 @@ export class OrderComponent implements OnInit {
       diaChiGiaoHang: `${this.orderData.diachiChiTiet}, ${this.fullAddress}`,
       phuongThucVanChuyen: 'Giao hàng nhanh',
       ngayVanChuyen: new Date().toISOString(),
-      chiTietDonHangs: this.orderData.chiTietDonHangs.map((item) => ({
+      chiTietDonHangs: this.orderData.chiTietDonHangs.map(item => ({
         spctId: Number(item.spctId),
         quantity: Number(item.quantity),
       })),
@@ -533,69 +573,86 @@ export class OrderComponent implements OnInit {
       trangThai: this.orderData.phuongThucThanhToan === 'tm' ? 1 : 0,
     };
 
-    console.log('Payload:', payload);
-
     Swal.fire({ title: 'Đang xử lý...', text: 'Vui lòng chờ!', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
       const orderRes = await this.orderService.createOrder(payload).toPromise();
-      console.log('Order created successfully:', orderRes);
-      Swal.close();
-
-      // Remove selected products from cart
-      const productsToRemove = this.selectedProducts.map(product => ({
-        idSpct: product.product.idSpct,
-        volume: product.volume
-      }));
-
-      await this.cartService.removeMultipleFromCart(productsToRemove);
-      this.cartService.setSelectedCartItems([]); // Clear selected items
-      console.log('🗑️ Đã xóa các sản phẩm khỏi giỏ hàng');
-
-      // Đồng bộ giỏ hàng trước khi điều hướng
-      this.cartService.reloadCart();
-
-      if (this.orderData.phuongThucThanhToan === 'tm') {
-        Swal.fire({
-          title: 'Thành công!',
-          text: 'Đơn hàng đã được đặt thành công.',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false
-        });
-        this.router.navigate(['/order-success', orderRes.id]);
-        return;
-      }
-
-      const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`, orderId: 'ORDER_' + orderRes.id };
-      const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
-
-      const momoRequest = {
-        orderId: extraDataObj.orderId,
-        requestId: 'REQ_' + new Date().getTime(),
-        orderInfo: extraDataObj.orderInfo,
-        amount: this.finalAmount.toString(),
-        returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
-        notifyUrl: 'http://localhost:8080/api/momo/callback',
-        requestType: 'captureWallet',
-        extraData,
-      };
-
-      this.momoPaymentService.createPayment(momoRequest).subscribe({
-        next: (res: any) => {
-          console.log('MoMo response:', res);
-          if (res.payUrl) window.location.href = res.payUrl;
-          else Swal.fire('Lỗi', 'Không nhận được payUrl từ MoMo.', 'error');
-        },
-        error: (err) => {
-          console.error('MoMo error:', err);
-          Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
-        },
-      });
+      await this.handlePostOrderSuccess(orderRes);
     } catch (err) {
       console.error('Order creation error:', err);
       Swal.close();
       Swal.fire('Lỗi', err.error?.message || 'Lỗi khi đặt đơn hàng.', 'error');
     }
+  }
+
+  private validateOrderData(): boolean {
+    if (!this.orderData.tenNguoiNhanHang) {
+      Swal.fire('Lỗi', 'Vui lòng nhập tên người nhận hàng!', 'error');
+      return false;
+    }
+    if (!this.orderData.diachiChiTiet || !this.orderData.diaChiGiaoHang) {
+      Swal.fire('Lỗi', 'Vui lòng nhập đầy đủ địa chỉ giao hàng!', 'error');
+      return false;
+    }
+    if (!this.orderData.sdtNguoiNhan || !/^0[0-9]{9}$/.test(this.orderData.sdtNguoiNhan)) {
+      Swal.fire('Lỗi', 'Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)!', 'error');
+      return false;
+    }
+    if (!this.orderData.phuongThucThanhToan) {
+      Swal.fire('Lỗi', 'Vui lòng chọn phương thức thanh toán!', 'error');
+      return false;
+    }
+    return true;
+  }
+
+  private async handlePostOrderSuccess(orderRes: any) {
+    Swal.close();
+
+    const productsToRemove = this.selectedProducts.map(product => ({
+      idSpct: product.product.idSpct,
+      volume: product.volume,
+    }));
+
+    await this.cartService.removeMultipleFromCart(productsToRemove);
+    this.cartService.setSelectedCartItems([]);
+    this.cartService.reloadCart();
+
+    if (this.orderData.phuongThucThanhToan === 'tm') {
+      Swal.fire({
+        title: 'Thành công!',
+        text: 'Đơn hàng đã được đặt thành công.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      this.router.navigate(['/order-success', orderRes.id]);
+      return;
+    }
+
+    const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`, orderId: 'ORDER_' + orderRes.id };
+    const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
+
+    const momoRequest = {
+      orderId: extraDataObj.orderId,
+      requestId: 'REQ_' + new Date().getTime(),
+      orderInfo: extraDataObj.orderInfo,
+      amount: this.finalAmount.toString(),
+      returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
+      notifyUrl: 'http://localhost:8080/api/momo/callback',
+      requestType: 'captureWallet',
+      extraData,
+    };
+
+    const sub = this.momoPaymentService.createPayment(momoRequest).subscribe({
+      next: (res: any) => {
+        if (res.payUrl) window.location.href = res.payUrl;
+        else Swal.fire('Lỗi', 'Không nhận được payUrl từ MoMo.', 'error');
+      },
+      error: (err) => {
+        console.error('MoMo error:', err);
+        Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
+      },
+    });
+    this.subscriptions.push(sub);
   }
 }

@@ -10,12 +10,16 @@ export class DetailService {
     private apiUrl = 'http://localhost:8080/rest/san-pham/sorted';
 
     constructor(private http: HttpClient) {}
-  
+    
     // Lấy thông tin chi tiết sản phẩm theo ID
     getProductDetailById(productId: number): Observable<any> {
       return this.http.get(`${this.apiBaseUrl}/san-pham/detail/${productId}`);
     }
     getRecommendedProducts(): Observable<any[]> {
         return this.http.get<any[]>(this.apiUrl);
+      }
+
+      getRecommendedProducts1(currentProduct: any): Observable<any[]> {
+        return this.http.post<any[]>(`${this.apiBaseUrl}/san-pham/recommended`, currentProduct);
       }
 }

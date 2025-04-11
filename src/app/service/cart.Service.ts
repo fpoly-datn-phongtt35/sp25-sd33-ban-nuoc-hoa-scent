@@ -45,7 +45,7 @@ export class CartService {
   private cartSubject: BehaviorSubject<Map<string, CartItem>> = new BehaviorSubject(new Map());
   private apiUrl = 'http://localhost:8080/api/cart';
   private userId: string | null = null;
-  private selectedCartItems: CartItemWithKey[] = []; // Lưu trữ selectedCartItems
+  private selectedCartItems: CartItemWithKey[] = [];
   private inventorySubscription: Subscription | undefined;
 
   constructor(
@@ -61,36 +61,27 @@ export class CartService {
   private setupWebSocket(): void {
     const userId = this.getUserId();
     if (userId) {
-      console.log('🔌 Setting up WebSocket for userId:', userId);
       this.webSocketService.connect(Number(userId));
-      this.inventorySubscription = this.webSocketService.getInventoryUpdates().subscribe(
-        (update: { productId: number; stock: number }) => {
-          console.log('📥 Processing inventory update in CartService:', update);
+      this.inventorySubscription = this.webSocketService.getInventoryUpdates().subscribe({
+        next: (update: { productId: number; stock: number }) => {
           this.updateStockInCart(update.productId, update.stock);
         },
-        (error) => console.error('❌ WebSocket error in CartService:', error)
-      );
-    } else {
-      console.log('⛔ No userId, skipping WebSocket setup');
+        error: (error) => console.error('❌ WebSocket error in CartService:', error),
+      });
     }
   }
 
   private updateStockInCart(productId: number, newStock: number): void {
-    console.log('🔄 Updating stock for productId:', productId, 'newStock:', newStock);
     let updated = false;
     this.cart.forEach((item, key) => {
       if (item.product.idSpct === productId) {
-        console.log('🔍 Found matching item in cart:', item);
         item.product.soLuongTonKho = newStock;
         this.cart.set(key, item);
         updated = true;
       }
     });
     if (updated) {
-      console.log('✅ Cart updated with new stock:', Array.from(this.cart.entries()));
       this.cartSubject.next(new Map(this.cart));
-    } else {
-      console.log('⚠️ No items in cart matched productId:', productId);
     }
   }
 
@@ -103,30 +94,20 @@ export class CartService {
   }
 
   setUserId(userId: string | null): void {
-    if (this.userId === userId) {
-      console.log('🔄 userId không thay đổi, bỏ qua:', userId);
-      return;
-    }
+    if (this.userId === userId) return;
 
     if (this.cart.size > 0 && !this.userId && isPlatformBrowser(this.platformId)) {
-      console.log('💾 Lưu giỏ hàng hiện tại vào temp-cart trước khi đăng nhập:', Array.from(this.cart.entries()));
       const cartArray = Array.from(this.cart.entries());
       const dataToStore = JSON.stringify(cartArray);
-      const sizeInBytes = new Blob([dataToStore]).size;
-      console.log(`📏 Kích thước của temp-cart cần lưu: ${sizeInBytes} bytes`);
-
       try {
-        if (sizeInBytes > 5 * 1024 * 1024) {
-          throw new Error('Dữ liệu temp-cart quá lớn cho localStorage');
-        }
         localStorage.setItem('temp-cart', dataToStore);
       } catch (e) {
         console.error('❌ Lỗi khi lưu temp-cart vào localStorage:', e);
         Swal.fire({
           icon: 'error',
           title: 'Lỗi lưu trữ',
-          text: 'Dữ liệu giỏ hàng tạm quá lớn để lưu trữ. Một số dữ liệu có thể bị mất!',
-          position: 'bottom-end'
+          text: 'Dữ liệu giỏ hàng tạm quá lớn để lưu trữ!',
+          position: 'bottom-end',
         });
       }
     }
@@ -137,14 +118,12 @@ export class CartService {
     this.webSocketService.disconnect();
 
     this.userId = userId;
-    console.log('👤 user đăng nhập:', userId);
     this.loadCart();
     this.setupWebSocket();
   }
 
   private loadCart(): void {
     const userId = this.getUserId();
-    console.log('🔍 Loading cart for userId:', userId);
     if (userId) {
       this.loadCartFromDB(userId);
     } else {
@@ -154,7 +133,6 @@ export class CartService {
 
   private loadTempCart(): void {
     if (!isPlatformBrowser(this.platformId)) {
-      console.log('⛔ Running on server, skipping localStorage access for temp-cart');
       this.cart = new Map();
       this.cartSubject.next(new Map(this.cart));
       return;
@@ -162,7 +140,6 @@ export class CartService {
 
     const storedCart = localStorage.getItem('temp-cart');
     if (!storedCart) {
-      console.log('📭 Không có giỏ hàng tạm trong localStorage.');
       this.cart = new Map();
       this.cartSubject.next(new Map(this.cart));
       return;
@@ -170,8 +147,6 @@ export class CartService {
 
     try {
       const parsedCart = JSON.parse(storedCart);
-      console.log('📥 Dữ liệu giỏ hàng tạm từ localStorage:', parsedCart);
-
       this.cart = new Map();
       parsedCart.forEach((item: [string, CartItem]) => {
         if (Array.isArray(item) && item.length === 2 && item[1]?.product?.idSpct && item[1]?.volume) {
@@ -189,12 +164,8 @@ export class CartService {
             quantity: value.quantity,
             volume: String(value.volume).trim(),
           });
-        } else {
-          console.warn('🔴 Mục giỏ hàng không hợp lệ:', item);
         }
       });
-
-      console.log('✅ Giỏ hàng tạm sau khi load:', Array.from(this.cart.entries()));
       this.cartSubject.next(new Map(this.cart));
     } catch (error) {
       console.error('❌ Lỗi khi parse JSON giỏ hàng tạm từ localStorage:', error);
@@ -208,33 +179,26 @@ export class CartService {
     this.http.get<BackendCartItem[]>(`${this.apiUrl}/${userId}`).pipe(
       tap(cartItems => {
         this.cart = new Map<string, CartItem>();
-        if (!cartItems || cartItems.length === 0) {
-          console.log('📭 Giỏ hàng trống từ backend.');
-        } else {
+        if (cartItems && cartItems.length > 0) {
           cartItems.forEach(item => {
-            if (!item || !item.idSpct || !item.dungTich) {
-              console.warn('🔴 Dữ liệu giỏ hàng không hợp lệ, bỏ qua mục:', item);
-              return;
+            if (item && item.idSpct && item.dungTich) {
+              const key = this.createProductKey(item.idSpct, item.dungTich);
+              this.cart.set(key, {
+                product: {
+                  idSanPham: item.idSpct,
+                  idSpct: item.idSpct,
+                  tenSanPham: item.tenSanPham,
+                  donGia: item.donGia,
+                  dungTich: item.dungTich,
+                  imageURL: item.imageUrl && item.imageUrl.length > 0 ? item.imageUrl[0] : '',
+                  soLuongTonKho: item.soLuongTonKho,
+                },
+                quantity: item.soLuong,
+                volume: String(item.dungTich),
+              });
             }
-
-            const key = this.createProductKey(item.idSpct, item.dungTich);
-            this.cart.set(key, {
-              product: {
-                idSanPham: item.idSpct,
-                idSpct: item.idSpct,
-                tenSanPham: item.tenSanPham,
-                donGia: item.donGia,
-                dungTich: item.dungTich,
-                imageURL: item.imageUrl && item.imageUrl.length > 0 ? item.imageUrl[0] : '',
-                soLuongTonKho: item.soLuongTonKho,
-              },
-              quantity: item.soLuong,
-              volume: String(item.dungTich),
-            });
           });
-          console.log('✅ Giỏ hàng từ backend:', Array.from(this.cart.entries()));
         }
-
         this.mergeTempCart(userId);
         this.cartSubject.next(new Map(this.cart));
       }),
@@ -244,7 +208,7 @@ export class CartService {
           icon: 'error',
           title: 'Lỗi',
           text: 'Không thể tải giỏ hàng từ backend. Vui lòng thử lại!',
-          position: 'bottom-end'
+          position: 'bottom-end',
         });
         this.cart = new Map();
         this.cartSubject.next(new Map(this.cart));
@@ -254,49 +218,37 @@ export class CartService {
   }
 
   private mergeTempCart(userId: string): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.log('⛔ Running on server, skipping temp-cart merge');
-      return;
-    }
+    if (!isPlatformBrowser(this.platformId)) return;
 
     const tempCart = localStorage.getItem('temp-cart');
-    if (!tempCart) {
-      console.log('📭 Không có giỏ hàng tạm để gộp.');
-      return;
-    }
+    if (!tempCart) return;
 
     try {
       const parsedTempCart = JSON.parse(tempCart);
-      console.log('📥 Dữ liệu giỏ hàng tạm để gộp:', parsedTempCart);
-
       if (!Array.isArray(parsedTempCart)) {
-        console.warn('🔴 Dữ liệu giỏ hàng tạm không hợp lệ (không phải mảng):', parsedTempCart);
         localStorage.removeItem('temp-cart');
         return;
       }
 
-      parsedTempCart.forEach((item: [string, CartItem]) => {
-        if (Array.isArray(item) && item.length === 2 && item[1]?.product?.idSpct && item[1]?.quantity) {
-          const [productKey, value] = item;
-          const params = {
-            idTaiKhoan: userId,
-            idSpct: value.product.idSpct,
-            soLuong: value.quantity,
-          };
-          this.http.post(`${this.apiUrl}/add`, null, { params }).pipe(
-            tap(() => {
-              console.log(`➕ Đã gộp sản phẩm ${productKey} vào giỏ hàng backend`);
-              this.loadCartFromDB(userId);
-            }),
-            catchError(err => {
-              console.error(`❌ Lỗi khi gộp sản phẩm ${productKey}:`, err);
-              return throwError(err);
-            })
-          ).subscribe();
-        } else {
-          console.warn('🔴 Mục giỏ hàng tạm không hợp lệ, bỏ qua:', item);
-        }
-      });
+      const itemsToAdd = parsedTempCart
+        .filter((item: [string, CartItem]) => Array.isArray(item) && item.length === 2 && item[1]?.product?.idSpct && item[1]?.quantity)
+        .map((item: [string, CartItem]) => ({
+          idTaiKhoan: userId,
+          idSpct: item[1].product.idSpct,
+          soLuong: item[1].quantity,
+        }));
+
+      if (itemsToAdd.length > 0) {
+        this.http.post(`${this.apiUrl}/add-multiple`, itemsToAdd).pipe(
+          tap(() => {
+            this.loadCartFromDB(userId);
+          }),
+          catchError(err => {
+            console.error('❌ Lỗi khi gộp giỏ hàng tạm:', err);
+            return throwError(err);
+          })
+        ).subscribe();
+      }
 
       localStorage.removeItem('temp-cart');
     } catch (error) {
@@ -306,14 +258,12 @@ export class CartService {
   }
 
   addToCart(product: any, quantity: number = 1): void {
-    console.log('➕ Adding to cart:', product, 'quantity:', quantity);
     if (!product || !product.idSpct || !product.dungTich) {
-      console.error('❌ Không thể thêm sản phẩm không hợp lệ vào giỏ hàng!', product);
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
         text: 'Sản phẩm không hợp lệ!',
-        position: 'bottom-end'
+        position: 'bottom-end',
       });
       return;
     }
@@ -323,7 +273,7 @@ export class CartService {
         icon: 'error',
         title: 'Lỗi',
         text: `Số lượng tồn kho không đủ! Chỉ còn ${product.soLuongTonKho} sản phẩm.`,
-        position: 'bottom-end'
+        position: 'bottom-end',
       });
       return;
     }
@@ -342,86 +292,84 @@ export class CartService {
             text: `✅ ${quantity} sản phẩm đã được thêm!`,
             position: 'bottom-end',
             timer: 1500,
-            showConfirmButton: false
+            showConfirmButton: false,
           });
         }),
         catchError(err => {
-          console.error('❌ Lỗi khi thêm vào giỏ:', err);
           Swal.fire({
             icon: 'error',
             title: 'Lỗi',
             text: err.error?.message || 'Lỗi khi thêm vào giỏ hàng',
-            position: 'bottom-end'
+            position: 'bottom-end',
           });
           return throwError(err);
         })
       ).subscribe();
     } else {
-      if (this.cart.has(productKey)) {
-        const existingProduct = this.cart.get(productKey);
-        if (existingProduct) {
-          const newQuantity = existingProduct.quantity + quantity;
-          if (product.soLuongTonKho !== undefined && newQuantity > product.soLuongTonKho) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Lỗi',
-              text: `Số lượng tồn kho không đủ! Chỉ còn ${product.soLuongTonKho} sản phẩm.`,
-              position: 'bottom-end'
-            });
-            return;
-          }
-          existingProduct.quantity = newQuantity;
-          this.cart.set(productKey, existingProduct);
-        }
-      } else {
-        this.cart.set(productKey, {
-          product: {
-            idSanPham: product.idSanPham,
-            idSpct: product.idSpct,
-            tenSanPham: product.tenSanPham,
-            donGia: product.donGia,
-            dungTich: product.dungTich,
-            imageURL: product.imageURL || '',
-            soLuongTonKho: product.soLuongTonKho,
-          },
-          quantity,
-          volume: String(product.dungTich).trim(),
-        });
-      }
-      this.saveCart();
-      this.cartSubject.next(new Map(this.cart));
-      Swal.fire({
-        icon: 'success',
-        title: 'Đã thêm vào giỏ hàng',
-        text: `✅ ${quantity} sản phẩm đã được thêm!`,
-        position: 'bottom-end',
-        timer: 1500,
-        showConfirmButton: false
-      });
+      this.addToLocalCart(product, quantity, productKey);
     }
   }
 
+  private addToLocalCart(product: any, quantity: number, productKey: string) {
+    if (this.cart.has(productKey)) {
+      const existingProduct = this.cart.get(productKey);
+      if (existingProduct) {
+        const newQuantity = existingProduct.quantity + quantity;
+        if (product.soLuongTonKho !== undefined && newQuantity > product.soLuongTonKho) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: `Số lượng tồn kho không đủ! Chỉ còn ${product.soLuongTonKho} sản phẩm.`,
+            position: 'bottom-end',
+          });
+          return;
+        }
+        existingProduct.quantity = newQuantity;
+        this.cart.set(productKey, existingProduct);
+      }
+    } else {
+      this.cart.set(productKey, {
+        product: {
+          idSanPham: product.idSanPham,
+          idSpct: product.idSpct,
+          tenSanPham: product.tenSanPham,
+          donGia: product.donGia,
+          dungTich: product.dungTich,
+          imageURL: product.imageURL || '',
+          soLuongTonKho: product.soLuongTonKho,
+        },
+        quantity,
+        volume: String(product.dungTich).trim(),
+      });
+    }
+    this.saveCart();
+    this.cartSubject.next(new Map(this.cart));
+    Swal.fire({
+      icon: 'success',
+      title: 'Đã thêm vào giỏ hàng',
+      text: `✅ ${quantity} sản phẩm đã được thêm!`,
+      position: 'bottom-end',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
   updateCartItem(productId: number, volume: string, quantity: number): void {
-    console.log('📝 Updating cart item: productId:', productId, 'volume:', volume, 'quantity:', quantity);
     const userId = this.getUserId();
     const productKey = this.createProductKey(productId, volume);
 
     if (userId) {
       const params = { idTaiKhoan: userId, idSpct: productId, soLuong: quantity };
-      console.log('📤 Gửi yêu cầu cập nhật: ', params);
       this.http.put<{ message: string }>(`${this.apiUrl}/update`, null, { params }).pipe(
-        tap(response => {
-          console.log('✅ Response từ update:', response);
+        tap(() => {
           this.loadCartFromDB(userId);
         }),
         catchError(err => {
-          console.error('❌ Lỗi khi cập nhật giỏ:', err);
-          const errorMessage = err.error?.message || 'Lỗi khi cập nhật giỏ hàng';
           Swal.fire({
             icon: 'error',
             title: 'Lỗi',
-            text: errorMessage,
-            position: 'bottom-end'
+            text: err.error?.message || 'Lỗi khi cập nhật giỏ hàng',
+            position: 'bottom-end',
           });
           this.loadCartFromDB(userId);
           return throwError(err);
@@ -436,7 +384,7 @@ export class CartService {
               icon: 'error',
               title: 'Lỗi',
               text: `Số lượng tồn kho không đủ! Chỉ còn ${item.product.soLuongTonKho} sản phẩm.`,
-              position: 'bottom-end'
+              position: 'bottom-end',
             });
             return;
           }
@@ -461,12 +409,11 @@ export class CartService {
           this.loadCartFromDB(userId);
         }),
         catchError(err => {
-          console.error('❌ Lỗi khi xóa khỏi giỏ:', err);
           Swal.fire({
             icon: 'error',
             title: 'Lỗi',
             text: err.error?.message || 'Lỗi khi xóa khỏi giỏ hàng',
-            position: 'bottom-end'
+            position: 'bottom-end',
           });
           return throwError(err);
         })
@@ -483,7 +430,6 @@ export class CartService {
   removeMultipleFromCart(products: { idSpct: number; volume: string }[]): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!products || products.length === 0) {
-        console.log('📭 Không có sản phẩm nào để xóa.');
         resolve();
         return;
       }
@@ -492,10 +438,7 @@ export class CartService {
       if (!userId) {
         products.forEach(product => {
           const productKey = this.createProductKey(product.idSpct, product.volume);
-          if (this.cart.has(productKey)) {
-            this.cart.delete(productKey);
-            console.log(`🗑️ Đã xóa sản phẩm ${productKey} khỏi temp-cart`);
-          }
+          this.cart.delete(productKey);
         });
         this.saveCart();
         this.cartSubject.next(new Map(this.cart));
@@ -513,45 +456,39 @@ export class CartService {
           products.forEach(product => {
             const productKey = this.createProductKey(product.idSpct, product.volume);
             this.cart.delete(productKey);
-            console.log(`🗑️ Đã xóa sản phẩm ${productKey} khỏi giỏ hàng`);
           });
           this.cartSubject.next(new Map(this.cart));
           this.loadCartFromDB(userId);
         }),
         catchError(err => {
-          console.error('❌ Lỗi khi xóa nhiều sản phẩm khỏi giỏ:', err);
           Swal.fire({
             icon: 'error',
             title: 'Lỗi',
             text: err.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng',
-            position: 'bottom-end'
+            position: 'bottom-end',
           });
           return throwError(err);
         })
       ).subscribe({
         complete: () => resolve(),
-        error: (err) => reject(err)
+        error: (err) => reject(err),
       });
     });
   }
 
   setSelectedCartItems(items: CartItemWithKey[]): void {
     this.selectedCartItems = items;
-    console.log('🛒 Đã đặt danh sách sản phẩm được chọn:', this.selectedCartItems);
   }
 
-  // Thêm phương thức để lấy selectedCartItems
   getSelectedCartItems(): CartItemWithKey[] {
     return this.selectedCartItems;
   }
 
   getCart(): CartItemWithKey[] {
-    const cartItems = Array.from(this.cart.entries()).map(([key, value]) => ({
+    return Array.from(this.cart.entries()).map(([key, value]) => ({
       key,
       ...value,
     }));
-    console.log('🛒 Trả về giỏ hàng:', cartItems);
-    return cartItems;
   }
 
   getCartObservable(): Observable<Map<string, CartItem>> {
@@ -568,12 +505,11 @@ export class CartService {
           this.loadCartFromDB(userId);
         }),
         catchError(err => {
-          console.error('❌ Lỗi khi xóa giỏ:', err);
           Swal.fire({
             icon: 'error',
             title: 'Lỗi',
             text: err.error?.message || 'Lỗi khi xóa toàn bộ giỏ hàng',
-            position: 'bottom-end'
+            position: 'bottom-end',
           });
           return throwError(err);
         })
@@ -589,34 +525,24 @@ export class CartService {
     this.cart.clear();
     this.saveCart();
     this.cartSubject.next(new Map(this.cart));
-    console.log('🗑️ Cart has been cleared on the client-side.');
   }
 
   private saveCart(): void {
     const userId = this.getUserId();
     if (!userId && isPlatformBrowser(this.platformId)) {
       const cartArray = Array.from(this.cart.entries());
-      console.log('💾 Lưu giỏ hàng vào temp-cart:', cartArray);
       const dataToStore = JSON.stringify(cartArray);
-      const sizeInBytes = new Blob([dataToStore]).size;
-      console.log(`📏 Kích thước của temp-cart cần lưu: ${sizeInBytes} bytes`);
-
       try {
-        if (sizeInBytes > 5 * 1024 * 1024) {
-          throw new Error('Dữ liệu temp-cart quá lớn cho localStorage');
-        }
         localStorage.setItem('temp-cart', dataToStore);
       } catch (e) {
         console.error('❌ Lỗi khi lưu temp-cart vào localStorage:', e);
         Swal.fire({
           icon: 'error',
           title: 'Lỗi lưu trữ',
-          text: 'Dữ liệu giỏ hàng tạm quá lớn để lưu trữ. Một số dữ liệu có thể bị mất!',
-          position: 'bottom-end'
+          text: 'Dữ liệu giỏ hàng tạm quá lớn để lưu trữ!',
+          position: 'bottom-end',
         });
       }
-    } else if (!isPlatformBrowser(this.platformId)) {
-      console.log('⛔ Running on server, skipping localStorage save');
     }
   }
 

@@ -932,9 +932,9 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
           <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
             <div style="width: 45%;">
-              <p style="font-size: 10px;"><strong>Người đặt hàng</strong></p>
-              <p style="font-size: 10px;">Họ tên: ${escapeHtml(username)}</p>
-              <p style="font-size: 10px;">Vai trò: ${escapeHtml(vaiTro)}</p>
+              <p style="font-size: 10px;"><strong>Người nhận hàng</strong></p>
+              <p style="font-size: 10px;">Họ tên: ${escapeHtml(orderData.tenNguoiNhanHang)}</p>
+              <p style="font-size: 10px;">SĐT: ${escapeHtml(orderData.sdtNguoiNhan)}</p>
             </div>
             <div style="width: 45%;">
               <p style="font-size: 10px;"><strong>Ngày đặt: ${escapeHtml(orderData.ngayTao || 'N/A')}</strong></p>
