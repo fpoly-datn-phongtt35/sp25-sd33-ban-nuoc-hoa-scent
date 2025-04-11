@@ -23,23 +23,42 @@ public class SanPhamDetailDto {
 
     // Constructor
     public SanPhamDetailDto(SanPhamDto sanPhamDto, List<MuiHuongDto> muiHuongs) {
-        this.idSanPham = sanPhamDto.getIdSanPham();
-        this.tenSanPham = sanPhamDto.getTenSanPham();
-        this.moTaSanPham = sanPhamDto.getMoTaSanPham();
-        this.idSpct = sanPhamDto.getIdSpct();
-        this.donGia = sanPhamDto.getDonGia();
-        this.soLuongTonKho = sanPhamDto.getSoLuongTonKho();
-        this.dungTich = sanPhamDto.getDungTich();
-        this.tenThuongHieu = sanPhamDto.getTenThuongHieu();
-        this.tenDanhMuc = sanPhamDto.getTenDanhMuc();
-        this.moTaHuongDau = sanPhamDto.getMoTaHuongDau();
-        this.moTaHuongGiua = sanPhamDto.getMoTaHuongGiua();
-        this.moTaHuongCuoi = sanPhamDto.getMoTaHuongCuoi();
-        this.imageURL = sanPhamDto.getimageURL();
-        this.tenNhomHuong = sanPhamDto.getTenNhomHuong();
-        this.phongCachs = sanPhamDto.getPhongCachs();
+        if (sanPhamDto != null) {
+            this.idSanPham = sanPhamDto.getIdSanPham();
+            this.tenSanPham = sanPhamDto.getTenSanPham();
+            this.moTaSanPham = sanPhamDto.getMoTaSanPham();
+            this.idSpct = sanPhamDto.getIdSpct();
+            this.donGia = sanPhamDto.getDonGia();
+            this.soLuongTonKho = sanPhamDto.getSoLuongTonKho();
+            this.dungTich = sanPhamDto.getDungTich();
+            this.tenThuongHieu = sanPhamDto.getTenThuongHieu();
+            this.tenDanhMuc = sanPhamDto.getTenDanhMuc();
+            this.moTaHuongDau = sanPhamDto.getMoTaHuongDau();
+            this.moTaHuongGiua = sanPhamDto.getMoTaHuongGiua();
+            this.moTaHuongCuoi = sanPhamDto.getMoTaHuongCuoi();
+            this.tenNhomHuong = sanPhamDto.getTenNhomHuong();
+            this.phongCachs = sanPhamDto.getPhongCachs();
+        }
         this.muiHuongs = muiHuongs;
     }
+//    public SanPhamDetailDto(SanPhamDto sanPhamDto, List<MuiHuongDto> muiHuongs) {
+//        this.idSanPham = sanPhamDto.getIdSanPham();
+//        this.tenSanPham = sanPhamDto.getTenSanPham();
+//        this.moTaSanPham = sanPhamDto.getMoTaSanPham();
+//        this.idSpct = sanPhamDto.getIdSpct();
+//        this.donGia = sanPhamDto.getDonGia();
+//        this.soLuongTonKho = sanPhamDto.getSoLuongTonKho();
+//        this.dungTich = sanPhamDto.getDungTich();
+//        this.tenThuongHieu = sanPhamDto.getTenThuongHieu();
+//        this.tenDanhMuc = sanPhamDto.getTenDanhMuc();
+//        this.moTaHuongDau = sanPhamDto.getMoTaHuongDau();
+//        this.moTaHuongGiua = sanPhamDto.getMoTaHuongGiua();
+//        this.moTaHuongCuoi = sanPhamDto.getMoTaHuongCuoi();
+//        this.imageURL = sanPhamDto.getimageURL();
+//        this.tenNhomHuong = sanPhamDto.getTenNhomHuong();
+//        this.phongCachs = sanPhamDto.getPhongCachs();
+//        this.muiHuongs = muiHuongs;
+//    }
 
     // Getters và setters
     public Integer getIdSanPham() {

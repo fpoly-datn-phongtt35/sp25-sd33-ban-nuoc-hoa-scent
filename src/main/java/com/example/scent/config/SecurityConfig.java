@@ -151,6 +151,7 @@ public class SecurityConfig {
                                 "/api/cart/**")
                         .permitAll()
 
+
                         .requestMatchers("rest/spct/getAll", "rest/spct/getByidSanPham/**",
                                 "rest/spct/add", "rest/spct/update")
                         .permitAll()
@@ -190,6 +191,24 @@ public class SecurityConfig {
                         // .requestMatchers("rest/thuong-hieu/getAll").permitAll()
                         // .requestMatchers("rest/ctdh/getAll").permitAll()
                         // còn lại request nào cũng cần xác thực mới cho phép
+
+                        .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
+                        .requestMatchers("/api/thong-ke/doanh-thu/nam","/api/thong-ke/doanh-thu/thang","/api/thong-ke/doanh-thu/tuan","/api/thong-ke/doanh-thu/ngay"
+                                ,"/api/thong-ke/so-luong-don/nam","/api/thong-ke/so-luong-don/thang","/api/thong-ke/so-luong-don/tuan","/api/thong-ke/so-luong-don/ngay","/api/thong-ke/tong-quan","/api/thong-ke/count-by-luong-ban-trang-thai"
+                                ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
+                                "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam").permitAll()
+//                         // // // // // // // // // // // // // // // // // // // //
+                        .requestMatchers("/api/cart/remove-multiple/**","/rest/san-pham/recommended","/rest/don-hang/latest/**","/rest/tai-khoan/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
+//                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
+//                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
+//                        .requestMatchers("rest/huong-dau/getAll").permitAll()
+//                        .requestMatchers("rest/huong-giua/getAll").permitAll()
+//                        .requestMatchers("rest/huong-cuoi/getAll").permitAll()
+//                        .requestMatchers("rest/phan-hoi/getAll").permitAll()
+//                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
+//                        .requestMatchers("rest/ctdh/getAll").permitAll()
+//                        còn lại request nào cũng cần xác thực mới cho phép
+
                         .anyRequest().authenticated())
                 // http.formLogin(Customizer.withDefaults()); //xác thực bằng gửi biểu mẫu yêu
                 // cầu đăng nhập

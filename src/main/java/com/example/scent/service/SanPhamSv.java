@@ -22,6 +22,7 @@
     import java.math.BigDecimal;
     import java.util.*;
     import java.util.stream.Collectors;
+    import java.util.stream.Stream;
 
 
     @Service
@@ -548,7 +549,9 @@
                                     huongGiua,
                                     huongCuoi,
                                     phongCach,
+
                                     muiHuongSelections,sanPham.getTrangThai()
+
                             );
                         } catch (Exception e) {
                             // Ghi log lỗi và bỏ qua bản ghi này để tránh phá vỡ toàn bộ trang
@@ -568,7 +571,12 @@
             // Trả về PageImpl với dữ liệu đã ánh xạ
             return new PageImpl<>(sanPhammDTOList, pageable, sanPhamPage.getTotalElements());
         }
-
+        public SanPham updateTrangThai(Integer id, Integer trangThai) {
+            SanPham sanPham = spi.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+            sanPham.setTrangThai(trangThai);
+            return spi.save(sanPham);
+        }
         public List<HinhAnh> findAllImageBySanPhamId(Integer idSanPham) {
             return hai.findHinhAnhBySanPhamId(idSanPham);
         }
@@ -629,10 +637,155 @@
         public List<SanPhamTonKhoDTO> findTop5BySoLuongTonKhoAsc() {
             return spi.findTop5BySoLuongTonKhoAsc();
         }
-        public SanPham updateTrangThai(Integer id, Integer trangThai) {
-            SanPham sanPham = spi.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
-            sanPham.setTrangThai(trangThai);
-            return spi.save(sanPham);
+
+        public List<SanPhamDetailDto> getAllProductDetailsList() {
+            List<SanPhamDetailDto> allProducts = new ArrayList<>();
+            try {
+                List<SanPham> sanPhams = spi.findAll(); // Lấy tất cả sản phẩm từ repository
+                if (sanPhams == null || sanPhams.isEmpty()) {
+                    log.warn("No products found in the database");
+                    return allProducts;
+                }
+
+                for (SanPham sanPham : sanPhams) {
+                    try {
+                        List<SanPhamDetailDto> productDetails = detail(sanPham.getIdSanPham());
+                        if (productDetails != null) {
+                            allProducts.addAll(productDetails);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error fetching details for product ID {}: {}", sanPham.getIdSanPham(), e.getMessage(), e);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error fetching all products: {}", e.getMessage(), e);
+            }
+            return allProducts;
         }
+
+        public List<SanPhamDetailDto> getRecommendedProducts(SanPhamDetailDto currentProduct) {
+            try {
+                // Lấy tất cả sản phẩm
+                List<SanPhamDetailDto> allProducts = getAllProductDetailsList();
+                List<SanPhamDetailDto> recommendedProducts = new ArrayList<>();
+
+                // Lọc trùng lặp dựa trên tenSanPham và chỉ lấy sản phẩm đầu tiên
+                Map<String, SanPhamDetailDto> uniqueProductsMap = new HashMap<>();
+                for (SanPhamDetailDto product : allProducts) {
+                    String tenSanPham = product.getTenSanPham();
+                    if (!uniqueProductsMap.containsKey(tenSanPham)) {
+                        uniqueProductsMap.put(tenSanPham, product); // Chỉ giữ sản phẩm đầu tiên
+                    }
+                }
+
+                // Chuyển Map thành List để tính điểm tương đồng
+                List<SanPhamDetailDto> uniqueProducts = new ArrayList<>(uniqueProductsMap.values());
+
+                // Tính điểm tương đồng cho từng sản phẩm
+                List<ProductScore> productScores = new ArrayList<>();
+                for (SanPhamDetailDto product : uniqueProducts) {
+                    // Bỏ qua sản phẩm hiện tại
+                    if (product.getIdSanPham().equals(currentProduct.getIdSanPham())) {
+                        continue;
+                    }
+
+                    // Bỏ qua sản phẩm hết hàng
+                    if (product.getSoLuongTonKho() <= 0) {
+                        continue;
+                    }
+
+                    int score = 0;
+                    // Cùng danh mục
+                    if (product.getTenDanhMuc() != null && product.getTenDanhMuc().equals(currentProduct.getTenDanhMuc())) {
+                        score += 3;
+                    }
+                    // Cùng thương hiệu
+                    if (product.getTenThuongHieu() != null && product.getTenThuongHieu().equals(currentProduct.getTenThuongHieu())) {
+                        score += 3;
+                    }
+                    // Cùng nhóm hương
+                    if (product.getTenNhomHuong() != null && product.getTenNhomHuong().equals(currentProduct.getTenNhomHuong())) {
+                        score += 2;
+                    }
+                    // Thành phần hương tương tự
+                    if (hasMatchingHuong(product, currentProduct)) {
+                        score += 1;
+                    }
+                    // Phong cách tương tự
+                    if (hasMatchingPhongCach(product.getPhongCachs(), currentProduct.getPhongCachs())) {
+                        score += 2;
+                    }
+                    // Mức giá tương đương (±20%)
+                    if (isPriceInRange(product.getDonGia(), currentProduct.getDonGia())) {
+                        score += 1;
+                    }
+
+                    productScores.add(new ProductScore(product, score));
+                }
+
+                // Sắp xếp theo điểm số và lấy tối đa 6 sản phẩm
+                productScores.sort((a, b) -> b.getScore() - a.getScore());
+                recommendedProducts = productScores.stream()
+                        .map(ProductScore::getProduct)
+                        .limit(6)
+                        .collect(Collectors.toList());
+
+                return recommendedProducts;
+            } catch (Exception e) {
+                log.error("Error getting recommended products: {}", e.getMessage(), e);
+                return new ArrayList<>(); // Trả về danh sách rỗng thay vì ném lỗi 500
+            }
+        }
+
+        // Các phương thức khác giữ nguyên
+        private boolean hasMatchingHuong(SanPhamDetailDto product, SanPhamDetailDto currentProduct) {
+            String[] huongDau = currentProduct.getMoTaHuongDau() != null ? currentProduct.getMoTaHuongDau().split(", ") : new String[]{};
+            String[] huongGiua = currentProduct.getMoTaHuongGiua() != null ? currentProduct.getMoTaHuongGiua().split(", ") : new String[]{};
+            String[] huongCuoi = currentProduct.getMoTaHuongCuoi() != null ? currentProduct.getMoTaHuongCuoi().split(", ") : new String[]{};
+            String[] targetHuongDau = product.getMoTaHuongDau() != null ? product.getMoTaHuongDau().split(", ") : new String[]{};
+            String[] targetHuongGiua = product.getMoTaHuongGiua() != null ? product.getMoTaHuongGiua().split(", ") : new String[]{};
+            String[] targetHuongCuoi = product.getMoTaHuongCuoi() != null ? product.getMoTaHuongCuoi().split(", ") : new String[]{};
+
+            return Stream.of(huongDau, huongGiua, huongCuoi)
+                    .flatMap(Arrays::stream)
+                    .anyMatch(h1 -> Stream.of(targetHuongDau, targetHuongGiua, targetHuongCuoi)
+                            .flatMap(Arrays::stream)
+                            .anyMatch(h2 -> h2.equalsIgnoreCase(h1)));
+        }
+
+        private boolean hasMatchingPhongCach(String phongCach1, String phongCach2) {
+            if (phongCach1 == null || phongCach2 == null) return false;
+            String[] styles1 = phongCach1.split(", ");
+            String[] styles2 = phongCach2.split(", ");
+            return Arrays.stream(styles1)
+                    .anyMatch(s1 -> Arrays.stream(styles2)
+                            .anyMatch(s2 -> s2.equalsIgnoreCase(s1)));
+        }
+
+        private boolean isPriceInRange(BigDecimal price, BigDecimal currentPrice) {
+            if (price == null || currentPrice == null) return false;
+            BigDecimal lowerBound = currentPrice.multiply(BigDecimal.valueOf(0.8));
+            BigDecimal upperBound = currentPrice.multiply(BigDecimal.valueOf(1.2));
+            return price.compareTo(lowerBound) >= 0 && price.compareTo(upperBound) <= 0;
+        }
+
+        private static class ProductScore {
+            private SanPhamDetailDto product;
+            private int score;
+
+            public ProductScore(SanPhamDetailDto product, int score) {
+                this.product = product;
+                this.score = score;
+            }
+
+            public SanPhamDetailDto getProduct() {
+                return product;
+            }
+
+            public int getScore() {
+                return score;
+            }
+        }
+
+
     }

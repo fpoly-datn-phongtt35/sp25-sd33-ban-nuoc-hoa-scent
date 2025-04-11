@@ -357,19 +357,30 @@ public class SanPhamCtrl {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
     }
+
     @PutMapping("/updateTrangThai/{id}")
     public ResponseEntity<SanPham> updateSanPhamTrangThai(
             @PathVariable Integer id,
             @RequestParam("trangThai") Integer trangThai
     ) {
-        if (trangThai ==0){
-            List<Spct> ListSpct=spcts.findByidSanPham(id);
+        if (trangThai == 0) {
+            List<Spct> ListSpct = spcts.findByidSanPham(id);
             for (Spct spct : ListSpct) {
                 spcts.updateTrangThai(spct.getIdSpct(), 0);
             }
         }
         SanPham updatedSanPham = sps.updateTrangThai(id, trangThai);
         return ResponseEntity.ok(updatedSanPham);
+    }
+    @PostMapping("/recommended")
+    public ResponseEntity<List<SanPhamDetailDto>> getRecommendedProducts(@RequestBody SanPhamDetailDto currentProduct) {
+        try {
+            List<SanPhamDetailDto> recommendedProducts = sps.getRecommendedProducts(currentProduct);
+            return ResponseEntity.ok(recommendedProducts);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+
     }
 }
 
