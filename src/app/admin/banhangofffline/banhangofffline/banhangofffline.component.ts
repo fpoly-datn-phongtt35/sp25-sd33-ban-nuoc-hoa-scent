@@ -87,6 +87,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadAllProducts();
     if (!this.tokenService.isLoggedIn()) {
       Swal.fire({
         icon: 'error',
@@ -135,7 +136,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     if (this.currentOrder.chiTietDonHangs.length > 0) {
       this.calculateTotal();
     }
-    this.loadAllProducts();
+
   }
 
   private resetState(): void {
