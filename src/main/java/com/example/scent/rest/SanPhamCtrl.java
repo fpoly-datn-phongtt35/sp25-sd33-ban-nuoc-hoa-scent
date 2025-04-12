@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +41,8 @@ public class SanPhamCtrl {
     SanPhamSv sps;
     @Autowired
     SpctSv spcts;
-
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     public SanPhamCtrl(SanPhamSv sps) {
         this.sps = sps;
     }
@@ -357,21 +359,57 @@ public class SanPhamCtrl {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
     }
-
     @PutMapping("/updateTrangThai/{id}")
     public ResponseEntity<SanPham> updateSanPhamTrangThai(
             @PathVariable Integer id,
             @RequestParam("trangThai") Integer trangThai
     ) {
+        // Cập nhật trạng thái chi tiết sản phẩm (Spct) nếu trạng thái là "Ngừng bán" (0)
         if (trangThai == 0) {
-            List<Spct> ListSpct = spcts.findByidSanPham(id);
-            for (Spct spct : ListSpct) {
+            List<Spct> listSpct = spcts.findByidSanPham(id);
+            for (Spct spct : listSpct) {
                 spcts.updateTrangThai(spct.getIdSpct(), 0);
             }
         }
+
+        // Cập nhật trạng thái sản phẩm
         SanPham updatedSanPham = sps.updateTrangThai(id, trangThai);
+
+        // Gửi thông báo qua WebSocket đến tất cả client
+        messagingTemplate.convertAndSend("/topic/productUpdates",
+                new ProductUpdateMessage(id, trangThai));
+
         return ResponseEntity.ok(updatedSanPham);
+
+}
+
+// Class để định dạng thông điệp WebSocket
+class ProductUpdateMessage {
+    private Integer productId;
+    private Integer trangThai;
+
+    public ProductUpdateMessage(Integer productId, Integer trangThai) {
+        this.productId = productId;
+        this.trangThai = trangThai;
     }
+
+    // Getters và setters
+    public Integer getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Integer productId) {
+        this.productId = productId;
+    }
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+}
     @PostMapping("/recommended")
     public ResponseEntity<List<SanPhamDetailDto>> getRecommendedProducts(@RequestBody SanPhamDetailDto currentProduct) {
         try {
