@@ -221,22 +221,38 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     List<Object[]> thongKeTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     // Thống kê doanh thu và số đơn theo tuần với năm và tuần cụ thể
-    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, DATEPART(WEEK, dh.ngay_tao) as tuan, " +
-            "SUM(dh.tong_tien) as tongDoanhThu, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
-            "COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "AND (:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
-            "GROUP BY DATEPART(YEAR, dh.ngay_tao), DATEPART(WEEK, dh.ngay_tao) " +
-            "ORDER BY nam, tuan", nativeQuery = true)
+    @Query(value =
+            "SET DATEFIRST 1; " + // Đặt thứ Hai là ngày đầu tiên của tuần
+                    "WITH Weeks AS ( " +
+                    "    SELECT DISTINCT " +
+                    "        DATEPART(YEAR, DATEADD(WEEK, number, DATEADD(YEAR, :year - 1900, 0))) as nam, " +
+                    "        number + 1 as tuan " +
+                    "    FROM master.dbo.spt_values " +
+                    "    WHERE type = 'P' " +
+                    "    AND DATEPART(YEAR, DATEADD(WEEK, number, DATEADD(YEAR, :year - 1900, 0))) = :year " +
+                    "    AND number < DATEPART(WEEK, GETDATE()) " +
+                    ") " +
+                    "SELECT " +
+                    "    w.nam, " +
+                    "    w.tuan, " +
+                    "    ISNULL(SUM(dh.tong_tien), 0) as tongDoanhThu, " +
+                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END), 0) as doanhThuOnline, " +
+                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END), 0) as doanhThuOffline, " +
+                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END), 0) as onlineHoanThanh, " +
+                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END), 0) as onlineHuy, " +
+                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END), 0) as offlineHoanThanh, " +
+                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END), 0) as offlineHuy, " +
+                    "    ISNULL(COUNT(dh.id), 0) as soLuongDon " +
+                    "FROM Weeks w " +
+                    "LEFT JOIN don_hang dh ON " +
+                    "    DATEPART(YEAR, dh.ngay_tao) = w.nam " +
+                    "    AND DATEPART(WEEK, dh.ngay_tao) = w.tuan " +
+                    "WHERE (:year IS NULL OR w.nam = :year) " +
+                    "    AND (:week IS NULL OR w.tuan = :week) " +
+                    "GROUP BY w.nam, w.tuan " +
+                    "ORDER BY w.nam, w.tuan",
+            nativeQuery = true)
     List<Object[]> thongKeTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
-
     // Thống kê doanh thu và số đơn theo tháng với năm và tháng cụ thể
     @Query(value = "SELECT FORMAT(dh.ngay_tao, 'yyyy-MM') as thang, " +
             "SUM(dh.tong_tien) as tongDoanhThu, " +

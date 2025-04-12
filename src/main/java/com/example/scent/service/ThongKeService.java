@@ -55,11 +55,65 @@ public class ThongKeService {
         List<Object[]> results = donHangRepository.thongKeTheoNgay(startDate, endDate);
         return aggregateThongKeDonHangDTO(results);
     }
+    private ThongKeDonHangDTO aggregateThongKeDonHangDTOForWeek(List<Object[]> results) {
+        // Nếu không có dữ liệu, trả về DTO với các giá trị mặc định là 0
+        if (results == null || results.isEmpty()) {
+            return new ThongKeDonHangDTO(
+                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                    0L, 0L, 0L, 0L, 0L, 0L, 0L, null
+            );
+        }
 
+        // Khởi tạo các biến để tổng hợp
+        BigDecimal tongDoanhThu = BigDecimal.ZERO;
+        BigDecimal doanhThuOnline = BigDecimal.ZERO;
+        BigDecimal doanhThuOffline = BigDecimal.ZERO;
+        long onlineHoanThanh = 0;
+        long onlineHuy = 0;
+        long offlineHoanThanh = 0;
+        long offlineHuy = 0;
+        long soLuongDon = 0;
+        long soLuongDonOnline = 0;
+        long soLuongDonOffline = 0;
+
+        // Tổng hợp dữ liệu từ kết quả truy vấn
+        for (Object[] result : results) {
+            BigDecimal dailyTongDoanhThu = result[2] != null ? (BigDecimal) result[2] : BigDecimal.ZERO;
+            BigDecimal dailyDoanhThuOnline = result[3] != null ? (BigDecimal) result[3] : BigDecimal.ZERO;
+            BigDecimal dailyDoanhThuOffline = result[4] != null ? (BigDecimal) result[4] : BigDecimal.ZERO;
+            long dailyOnlineHoanThanh = result[5] != null ? ((Number) result[5]).longValue() : 0;
+            long dailyOnlineHuy = result[6] != null ? ((Number) result[6]).longValue() : 0;
+            long dailyOfflineHoanThanh = result[7] != null ? ((Number) result[7]).longValue() : 0;
+            long dailyOfflineHuy = result[8] != null ? ((Number) result[8]).longValue() : 0;
+            long dailySoLuongDon = result[9] != null ? ((Number) result[9]).longValue() : 0;
+
+            // Tổng hợp
+            tongDoanhThu = tongDoanhThu.add(dailyTongDoanhThu);
+            doanhThuOnline = doanhThuOnline.add(dailyDoanhThuOnline);
+            doanhThuOffline = doanhThuOffline.add(dailyDoanhThuOffline);
+            onlineHoanThanh += dailyOnlineHoanThanh;
+            onlineHuy += dailyOnlineHuy;
+            offlineHoanThanh += dailyOfflineHoanThanh;
+            offlineHuy += dailyOfflineHuy;
+            soLuongDon += dailySoLuongDon;
+
+            // Tính số lượng đơn online và offline
+            soLuongDonOnline += dailyDoanhThuOnline.compareTo(BigDecimal.ZERO) > 0 ? dailySoLuongDon : 0;
+            soLuongDonOffline += dailyDoanhThuOffline.compareTo(BigDecimal.ZERO) > 0 ? dailySoLuongDon : 0;
+        }
+
+        Double tiLeTangTruongDoanhThu = null;
+
+        return new ThongKeDonHangDTO(
+                tongDoanhThu, doanhThuOnline, doanhThuOffline,
+                onlineHoanThanh, onlineHuy, offlineHoanThanh, offlineHuy,
+                soLuongDon, soLuongDonOnline, soLuongDonOffline, tiLeTangTruongDoanhThu
+        );
+    }
     // New method: Aggregated statistics for a specific week (Theo tuần)
     public ThongKeDonHangDTO thongKeTongQuanTheoTuan(Integer year, Integer week) {
         List<Object[]> results = donHangRepository.thongKeTheoTuan(year, week);
-        return aggregateThongKeDonHangDTO(results);
+        return aggregateThongKeDonHangDTOForWeek(results); // Sử dụng phương thức riêng
     }
 
     // New method: Aggregated statistics for a specific month (Theo tháng)

@@ -165,7 +165,7 @@ public class SecurityConfig {
                                 "/api/thong-ke/so-luong-don/ngay",
                                 "/api/thong-ke/tong-quan",
                                 "/api/thong-ke/count-by-luong-ban-trang-thai",
-                                "/api/thong-ke/tong-quan/tuan",
+                                "/api/thong-ke/tong-quan/tuan/**",
                                 "/api/thong-ke/tong-quan/thang",
                                 "/api/thong-ke/tong-quan/nam",
                                 "/api/thong-ke/tong-quan/ngay",
