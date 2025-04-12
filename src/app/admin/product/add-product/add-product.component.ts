@@ -54,6 +54,7 @@ export class AddProductComponent implements OnInit {
   @ViewChild('muiHuongSelect') muiHuongSelect!: NgSelectComponent;
 
   productForm: FormGroup;
+  prominenceForm: FormGroup; // Thêm FormGroup cho modal
   selectedFiles: File[] = [];
   previewUrls: string[] = [];
   danhMucList: DanhMuc[] = [];
@@ -65,7 +66,6 @@ export class AddProductComponent implements OnInit {
   muiHuongSelections: { id: number; prominenceLevel: number }[] = [];
   showProminenceModal: boolean = false;
   tempMuiHuongId: number | null = null;
-  tempProminenceLevel: number = 0.5;
   loadingMuiHuong: boolean = true;
   isSubmitting: boolean = false;
 
@@ -90,6 +90,11 @@ export class AddProductComponent implements OnInit {
       notHuongCuoiIds: [[], Validators.required],
       phongCachIds: [[], Validators.required],
       muiHuongIds: [[]]
+    });
+
+    // Khởi tạo FormGroup cho modal
+    this.prominenceForm = this.fb.group({
+      prominenceLevel: [0.5, [Validators.required, Validators.min(0), Validators.max(1)]]
     });
   }
 
@@ -350,7 +355,7 @@ export class AddProductComponent implements OnInit {
 
     if (!this.muiHuongSelections.some((s) => s.id === id)) {
       this.tempMuiHuongId = id;
-      this.tempProminenceLevel = 0.5;
+      this.prominenceForm.get('prominenceLevel')?.setValue(0.5); // Đặt giá trị mặc định
       this.showProminenceModal = true;
       console.log('showProminenceModal set to true:', this.showProminenceModal);
       document.body.classList.add('modal-open');
@@ -385,7 +390,7 @@ export class AddProductComponent implements OnInit {
   confirmProminence() {
     if (this.tempMuiHuongId === null) return;
 
-    const prominenceLevel = Number(this.tempProminenceLevel);
+    const prominenceLevel = this.prominenceForm.get('prominenceLevel')?.value;
     if (isNaN(prominenceLevel) || prominenceLevel < 0 || prominenceLevel > 1) {
       this.toastr.warning('Độ nổi hương phải từ 0 đến 1!', 'Cảnh báo');
       return;
@@ -393,6 +398,8 @@ export class AddProductComponent implements OnInit {
 
     this.muiHuongSelections = this.muiHuongSelections.filter((s) => s.id !== this.tempMuiHuongId);
     this.muiHuongSelections.push({ id: this.tempMuiHuongId, prominenceLevel });
+
+    console.log('muiHuongSelections sau khi lưu:', this.muiHuongSelections);
 
     const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
     if (!currentMuiHuongIds.includes(this.tempMuiHuongId)) {
@@ -408,6 +415,7 @@ export class AddProductComponent implements OnInit {
       const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
       this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== this.tempMuiHuongId));
     }
+    this.prominenceForm.get('prominenceLevel')?.setValue(0.5); // Reset giá trị
     this.closeProminenceModal();
   }
 
@@ -416,17 +424,13 @@ export class AddProductComponent implements OnInit {
 
     this.showProminenceModal = false;
     this.tempMuiHuongId = null;
-    this.tempProminenceLevel = 0.5;
 
-    // Xóa backdrop của modal con
     const backdrops = document.querySelectorAll('.modal-backdrop');
     if (backdrops.length > 1) {
-      // Chỉ xóa backdrop của modal con, giữ lại backdrop của modal chính
       console.log('🗑️ Xóa backdrop của modal con:', backdrops[backdrops.length - 1]);
       backdrops[backdrops.length - 1].remove();
     }
 
-    // Nếu không còn modal con nào mở, kiểm tra modal chính
     const openModals = document.querySelectorAll('.modal.show:not(.prominence-modal)');
     if (openModals.length === 0) {
       console.log('🔄 Không còn modal nào mở, xóa lớp modal-open');
@@ -478,8 +482,53 @@ export class AddProductComponent implements OnInit {
       return;
     }
 
-    this.isSubmitting = true;
     const formValues = this.productForm.value;
+
+    // Kiểm tra dữ liệu đầu vào
+    if (!this.thuongHieuList.some((th: any) => th.id === formValues.idThuongHieu)) {
+      this.toastr.warning('Thương hiệu không hợp lệ!', 'Cảnh báo');
+      return;
+    }
+    if (!this.danhMucList.some((dm: any) => dm.id === formValues.idDanhMuc)) {
+      this.toastr.warning('Danh mục không hợp lệ!', 'Cảnh báo');
+      return;
+    }
+    if (!this.nhomHuongList.some((nh: any) => nh.id === formValues.idNhomHuong)) {
+      this.toastr.warning('Nhóm hương không hợp lệ!', 'Cảnh báo');
+      return;
+    }
+
+    const validateNotHuong = (ids: number[], type: string) => {
+      if (!ids || ids.length === 0) {
+        this.toastr.warning(`Vui lòng chọn ít nhất một nốt ${type}!`, 'Cảnh báo');
+        return false;
+      }
+      return ids.every((id: number) => this.notHuongList.some((nh: any) => nh.id === id));
+    };
+
+    if (!validateNotHuong(formValues.notHuongDauIds, 'hương đầu')) return;
+    if (!validateNotHuong(formValues.notHuongGiuaIds, 'hương giữa')) return;
+    if (!validateNotHuong(formValues.notHuongCuoiIds, 'hương cuối')) return;
+
+    if (formValues.phongCachIds && formValues.phongCachIds.length > 0) {
+      const invalidPhongCach = formValues.phongCachIds.some(
+        (id: number) => !this.phongCachList.some((pc: any) => pc.id === id)
+      );
+      if (invalidPhongCach) {
+        this.toastr.warning('Một số phong cách không hợp lệ!', 'Cảnh báo');
+        return;
+      }
+    }
+
+    const invalidMuiHuong = this.muiHuongSelections.some(
+      (selection: any) => !this.muiHuongList.some((mh: any) => mh.id === selection.id)
+    );
+    if (invalidMuiHuong) {
+      this.toastr.warning('Một số mùi hương không hợp lệ!', 'Cảnh báo');
+      return;
+    }
+
+    this.isSubmitting = true;
     const formData = new FormData();
 
     formData.append('ten', formValues.ten || '');
@@ -488,13 +537,39 @@ export class AddProductComponent implements OnInit {
     formData.append('idDanhMuc', String(formValues.idDanhMuc));
     formData.append('idNhomHuong', String(formValues.idNhomHuong));
 
-    formValues.notHuongDauIds?.forEach((id: number) => formData.append('notHuongDauIds', String(id)));
-    formValues.notHuongGiuaIds?.forEach((id: number) => formData.append('notHuongGiuaIds', String(id)));
-    formValues.notHuongCuoiIds?.forEach((id: number) => formData.append('notHuongCuoiIds', String(id)));
-    formValues.phongCachIds?.forEach((id: number) => formData.append('phongCachIds', String(id)));
+    formValues.notHuongDauIds.forEach((id: number, index: number) => {
+      formData.append(`notHuongDauIds[${index}]`, String(id));
+    });
 
-    formData.append('muiHuongSelections', JSON.stringify(this.muiHuongSelections));
+    formValues.notHuongGiuaIds.forEach((id: number, index: number) => {
+      formData.append(`notHuongGiuaIds[${index}]`, String(id));
+    });
+
+    formValues.notHuongCuoiIds.forEach((id: number, index: number) => {
+      formData.append(`notHuongCuoiIds[${index}]`, String(id));
+    });
+
+    if (formValues.phongCachIds && formValues.phongCachIds.length > 0) {
+      formValues.phongCachIds.forEach((id: number, index: number) => {
+        formData.append(`phongCachIds[${index}]`, String(id));
+      });
+    }
+
+    this.muiHuongSelections.forEach((selection: any, index: number) => {
+      const muiHuong = this.muiHuongList.find((mh: any) => mh.id === selection.id);
+      if (muiHuong) {
+        formData.append(`muiHuongSelections[${index}].id`, String(selection.id));
+        formData.append(`muiHuongSelections[${index}].tenMuiHuong`, muiHuong.tenMuiHuong);
+        formData.append(`muiHuongSelections[${index}].prominenceLevel`, String(selection.prominenceLevel));
+      }
+    });
+
     this.selectedFiles.forEach((file) => formData.append('images', file));
+
+    console.log('FormData gửi lên API:');
+    for (let pair of (formData as any).entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
 
     try {
       const response = await firstValueFrom(this.sanPhamService.addProductOnAdmin(formData));
@@ -545,13 +620,11 @@ export class AddProductComponent implements OnInit {
   closeModal() {
     console.log('🛑 Đang cố đóng modal chính...');
 
-    // Đóng modal con nếu còn mở
     if (this.showProminenceModal) {
       console.log('🔄 Đóng modal con (prominenceModal) trước...');
       this.closeProminenceModal();
     }
 
-    // Đóng modal chính
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
       console.log('✅ Đã gọi dismiss trên modal chính');
@@ -559,24 +632,20 @@ export class AddProductComponent implements OnInit {
       console.error('❌ ActiveModal không khả dụng');
     }
 
-    // Dọn dẹp trạng thái giao diện
     this.finalizeModalClose();
   }
 
   private finalizeModalClose() {
     console.log('🧹 Dọn dẹp trạng thái modal...');
 
-    // Xóa lớp modal-open khỏi body
     document.body.classList.remove('modal-open');
 
-    // Xóa tất cả backdrop còn sót lại
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => {
       console.log('🗑️ Xóa backdrop:', backdrop);
       backdrop.remove();
     });
 
-    // Xóa lớp show khỏi tất cả modal
     const modals = document.querySelectorAll('.modal.show');
     modals.forEach(modal => {
       console.log('🗑️ Xóa lớp show khỏi modal:', modal);
@@ -584,7 +653,6 @@ export class AddProductComponent implements OnInit {
       modal.remove();
     });
 
-    // Khôi phục trạng thái body
     document.body.style.overflow = 'auto';
     document.body.style.paddingRight = '';
 

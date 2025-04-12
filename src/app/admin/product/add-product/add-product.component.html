@@ -120,68 +120,80 @@
     Vui lòng chọn ít nhất một nốt hương cuối.
   </div>
 </div>
-<div class="col-md-12">
-  <label class="form-label fw-semibold">Mùi hương và Độ nổi hương (0-1, ví dụ: 0.5)</label>
-  <div *ngIf="loadingMuiHuong" class="text-muted">
-    Đang tải danh sách mùi hương...
+
+
+   <!-- Mùi hương và Độ nổi hương -->
+   <div class="col-md-12">
+    <label class="form-label fw-semibold">Mùi hương và Độ nổi hương (0-1, ví dụ: 0.5)</label>
+    <div *ngIf="loadingMuiHuong" class="text-muted">
+      Đang tải danh sách mùi hương...
+    </div>
+    <div *ngIf="!loadingMuiHuong && (!muiHuongList || muiHuongList.length === 0)" class="text-danger small mt-1">
+      Không có mùi hương nào để chọn. Vui lòng kiểm tra dữ liệu.
+    </div>
+    <ng-select
+      *ngIf="!loadingMuiHuong && muiHuongList && muiHuongList.length > 0"
+      #muiHuongSelect
+      [items]="muiHuongList"
+      bindLabel="tenMuiHuong"
+      bindValue="id"
+      [multiple]="true"
+      [searchable]="true"
+      placeholder="Chọn mùi hương..."
+      formControlName="muiHuongIds"
+      (add)="onMuiHuongAdd($event)"
+      (remove)="onMuiHuongRemove($event)"
+      (change)="onMuiHuongChange($event)">
+      <ng-template ng-option-tmp let-item="item">
+        <div *ngIf="item.id !== -1">
+          {{ item.tenMuiHuong }}
+          <span *ngIf="hasProminenceLevel(item)" class="text-muted small">
+            (Độ nổi hương: {{ getProminenceLevel(item) }})
+          </span>
+        </div>
+        <div *ngIf="item.id === -1" class="text-primary">➕ Thêm mùi hương mới...</div>
+      </ng-template>
+      <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+        <div class="ng-value" *ngFor="let item of items">
+          <span class="ng-value-label">{{ getMuiHuongName(item) }} ({{ getProminenceLevel(item) }})</span>
+          <span class="ng-value-icon" (click)="clear(item)">×</span>
+        </div>
+      </ng-template>
+    </ng-select>
+    <div *ngIf="productForm.get('muiHuongIds')?.touched && productForm.get('muiHuongIds')?.invalid" class="text-danger small mt-1">
+      Vui lòng chọn ít nhất một mùi hương.
+    </div>
   </div>
-  <div *ngIf="!loadingMuiHuong && (!muiHuongList || muiHuongList.length === 0)" class="text-danger small mt-1">
-    Không có mùi hương nào để chọn. Vui lòng kiểm tra dữ liệu.
-  </div>
-  <ng-select
-    *ngIf="!loadingMuiHuong && muiHuongList && muiHuongList.length > 0"
-    #muiHuongSelect
-    [items]="muiHuongList"
-    bindLabel="tenMuiHuong"
-    bindValue="id"
-    [multiple]="true"
-    [searchable]="true"
-    placeholder="Chọn mùi hương..."
-    formControlName="muiHuongIds"
-    (add)="onMuiHuongAdd($event)"
-    (remove)="onMuiHuongRemove($event)"
-    (change)="onMuiHuongChange($event)">
-    <ng-template ng-option-tmp let-item="item">
-      <div *ngIf="item.id !== -1">
-        {{ item.tenMuiHuong }}
-        <span *ngIf="hasProminenceLevel(item)" class="text-muted small">
-          (Độ nổi hương: {{ getProminenceLevel(item) }})
-        </span>
-      </div>
-      <div *ngIf="item.id === -1" class="text-primary">➕ Thêm mùi hương mới...</div>
-    </ng-template>
-    <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
-      <div class="ng-value" *ngFor="let item of items">
-        <span class="ng-value-label">{{ getMuiHuongName(item) }} ({{ getProminenceLevel(item) }})</span>
-        <span class="ng-value-icon" (click)="clear(item)">×</span>
-      </div>
-    </ng-template>
-  </ng-select>
-  <div *ngIf="productForm.get('muiHuongIds')?.touched && productForm.get('muiHuongIds')?.invalid" class="text-danger small mt-1">
-    Vui lòng chọn ít nhất một mùi hương.
-  </div>
-</div>
-            <!-- Prominence Modal -->
-            <div *ngIf="showProminenceModal" class="modal prominence-modal fade show" style="display: block;" role="dialog">
-              <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Nhập độ nổi hương</h5>
-                    <button type="button" class="btn-close" (click)="cancelProminenceModal()"></button>
-                  </div>
-                  <div class="modal-body">
-                    <div class="form-group">
-                      <label for="prominenceLevel">Độ nổi hương (0-1):</label>
-                      <input type="number" class="form-control" id="prominenceLevel" [(ngModel)]="tempProminenceLevel" step="0.1" min="0" max="1">
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" (click)="cancelProminenceModal()">Hủy</button>
-                    <button type="button" class="btn btn-primary" (click)="confirmProminence()">Xác nhận</button>
-                  </div>
+
+  <!-- Prominence Modal -->
+  <div *ngIf="showProminenceModal" class="modal prominence-modal fade show" style="display: block;" role="dialog">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nhập độ nổi hương</h5>
+          <button type="button" class="btn-close" (click)="cancelProminenceModal()"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="prominenceForm">
+            <div class="form-group">
+              <label for="prominenceLevel">Độ nổi hương (0-1):</label>
+              <input type="number" class="form-control" id="prominenceLevel" formControlName="prominenceLevel" step="0.1" min="0" max="1">
+              <div *ngIf="prominenceForm.get('prominenceLevel')?.touched && prominenceForm.get('prominenceLevel')?.invalid" class="text-danger small mt-1">
+                <div *ngIf="prominenceForm.get('prominenceLevel')?.errors?.['required']">Độ nổi hương là bắt buộc.</div>
+                <div *ngIf="prominenceForm.get('prominenceLevel')?.errors?.['min'] || prominenceForm.get('prominenceLevel')?.errors?.['max']">
+                  Độ nổi hương phải từ 0 đến 1.
                 </div>
               </div>
             </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelProminenceModal()">Hủy</button>
+          <button type="button" class="btn btn-primary" (click)="confirmProminence()">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
             <!-- Phong cách và Mô tả -->
             <div class="col-md-6">
