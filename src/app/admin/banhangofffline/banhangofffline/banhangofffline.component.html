@@ -2,9 +2,8 @@
   <h2 class="page-title">Bán hàng tại quầy</h2>
 
   <!-- Thông báo -->
-  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+  <div *ngIf="errorMessage?.length" class="alert alert-danger">{{ errorMessage }}</div>
   <div *ngIf="isLoading" class="alert alert-info text-center">Đang xử lý...</div>
-
   <!-- Tabs đơn hàng -->
   <div class="order-tabs">
     <div class="tab-container">
@@ -46,6 +45,7 @@
               placeholder="Tên khách hàng"
               class="form-control"
               autocomplete="off"
+              debounce="300"
             />
           </div>
           <div class="col-6">
@@ -55,6 +55,7 @@
               placeholder="Số điện thoại"
               class="form-control"
               autocomplete="off"
+              debounce="300"
             />
           </div>
         </div>
@@ -69,6 +70,7 @@
             (ngModelChange)="onSearchInput()"
             placeholder="🔍 Tìm kiếm sản phẩm"
             class="form-control search-input"
+            debounce="300"
           />
         </div>
         <!-- Bộ lọc -->
@@ -108,7 +110,7 @@
         </div>
         <!-- Danh sách sản phẩm -->
         <div class="product-list" *ngIf="products.length > 0">
-          <div class="product-item-horizontal" *ngFor="let product of products" (click)="openQuantityModal(product)">
+          <div class="product-item-horizontal" *ngFor="let product of products; trackBy: trackByProduct" (click)="openQuantityModal(product)">
             <img
               [src]="product.urlImage || 'assets/placeholder.png'"
               alt="{{ product.tenSanPham }}"
@@ -144,7 +146,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of currentOrder.chiTietDonHangs; let i = index">
+              <tr *ngFor="let item of currentOrder.chiTietDonHangs; let i = index; trackBy: trackByCartItem">
                 <td class="cart-item-name">{{ item.tenSanPham }} ({{ item.dungTich }}ml)</td>
                 <td>
                   <div class="quantity-control">
@@ -168,13 +170,13 @@
       <div class="card payment-card">
         <h4>Thanh toán</h4>
         <select
-        [(ngModel)]="currentOrder.phuongThucThanhToan"
-        (ngModelChange)="updatePaymentMethod($event)"
-        class="form-control"
-      >
-        <option value="tm">Tiền mặt</option>
-        <option value="ck">Chuyển khoản ngân hàng (VietQR)</option>
-      </select>
+          [(ngModel)]="currentOrder.phuongThucThanhToan"
+          (ngModelChange)="updatePaymentMethod($event)"
+          class="form-control"
+        >
+          <option value="tm">Tiền mặt</option>
+          <option value="ck">Chuyển khoản ngân hàng (VietQR)</option>
+        </select>
         <div class="discount-section">
           <label for="maGiamGia">Mã giảm giá:</label>
           <div class="discount-input-group">
@@ -182,9 +184,10 @@
               type="text"
               id="maGiamGia"
               [(ngModel)]="discountCodeInput"
-              (ngModelChange)="saveStateToLocalStorage()"
+              (ngModelChange)="onDiscountCodeChange($event)"
               placeholder="Nhập mã giảm giá"
               class="form-control"
+              debounce="300"
             />
             <button
               (click)="applyDiscountCode()"

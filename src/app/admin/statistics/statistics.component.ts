@@ -231,7 +231,7 @@ export class StatisticsComponent implements OnInit {
           console.error('Error loading filtered overview:', err);
         }
       });
-  }
+}
 
   loadBestSellingProducts(): void {
     let url = '';
