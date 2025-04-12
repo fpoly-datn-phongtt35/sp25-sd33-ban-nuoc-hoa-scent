@@ -1,12 +1,6 @@
 <!-- src/app/product-admin/product-admin.component.html -->
 <div class="product-admin-container">
-  <app-spct
-    *ngIf="selectedProductId !== null"
-    [productId]="selectedProductId"
-    (closeSpct)="closeProductDetail()"
-  ></app-spct>
-
-  <div *ngIf="selectedProductId === null">
+  <div *ngIf="selectedProductId === null; else productDetailView">
     <div class="header-section">
       <div class="actions">
         <button class="btn btn-primary" (click)="openAddModal()" *ngIf="userRole !== 'STAFF'">Thêm mới</button>
@@ -31,19 +25,15 @@
             <th>Tên</th>
             <th>Thương hiệu</th>
             <th>Danh mục</th>
-            <th>Nhóm hương</th>
-            <th>Tầng hương</th>
-            <th>Phong cách</th>
-            <th>Mùi hương</th>
             <th>Tồn kho</th>
             <th>Trạng thái</th>
-            <th *ngIf="userRole !== 'STAFF'">Hành động</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let product of products; let i = index">
-            <td (click)="onRowClick(product.idSanPham)">{{ i + 1 + (page * 5) }}</td>
-            <td (click)="onRowClick(product.idSanPham)">
+            <td>{{ i + 1 + (page * 5) }}</td>
+            <td>
               <img
                 *ngIf="product.imageURL; else noImage"
                 [src]="product.imageURL"
@@ -54,46 +44,31 @@
                 <span class="text-muted">N/A</span>
               </ng-template>
             </td>
-            <td (click)="onRowClick(product.idSanPham)" class="wrap-text">
+            <td class="wrap-text">
               {{ product.tenSanPham || 'Không xác định' }}
             </td>
-            <td (click)="onRowClick(product.idSanPham)" class="truncate" [title]="product.tenThuongHieu">
+            <td class="wrap-text">
               {{ product.tenThuongHieu || 'Không xác định' }}
             </td>
-            <td (click)="onRowClick(product.idSanPham)" class="truncate" [title]="product.tenDanhMuc">
+            <td class="wrap-text">
               {{ product.tenDanhMuc || 'Không xác định' }}
             </td>
-            <td (click)="onRowClick(product.idSanPham)" class="truncate" [title]="product.tenNhomHuong">
-              {{ product.tenNhomHuong || 'Không xác định' }}
-            </td>
-            <td (click)="onRowClick(product.idSanPham)" class="wrap-text">
-              <ul>
-                <li>Đầu: {{ product.huongDauString || 'Không xác định' }}</li>
-                <li>Giữa: {{ product.huongGiuaString || 'Không xác định' }}</li>
-                <li>Cuối: {{ product.huongCuoiString || 'Không xác định' }}</li>
-              </ul>
-            </td>
-            <td (click)="onRowClick(product.idSanPham)" class="wrap-text">
-              {{ getPhongCachString(product.phongCach) || 'Không xác định' }}
-            </td>
-            <td (click)="onRowClick(product.idSanPham)" class="wrap-text">
-              <ul *ngIf="product.muiHuongSelections?.length; else noMuiChon">
-                <li *ngFor="let scent of product.muiHuongSelections">
-                  {{ scent.tenMuiHuong || 'Không xác định' }} ({{ scent.prominenceLevel || 0 }})
-                </li>
-              </ul>
-              <ng-template #noMuiChon>
-                Không xác định
-              </ng-template>
-            </td>
-            <td (click)="onRowClick(product.idSanPham)">{{ product.tongSoLuong || 0 }}</td>
+            <td>{{ product.tongSoLuong || 0 }}</td>
             <td>{{ product.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</td>
-            <td *ngIf="userRole !== 'STAFF'">
+            <td>
               <div class="d-flex gap-2">
-                <button class="btn btn-warning btn-sm" (click)="openUpdateProductModal(product.idSanPham)">
+                <button class="btn btn-info btn-sm" (click)="viewProductDetails(product)">
+                  <i class="bi bi-eye"></i> Xem chi tiết
+                </button>
+                <button
+                  *ngIf="userRole !== 'STAFF'"
+                  class="btn btn-warning btn-sm"
+                  (click)="openUpdateProductModal(product.idSanPham)"
+                >
                   <i class="bi bi-pencil"></i>
                 </button>
                 <button
+                  *ngIf="userRole !== 'STAFF'"
                   class="btn btn-sm"
                   [ngClass]="product.trangThai === 1 ? 'btn-danger' : 'btn-success'"
                   (click)="toggleProductStatus(product.idSanPham, product.trangThai)"
@@ -115,8 +90,9 @@
         <li class="page-item" [class.disabled]="page === 0">
           <button class="page-link" (click)="prevPage()">‹</button>
         </li>
-        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === page" [class.disabled]="p.isEllipsis">
+          <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+          <span *ngIf="p.isEllipsis" class="page-link">...</span>
         </li>
         <li class="page-item" [class.disabled]="page >= totalPages - 1">
           <button class="page-link" (click)="nextPage()">›</button>
@@ -127,4 +103,23 @@
       </ul>
     </nav>
   </div>
+
+  <!-- Template for Product Detail View -->
+  <ng-template #productDetailView>
+    <div class="product-detail-container">
+      <div class="header-section">
+        <button class="btn btn-link text-dark fs-4 fw-bold d-flex align-items-center gap-2" (click)="closeProductDetail()">
+          <i class="bi bi-arrow-left fs-3"></i> Quay lại danh sách sản phẩm
+        </button>
+      </div>
+
+      <!-- Pass the entire selectedProduct to SpctComponent -->
+      <div class="product-variants-section">
+        <app-spct
+          [product]="selectedProduct"
+          (closeSpct)="closeProductDetail()"
+        ></app-spct>
+      </div>
+    </div>
+  </ng-template>
 </div>

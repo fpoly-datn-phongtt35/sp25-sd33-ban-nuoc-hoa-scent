@@ -1,54 +1,127 @@
-<!-- src/app/product-detail/spct-list/spct.component.html -->
-<div class="header-section">
-  <button class="btn btn-link text-dark fs-4 fw-bold d-flex align-items-center gap-2" (click)="closeDetail()">
-    <i class="bi bi-arrow-left fs-3"></i> Quay lại Sản Phẩm
-  </button>
-
-  <div class="actions">
-    <button class="btn btn-primary" (click)="openModalAddSpct()" *ngIf="userRole !== 'STAFF'">Thêm mới</button>
-    <div class="search-box">
-      <input type="text" placeholder="Search" />
-      <button class="search-btn"><i class="bi bi-search"></i></button>
-    </div>
-    <button class="export-btn">Export Excel</button>
-  </div>
-</div>
-<div class="container mt-4">
-  <h2 class="text-center">Danh sách sản phẩm chi tiết</h2>
-  <table class="table">
-    <thead class="table-hover">
-      <tr>
-        <th>Tên sản phẩm</th>
-        <th>Dung tích</th>
-        <th>Đơn giá</th>
-        <th>Số lượng tồn kho</th>
-        <th>Trạng thái</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let sp of spct">
-        <td>{{ sp.sanPham?.tenSanPham }}</td>
-        <td>{{ sp.dungTich }} ml</td>
-        <td>{{ sp.donGia }} VNĐ</td>
-        <td>{{ sp.soLuongTonKho }}</td>
-        <td>{{ sp.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</td>
-        <td>
-          <div class="d-flex gap-2">
-            <button class="btn btn-warning btn-sm me-1" (click)="openUpdateSpctModal(sp)" *ngIf="userRole !== 'STAFF'">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button
-              class="btn btn-sm"
-              [ngClass]="sp.trangThai === 1 ? 'btn-danger' : 'btn-success'"
-              (click)="toggleSpctStatus(sp.idSpct, sp.trangThai)"
-              *ngIf="userRole !== 'STAFF'"
-            >
-              {{ sp.trangThai === 1 ? 'Ngưng bán' : 'Tiếp tục bán' }}
-            </button>
+<div class="spct-container">
+  <!-- Product Details Section -->
+  <div class="product-details-section">
+    <h2 class="section-title">Thông tin sản phẩm</h2>
+    <div class="product-card">
+      <div class="product-image">
+        <img
+          *ngIf="product?.imageURL; else noImage"
+          [src]="product?.imageURL"
+          [alt]="product?.tenSanPham"
+          class="detail-product-image"
+        />
+        <ng-template #noImage>
+          <div class="no-image">N/A</div>
+        </ng-template>
+      </div>
+      <div class="product-info">
+        <h3 class="product-name">{{ product?.tenSanPham || 'Không xác định' }}</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <strong>Thương hiệu</strong>
+            <span>{{ product?.tenThuongHieu || 'Không xác định' }}</span>
           </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+          <div class="info-item">
+            <strong>Danh mục</strong>
+            <span>{{ product?.tenDanhMuc || 'Không xác định' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Nhóm hương</strong>
+            <span>{{ product?.tenNhomHuong || 'Không xác định' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Phong cách</strong>
+            <span>{{ getPhongCachString(product?.phongCach) || 'Không xác định' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Tồn kho</strong>
+            <span>{{ product?.tongSoLuong || 0 }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Trạng thái</strong>
+            <span>{{ product?.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</span>
+          </div>
+        </div>
+        <div class="scent-details">
+          <div class="scent-layers">
+            <strong>Tầng hương</strong>
+            <ul>
+              <li><span>Đầu:</span> {{ product?.huongDauString || 'Không xác định' }}</li>
+              <li><span>Giữa:</span> {{ product?.huongGiuaString || 'Không xác định' }}</li>
+              <li><span>Cuối:</span> {{ product?.huongCuoiString || 'Không xác định' }}</li>
+            </ul>
+          </div>
+          <div class="scent-selections">
+            <strong>Mùi hương</strong>
+            <ul *ngIf="product?.muiHuongSelections?.length; else noMuiChon">
+              <li *ngFor="let scent of product?.muiHuongSelections">
+                {{ scent.tenMuiHuong || 'Không xác định' }} ({{ scent.prominenceLevel || 0 }})
+              </li>
+            </ul>
+            <ng-template #noMuiChon>
+              <span>Không xác định</span>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Variants Section -->
+  <div class="variants-section">
+    <div class="header-section">
+      <h2 class="section-title">Danh sách biến thể</h2>
+      <div class="actions">
+        <button class="btn btn-primary" (click)="openModalAddSpct()" *ngIf="userRole !== 'STAFF'">Thêm biến thể</button>
+        <div class="search-box">
+          <input type="text" placeholder="Tìm kiếm biến thể" />
+          <i class="bi bi-search"></i>
+        </div>
+        <button class="btn btn-export">Export Excel</button>
+      </div>
+    </div>
+    <div class="table-container">
+      <table class="variants-table">
+        <thead>
+          <tr>
+            <th>Dung tích</th>
+            <th>Đơn giá</th>
+            <th>Số lượng</th>
+            <th>Trs </th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let sp of spct">
+            <td>{{ sp.dungTich }} ml</td>
+            <td>{{ sp.donGia | currency: 'VND' }}</td>
+            <td>{{ sp.soLuongTonKho }}</td>
+            <td>{{ sp.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</td>
+            <td class="action-buttons">
+              <button
+                class="btn btn-edit"
+                (click)="openUpdateSpctModal(sp)"
+                *ngIf="userRole !== 'STAFF'"
+                title="Sửa"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                class="btn"
+                [ngClass]="sp.trangThai === 1 ? 'btn-stop' : 'btn-resume'"
+                (click)="toggleSpctStatus(sp.idSpct, sp.trangThai)"
+                *ngIf="userRole !== 'STAFF'"
+                title="{{ sp.trangThai === 1 ? 'Ngưng bán' : 'Tiếp tục bán' }}"
+              >
+                <i class="bi" [ngClass]="sp.trangThai === 1 ? 'bi-pause' : 'bi-play'"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!spct?.length">
+            <td colspan="5" class="no-data">Không có biến thể nào.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

@@ -1,4 +1,3 @@
-// src/app/product-detail/spct-list/spct.component.ts
 import { Component, Input, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { AddSpctComponent } from '../add-spct/add-spct.component';
@@ -17,7 +16,7 @@ import { TokenService } from '../../../../service/token.service';
   providers: [NgbActiveModal]
 })
 export class SpctComponent implements OnInit {
-  @Input() productId: number | null = null;
+  @Input() product: any = null; // Đảm bảo có khai báo @Input() product
   @Output() closeSpct = new EventEmitter<void>();
   spct: any[] = [];
   userRole: string | null = null;
@@ -32,29 +31,40 @@ export class SpctComponent implements OnInit {
   ngOnInit(): void {
     this.userRole = this.tokenService.getRole();
     console.log('Vai trò trong SpctComponent:', this.userRole);
-    console.log("ID sản phẩm trong modal:", this.productId);
-    this.loadSpct();
+    if (this.product) {
+      console.log('Sản phẩm nhận được:', this.product);
+      this.loadSpct();
+    }
   }
 
   ngOnChanges(): void {
-    this.loadSpct();
+    if (this.product) {
+      this.loadSpct();
+    }
   }
 
   loadSpct(): void {
-    if (this.productId !== null) {
-      console.log(`🔎 Đang tải chi tiết sản phẩm ID: ${this.productId}`);
-      this.spctService.geSpctByIdProduct(this.productId).subscribe(data => {
+    if (this.product?.idSanPham) {
+      console.log(`🔎 Đang tải chi tiết sản phẩm ID: ${this.product.idSanPham}`);
+      this.spctService.geSpctByIdProduct(this.product.idSanPham).subscribe(data => {
         this.spct = data;
-        console.log("✅ Dữ liệu sản phẩm:", this.spct);
+        console.log("✅ Dữ liệu biến thể:", this.spct);
         this.cdr.detectChanges();
       });
     }
   }
 
+  getPhongCachString(phongCach: any[]): string {
+    if (!phongCach || !Array.isArray(phongCach)) {
+      return 'Không có phong cách';
+    }
+    return phongCach.map(style => style.tenPhongCach).join(', ');
+  }
+
   openModalAddSpct(): void {
     const modalRef = this.modalService.open(AddSpctComponent, { backdrop: 'static', keyboard: false });
-    modalRef.componentInstance.productId = this.productId;
-    console.log('🎉 IdSpIdSp:', this.productId);
+    modalRef.componentInstance.productId = this.product?.idSanPham;
+    console.log('🎉 IdSpIdSp:', this.product?.idSanPham);
 
     modalRef.componentInstance.SpctAdded.subscribe((newSpct: any) => {
       console.log('🎉 Spct mới nhận được:', newSpct);
@@ -73,26 +83,21 @@ export class SpctComponent implements OnInit {
     });
   }
 
- // src/app/product-detail/spct-list/spct.component.ts
-toggleSpctStatus(id: number, currentTrangThai: number): void {
-  const action = currentTrangThai === 1 ? 'ngưng bán' : 'tiếp tục bán';
-  const confirmed = window.confirm(`Bạn có chắc muốn ${action} sản phẩm chi tiết này không?`);
-  if (confirmed) {
-    const newTrangThai = currentTrangThai === 1 ? 0 : 1;
-    this.spctService.updateSpctTrangThai(id, newTrangThai).subscribe({
-      next: (response) => {
-        console.log('✅ Cập nhật trạng thái Spct:', response);
-        this.loadSpct();
-      },
-      error: (error) => {
-        console.error('❌ Lỗi khi cập nhật trạng thái:', error);
-        alert('Cập nhật trạng thái thất bại!');
-      }
-    });
-  }
-}
-
-  closeDetail() {
-    this.closeSpct.emit();
+  toggleSpctStatus(id: number, currentTrangThai: number): void {
+    const action = currentTrangThai === 1 ? 'ngưng bán' : 'tiếp tục bán';
+    const confirmed = window.confirm(`Bạn có chắc muốn ${action} sản phẩm chi tiết này không?`);
+    if (confirmed) {
+      const newTrangThai = currentTrangThai === 1 ? 0 : 1;
+      this.spctService.updateSpctTrangThai(id, newTrangThai).subscribe({
+        next: (response) => {
+          console.log('✅ Cập nhật trạng thái Spct:', response);
+          this.loadSpct();
+        },
+        error: (error) => {
+          console.error('❌ Lỗi khi cập nhật trạng thái:', error);
+          alert('Cập nhật trạng thái thất bại!');
+        }
+      });
+    }
   }
 }

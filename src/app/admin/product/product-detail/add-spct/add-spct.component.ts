@@ -16,7 +16,7 @@ import { SpctService } from '../../../../service/spct.service';
 export class AddSpctComponent implements OnInit {
   @Input() productId: number | null = null; // Nhận productId từ SpctComponent
   @Output() SpctAdded = new EventEmitter<any>();
-
+  showProminenceModal: boolean = false;
   spctForm: FormGroup;
 
   constructor(
@@ -62,31 +62,45 @@ export class AddSpctComponent implements OnInit {
     }
   }
   closeModal() {
-    console.log('🛑 Attempting to close modal...', this.activeModal);
+    console.log('🛑 Đang cố đóng modal chính...');
 
-    // 🟢 Gọi dismiss() trước
-    if (this.activeModal) {
-        this.activeModal.dismiss('cancel');
-        console.log('✅ Dismiss method called');
-    } else {
-        console.error('❌ ActiveModal is not available');
+    if (this.showProminenceModal) {
+      console.log('🔄 Đóng modal con (prominenceModal) trước...');
+
     }
 
-    // 🟠 Backup plan: Xóa modal bằng Bootstrap
-    setTimeout(() => {
-        const modalElement = document.querySelector('.modal');
-        if (modalElement) {
-            modalElement.remove();
-        }
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-            backdrop.remove();
-        }
-        document.body.classList.remove('modal-open');
-        console.log('✅ Forced modal removal executed');
+    if (this.activeModal) {
+      this.activeModal.dismiss('cancel');
+      console.log('✅ Đã gọi dismiss trên modal chính');
+    } else {
+      console.error('❌ ActiveModal không khả dụng');
+    }
 
-        // 🔥 Kích hoạt Change Detection để cập nhật UI
-        this.cdr.detectChanges();
-    }, 100);
-}
+    this.finalizeModalClose();
+  }
+
+  private finalizeModalClose() {
+    console.log('🧹 Dọn dẹp trạng thái modal...');
+
+    document.body.classList.remove('modal-open');
+
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+      console.log('🗑️ Xóa backdrop:', backdrop);
+      backdrop.remove();
+    });
+
+    const modals = document.querySelectorAll('.modal.show');
+    modals.forEach(modal => {
+      console.log('🗑️ Xóa lớp show khỏi modal:', modal);
+      modal.classList.remove('show');
+      modal.remove();
+    });
+
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '';
+
+    this.cdr.detectChanges();
+    console.log('✅ Đã dọn dẹp trạng thái modal');
+  }
 }

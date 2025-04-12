@@ -18,7 +18,7 @@ export function app(): express.Express {
   server.set('views', browserDistFolder);
 
   // Thêm middleware timeout (60 giây)
-  server.use(timeout('60s'));
+  // server.use(timeout('60s'));
 
   // Serve static files from /browser
   server.get('**', express.static(browserDistFolder, {
@@ -43,13 +43,13 @@ export function app(): express.Express {
   });
 
   // Xử lý lỗi timeout
-  server.use((req, res, next) => {
-    if ((req as any).timedout) {
-      res.status(503).send('Server timed out after 60 seconds');
-    } else {
-      next();
-    }
-  });
+  // server.use((req, res, next) => {
+  //   if ((req as any).timedout) {
+  //     res.status(503).send('Server timed out after 60 seconds');
+  //   } else {
+  //     next();
+  //   }
+  // });
 
   return server;
 }

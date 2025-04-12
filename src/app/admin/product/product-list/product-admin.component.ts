@@ -1,4 +1,3 @@
-// src/app/product-admin/product-admin.component.ts
 import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -17,8 +16,8 @@ import { ChangeDetectorRef } from '@angular/core';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    SpctComponent,
-    FormsModule
+    FormsModule,
+    SpctComponent // Ensure this is included
   ],
   templateUrl: './product-admin.component.html',
   styleUrls: ['./product-admin.component.scss'],
@@ -36,6 +35,7 @@ export class ProductAdminComponent implements OnInit {
   totalPages: number = 0;
   searchTerm: string = '';
   selectedProductId: number | null = null;
+  selectedProduct: any = null;
 
   constructor(
     private sanPhamService: SanPhamService,
@@ -83,6 +83,7 @@ export class ProductAdminComponent implements OnInit {
       }
     });
   }
+
   formatScent(huongDau: string, huongGiua: string, huongCuoi: string): string {
     const parts = [
       huongDau || 'N/A',
@@ -98,6 +99,7 @@ export class ProductAdminComponent implements OnInit {
       .map(scent => `${scent.tenMuiHuong || 'N/A'} (${scent.prominenceLevel || 0})`)
       .join(', ');
   }
+
   getMuiHuongTitle(product: any): string {
     return `Đầu: ${product.huongDauString}\nGiữa: ${product.huongGiuaString}\nCuối: ${product.huongCuoiString}`;
   }
@@ -105,6 +107,7 @@ export class ProductAdminComponent implements OnInit {
   getMuiChonTitle(muiHuongSelections: any[]): string {
     return muiHuongSelections?.map(scent => `${scent.tenMuiHuong} (${scent.prominenceLevel})`).join(', ') || '';
   }
+
   openAddModal(): void {
     const modalRef = this.modalService.open(AddProductComponent, {
       size: 'lg',
@@ -164,24 +167,36 @@ export class ProductAdminComponent implements OnInit {
       });
   }
 
-// src/app/product-admin/product-admin.component.ts
-toggleProductStatus(id: number, currentTrangThai: number): void {
-  const action = currentTrangThai === 1 ? 'ngưng bán' : 'tiếp tục bán';
-  const confirmed = window.confirm(`Bạn có chắc muốn ${action} sản phẩm này không?`);
-  if (confirmed) {
-    const newTrangThai = currentTrangThai === 1 ? 0 : 1;
-    this.sanPhamService.updateSanPhamTrangThai(id, newTrangThai).subscribe({
-      next: (response) => {
-        console.log('✅ Cập nhật trạng thái SanPham:', response);
-        this.loadProducts();
-      },
-      error: (error) => {
-        console.error('❌ Lỗi khi cập nhật trạng thái:', error);
-        alert('Cập nhật trạng thái thất bại!');
-      }
-    });
+  toggleProductStatus(id: number, currentTrangThai: number): void {
+    const action = currentTrangThai === 1 ? 'ngưng bán' : 'tiếp tục bán';
+    const confirmed = window.confirm(`Bạn có chắc muốn ${action} sản phẩm này không?`);
+    if (confirmed) {
+      const newTrangThai = currentTrangThai === 1 ? 0 : 1;
+      this.sanPhamService.updateSanPhamTrangThai(id, newTrangThai).subscribe({
+        next: (response) => {
+          console.log('✅ Cập nhật trạng thái SanPham:', response);
+          this.loadProducts();
+        },
+        error: (error) => {
+          console.error('❌ Lỗi khi cập nhật trạng thái:', error);
+          alert('Cập nhật trạng thái thất bại!');
+        }
+      });
+    }
   }
-}
+
+  viewProductDetails(product: any): void {
+    this.selectedProductId = product.idSanPham;
+    this.selectedProduct = product;
+    console.log(`🔎 Đang xem chi tiết sản phẩm ID: ${this.selectedProductId}`);
+  }
+
+  closeProductDetail(): void {
+    this.selectedProductId = null;
+    this.selectedProduct = null;
+    console.log("🔄 Đã đóng chi tiết sản phẩm.");
+    this.restorePageState();
+  }
 
   private restorePageState(): void {
     console.log('🔄 Khôi phục trạng thái trang...');
@@ -200,6 +215,7 @@ toggleProductStatus(id: number, currentTrangThai: number): void {
     document.body.style.overflow = 'auto';
     document.body.style.paddingRight = '';
     this.selectedProductId = null;
+    this.selectedProduct = null;
     this.refreshProductList();
     this.cdr.detectChanges();
     console.log('✅ Đã khôi phục trạng thái trang');
@@ -213,17 +229,6 @@ toggleProductStatus(id: number, currentTrangThai: number): void {
     console.log('Tìm kiếm với từ khóa:', this.searchTerm);
     this.page = 0;
     this.loadProducts();
-  }
-
-  onRowClick(id: number): void {
-    console.log(`🔎 Chọn sản phẩm ID: ${id}`);
-    this.selectedProductId = id;
-  }
-
-  closeProductDetail(): void {
-    this.selectedProductId = null;
-    console.log("🔄 Đã đóng chi tiết sản phẩm.");
-    this.restorePageState();
   }
 
   goToPage(p: number): void {
@@ -248,22 +253,44 @@ toggleProductStatus(id: number, currentTrangThai: number): void {
     }
   }
 
-  getPaginationRange(): number[] {
-    let range: number[] = [];
-    const maxPagesToShow = 5;
-    let start = Math.max(0, this.page - Math.floor(maxPagesToShow / 2));
-    let end = Math.min(this.totalPages, start + maxPagesToShow);
+  getPaginationRange(): { page: number, isEllipsis: boolean }[] {
+    const range: { page: number, isEllipsis: boolean }[] = [];
+    const maxVisiblePages = 3;
 
-    if (end === this.totalPages) {
-      start = Math.max(0, end - maxPagesToShow);
-    }
+    if (this.totalPages <= 5) {
+      for (let i = 0; i < this.totalPages; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+    } else {
+      range.push({ page: 0, isEllipsis: false });
 
-    for (let i = start; i < end; i++) {
-      range.push(i);
+      let start = Math.max(1, this.page - 1);
+      let end = Math.min(this.totalPages - 2, this.page + 1);
+
+      if (end - start + 1 < maxVisiblePages) {
+        if (start === 1) {
+          end = Math.min(start + maxVisiblePages - 1, this.totalPages - 2);
+        } else if (end === this.totalPages - 2) {
+          start = Math.max(1, end - maxVisiblePages + 1);
+        }
+      }
+
+      if (start > 1) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      for (let i = start; i <= end; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+
+      if (end < this.totalPages - 2) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
     console.log('📌 Pagination range:', range);
     return range;
   }
-
 }
