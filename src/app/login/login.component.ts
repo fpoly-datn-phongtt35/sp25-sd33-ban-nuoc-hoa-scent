@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TokenService } from '../service/token.service';
 import { loginService } from '../service/login';
 import { CartService } from '../service/cart.Service';
@@ -14,7 +14,7 @@ import Swal from 'sweetalert2';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm: FormGroup;
 
   constructor(
@@ -22,12 +22,22 @@ export class LoginComponent {
     private authService: loginService,
     private tokenService: TokenService,
     private router: Router,
-    private cartService: CartService
+    private cartService: CartService,
+    private route: ActivatedRoute
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required],
     });
+  }
+
+  ngOnInit(): void {
+    const state = history.state as { username: string };
+    if (state && state.username) {
+      this.loginForm.patchValue({
+        username: state.username
+      });
+    }
   }
 
   onSubmit(): void {
@@ -44,7 +54,6 @@ export class LoginComponent {
           console.log('ID:', UserID);
           this.cartService.setUserId(UserID.toString());
 
-          // Centered success notification with correct icon and customClass
           Swal.fire({
             title: 'Đăng nhập thành công!',
             text: 'Chào mừng bạn đến với hệ thống!',
@@ -55,7 +64,7 @@ export class LoginComponent {
               popup: 'swal2-centered',
               icon: 'swal2-icon',
               title: 'swal2-title',
-              htmlContainer: 'swal2-content', // Changed 'content' to 'htmlContainer'
+              htmlContainer: 'swal2-content',
               confirmButton: 'swal2-confirm',
             },
             timer: 3000,
@@ -63,7 +72,6 @@ export class LoginComponent {
             backdrop: true,
             allowOutsideClick: true,
           }).then(() => {
-            // Navigate after the notification closes
             if (role === 'ADMIN') {
               this.router.navigate(['/admin']);
             } else if (role === 'STAFF') {
@@ -75,7 +83,6 @@ export class LoginComponent {
         },
         error: (error: any) => {
           console.error('Đăng nhập thất bại', error);
-          // Centered error notification with correct icon and customClass
           Swal.fire({
             icon: 'error',
             title: 'Đăng nhập thất bại',
@@ -86,7 +93,7 @@ export class LoginComponent {
               popup: 'swal2-centered',
               icon: 'swal2-icon',
               title: 'swal2-title',
-              htmlContainer: 'swal2-content', // Changed 'content' to 'htmlContainer'
+              htmlContainer: 'swal2-content',
               confirmButton: 'swal2-confirm',
             },
             timer: 3000,

@@ -42,25 +42,22 @@ export class RegisterComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-    // Real-time email duplicate check
     const emailSubscription = this.registerForm.get('email')?.valueChanges.pipe(
-      debounceTime(500), // Wait 500ms after typing stops to reduce API calls
-      distinctUntilChanged(), // Only proceed if the value has changed
+      debounceTime(500),
+      distinctUntilChanged(),
       switchMap(email => {
         if (!email || !this.registerForm.get('email')?.valid) {
-          return of(null); // Skip check if email is empty or invalid
+          return of(null);
         }
         return this.accountService.findByEmail(email).pipe(
-          catchError(() => of(null)) // Handle errors gracefully
+          catchError(() => of(null))
         );
       })
     ).subscribe(response => {
       const emailControl = this.registerForm.get('email');
       if (response) {
-        // Email exists
         emailControl?.setErrors({ duplicateEmail: true });
       } else {
-        // Clear duplicateEmail error if email is not taken
         if (emailControl?.errors && emailControl.errors['duplicateEmail']) {
           const { duplicateEmail, ...otherErrors } = emailControl.errors;
           emailControl.setErrors(Object.keys(otherErrors).length ? otherErrors : null);
@@ -68,13 +65,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Real-time username duplicate check
     const usernameSubscription = this.registerForm.get('tenDangNhap')?.valueChanges.pipe(
       debounceTime(500),
       distinctUntilChanged(),
       switchMap(username => {
         if (!username || !this.registerForm.get('tenDangNhap')?.valid) {
-          return of(null); // Skip check if username is empty or invalid
+          return of(null);
         }
         return this.accountService.findByUsername(username).pipe(
           catchError(() => of(null))
@@ -83,10 +79,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
     ).subscribe(response => {
       const usernameControl = this.registerForm.get('tenDangNhap');
       if (response) {
-        // Username exists
         usernameControl?.setErrors({ duplicateUsername: true });
       } else {
-        // Clear duplicateUsername error if username is not taken
         if (usernameControl?.errors && usernameControl.errors['duplicateUsername']) {
           const { duplicateUsername, ...otherErrors } = usernameControl.errors;
           usernameControl.setErrors(Object.keys(otherErrors).length ? otherErrors : null);
@@ -98,13 +92,11 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Unsubscribe to prevent memory leaks
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   onSubmit() {
     if (this.registerForm.valid) {
-      // Check if there are any duplicate errors
       const emailControl = this.registerForm.get('email');
       const usernameControl = this.registerForm.get('tenDangNhap');
       if (emailControl?.errors?.['duplicateEmail'] || usernameControl?.errors?.['duplicateUsername']) {
@@ -129,7 +121,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Proceed with registration
       this.userService.register(this.registerForm.value).subscribe({
         next: (data: any) => {
           console.log('Registration successful', data);
@@ -151,7 +142,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
             backdrop: true,
             allowOutsideClick: true,
           }).then(() => {
-            this.router.navigate(['/login']);
+            // Chỉ truyền username qua state
+            this.router.navigate(['/login'], {
+              state: {
+                username: this.registerForm.get('tenDangNhap')?.value
+              }
+            });
           });
         },
         error: (error: any) => {

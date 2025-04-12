@@ -86,7 +86,7 @@ private apiURLbb = 'http://localhost:8080/rest/san-pham/search-combined'; // API
     params = params.set('page', queryParams.page?.toString() || '0');
     params = params.set('size', queryParams.size?.toString() || '12');
 
-    console.log('Query Params:', params.toString());
+   
 
 
     return this.http.get<any>(this.apiURLbb, { params });
