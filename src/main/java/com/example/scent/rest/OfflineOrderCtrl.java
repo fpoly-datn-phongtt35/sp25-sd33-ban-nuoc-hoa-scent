@@ -61,7 +61,7 @@ public class OfflineOrderCtrl {
     // Endpoint để cập nhật trạng thái đơn hàng
 
     @GetMapping("/getAll-sptq")
-    public ResponseEntity<List<SPTQDTO>> getAllSPTQ(@RequestParam String keyword) {
+    public ResponseEntity<List<SPTQDTO>> getAllSPTQ(@RequestParam(required = false) String keyword) {
         return ResponseEntity.ok(sanPhamSv.getALlSPTQ(keyword));
     }
 

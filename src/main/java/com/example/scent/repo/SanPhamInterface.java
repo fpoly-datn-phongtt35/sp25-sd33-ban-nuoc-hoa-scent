@@ -193,7 +193,9 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     List<SanPham> searchByName(@Param("tenSanPham") String tenSanPham);
 
 
-    @Query("SELECT new com.example.scent.dto.SanPhamDungTich(p.idSanPham,spct.dungTich, spct.donGia,spct.idSpct,spct.soLuongTonKho) FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1")
+    @Query("SELECT new com.example.scent.dto.SanPhamDungTich" +
+            "(p.idSanPham,spct.dungTich, spct.donGia,spct.idSpct,spct.soLuongTonKho) " +
+            "FROM SanPham p JOIN p.spcts spct WHERE p.idSanPham = ?1 and spct.trangThai=1")
     List<SanPhamDungTich> findByIdSanPham(Integer productId);
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
@@ -284,7 +286,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "JOIN sp.nhomHuong nh " +
             "JOIN sp.danhMuc dm " +
             "JOIN sp.huongCuoi hc " +
-            "WHERE (:searchQuery IS NULL OR :searchQuery = '' OR " +
+            "WHERE sp.trangThai=1 and (:searchQuery IS NULL OR :searchQuery = '' OR " +
             "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
