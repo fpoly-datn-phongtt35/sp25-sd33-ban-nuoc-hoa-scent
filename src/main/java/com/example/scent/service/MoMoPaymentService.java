@@ -83,7 +83,7 @@ public class MoMoPaymentService {
             body.put("lang", "vi");
             body.put("requestType", dto.getRequestType());
             body.put("autoCapture", true);
-            body.put("expireTime", String.valueOf(System.currentTimeMillis() + 15 * 60 * 1000)); // 15 minutes expiry
+            body.put("expireTime", String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)); // 15 minutes expiry
             body.put("extraData", extraData);
             body.put("orderGroupId", "");
             body.put("signature", signature);

@@ -35,6 +35,7 @@ public class SpctCtrl {
         SanPham sanPham = new SanPham();
         sanPham.setIdSanPham(spctDTO.getIdSanPham());
         spct.setSanPham(sanPham);spcts.add(spct);
+        spct.setTrangThai(1);
         return spcts.add(spct);
     }
     @PutMapping("/update")
@@ -48,6 +49,7 @@ public class SpctCtrl {
         SanPham sanPham = new SanPham();
         sanPham.setIdSanPham(spctDTO.getIdSanPham());
         spct.setSanPham(sanPham);spcts.add(spct);
+        spct.setTrangThai(spctDTO.getTrangThai());
         return spcts.update(spct);
     }
     @DeleteMapping("/del/{id}")

@@ -8,7 +8,7 @@ public class SpctDTO {
     private Integer soLuongTonKho;
     private Integer dungTich;
     private Integer idSanPham; // chỉ cần ID sản phẩm
-
+    private Integer trangThai;
     // Getter và Setter cho donGia
     public Integer getIdSpct() {
         return idSpct;
@@ -50,6 +50,23 @@ public class SpctDTO {
 
     public void setIdSanPham(Integer idSanPham) {
         this.idSanPham = idSanPham;
+    }
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public SpctDTO(Integer idSpct, BigDecimal donGia, Integer soLuongTonKho, Integer dungTich, Integer idSanPham, Integer trangThai) {
+        this.idSpct = idSpct;
+        this.donGia = donGia;
+        this.soLuongTonKho = soLuongTonKho;
+        this.dungTich = dungTich;
+        this.idSanPham = idSanPham;
+        this.trangThai = trangThai;
     }
 }
 
