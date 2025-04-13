@@ -174,4 +174,7 @@ public class TaiKhoanSv implements UserDetailsService {
         TaiKhoan tk = tkOpt.get();
         return passwordMatches(oldPassword, tk.getMatKhau()); // Kiểm tra mật khẩu
     }
+    public List<TaiKhoan> findBySdtStartingWithAndVaiTro(String sdt, String vaiTro) {
+        return tki.findBySdtStartingWithAndVaiTro(sdt, vaiTro);
+    }
 }

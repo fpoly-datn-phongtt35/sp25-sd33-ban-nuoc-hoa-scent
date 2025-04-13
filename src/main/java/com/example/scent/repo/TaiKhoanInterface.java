@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -40,5 +41,7 @@ public interface TaiKhoanInterface extends JpaRepository<TaiKhoan, Integer>{
             Pageable pageable);
     Optional<TaiKhoan> findByEmail(String email);
     Optional<TaiKhoan> findBySdt(String sdt);
+    @Query("SELECT t FROM TaiKhoan t WHERE t.sdt LIKE :sdt% AND t.vaiTro = :vaiTro")
+    List<TaiKhoan> findBySdtStartingWithAndVaiTro(@Param("sdt") String sdt, @Param("vaiTro") String vaiTro);
 
 }

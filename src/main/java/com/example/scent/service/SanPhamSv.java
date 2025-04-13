@@ -609,7 +609,7 @@
             });
             return sanPham;
         }
-        ///
+
         public Page<SanPhamInfoDTO> searchSanPhamCombined(String searchQuery,
                                                           BigDecimal minPrice,
                                                           BigDecimal maxPrice,

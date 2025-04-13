@@ -32,7 +32,6 @@ public class OfflineOrderCtrl {
         response.put("orderId", savedOrder.getId());
         response.put("tongTien", savedOrder.getTongTien());
         response.put("message", "Đơn hàng tại quầy đã được tạo thành công với trạng thái tạm thời!");
-
         return ResponseEntity.ok(response);
     }
     @PutMapping("/status/{orderId}")

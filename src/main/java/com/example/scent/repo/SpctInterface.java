@@ -1,5 +1,6 @@
 package com.example.scent.repo;
 
+import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,7 @@ public interface SpctInterface extends JpaRepository<Spct, Integer>{
     @Query("SELECT spct FROM Spct spct " +
             "ORDER BY CASE WHEN spct.soLuongTonKho <= 5 THEN 0 ELSE 1 END, spct.idSpct")
     List<Spct> findAll();
+    List<Spct> findBySanPhamIdSanPham(int idSanPham);
 
 }
 

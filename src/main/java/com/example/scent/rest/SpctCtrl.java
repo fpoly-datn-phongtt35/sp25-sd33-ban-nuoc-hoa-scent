@@ -4,8 +4,12 @@ import com.example.scent.dto.SpctDTO;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 
+import com.example.scent.repo.SanPhamInterface;
 import com.example.scent.service.SpctSv;
+import com.example.scent.websocket.SpctMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,7 +20,10 @@ import java.util.List;
 public class SpctCtrl {
     final
     SpctSv spcts;
-
+    @Autowired
+    SanPhamInterface sanPhamInterface;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     public SpctCtrl(SpctSv spcts) {
         this.spcts = spcts;
     }
@@ -60,11 +67,57 @@ public class SpctCtrl {
         return spcts.findByidSanPham(id);
     }
     @PutMapping("/updateTrangThai/{id}")
+
     public ResponseEntity<Spct> updateSpctTrangThai(@PathVariable Integer id,
                                                     @RequestParam Integer trangThai) {
-        Spct updatedSpct = spcts.updateTrangThai(id, trangThai);
-        return ResponseEntity.ok(updatedSpct);
+        try {
+            // Cập nhật trạng thái Spct
+            Spct updatedSpct = spcts.updateTrangThai(id, trangThai);
+
+            // Gửi thông báo WebSocket cho Spct
+            SpctMessage spctMessage = new SpctMessage();
+            spctMessage.setIdSpct(updatedSpct.getIdSpct());
+            spctMessage.setTrangThai(updatedSpct.getTrangThai());
+            messagingTemplate.convertAndSend("/topic/spctUpdates", spctMessage);
+
+            // Kiểm tra và gửi thông báo WebSocket cho Sp nếu trạng thái thay đổi
+            Integer spId = updatedSpct.getSanPham().getIdSanPham();
+            SanPham sp = sanPhamInterface.findById(spId)
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+
+            // Giả định rằng SpMessage là một class để gửi thông báo cho Sp
+            SpMessage spMessage = new SpMessage();
+            spMessage.setId(sp.getIdSanPham());
+            spMessage.setTrangThai(sp.getTrangThai());
+            messagingTemplate.convertAndSend("/topic/productUpdates", spMessage);
+
+            return ResponseEntity.ok(updatedSpct);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(null); // Handle "Sản phẩm chi tiết không tồn tại"
+        }
     }
+
+    public class SpMessage {
+        private Integer id;
+        private Integer trangThai;
+
+        // Getters và Setters
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+
+        public Integer getTrangThai() {
+            return trangThai;
+        }
+
+        public void setTrangThai(Integer trangThai) {
+            this.trangThai = trangThai;
+        }
+        }
 }
 
 
