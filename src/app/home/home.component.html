@@ -1,135 +1,144 @@
+<!-- Header -->
 <app-header></app-header>
 
 <!-- Banner Section -->
-<div class="banner">
-  <img src="banner1.jpg" alt="Banner Sản Phẩm" class="banner-image" />
-  <div class="banner-overlay">
-    <h1 class="banner-title">Khám Phá Sản Phẩm Mới</h1>
-    <p class="banner-subtitle">Tìm kiếm và trải nghiệm những sản phẩm tuyệt vời nhất!</p>
+<div class="banner-section">
+  <div class="banner">
+    <img src="banner1.jpg" alt="Banner Sản Phẩm" class="banner-image" />
+    <div class="banner-overlay">
+      <h1 class="banner-title">Khám Phá Sản Phẩm Mới</h1>
+      <p class="banner-subtitle">Tìm kiếm và trải nghiệm những sản phẩm tuyệt vời nhất!</p>
+    </div>
   </div>
 </div>
 
 <!-- Main Content -->
-<div class="main-container">
-  <!-- Bộ lọc bên trái -->
-  <div class="category-container">
-    <h3 class="category-title">Bộ Lọc Sản Phẩm</h3>
+<div class="main-content">
+  <div class="container">
+    <div class="row">
+      <!-- Bộ lọc bên trái -->
+      <div class="col-md-3 filter-section">
+        <h3 class="filter-title">Bộ Lọc Sản Phẩm</h3>
 
-    <div class="filter-group">
-      <label for="category-filter">Danh Mục</label>
-      <select id="category-filter" class="form-select" [(ngModel)]="selectedFilters.tenDanhMuc" (ngModelChange)="applyFilter('tenDanhMuc')">
-        <option value="">Tất cả</option>
-        <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label for="brand-filter">Thương Hiệu</label>
-      <select id="brand-filter" class="form-select" [(ngModel)]="selectedFilters.tenThuongHieu" (ngModelChange)="applyFilter('tenThuongHieu')">
-        <option value="">Tất cả</option>
-        <option *ngFor="let brand of tenThuongHieus" [value]="brand">{{ brand }}</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label for="scent-filter">Nhóm Hương</label>
-      <select id="scent-filter" class="form-select" [(ngModel)]="selectedFilters.tenNhomHuong" (ngModelChange)="applyFilter('tenNhomHuong')">
-        <option value="">Tất cả</option>
-        <option *ngFor="let scent of tenNhomHuongs" [value]="scent">{{ scent }}</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label for="country-filter">Quốc Gia</label>
-      <select id="country-filter" class="form-select" [(ngModel)]="selectedFilters.quocGia" (ngModelChange)="applyFilter('quocGia')">
-        <option value="">Tất cả</option>
-        <option *ngFor="let country of quocGias" [value]="country">{{ country }}</option>
-      </select>
-    </div>
-
-    <hr class="divider">
-
-    <div class="filter-container">
-      <h4>Lọc Theo Giá</h4>
-      <mat-slider class="price-slider" [min]="minPrice" [max]="maxPrice" [step]="50000" (change)="filterByPrice()">
-        <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
-        <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
-      </mat-slider>
-      <div class="price-range">
-        Giá: <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
-      </div>
-    </div>
-  </div>
-
-  <!-- Danh sách sản phẩm bên phải -->
-  <div class="product-container">
-    <div class="search-filter-container">
-      <div class="search-box">
-        <input
-          type="text"
-          [(ngModel)]="query"
-          (ngModelChange)="onSearch()"
-          placeholder="🔍 Tìm kiếm sản phẩm..."
-          class="form-control">
-      </div>
-    </div>
-
-    <div class="product-grid">
-      <div *ngFor="let product of sanPhams" class="product-card" (click)="viewProductDetail(product.idSanPham)">
-        <div class="product-image-container">
-          <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
+        <div class="filter-group">
+          <label for="category-filter" class="filter-label">Danh Mục</label>
+          <select id="category-filter" class="form-select" [(ngModel)]="selectedFilters.tenDanhMuc" (ngModelChange)="applyFilter('tenDanhMuc')">
+            <option value="">Tất cả</option>
+            <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+          </select>
         </div>
-        <div class="product-info">
-          <h2 class="product-title">{{ product.tenSanPham }}</h2>
-          <p class="product-price">{{ product.donGia | number }} VND</p>
+
+        <div class="filter-group">
+          <label for="brand-filter" class="filter-label">Thương Hiệu</label>
+          <select id="brand-filter" class="form-select" [(ngModel)]="selectedFilters.tenThuongHieu" (ngModelChange)="applyFilter('tenThuongHieu')">
+            <option value="">Tất cả</option>
+            <option *ngFor="let brand of tenThuongHieus" [value]="brand">{{ brand }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="scent-filter" class="filter-label">Nhóm Hương</label>
+          <select id="scent-filter" class="form-select" [(ngModel)]="selectedFilters.tenNhomHuong" (ngModelChange)="applyFilter('tenNhomHuong')">
+            <option value="">Tất cả</option>
+            <option *ngFor="let scent of tenNhomHuongs" [value]="scent">{{ scent }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="country-filter" class="filter-label">Quốc Gia</label>
+          <select id="country-filter" class="form-select" [(ngModel)]="selectedFilters.quocGia" (ngModelChange)="applyFilter('quocGia')">
+            <option value="">Tất cả</option>
+            <option *ngFor="let country of quocGias" [value]="country">{{ country }}</option>
+          </select>
+        </div>
+
+        <hr class="divider">
+
+        <div class="filter-group price-filter">
+          <h4 class="filter-subtitle">Lọc Theo Giá</h4>
+          <mat-slider class="price-slider" [min]="minPrice" [max]="maxPrice" [step]="50000" (change)="filterByPrice()">
+            <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
+            <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
+          </mat-slider>
+          <div class="price-range">
+            Giá: <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
+          </div>
         </div>
       </div>
-      <!-- Placeholder for empty state -->
-      <div class="empty-state" *ngIf="sanPhams.length === 0">
-        <p>Không tìm thấy sản phẩm nào.</p>
+
+      <!-- Danh sách sản phẩm bên phải -->
+      <div class="col-md-9 product-section">
+        <div class="search-filter-container">
+          <div class="search-box">
+            <input
+              type="text"
+              [(ngModel)]="query"
+              (ngModelChange)="onSearch()"
+              placeholder="🔍 Tìm kiếm sản phẩm..."
+              class="form-control">
+          </div>
+        </div>
+
+        <div class="product-grid">
+          <div *ngFor="let product of sanPhams" class="product-card" (click)="viewProductDetail(product.idSanPham)">
+            <div class="product-image-container">
+              <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
+            </div>
+            <div class="product-info">
+              <h2 class="product-title">{{ product.tenSanPham }}</h2>
+              <p class="product-price">{{ product.donGia | number }} VND</p>
+            </div>
+          </div>
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="sanPhams.length === 0">
+            <p>Không tìm thấy sản phẩm nào.</p>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" *ngIf="sanPhams.length > 0" class="pagination-container">
+          <ul class="pagination justify-content-center">
+            <li class="page-item" [class.disabled]="page === 0">
+              <button class="page-link page-nav" (click)="goToPage(0)">
+                <i class="bi bi-chevron-double-left"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="page === 0">
+              <button class="page-link page-nav" (click)="prevPage()">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            <li class="page-item" *ngIf="page > 2">
+              <button class="page-link" (click)="goToPage(0)">1</button>
+            </li>
+            <li class="page-item disabled" *ngIf="page > 3">
+              <span class="page-link dots">...</span>
+            </li>
+            <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+              <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+            <li class="page-item disabled" *ngIf="page < totalPages - 4">
+              <span class="page-link dots">...</span>
+            </li>
+            <li class="page-item" *ngIf="page < totalPages - 3">
+              <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+            </li>
+            <li class="page-item" [class.disabled]="page >= totalPages - 1">
+              <button class="page-link page-nav" (click)="nextPage()">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="page >= totalPages - 1">
+              <button class="page-link page-nav" (click)="goToPage(totalPages - 1)">
+                <i class="bi bi-chevron-double-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
-
-    <nav aria-label="Page navigation" *ngIf="sanPhams.length > 0">
-      <ul class="pagination justify-content-center">
-        <li class="page-item" [class.disabled]="page === 0">
-          <button class="page-link page-nav" (click)="goToPage(0)">
-            <i class="bi bi-chevron-double-left"></i>
-          </button>
-        </li>
-        <li class="page-item" [class.disabled]="page === 0">
-          <button class="page-link page-nav" (click)="prevPage()">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-        </li>
-        <li class="page-item" *ngIf="page > 2">
-          <button class="page-link" (click)="goToPage(0)">1</button>
-        </li>
-        <li class="page-item disabled" *ngIf="page > 3">
-          <span class="page-link dots">...</span>
-        </li>
-        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-        </li>
-        <li class="page-item disabled" *ngIf="page < totalPages - 4">
-          <span class="page-link dots">...</span>
-        </li>
-        <li class="page-item" *ngIf="page < totalPages - 3">
-          <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-        </li>
-        <li class="page-item" [class.disabled]="page >= totalPages - 1">
-          <button class="page-link page-nav" (click)="nextPage()">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-        </li>
-        <li class="page-item" [class.disabled]="page >= totalPages - 1">
-          <button class="page-link page-nav" (click)="goToPage(totalPages - 1)">
-            <i class="bi bi-chevron-double-right"></i>
-          </button>
-        </li>
-      </ul>
-    </nav>
   </div>
 </div>
 
+<!-- Footer -->
 <app-footer></app-footer>

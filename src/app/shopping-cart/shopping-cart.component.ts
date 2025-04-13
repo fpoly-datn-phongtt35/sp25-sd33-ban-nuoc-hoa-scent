@@ -29,7 +29,6 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Lắng nghe cập nhật giỏ hàng từ CartService
     this.cartSubscription = this.cartService.getCartObservable().subscribe(cart => {
       console.log('🛒 Nhận cập nhật giỏ hàng từ observable:', Array.from(cart.entries()));
       this.cartItems = Array.from(cart.entries()).map(([key, value]) => ({
@@ -37,18 +36,23 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
         ...value
       }));
       console.log('🛒 Cập nhật giỏ hàng trên giao diện:', this.cartItems);
-      this.selectedProducts = this.selectedProducts.filter(sp =>
-        this.cartItems.some(item => item.key === sp.key)
-      );
+  
+      // Update selectedProducts with the new quantities
+      this.selectedProducts = this.selectedProducts.map(selectedItem => {
+        const updatedItem = this.cartItems.find(item => item.key === selectedItem.key);
+        if (updatedItem) {
+          return { ...selectedItem, quantity: updatedItem.quantity };
+        }
+        return selectedItem;
+      }).filter(sp => this.cartItems.some(item => item.key === sp.key));
+  
       this.calculateTotalPrice();
     });
-
-    // Kết nối WebSocket với userId (giả sử userId là 0 nếu không có user đăng nhập)
-    const userId = 0; // Thay bằng userId thực tế nếu có
+  
+    const userId = 0;
     console.log(`[ShoppingCartComponent] Connecting WebSocket for userId: ${userId}`);
     this.webSocketService.connect(userId);
-
-    // Lắng nghe cập nhật trạng thái SPCT từ WebSocket
+  
     this.webSocketSubscription = this.webSocketService.getSpctUpdates().subscribe({
       next: (update: any) => {
         console.log('[ShoppingCartComponent] SPCT update received:', update);
@@ -123,7 +127,7 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       this.removeItem(key);
       return;
     }
-
+  
     const item = this.cartItems.find(i => i.key === key);
     if (item && item.product.soLuongTonKho !== undefined && quantity > item.product.soLuongTonKho) {
       Swal.fire({
@@ -134,9 +138,24 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       });
       return;
     }
-
+  
     console.log('📝 Gọi updateCartItem: productId=', productId, 'volume=', volume, 'quantity=', quantity);
     this.cartService.updateCartItem(Number(productId), volume, quantity);
+  
+    // Update the quantity in both cartItems and selectedProducts
+    if (item) {
+      // Update the quantity in cartItems
+      item.quantity = quantity;
+  
+      // Update the quantity in selectedProducts (if the item is selected)
+      const selectedItem = this.selectedProducts.find(sp => sp.key === key);
+      if (selectedItem) {
+        selectedItem.quantity = quantity;
+      }
+  
+      // Recalculate the total price
+      this.calculateTotalPrice();
+    }
   }
 
   removeItem(key: string): void {
