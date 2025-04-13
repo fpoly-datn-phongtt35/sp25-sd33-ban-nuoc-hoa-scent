@@ -23,6 +23,16 @@ public class SanPhamInfoDTO {
     private Integer IdnhomHuong;
     private String tennhomHuong;
     private String QuocGia;
+    private Integer trangThai;
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
     public String getTennhomHuong() {
         return tennhomHuong;
     }
@@ -118,21 +128,21 @@ public class SanPhamInfoDTO {
         this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
-    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia) {
-        this.IdSanPham = idSanPham;
-        this.TenSanPham = tenSanPham;
-        this.DonGia = donGia;
+    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai) {
+        IdSanPham = idSanPham;
+        TenSanPham = tenSanPham;
+        DonGia = donGia;
         this.imageURL = imageURL;
         this.tenThuongHieu = tenThuongHieu;
         this.tenDanhMuc = tenDanhMuc;
         this.moTaHuongDau = moTaHuongDau;
         this.moTaHuongGiua = moTaHuongGiua;
         this.moTaHuongCuoi = moTaHuongCuoi;
-        this.IdnhomHuong = idnhomHuong;
+        IdnhomHuong = idnhomHuong;
         this.tennhomHuong = tennhomHuong;
-        this.QuocGia = quocGia;
+        QuocGia = quocGia;
+        this.trangThai = trangThai;
     }
-
 
     public SanPhamInfoDTO() {
     }

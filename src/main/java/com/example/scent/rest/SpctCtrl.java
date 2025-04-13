@@ -97,6 +97,7 @@ public class SpctCtrl {
         }
     }
 
+
     public class SpMessage {
         private Integer id;
         private Integer trangThai;

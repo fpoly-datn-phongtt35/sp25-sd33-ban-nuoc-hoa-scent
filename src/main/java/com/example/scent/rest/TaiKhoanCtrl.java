@@ -118,7 +118,11 @@ public class TaiKhoanCtrl {
         return ResponseEntity.ok("OTP đã gửi tới email của bạn");
     }
 
-
+    @GetMapping("/{idTaiKhoan}")
+    public ResponseEntity<TaiKhoan> getTaiKhoanById(@PathVariable Integer idTaiKhoan) {
+        TaiKhoan taiKhoan = tks.getTaiKhoanById(idTaiKhoan);
+        return ResponseEntity.ok(taiKhoan);
+    }
     @PostMapping("/forgot-password/reset-admin-staff")
     public ResponseEntity<String> resetPasswordAdminAndStaff(@RequestParam String email) {
         Optional<TaiKhoan> tkOpt = tks.findByEmail(email);

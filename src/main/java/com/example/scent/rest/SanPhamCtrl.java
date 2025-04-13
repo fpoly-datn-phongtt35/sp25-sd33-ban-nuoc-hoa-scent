@@ -385,21 +385,21 @@ public class SanPhamCtrl {
 
 // Class để định dạng thông điệp WebSocket
 class ProductUpdateMessage {
-    private Integer productId;
+    private Integer id;
     private Integer trangThai;
 
-    public ProductUpdateMessage(Integer productId, Integer trangThai) {
-        this.productId = productId;
+    public ProductUpdateMessage(Integer id, Integer trangThai) {
+        this.id = id;
         this.trangThai = trangThai;
     }
 
     // Getters và setters
-    public Integer getProductId() {
-        return productId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setProductId(Integer productId) {
-        this.productId = productId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public Integer getTrangThai() {
