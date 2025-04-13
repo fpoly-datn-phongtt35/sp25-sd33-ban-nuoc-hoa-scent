@@ -1215,4 +1215,9 @@ public class DonHangSv {
         DonHang updatedOrder = dhi.save(donhang);
         return DonHangResponseDTO.fromEntity(updatedOrder);
     }
+
+    public List<DonHang> findByIdTk(Integer idTaiKhoan) {
+        TaiKhoan taiKhoan=tki.findByIdTk(idTaiKhoan);
+        return dhi.findByTaiKhoan(taiKhoan);
+    }
 }

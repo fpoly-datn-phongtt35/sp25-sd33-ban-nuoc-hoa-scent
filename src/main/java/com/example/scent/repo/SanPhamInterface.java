@@ -326,7 +326,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "LEFT JOIN sp.huongCuoi hc " +
             "LEFT JOIN sp.nhomHuong nh " +
             "LEFT JOIN sp.hinhAnhs ha " +
-            "WHERE sp.trangThai = 1 " + // Thêm điều kiện lọc trạng thái
+            "WHERE spct.trangThai = 1 " + // Thêm điều kiện lọc trạng thái
             "AND (:keyword IS NULL OR " +
             "sp.tenSanPham LIKE %:keyword% OR " +
             "th.tenThuongHieu LIKE %:keyword% OR " +

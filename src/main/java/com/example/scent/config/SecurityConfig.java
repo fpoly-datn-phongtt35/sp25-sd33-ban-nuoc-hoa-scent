@@ -125,7 +125,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("rest/spct/getAll", "rest/spct/getByidSanPham/**",
                                 "/all/dia-chi/get-tinh-thanh",
-                                "/rest/don-hang/importData")
+                                "/rest/don-hang/importData","rest/don-hang/getByIdTaiKhoan/")
                         .permitAll()
                         .requestMatchers("/rest/dia-chi/get-tinh-thanh",
                                 "/rest/dia-chi/tinh-phi-van-chuyen",
