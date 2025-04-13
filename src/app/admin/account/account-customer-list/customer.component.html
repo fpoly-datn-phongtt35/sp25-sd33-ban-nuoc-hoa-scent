@@ -1,96 +1,158 @@
 <div class="employee-container">
-  <div class="header-section">
-    <h2>Khách Hàng</h2>
-    <div class="actions">
-      <button class="btn btn-primary">Thêm mới</button>
-      <div class="search-box">
-        <input
-          type="text"
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="onSearch()"
-          placeholder="Tìm kiếm" />
+  <!-- Main Content: Customer List -->
+  <div *ngIf="showMainContent">
+    <div class="header-section">
+      <h2>Khách Hàng</h2>
+      <div class="actions">
+        <div class="search-box">
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Tìm kiếm" />
+        </div>
+        <button class="export-btn">Export Excel</button>
       </div>
-      <button class="export-btn">Export Excel</button>
+    </div>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên người dùng</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>SDT</th>
+            <th>Địa chỉ</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let account of accounts; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ account.hoTen }}</td>
+            <td>{{ account.tenDangNhap }}</td>
+            <td>{{ account.email }}</td>
+            <td>{{ account.sdt }}</td>
+            <td>{{ account.diaChi }}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" (click)="viewOrders(account.id)">
+                Xem đơn hàng
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="goToPage(0)">«</button>
+        </li>
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="prevPage()">‹</button>
+        </li>
+        <li class="page-item" *ngIf="page > 2">
+          <button class="page-link" (click)="goToPage(0)">1</button>
+        </li>
+        <li class="page-item disabled" *ngIf="page > 3">
+          <span class="page-link">...</span>
+        </li>
+        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+        </li>
+        <li class="page-item disabled" *ngIf="page < totalPages - 4">
+          <span class="page-link">...</span>
+        </li>
+        <li class="page-item" *ngIf="page < totalPages - 3">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+        </li>
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="nextPage()">›</button>
+        </li>
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Order List -->
+  <div *ngIf="!showMainContent && selectedAccountId !== null">
+    <div class="employee-container">
+      <a href="javascript:void(0)" (click)="closeOrders()" class="text-decoration-none text-muted fw-medium">
+        <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng
+      </a>
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>Danh sách đơn hàng đã mua</h3>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <input class="form-control w-50" type="text" placeholder="🔍 Tìm kiếm..." [(ngModel)]="searchKeyword" (input)="applySearch()" />
+        </div>
+
+        <div class="btn-group mb-4" role="group">
+          <button class="btn btn-outline-secondary" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
+          <button *ngIf="selectedTab === 'online'" class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
+          <button *ngIf="selectedTab === 'online'" class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
+          <button *ngIf="selectedTab === 'online'" class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
+          <button class="btn btn-outline-secondary" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
+          <button class="btn btn-outline-danger" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Hủy</button>
+          <button class="btn btn-outline-dark" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+        </div>
+
+        <table class="table table-hover text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Mã</th>
+              <th>Người nhận</th>
+              <th>SĐT</th>
+              <th>Thanh toán</th>
+              <th>Ngày tạo</th>
+              <th>Trạng thái</th>
+              <th>Phương thức bán</th>
+              <th>Xem chi tiết</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of filteredDonhang">
+              <td>{{ formatOrderId(order) }}</td>
+              <td>{{ order.tenNguoiNhanHang }}</td>
+              <td>{{ order.sdtNguoiNhan }}</td>
+              <td>{{ getPaymentMethod(order.phuongThucThanhToan) }}</td>
+              <td>{{ order.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <ng-container [ngSwitch]="order.trangThai">
+                  <div *ngSwitchCase="1" class="badge-status status-warning">
+                    {{ order.phuongThucThanhToan?.toLowerCase().includes('ck') ? '💳 Chờ Thanh Toán' : '🕒 Chờ Xác Nhận' }}
+                  </div>
+                  <div *ngSwitchCase="2" class="badge-status status-success">
+                    ✅ Đã Xác Nhận
+                  </div>
+                  <div *ngSwitchCase="3" class="badge-status status-info">
+                    🚚 Đang Giao
+                  </div>
+                  <div *ngSwitchCase="4" class="badge-status status-secondary disabled">
+                    🎉 Hoàn Thành
+                  </div>
+                  <div *ngSwitchCase="5" class="badge-status status-danger disabled">
+                    ❌ Hủy {{ order.lyDoHuy }}
+                  </div>
+                  <div *ngSwitchCase="6" class="badge-status status-dark">
+                    💰 Đã Thanh Toán
+                  </div>
+                </ng-container>
+              </td>
+              <td>{{ order.luongBan === 0 ? 'Offline' : 'Online' }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary" (click)="onRowClick(order)">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>STT</th>
-          <th>Tên người dùng</th>
-          <th>Username</th>
-          <th>Email</th>
-          <th>SDT</th>
-         <th>Địa chỉ</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let account of accounts; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ account.hoTen }}</td>
-          <td>{{ account.tenDangNhap }}</td>
-          <td>{{ account.email }}</td>
-          <td>{{ account.sdt }}</td>
-          <td>{{ account.diaChi }}</td>
-         
-         
-        </tr>
-      </tbody>
-    </table>
-  </div>
-    <!-- Pagination -->
-<!-- ✅ Phân trang với Bootstrap -->
-<!-- ✅ Phân trang với Bootstrap -->
-<!-- ✅ Phân trang đẹp với Bootstrap -->
-<nav aria-label="Page navigation">
-<ul class="pagination justify-content-center">
-
-  <!-- Nút "Trang đầu" -->
-  <li class="page-item" [class.disabled]="page === 0">
-    <button class="page-link" (click)="goToPage(0)">«</button>
-  </li>
-
-  <!-- Nút "Trước" -->
-  <li class="page-item" [class.disabled]="page === 0">
-    <button class="page-link" (click)="prevPage()">‹</button>
-  </li>
-
-  <!-- Hiển thị trang đầu nếu page > 2 -->
-  <li class="page-item" *ngIf="page > 2">
-    <button class="page-link" (click)="goToPage(0)">1</button>
-  </li>
-
-  <!-- Dấu "..." nếu cần -->
-  <li class="page-item disabled" *ngIf="page > 3">
-    <span class="page-link">...</span>
-  </li>
-
-  <!-- Hiển thị các trang gần nhất -->
-  <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-    <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-  </li>
-
-  <!-- Dấu "..." nếu có nhiều trang -->
-  <li class="page-item disabled" *ngIf="page < totalPages - 4">
-    <span class="page-link">...</span>
-  </li>
-
-  <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
-  <li class="page-item" *ngIf="page < totalPages - 3">
-    <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-  </li>
-
-  <!-- Nút "Sau" -->
-  <li class="page-item" [class.disabled]="page >= totalPages - 1">
-    <button class="page-link" (click)="nextPage()">›</button>
-  </li>
-
-  <!-- Nút "Trang cuối" -->
-  <li class="page-item" [class.disabled]="page >= totalPages - 1">
-    <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-  </li>
-</ul>
-</nav>
 </div>

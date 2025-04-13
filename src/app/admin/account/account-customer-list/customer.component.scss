@@ -1,6 +1,10 @@
-.customer-container {
+.employee-container {
   max-width: 1200px;
   margin: auto;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .header-section {
@@ -10,16 +14,22 @@
   margin-bottom: 20px;
 }
 
+.header-section h2 {
+  margin: 0;
+}
+
 .actions {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .search-box {
   display: flex;
   align-items: center;
   border: 1px solid #ccc;
-  padding: 5px;
+  border-radius: 4px;
+  padding: 5px 10px;
 }
 
 .search-box input {
@@ -35,14 +45,22 @@
 }
 
 .export-btn {
-  background-color: green;
+  background-color: #28a745;
   color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  background-color: #218838;
 }
 
 .table-container {
   margin-top: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
 }
 
 .table {
@@ -50,34 +68,67 @@
   border-collapse: collapse;
 }
 
-.table th, .table td {
-  padding: 10px;
-  text-align: left;
+.table th,
+.table td {
+  padding: 12px 15px;
+  text-align: center;
   border-bottom: 1px solid #ddd;
 }
 
-.actions {
+.table th {
+  background-color: #f8f9fa;
+}
+
+.table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.btn-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
 }
 
-.btn-order {
-  background-color: #ff9800;
-  color: white;
+.badge-status {
   padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 12px;
+  font-size: 0.9em;
 }
 
-.btn-action {
-  background: none;
-  border: none;
-  cursor: pointer;
+.status-warning {
+  background-color: #fff3cd;
+  color: #856404;
 }
 
-.btn-action.edit {
-  color: blue;
+.status-success {
+  background-color: #d4edda;
+  color: #155724;
 }
 
-.btn-action.delete {
-  color: red;
+.status-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-secondary {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-dark {
+  background-color: #d6d8d9;
+  color: #1b1e21;
+}
+
+.pagination {
+  margin-top: 20px;
 }

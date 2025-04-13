@@ -1,112 +1,135 @@
 <div class="employee-container">
-  <div class="header-section">
-    <h2>Nhân viên</h2>
-    <div class="actions">
-      <button
-        class="btn btn-primary"
-        *ngIf="userRole !== 'STAFF'"
-        (click)="openAddModal()"
-      >
-        Thêm mới
-      </button>
-      <div class="search-box">
-        <input
-          type="text"
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="onSearch()"
-          placeholder="Tìm kiếm"
-        />
+  <!-- Main Content: Employee List -->
+  <div *ngIf="showMainContent">
+    <div class="header-section">
+      <h2>Nhân viên</h2>
+      <div class="actions">
+        <button class="btn btn-primary" *ngIf="userRole !== 'STAFF'" (click)="openAddModal()">
+          Thêm mới
+        </button>
+        <div class="search-box">
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Tìm kiếm" />
+        </div>
+        <button class="export-btn">Export Excel</button>
       </div>
-      <button class="export-btn">Export Excel</button>
+    </div>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên người dùng</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>SDT</th>
+            <th>Trạng thái</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let account of accounts; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ account.hoTen }}</td>
+            <td>{{ account.tenDangNhap }}</td>
+            <td>{{ account.email }}</td>
+            <td>{{ account.sdt }}</td>
+            <td>{{ account.trangThai || 'Đang làm' }}</td>
+            <td class="actions">
+              <button class="btn-action edit" *ngIf="userRole !== 'STAFF'" (click)="openUpdateModal(account)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn-action delete" *ngIf="userRole !== 'STAFF'" (click)="deleteAccount(account.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+              <button class="btn-action view" (click)="viewOrders(account.id)">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button class="btn-action reset-password" *ngIf="userRole !== 'STAFF'" (click)="resetPassword(account.email)" title="Cấp lại mật khẩu">
+                <i class="bi bi-key"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="goToPage(0)">«</button>
+        </li>
+        <li class="page-item" [class.disabled]="page === 0">
+          <button class="page-link" (click)="prevPage()">‹</button>
+        </li>
+        <li class="page-item" *ngIf="page > 2">
+          <button class="page-link" (click)="goToPage(0)">1</button>
+        </li>
+        <li class="page-item disabled" *ngIf="page > 3">
+          <span class="page-link">...</span>
+        </li>
+        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+          <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+        </li>
+        <li class="page-item disabled" *ngIf="page < totalPages - 4">
+          <span class="page-link">...</span>
+        </li>
+        <li class="page-item" *ngIf="page < totalPages - 3">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+        </li>
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="nextPage()">›</button>
+        </li>
+        <li class="page-item" [class.disabled]="page >= totalPages - 1">
+          <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Order List -->
+  <div *ngIf="!showMainContent && selectedAccountId !== null">
+    <div class="employee-container">
+      <a href="javascript:void(0)" (click)="closeOrders()" class="text-decoration-none text-muted fw-medium">
+        <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng
+      </a>
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>Danh sách đơn hàng đã bán</h3>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <input class="form-control w-50" type="text" placeholder="🔍 Tìm kiếm..." [(ngModel)]="searchKeyword" (input)="applySearch()" />
+        </div>
+
+        <table class="table table-hover text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Mã</th>
+              <th>Người mua</th>
+              <th>SĐT</th>
+              <th>Thanh toán</th>
+              <th>Ngày bán</th>
+              <th>Xem chi tiết</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of filteredDonhang">
+              <td>{{ formatOrderId(order) }}</td>
+              <td>{{ order.tenNguoiNhanHang }}</td>
+              <td>{{ order.sdtNguoiNhan }}</td>
+              <td>{{ getPaymentMethod(order.phuongThucThanhToan) }}</td>
+              <td>{{ order.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary" (click)="onRowClick(order)">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>STT</th>
-          <th>Tên người dùng</th>
-          <th>Username</th>
-          <th>Email</th>
-          <th>SDT</th>
-          <th>Trạng thái</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let account of accounts; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ account.hoTen }}</td>
-          <td>{{ account.tenDangNhap }}</td>
-          <td>{{ account.email }}</td>
-          <td>{{ account.sdt }}</td>
-          <td>{{ account.trangThai || 'Đang làm' }}</td>
-          <td class="actions">
-            <button
-              class="btn-action edit"
-              *ngIf="userRole !== 'STAFF'"
-              (click)="openUpdateModal(account)"
-            >
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button
-              class="btn-action delete"
-              *ngIf="userRole !== 'STAFF'"
-              (click)="deleteAccount(account.id)"
-            >
-              <i class="bi bi-trash"></i>
-            </button>
-            <button
-              class="btn-action view"
-              (click)="viewAccount(account.id)"
-            >
-              <i class="bi bi-eye"></i>
-            </button>
-            <button
-              class="btn-action reset-password"
-              *ngIf="userRole !== 'STAFF'"
-              (click)="resetPassword(account.email)"
-              title="Cấp lại mật khẩu"
-            >
-              <i class="bi bi-key"></i>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-      <li class="page-item" [class.disabled]="page === 0">
-        <button class="page-link" (click)="goToPage(0)">«</button>
-      </li>
-      <li class="page-item" [class.disabled]="page === 0">
-        <button class="page-link" (click)="prevPage()">‹</button>
-      </li>
-      <li class="page-item" *ngIf="page > 2">
-        <button class="page-link" (click)="goToPage(0)">1</button>
-      </li>
-      <li class="page-item disabled" *ngIf="page > 3">
-        <span class="page-link">...</span>
-      </li>
-      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-        <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-      </li>
-      <li class="page-item disabled" *ngIf="page < totalPages - 4">
-        <span class="page-link">...</span>
-      </li>
-      <li class="page-item" *ngIf="page < totalPages - 3">
-        <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-      </li>
-      <li class="page-item" [class.disabled]="page >= totalPages - 1">
-        <button class="page-link" (click)="nextPage()">›</button>
-      </li>
-      <li class="page-item" [class.disabled]="page >= totalPages - 1">
-        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-      </li>
-    </ul>
-  </nav>
 </div>

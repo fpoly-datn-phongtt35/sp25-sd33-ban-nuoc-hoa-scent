@@ -1,30 +1,31 @@
-import { Component,EventEmitter,Output,ChangeDetectorRef,OnInit } from '@angular/core';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-// import * as XLSX from 'xlsx'; // ✅ Thêm thư viện xuất Excel
-import { ReactiveFormsModule,FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AccountService } from '../../../service/taikhoan.service';
+import Swal from 'sweetalert2';
+
 @Component({
   selector: 'app-customer',
-    standalone: true,
-    imports: [CommonModule,
-      FormsModule, // Thêm FormsModule ở đây
-
-    ],
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './customer.component.html',
-  styleUrls: ['./customer.component.scss'],
-  providers: [NgbActiveModal]
+  styleUrls: ['./customer.component.scss']
 })
 export class CustomerComponent implements OnInit {
   accounts: any[] = [];
-  page: number = 0; // Trang hiện tại
-  size: number = 5; // Số bản ghi mỗi trang
-  totalPages: number = 10; // Tổng số trang
-  searchTerm: string = ''; // Từ khóa tìm kiếm
+  page: number = 0;
+  size: number = 5;
+  totalPages: number = 10;
+  searchTerm: string = '';
+  selectedAccountId: number | null = null;
+  orders: any[] = [];
+  filteredDonhang: any[] = [];
+  searchKeyword: string = '';
+  selectedTab: string = 'online';
+  selectedStatus: number | null = null;
+  showMainContent: boolean = true;
 
-  constructor(private accountService: AccountService,private modalService: NgbModal) {}
-
+  constructor(private accountService: AccountService) {}
 
   ngOnInit(): void {
     this.loadAccounts();
@@ -32,12 +33,10 @@ export class CustomerComponent implements OnInit {
 
   loadAccounts(): void {
     console.log('📌 Gọi API với:', this.page, this.size, this.searchTerm);
-
     this.accountService.getUserAccounts(this.searchTerm, this.page, this.size).subscribe({
       next: (response) => {
         console.log('✅ API response:', response);
         this.accounts = response.content || [];
-        // Cập nhật tổng số trang từ phản hồi API (giả sử backend trả về tổng số trang)
         this.totalPages = response.page?.totalPages || 1;
       },
       error: (error) => {
@@ -47,9 +46,8 @@ export class CustomerComponent implements OnInit {
   }
 
   onSearch(): void {
-    // Khi người dùng thay đổi giá trị trong ô input, gọi lại loadAccounts để tìm kiếm theo từ khóa mới
     console.log('Tìm kiếm với từ khóa:', this.searchTerm);
-    this.page = 0;  // Khi tìm kiếm, reset về trang đầu tiên
+    this.page = 0;
     this.loadAccounts();
   }
 
@@ -75,17 +73,164 @@ export class CustomerComponent implements OnInit {
     }
   }
 
-  // 🔢 Cập nhật cách lấy danh sách số trang hiển thị
   getPaginationRange(): number[] {
     let range: number[] = [];
     let start = Math.max(0, this.page - 2);
     let end = Math.min(this.totalPages, this.page + 3);
-
     for (let i = start; i < end; i++) {
       range.push(i);
     }
-
-    console.log('📌 Pagination range:', range); // Debug
+    console.log('📌 Pagination range:', range);
     return range;
+  }
+
+  viewOrders(id: number): void {
+    this.selectedAccountId = id;
+    this.showMainContent = false;
+    this.accountService.getOrdersByTaiKhoanId(id).subscribe({
+      next: (orders) => {
+        this.orders = orders;
+        this.applySearch();
+      },
+      error: (error) => {
+        console.error('❌ Lỗi khi lấy danh sách đơn hàng:', error);
+        this.orders = [];
+        this.filteredDonhang = [];
+      }
+    });
+  }
+
+  closeOrders(): void {
+    this.selectedAccountId = null;
+    this.orders = [];
+    this.filteredDonhang = [];
+    this.searchKeyword = '';
+    this.selectedTab = 'online';
+    this.selectedStatus = null;
+    this.showMainContent = true;
+  }
+
+  applySearch(): void {
+    let filtered = this.orders;
+    if (this.searchKeyword) {
+      filtered = filtered.filter(order =>
+        order.tenNguoiNhanHang?.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
+        order.sdtNguoiNhan?.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
+        order.id.toString().includes(this.searchKeyword)
+      );
+    }
+    filtered = filtered.filter(order => {
+      if (this.selectedTab === 'online') {
+        return order.luongBan === 1;
+      } else {
+        return order.luongBan === 0;
+      }
+    });
+    if (this.selectedStatus !== null) {
+      filtered = filtered.filter(order => order.trangThai === this.selectedStatus);
+    }
+    this.filteredDonhang = filtered;
+  }
+
+  switchTab(tab: string): void {
+    this.selectedTab = tab;
+    this.selectedStatus = null;
+    this.applySearch();
+  }
+
+  filterOrders(status: string): void {
+    switch (status) {
+      case 'default':
+        this.selectedStatus = null;
+        break;
+      case 'pending':
+        this.selectedStatus = 1;
+        break;
+      case 'processed':
+        this.selectedStatus = 2;
+        break;
+      case 'shipping':
+        this.selectedStatus = 3;
+        break;
+      case 'completed':
+        this.selectedStatus = 4;
+        break;
+      case 'cancelled':
+        this.selectedStatus = 5;
+        break;
+      case 'prepaid':
+        this.selectedStatus = 6;
+        break;
+    }
+    this.applySearch();
+  }
+
+  formatOrderId(order: any): string {
+    return 'DH' + order.id.toString().padStart(4, '0');
+  }
+
+  getPaymentMethod(method: string): string {
+    return method === 'tm' ? 'Tiền mặt' : 'Chuyển khoản';
+  }
+
+  calculateTotal(chiTietDonHangs: any[]): number {
+    if (!chiTietDonHangs || chiTietDonHangs.length === 0) return 0;
+    return chiTietDonHangs.reduce((total, item) => total + (item.soLuong * item.donGia), 0);
+  }
+
+  onRowClick(order: any): void {
+    let htmlContent = '<div style="text-align: left;">';
+    if (order.chiTietDonHangs && order.chiTietDonHangs.length > 0) {
+      htmlContent += '<h5>Danh sách sản phẩm</h5>';
+      htmlContent += `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid #ddd;">
+              <th style="padding: 8px;">STT</th>
+              <th style="padding: 8px;">Tên sản phẩm</th>
+              <th style="padding: 8px;">Số lượng</th>
+              <th style="padding: 8px;">Đơn giá</th>
+              <th style="padding: 8px;">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      order.chiTietDonHangs.forEach((item: any, index: number) => {
+        htmlContent += `
+          <tr style="border-bottom: 1px solid #ddd;">
+            <td style="padding: 8px;">${index + 1}</td>
+            <td style="padding: 8px;">${item.spct.sanPham.tenSanPham || 'Không có'}</td>
+            <td style="padding: 8px;">${item.soLuong || 0}</td>
+            <td style="padding: 8px;">${(item.spct.donGia || 0).toLocaleString('vi-VN')} VNĐ</td>
+            <td style="padding: 8px;">${((item.soLuong || 0) * (item.donGia || 0)).toLocaleString('vi-VN')} VNĐ</td>
+          </tr>
+        `;
+      });
+      htmlContent += `
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" style="padding: 8px; text-align: right;"><strong>Tổng tiền:</strong></td>
+              <td style="padding: 8px;">${this.calculateTotal(order.chiTietDonHangs).toLocaleString('vi-VN')} VNĐ</td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+    } else {
+      htmlContent += '<p>Không có sản phẩm nào trong đơn hàng này.</p>';
+    }
+    htmlContent += '</div>';
+
+    Swal.fire({
+      title: 'Chi tiết đơn hàng',
+      html: htmlContent,
+      width: 800,
+      showCloseButton: true,
+      showConfirmButton: true,
+      confirmButtonText: 'Đóng',
+      customClass: {
+        popup: 'swal2-order-detail'
+      }
+    });
   }
 }

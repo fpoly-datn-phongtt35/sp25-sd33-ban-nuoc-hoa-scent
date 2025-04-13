@@ -87,8 +87,8 @@
             <th>Dung tích</th>
             <th>Đơn giá</th>
             <th>Số lượng</th>
-            <th>Trs </th>
-            <th>Hành động</th>
+            <th>Trạng thái</th>
+            <th  *ngIf="userRole !== 'STAFF'">Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -97,7 +97,7 @@
             <td>{{ sp.donGia | currency: 'VND' }}</td>
             <td>{{ sp.soLuongTonKho }}</td>
             <td>{{ sp.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</td>
-            <td class="action-buttons">
+            <td class="action-buttons"  *ngIf="userRole !== 'STAFF'">
               <button
                 class="btn btn-edit"
                 (click)="openUpdateSpctModal(sp)"

@@ -9,6 +9,7 @@ import { catchError } from 'rxjs/operators';
 export class AccountService {
   private readonly apiUrl = 'http://localhost:8080/rest/tai-khoan';
   private readonly otpApiUrl = 'http://localhost:8080/rest/otp';
+  private readonly ApiDonHangUrl = 'http://localhost:8080/rest/don-hang';
 
   constructor(private http: HttpClient) {}
 
@@ -149,4 +150,10 @@ export class AccountService {
       catchError(this.handleError)
     );
   }
+  cons
+  // Lấy danh sách đơn hàng theo id tài khoản
+  getOrdersByTaiKhoanId(idTaiKhoan: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.ApiDonHangUrl}/getByIdTaiKhoan/${idTaiKhoan}`);
+  }
+
 }

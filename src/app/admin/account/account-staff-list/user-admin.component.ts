@@ -5,13 +5,14 @@ import { AccountService } from '../../../service/taikhoan.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
 import { AddStaffAccountComponent } from '../add-staff-account/add-staff-account.component';
-import {AccountStaffUpdateComponent} from '../account-staff-update/account-staff-update.component';
-import { TokenService } from '../../../service/token.service'; // Import TokenService
+import { AccountStaffUpdateComponent } from '../account-staff-update/account-staff-update.component';
+import { TokenService } from '../../../service/token.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-user-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AddStaffAccountComponent, AccountStaffUpdateComponent],
   templateUrl: './user-admin.component.html',
   styleUrls: ['./user-admin.component.scss']
 })
@@ -21,17 +22,24 @@ export class UserAdminComponent implements OnInit {
   size: number = 5;
   totalPages: number = 10;
   searchTerm: string = '';
-  userRole: string | null = null; // Lưu vai trò người dùng
+  userRole: string | null = null;
+  selectedAccountId: number | null = null;
+  orders: any[] = [];
+  filteredDonhang: any[] = [];
+  searchKeyword: string = '';
+  selectedTab: string = 'online';
+  selectedStatus: number | null = null;
+  showMainContent: boolean = true;
 
   constructor(
     private accountService: AccountService,
     private router: Router,
     private modalService: NgbModal,
-    private tokenService: TokenService // Inject TokenService
+    private tokenService: TokenService
   ) {}
 
   ngOnInit(): void {
-    this.userRole = this.tokenService.getRole(); // Lấy userRole từ TokenService
+    this.userRole = this.tokenService.getRole();
     console.log('Vai trò trong UserAdminComponent:', this.userRole);
     this.loadAccounts();
   }
@@ -110,11 +118,11 @@ export class UserAdminComponent implements OnInit {
       keyboard: false
     });
 
-    modalRef.componentInstance.account = account; // Truyền dữ liệu tài khoản vào modal
+    modalRef.componentInstance.account = account;
 
     modalRef.componentInstance.accountUpdated.subscribe((updatedAccount: any) => {
       console.log('🎉 Tài khoản đã cập nhật:', updatedAccount);
-      this.loadAccounts(); // Tải lại danh sách sau khi cập nhật
+      this.loadAccounts();
     });
   }
 
@@ -136,12 +144,113 @@ export class UserAdminComponent implements OnInit {
   deleteAccount(id: number): void {
     if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
       alert('Chưa triển khai chức năng xóa tài khoản. ID: ' + id);
-      // Thêm logic gọi API xóa tài khoản nếu cần
     }
   }
 
-  viewAccount(id: number): void {
-    alert('Chưa triển khai chức năng xem chi tiết tài khoản. ID: ' + id);
-    // Thêm logic xem chi tiết tài khoản nếu cần
+  viewOrders(id: number): void {
+    this.selectedAccountId = id;
+    this.showMainContent = false;
+    this.accountService.getOrdersByTaiKhoanId(id).subscribe({
+      next: (orders) => {
+        this.orders = orders;
+        this.applySearch();
+      },
+      error: (error) => {
+        console.error('❌ Lỗi khi lấy danh sách đơn hàng:', error);
+        this.orders = [];
+        this.filteredDonhang = [];
+      }
+    });
+  }
+
+  closeOrders(): void {
+    this.selectedAccountId = null;
+    this.orders = [];
+    this.filteredDonhang = [];
+    this.searchKeyword = '';
+    this.selectedTab = 'online';
+    this.selectedStatus = null;
+    this.showMainContent = true;
+  }
+
+  applySearch(): void {
+    let filtered = this.orders;
+    if (this.searchKeyword) {
+      filtered = filtered.filter(order =>
+        order.tenNguoiNhanHang?.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
+        order.sdtNguoiNhan?.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
+        order.id.toString().includes(this.searchKeyword)
+      );
+    }
+    this.filteredDonhang = filtered;
+  }
+
+  formatOrderId(order: any): string {
+    return 'DH' + order.id.toString().padStart(4, '0');
+  }
+
+  getPaymentMethod(method: string): string {
+    return method === 'tm' ? 'Tiền mặt' : 'Chuyển khoản';
+  }
+
+  calculateTotal(chiTietDonHangs: any[]): number {
+    if (!chiTietDonHangs || chiTietDonHangs.length === 0) return 0;
+    return chiTietDonHangs.reduce((total, item) => total + (item.soLuong * item.donGia), 0);
+  }
+
+  onRowClick(order: any): void {
+    let htmlContent = '<div style="text-align: left;">';
+    if (order.chiTietDonHangs && order.chiTietDonHangs.length > 0) {
+      htmlContent += '<h5>Danh sách sản phẩm</h5>';
+      htmlContent += `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid #ddd;">
+              <th style="padding: 8px;">STT</th>
+              <th style="padding: 8px;">Tên sản phẩm</th>
+              <th style="padding: 8px;">Số lượng</th>
+              <th style="padding: 8px;">Đơn giá</th>
+              <th style="padding: 8px;">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      order.chiTietDonHangs.forEach((item: any, index: number) => {
+        htmlContent += `
+          <tr style="border-bottom: 1px solid #ddd;">
+            <td style="padding: 8px;">${index + 1}</td>
+            <td style="padding: 8px;">${item.spct.sanPham.tenSanPham || 'Không có'}</td>
+            <td style="padding: 8px;">${item.soLuong || 0}</td>
+            <td style="padding: 8px;">${(item.spct.donGia || 0).toLocaleString('vi-VN')} VNĐ</td>
+            <td style="padding: 8px;">${((item.soLuong || 0) * (item.donGia || 0)).toLocaleString('vi-VN')} VNĐ</td>
+          </tr>
+        `;
+      });
+      htmlContent += `
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" style="padding: 8px; text-align: right;"><strong>Tổng tiền:</strong></td>
+              <td style="padding: 8px;">${this.calculateTotal(order.chiTietDonHangs).toLocaleString('vi-VN')} VNĐ</td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+    } else {
+      htmlContent += '<p>Không có sản phẩm nào trong đơn hàng này.</p>';
+    }
+    htmlContent += '</div>';
+
+    Swal.fire({
+      title: 'Chi tiết đơn hàng',
+      html: htmlContent,
+      width: 800,
+      showCloseButton: true,
+      showConfirmButton: true,
+      confirmButtonText: 'Đóng',
+      customClass: {
+        popup: 'swal2-order-detail'
+      }
+    });
   }
 }
