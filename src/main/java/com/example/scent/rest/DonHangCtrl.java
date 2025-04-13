@@ -454,4 +454,16 @@ public class DonHangCtrl {
     public List<DonHang> getOderByIdTaiKhoan(@PathVariable Integer idTaiKhoan) {
         return dhs.findByIdTk(idTaiKhoan);
     }
+
+    @PutMapping("/update-address/{orderId}")
+    public ResponseEntity<DonHangResponseDTO> updateOrderAddress(
+            @PathVariable Integer orderId,
+            @RequestBody UpdateOrderAddressDTO updateRequest) {
+        try {
+            DonHangResponseDTO responseDTO = dhs.updateOrderAddress(orderId, updateRequest);
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 }

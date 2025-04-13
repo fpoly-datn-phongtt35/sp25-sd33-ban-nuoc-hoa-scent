@@ -119,6 +119,49 @@ public class SpctCtrl {
             this.trangThai = trangThai;
         }
         }
+    @GetMapping("/status/{idSpct}")
+    public ResponseEntity<?> getProductStatus(@PathVariable Integer idSpct) {
+        try {
+            Spct product = spcts.getProductStatus(idSpct);
+            return ResponseEntity.ok(new ProductStatusResponse(product.getTrangThai()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+}
+
+// DTO để trả về trạng thái
+class ProductStatusResponse {
+    private Integer trangThai;
+
+    public ProductStatusResponse(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+}
+
+// DTO để trả về lỗi
+class ErrorResponse {
+    private String message;
+
+    public ErrorResponse(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }
 
 

@@ -84,4 +84,8 @@ public class SpctSv {
 
         return updatedSpct;
     }
+    public Spct getProductStatus(Integer idSpct) {
+        return spcti.findById(idSpct)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + idSpct));
+    }
 }
