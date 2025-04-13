@@ -20,6 +20,6 @@ public interface SpctInterface extends JpaRepository<Spct, Integer>{
             "ORDER BY CASE WHEN spct.soLuongTonKho <= 5 THEN 0 ELSE 1 END, spct.idSpct")
     List<Spct> findAll();
     List<Spct> findBySanPhamIdSanPham(int idSanPham);
-
+    List<Spct> findByIdSpctIn(List<Integer> ids);
 }
 

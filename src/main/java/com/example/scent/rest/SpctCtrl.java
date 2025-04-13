@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin("*")
 @RestController
@@ -126,6 +127,15 @@ public class SpctCtrl {
             return ResponseEntity.ok(new ProductStatusResponse(product.getTrangThai()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+    @PostMapping("/status/multiple")
+    public ResponseEntity<Map<Integer, Integer>> getMultipleProductStatuses(@RequestBody List<Integer> idSpcts) {
+        try {
+            Map<Integer, Integer> statusMap = spcts.getMultipleProductStatuses(idSpcts);
+            return ResponseEntity.ok(statusMap);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
         }
     }
 }

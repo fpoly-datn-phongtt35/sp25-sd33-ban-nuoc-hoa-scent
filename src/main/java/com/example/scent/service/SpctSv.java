@@ -8,7 +8,9 @@ import com.example.scent.repo.SpctInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SpctSv {
@@ -83,6 +85,14 @@ public class SpctSv {
         }
 
         return updatedSpct;
+    }
+    public Map<Integer, Integer> getMultipleProductStatuses(List<Integer> idSpcts) {
+        List<Spct> products = spcti.findByIdSpctIn(idSpcts);
+        Map<Integer, Integer> statusMap = new HashMap<>();
+        for (Spct product : products) {
+            statusMap.put(product.getSanPham().getIdSanPham(), product.getTrangThai());
+        }
+        return statusMap;
     }
     public Spct getProductStatus(Integer idSpct) {
         return spcti.findById(idSpct)

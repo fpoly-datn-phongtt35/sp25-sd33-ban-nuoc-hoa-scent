@@ -198,7 +198,7 @@ public class SecurityConfig {
                                 ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
                                 "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
-                        .requestMatchers("/api/cart/remove-multiple/**","/rest/tai-khoan/**","/rest/spct/status/**","/rest/tai-khoan/search-by-sdt/**","/rest/san-pham/recommended","/rest/don-hang/latest/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
+                        .requestMatchers("/api/cart/remove-multiple/**","/rest/tai-khoan/**","/rest/spct/status/multiple","/rest/spct/status/**","/rest/tai-khoan/search-by-sdt/**","/rest/san-pham/recommended","/rest/don-hang/latest/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()
 //                        .requestMatchers("rest/thuong-hieu/getAll").permitAll()
 //                        .requestMatchers("rest/huong-dau/getAll").permitAll()
