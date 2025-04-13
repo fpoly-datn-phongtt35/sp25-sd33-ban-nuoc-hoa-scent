@@ -48,15 +48,26 @@
               debounce="300"
             />
           </div>
-          <div class="col-6">
+          <div class="col-6 position-relative">
             <input
               [(ngModel)]="currentOrder.donHang.sdtNguoiNhan"
-              (ngModelChange)="updateCustomerInfo('sdtNguoiNhan', $event)"
+              (ngModelChange)="onSdtInput($event)"
+              (blur)="hideSuggestions()"
               placeholder="Số điện thoại"
               class="form-control"
               autocomplete="off"
               debounce="300"
             />
+            <!-- Dropdown gợi ý số điện thoại -->
+            <div *ngIf="showSuggestions && suggestions.length > 0" class="suggestions-dropdown">
+              <div
+                *ngFor="let suggestion of suggestions"
+                class="suggestion-item"
+                (mousedown)="selectSuggestion(suggestion)"
+              >
+                {{ suggestion.sdt }} ({{ suggestion.hoTen }})
+              </div>
+            </div>
           </div>
         </div>
       </div>

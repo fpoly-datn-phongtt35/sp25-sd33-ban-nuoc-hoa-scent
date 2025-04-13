@@ -14,8 +14,10 @@ import { Router } from '@angular/router';
 import { HomeAdminComponent } from '../../home-admin/home-admin.component';
 import { VietQRService } from '../../../service/VietQR.Service';
 import { ProductCacheService } from '../../../service/productCacheService';
-import { Subscription } from 'rxjs';
+import { Subscription, interval, debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { OrderStateService } from '../../../service/qlOrrderOf/OrderStateService';
+import { WebSocketService } from '../../../service/WebSocketService';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-banhangoffline',
@@ -56,7 +58,15 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   orderStatusUpdated = new EventEmitter<void>();
   @Input() isComponentSwitched: boolean = false;
 
+  // Biến để quản lý gợi ý số điện thoại
+  showSuggestions: boolean = false;
+  suggestions: any[] = [];
+  private sdtInputSubject = new Subject<string>(); // Để debounce input
+
   private stateSubscription: Subscription;
+  private spctUpdateSubscription: Subscription;
+  private productUpdateSubscription: Subscription;
+  private connectionCheckSubscription: Subscription;
 
   get currentOrder() {
     return this.orders[this.currentOrderIndex];
@@ -72,9 +82,10 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     private vietQRService: VietQRService,
     private productCacheService: ProductCacheService,
     private orderStateService: OrderStateService,
+    private webSocketService: WebSocketService,
+    private http: HttpClient, // Inject HttpClient để gọi API
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Đăng ký lắng nghe trạng thái từ OrderStateService
     this.stateSubscription = this.orderStateService.getState().subscribe(state => {
       this.orders = state.orders;
       this.currentOrderIndex = state.currentOrderIndex;
@@ -97,6 +108,18 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.finalAmount = state.finalAmount;
       this.cdr.detectChanges();
     });
+
+    // Debounce input số điện thoại để tránh gọi API quá nhiều
+    this.sdtInputSubject
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(sdt => {
+        if (sdt && sdt.length >= 3) { // Chỉ tìm kiếm khi nhập ít nhất 3 ký tự
+          this.searchTaiKhoanBySdt(sdt);
+        } else {
+          this.suggestions = []
+          this.showSuggestions = false;
+        }
+      });
   }
 
   ngOnInit(): void {
@@ -117,7 +140,38 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       const userInfo = this.tokenService.getUserInfo();
       console.log('Thông tin người dùng:', userInfo);
 
-      // Tải danh sách sản phẩm
+      const userId = userInfo.UserID;
+      this.webSocketService.connect(userId);
+
+      this.spctUpdateSubscription = this.webSocketService.getSpctUpdates().subscribe(
+        (update: any) => {
+          console.log('Received Spct update via WebSocket:', update);
+          this.handleSpctUpdate(update);
+        },
+        (error) => {
+          console.error('Error in Spct update subscription:', error);
+          this.loadAllProducts();
+        }
+      );
+
+      this.productUpdateSubscription = this.webSocketService.getProductUpdates().subscribe(
+        (update: any) => {
+          console.log('Received Product update via WebSocket:', update);
+          this.handleProductUpdate(update);
+        },
+        (error) => {
+          console.error('Error in Product update subscription:', error);
+          this.loadAllProducts();
+        }
+      );
+
+      this.connectionCheckSubscription = interval(30000).subscribe(() => {
+        if (!this.webSocketService.isWebSocketConnected()) {
+          console.log('WebSocket disconnected, refreshing product list...');
+          this.loadAllProducts();
+        }
+      });
+
       this.loadAllProducts();
 
       if (!this.currentOrder.chiTietDonHangs) {
@@ -140,23 +194,166 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Hủy đăng ký subscription để tránh rò rỉ bộ nhớ
     if (this.stateSubscription) {
       this.stateSubscription.unsubscribe();
     }
+    if (this.spctUpdateSubscription) {
+      this.spctUpdateSubscription.unsubscribe();
+    }
+    if (this.productUpdateSubscription) {
+      this.productUpdateSubscription.unsubscribe();
+    }
+    if (this.connectionCheckSubscription) {
+      this.connectionCheckSubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
   }
 
-  // Thêm phương thức trackByProduct để tối ưu hóa ngFor
+  // Hàm gọi API để tìm kiếm tài khoản theo số điện thoại
+  searchTaiKhoanBySdt(sdt: string): void {
+    this.http.get<any[]>(`http://localhost:8080/rest/tai-khoan/search-by-sdt?sdt=${sdt}`).subscribe(
+      (response) => {
+        this.suggestions = response || [];
+        this.showSuggestions = this.suggestions.length > 0;
+        this.cdr.detectChanges();
+      },
+      (error) => {
+        console.error('Lỗi khi tìm kiếm tài khoản:', error);
+        this.suggestions = [];
+        this.showSuggestions = false;
+        this.cdr.detectChanges();
+      }
+    );
+  }
+
+  // Hàm xử lý khi người dùng nhập số điện thoại
+  onSdtInput(sdt: string): void {
+    this.updateCustomerInfo('sdtNguoiNhan', sdt);
+    this.sdtInputSubject.next(sdt);
+  }
+
+  // Hàm chọn một gợi ý từ danh sách
+  selectSuggestion(suggestion: any): void {
+    this.currentOrder.donHang.sdtNguoiNhan = suggestion.sdt;
+    this.currentOrder.donHang.tenNguoiNhanHang = suggestion.hoTen;
+    this.orderStateService.updateState({ orders: this.orders });
+    this.suggestions = [];
+    this.showSuggestions = false;
+    this.cdr.detectChanges();
+  }
+
+  // Hàm ẩn danh sách gợi ý khi mất focus
+  hideSuggestions(): void {
+    setTimeout(() => {
+      this.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  // Các phương thức khác (giữ nguyên)
+  refreshProducts(): void {
+    console.log('Manually refreshing product list...');
+    this.loadAllProducts();
+  }
+
+  private handleSpctUpdate(update: any): void {
+    const spctId = update.idSpct;
+    const newTrangThai = update.trangThai;
+
+    if (!spctId || newTrangThai === undefined) {
+      console.error('Invalid Spct Update: Missing idSpct or trangThai', update);
+      return;
+    }
+
+    console.log(`Updating Spct ID: ${spctId} to trangThai: ${newTrangThai}`);
+
+    this.allProducts = this.allProducts.map(product => {
+      if (product.idSpct === spctId) {
+        console.log(`Found matching Spct ID: ${spctId}, updating trangThai to ${newTrangThai}`);
+        return { ...product, trangThai: newTrangThai };
+      }
+      return product;
+    });
+
+    this.productCacheService.setAllProducts([...this.allProducts]);
+
+    this.currentOrder.chiTietDonHangs = this.currentOrder.chiTietDonHangs.filter((item: any) => {
+      const product = this.allProducts.find(p => p.idSpct === item.idSpct);
+      return product && product.trangThai === 1;
+    });
+
+    this.orderStateService.updateState({ orders: this.orders });
+
+    this.calculateTotal();
+    this.reapplyDiscountIfExists();
+
+    this.filterProducts();
+
+    this.cdr.detectChanges();
+
+    const statusText = newTrangThai === 1 ? 'Đang bán' : 'Ngừng bán';
+    Swal.fire({
+      icon: 'info',
+      title: 'Cập nhật trạng thái sản phẩm chi tiết',
+      text: `Sản phẩm chi tiết (ID: ${spctId}) đã được cập nhật trạng thái: ${statusText}.`,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  }
+
+  private handleProductUpdate(update: any): void {
+    console.log('Processing Product Update:', update);
+    const productId = update.id;
+    const newTrangThai = update.trangThai;
+
+    if (!productId || newTrangThai === undefined) {
+      console.error('Invalid Product Update: Missing id or trangThai', update);
+      return;
+    }
+
+    console.log(`Updating products with idSanPham: ${productId} to trangThai: ${newTrangThai}`);
+    console.log('Products before update:', this.products);
+
+    this.allProducts = this.allProducts.map(product => {
+      if (product.idSanPham === productId) {
+        console.log(`Updating Spct ID: ${product.idSpct} for product ID: ${product.idSanPham}`);
+        return { ...product, trangThai: newTrangThai };
+      }
+      return product;
+    });
+
+    this.productCacheService.setAllProducts([...this.allProducts]);
+
+    this.currentOrder.chiTietDonHangs = this.currentOrder.chiTietDonHangs.filter((item: any) => {
+      const product = this.allProducts.find(p => p.idSpct === item.idSpct);
+      return product && product.trangThai === 1;
+    });
+
+    this.orderStateService.updateState({ orders: this.orders });
+    this.calculateTotal();
+    this.reapplyDiscountIfExists();
+
+    this.filterProducts();
+    this.cdr.detectChanges();
+
+    const statusText = newTrangThai === 1 ? 'Đang bán' : 'Ngừng bán';
+    Swal.fire({
+      icon: 'info',
+      title: 'Cập nhật trạng thái sản phẩm',
+      text: `Sản phẩm (ID: ${productId}) và các sản phẩm chi tiết liên quan đã được cập nhật trạng thái: ${statusText}.`,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  }
+
   trackByProduct(index: number, product: any): number {
-    return product.idSpct; // Trả về giá trị duy nhất của sản phẩm
+    return product.idSpct;
   }
 
-  // Thêm phương thức trackByCartItem để tối ưu hóa ngFor
   trackByCartItem(index: number, item: any): string {
-    return `${item.idSanPham}-${item.dungTich}`; // Trả về giá trị duy nhất của item trong giỏ hàng
+    return `${item.idSanPham}-${item.dungTich}`;
   }
 
-  // Thêm phương thức onDiscountCodeChange để xử lý thay đổi mã giảm giá
   onDiscountCodeChange(value: string): void {
     this.orderStateService.updateState({ discountCodeInput: value });
   }
@@ -273,16 +470,29 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
             if (result.isConfirmed) {
               this.finalizeOrder(orderData);
             } else {
-              this.cancelOrder();
+              this.orderStateService.updateState({ 
+                vietQRString: null,
+                isLoading: false
+              });
+              Swal.fire({
+                icon: 'info',
+                title: 'Đã hủy',
+                text: 'Thao tác thanh toán đã bị hủy. Đơn hàng vẫn được giữ nguyên.',
+                timer: 1500,
+                showConfirmButton: false,
+              });
             }
           } catch (error) {
+            this.orderStateService.updateState({ 
+              vietQRString: null,
+              isLoading: false
+            });
             Swal.fire({
               title: 'Lỗi',
               text: `Không thể tạo mã QR. Vui lòng thử lại sau! ${error.message || ''}`,
               icon: 'error',
               confirmButtonText: 'OK',
             });
-            this.cancelOrder();
           }
         } else {
           this.finalizeOrder(orderData);
@@ -338,8 +548,13 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   }
 
   loadAllProducts(): void {
+    if (!this.webSocketService.isWebSocketConnected()) {
+      this.productCacheService.clearCache();
+    }
+
     const cachedAllProducts = this.productCacheService.getAllProducts();
-    if (cachedAllProducts.length > 0) {
+    if (cachedAllProducts.length > 0 && this.webSocketService.isWebSocketConnected()) {
+      console.log('Loading products from cache:', cachedAllProducts);
       this.allProducts = cachedAllProducts;
       this.products = this.productCacheService.getProducts();
       this.updateFilterLists();
@@ -351,14 +566,21 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
     this.orderoffservice.searchSanPham('').subscribe(
       (data) => {
+        console.log('Products loaded from API:', data);
         this.allProducts = data || [];
-        this.products = [...this.allProducts];
-        this.productCacheService.setAllProducts(this.allProducts);
-        this.productCacheService.setProducts(this.products);
-
-        this.updateFilterLists();
-        this.orderStateService.updateState({ isLoading: false });
-        this.filterProducts();
+        if (this.allProducts.length === 0) {
+          console.warn('No products returned from API.');
+          this.orderStateService.updateState({
+            errorMessage: 'Không có sản phẩm nào khả dụng. Vui lòng kiểm tra lại dữ liệu!',
+            isLoading: false,
+          });
+        } else {
+          this.productCacheService.setAllProducts([...this.allProducts]);
+          this.products = [...this.allProducts];
+          this.updateFilterLists();
+          this.filterProducts();
+          this.orderStateService.updateState({ isLoading: false });
+        }
       },
       (error) => {
         console.error('Lỗi khi tải sản phẩm:', error);
@@ -405,11 +627,6 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     console.log('Danh sách Thương Hiệu:', this.thuongHieuList);
   }
 
-  onSearchInput(): void {
-    this.orderStateService.updateState({ searchKeyword: this.searchKeyword });
-    this.filterProducts();
-  }
-
   filterProducts(): void {
     let filteredProducts = [...this.allProducts];
 
@@ -452,12 +669,23 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     }
 
     this.products = [...filteredProducts];
-    this.productCacheService.setProducts(this.products);
+    this.productCacheService.setProducts([...this.products]);
+
     console.log('Sản phẩm đã lọc:', this.products);
     if (this.products.length === 0) {
       console.log('Không có sản phẩm nào khớp với bộ lọc hoặc từ khóa tìm kiếm.');
+      this.orderStateService.updateState({
+        errorMessage: 'Không có sản phẩm nào khớp với bộ lọc hoặc từ khóa tìm kiếm.',
+      });
+    } else {
+      this.orderStateService.updateState({ errorMessage: '' });
     }
     this.cdr.detectChanges();
+  }
+
+  onSearchInput(): void {
+    this.orderStateService.updateState({ searchKeyword: this.searchKeyword });
+    this.filterProducts();
   }
 
   onFilterTenNhomHuongChange(event: string): void {
@@ -590,6 +818,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const product = this.allProducts.find(p => p.idSpct === this.selectedProduct.idSpct);
+
     const existingItem = this.currentOrder.chiTietDonHangs.find(
       (item: any) =>
         item.tenSanPham === this.selectedProduct.tenSanPham &&
@@ -619,9 +849,20 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   }
 
   increaseQuantity(index: number): void {
-    this.currentOrder.chiTietDonHangs[index].soLuong++;
-    this.currentOrder.chiTietDonHangs[index].thanhTien =
-      this.currentOrder.chiTietDonHangs[index].donGia * this.currentOrder.chiTietDonHangs[index].soLuong;
+    const item = this.currentOrder.chiTietDonHangs[index];
+    const product = this.allProducts.find(p => p.idSpct === item.idSpct);
+    if (product.trangThai !== 1) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: `Sản phẩm "${item.tenSanPham}" hiện không khả dụng để bán!`,
+      });
+      this.removeProduct(index);
+      return;
+    }
+
+    item.soLuong++;
+    item.thanhTien = item.donGia * item.soLuong;
     this.orderStateService.updateState({ orders: this.orders });
     this.calculateTotal();
     this.reapplyDiscountIfExists();
