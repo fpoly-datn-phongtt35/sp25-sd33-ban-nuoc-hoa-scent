@@ -41,7 +41,12 @@ public interface TaiKhoanInterface extends JpaRepository<TaiKhoan, Integer>{
             Pageable pageable);
     Optional<TaiKhoan> findByEmail(String email);
     Optional<TaiKhoan> findBySdt(String sdt);
+
     @Query("SELECT t FROM TaiKhoan t WHERE t.sdt LIKE :sdt% AND t.vaiTro = :vaiTro")
     List<TaiKhoan> findBySdtStartingWithAndVaiTro(@Param("sdt") String sdt, @Param("vaiTro") String vaiTro);
+
+
+    @Query("SELECT tk FROM TaiKhoan tk WHERE tk.id = :id")
+    TaiKhoan findByIdTk(@Param("id") Integer id);
 
 }

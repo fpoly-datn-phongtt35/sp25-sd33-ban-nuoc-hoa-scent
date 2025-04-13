@@ -1,14 +1,9 @@
 package com.example.scent.repo;
 
-import com.example.scent.dto.DonHangDTO;
-
 import com.example.scent.entity.DonHang;
-import com.example.scent.entity.KhachHang;
 import com.example.scent.dto.SanPhamThongKeDto;
 import com.example.scent.dto.donhangDetailDTO;
-import com.example.scent.entity.DonHang;
 import com.example.scent.entity.PhieuGiamGia;
-import com.example.scent.entity.SanPham;
 import com.example.scent.entity.TaiKhoan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -288,5 +283,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     Optional<DonHang> findTopByTaiKhoanIdOrderByNgayTaoDesc(Integer id);
 
 
+    List<DonHang> findByTaiKhoan(TaiKhoan taiKhoan);
 }
 

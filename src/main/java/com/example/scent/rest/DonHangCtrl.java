@@ -450,4 +450,8 @@ public class DonHangCtrl {
             log.error("Error sending WebSocket notification: {}", e.getMessage(), e);
         }
     }
+    @GetMapping("getByIdTaiKhoan/{idTaiKhoan}")
+    public List<DonHang> getOderByIdTaiKhoan(@PathVariable Integer idTaiKhoan) {
+        return dhs.findByIdTk(idTaiKhoan);
+    }
 }
