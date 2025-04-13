@@ -135,7 +135,7 @@ public class TaiKhoanSv implements UserDetailsService {
     public Optional<TaiKhoan> findByEmail(String email) {
         return tki.findAll().stream().filter(
                 t -> t.getEmail().equalsIgnoreCase(email)
-                        && t.getVaiTro().equalsIgnoreCase("USER")
+
         ).findFirst();
     }
     public TaiKhoan getTaiKhoanById(Integer id) {
