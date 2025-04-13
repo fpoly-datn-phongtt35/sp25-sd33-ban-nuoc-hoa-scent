@@ -20,10 +20,12 @@ export interface CartItem {
   };
   quantity: number;
   volume: string;
+  isHidden?: boolean;
 }
 
 export interface CartItemWithKey extends CartItem {
   key: string;
+  
 }
 
 export interface BackendCartItem {
@@ -413,7 +415,7 @@ export class CartService {
             icon: 'error',
             title: 'Lỗi',
             text: err.error?.message || 'Lỗi khi xóa khỏi giỏ hàng',
-            position: 'bottom-end',
+            position: 'bottom-end'
           });
           return throwError(err);
         })
