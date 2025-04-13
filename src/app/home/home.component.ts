@@ -12,6 +12,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { WebSocketService } from '../service/WebSocketService';
 
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -55,7 +56,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private nhomHuongService: NhomHuongService,
     private thuongHieuService: ThuongHieuService,
     private webSocketService: WebSocketService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     console.log('[HomeComponent] Initializing component');
@@ -70,71 +71,68 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Lắng nghe cập nhật sản phẩm từ WebSocket
     this.webSocketSubscription = this.webSocketService.getProductUpdates().subscribe({
       next: (update: any) => {
+        console.log('[HomeComponent] Product update received:', update);
 
-        if (update.trangThai == 0) {
+        // Đảm bảo sử dụng đúng tên thuộc tính (id từ SpMessage)
+        const productId = update.id; // Thuộc tính id từ SpMessage
+        const trangThai = update.trangThai;
 
+        if (trangThai === 0) {
+          // Sản phẩm ngưng bán, xóa khỏi danh sách hiển thị
           const oldLength = this.sanPhams.length;
-          // So sánh bằng cách chuyển cả hai về chuỗi để tránh lỗi kiểu dữ liệu
-          const productExists = this.sanPhams.some(product => String(product.idSanPham) === String(update.productId));
+          this.sanPhams = this.sanPhams.filter(product => {
+            const keep = String(product.idSanPham) !== String(productId);
+            if (!keep) {
+             
+            }
+            return keep;
+          });
 
-
-          if (productExists) {
-            this.sanPhams = this.sanPhams.filter(product => {
-              const keep = String(product.idSanPham) !== String(update.productId);
-              if (!keep) {
-
-              }
-              return keep;
-            });
-
+          // Cập nhật phân trang nếu cần
+          if (this.sanPhams.length < oldLength && this.sanPhams.length === 0 && this.page > 0) {
+            this.page--;
+            this.loadProducts();
           } else {
-
+            this.updateVisiblePages();
           }
-
-        } else if (update.trangThai == 1) {
-
-          const productExists = this.sanPhams.some(product => String(product.idSanPham) === String(update.productId));
+        } else if (trangThai === 1) {
+          // Sản phẩm được kích hoạt lại
+          const productExists = this.sanPhams.some(product => String(product.idSanPham) === String(productId));
           if (!productExists) {
-
+            
             this.loadProducts(); // Tải lại danh sách để hiển thị sản phẩm
           } else {
-
             this.sanPhams = this.sanPhams.map(product => {
-              if (String(product.idSanPham) === String(update.productId)) {
+              if (String(product.idSanPham) === String(productId)) {
+                console.log(`[HomeComponent] Updated product with ID ${productId} to trangThai = 1`);
                 return { ...product, trangThai: 1 };
               }
               return product;
             });
-
           }
-        } else {
-
         }
       },
       error: (err) => {
-
-      }
+        console.error('[HomeComponent] WebSocket error:', err);
+      },
     });
   }
 
   ngOnDestroy(): void {
-   
     if (this.webSocketSubscription) {
-     
       this.webSocketSubscription.unsubscribe();
     }
-   
     this.webSocketService.disconnect();
+    console.log('[HomeComponent] Disconnected WebSocket and unsubscribed');
   }
 
   fetchFilters(): void {
-   
     this.thuongHieuService.getThuonghieu().subscribe({
       next: (data: any) => {
         if (Array.isArray(data)) {
           this.tenThuongHieus = Array.from(new Set(data.map((item: any) => item.tenThuongHieu)));
           this.quocGias = Array.from(new Set(data.map((item: any) => item.quocGia)));
-         
+          
         }
       },
       error: (err: any) => console.error('[HomeComponent] Failed to get thuong hieu:', err),
@@ -144,8 +142,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         if (Array.isArray(data)) {
           this.tenNhomHuongs = Array.from(new Set(data.map((item: any) => item.tenNhomHuong)));
-         
-        } 
+          
+        }
       },
       error: (err: any) => console.error('[HomeComponent] Failed to get nhom huong:', err),
     });
@@ -184,18 +182,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       size: this.size,
     };
 
-    
+   
 
     this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
       next: (data: any) => {
-       
         this.sanPhams = data.content || [];
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
        
       },
       error: (err: any) => {
-        
+       
         this.sanPhams = [];
         this.totalPages = 1;
         this.visiblePages = [];
@@ -208,15 +205,15 @@ export class HomeComponent implements OnInit, OnDestroy {
     const startPage = Math.max(0, this.page - Math.floor(pagesToShow / 2));
     const endPage = Math.min(this.totalPages - 1, startPage + pagesToShow - 1);
     this.visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-  
+   
   }
 
   viewProductDetail(productId: number): void {
     if (productId) {
-      
+      console.log('[HomeComponent] Navigating to product detail:', productId);
       this.router.navigate([`/detail/${productId}`]);
     } else {
-     
+      console.warn('[HomeComponent] Invalid productId for navigation');
     }
   }
 
@@ -243,26 +240,26 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
-      
       this.page = p;
+    
       this.loadProducts();
-    } 
+    }
   }
 
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      
+      console.log('[HomeComponent] Navigating to previous page:', this.page);
       this.loadProducts();
-    } 
+    }
   }
 
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-     
+      console.log('[HomeComponent] Navigating to next page:', this.page);
       this.loadProducts();
-    } 
+    }
   }
 
   getPaginationRange(): number[] {
@@ -274,7 +271,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     for (let i = start; i < end; i++) {
       range.push(i);
     }
-   
+    console.log('[HomeComponent] Pagination range:', range);
     return range;
   }
 }

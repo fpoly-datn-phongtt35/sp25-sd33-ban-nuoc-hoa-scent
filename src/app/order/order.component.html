@@ -116,37 +116,44 @@
     </div>
 
     <!-- Mã Giảm Giá -->
-    <div class="mb-3">
-      <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
-      <div class="input-group">
-        <input
-          type="text"
-          id="maGiamGia"
-          class="form-control"
-          [(ngModel)]="orderData.maGiamGia"
-          name="maGiamGia"
-          [disabled]="isDiscountApplied"
-        >
-        <button
-          class="btn btn-primary"
-          type="button"
-          (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')"
-          [disabled]="!orderData.maGiamGia || isDiscountApplied"
-        >
-          Áp dụng
-        </button>
-      </div>
+   <!-- Mã Giảm Giá -->
+<div class="mb-3">
+  <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
+  <div class="input-group">
+    <input
+      type="text"
+      id="maGiamGia"
+      class="form-control"
+      [(ngModel)]="orderData.maGiamGia"
+      name="maGiamGia"
+      [disabled]="isDiscountApplied"
+    >
+    <button
+      class="btn btn-primary"
+      type="button"
+      (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')"
+      [disabled]="!orderData.maGiamGia || isDiscountApplied"
+    >
+      Áp dụng
+    </button>
+  </div>
 
-      <!-- Thông báo lỗi -->
-      <div *ngIf="discountErrorMessage" class="text-danger mt-1">
-        {{ discountErrorMessage }}
-      </div>
+  <!-- Thông báo lỗi -->
+  <div *ngIf="discountErrorMessage" class="text-danger mt-1">
+    {{ discountErrorMessage }}
+  </div>
 
-      <!-- Thông báo số tiền được giảm -->
-      <div *ngIf="discountAmount > 0" class="text-success mt-1">
-        ✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!
-      </div>
-    </div>
+  <!-- Thông báo số tiền được giảm và nút hủy -->
+  <div *ngIf="discountAmount > 0" class="text-success mt-1 d-flex align-items-center">
+    <span>✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!</span>
+    <button
+      class="btn btn-danger btn-sm ms-2"
+      (click)="cancelDiscount()"
+    >
+      Hủy mã giảm giá
+    </button>
+  </div>
+</div>
 
     <!-- Tổng tiền -->
     <div class="payment-info mb-4">

@@ -18,11 +18,11 @@ export class PhieugiamgiaService {
   constructor(private http: HttpClient) {}
 
   // phieugiamgia.service.ts
-  getDiscountCodeDetails(code: string, sdt: string, id: number | null, headers?: HttpHeaders): Observable<any> {
+  getDiscountCodeDetails(code: string, sdt: string, id: number | null): Observable<any> {
     const params: any = { code };
     if (id) params.idTaiKhoan = id;
     if (sdt) params.sdt = sdt;
-    return this.http.get(`${this.apiUrl}/check`, { params, headers });
+    return this.http.get(`${this.apiUrl}/check`,{ params });
   }
 
 private handleError(error: HttpErrorResponse) {

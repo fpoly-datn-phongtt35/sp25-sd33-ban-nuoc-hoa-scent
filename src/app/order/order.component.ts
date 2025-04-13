@@ -11,7 +11,7 @@ import { MomoPaymentService } from '../service/momoPayment.service';
 import { PhieugiamgiaService } from '../service/phieugiamgia.service';
 import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { VietQRService } from '../service/VietQR.Service';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Subscription } from 'rxjs';
 
@@ -424,63 +424,87 @@ export class OrderComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  onDiscountCodeEntered(code: string) {
+  onDiscountCodeEntered(code: string): void {
     this.discountErrorMessage = '';
     this.isDiscountApplied = false;
-
+  
+    // Nếu không có mã giảm giá, reset và thoát
     if (!code) {
       this.resetDiscount();
+      Swal.fire('Thông báo', 'Vui lòng nhập mã giảm giá!', 'info');
       return;
     }
-
+  
+    // Kiểm tra xem có idTaiKhoan hay không
     if (this.orderData.idTaiKhoan) {
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${this.tokenService.getToken()}`,
-      });
-
-      const sub = this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`, { headers }).subscribe({
+      // Gọi API để lấy thông tin tài khoản (không dùng token)
+      const sub = this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`).subscribe({
         next: (account) => {
-          const registeredSdt = account.sdt;
+          const registeredSdt = account?.sdt;
+  
+          // Kiểm tra xem tài khoản có số điện thoại không
           if (!registeredSdt) {
             this.discountErrorMessage = '⚠️ Tài khoản không có số điện thoại đăng ký!';
             this.resetDiscount();
             Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
             return;
           }
+  
+          // Nếu có số điện thoại, kiểm tra mã giảm giá
           this.checkDiscountCode(code, registeredSdt);
         },
         error: (err) => {
+          // Xử lý lỗi khi không lấy được thông tin tài khoản
           this.discountErrorMessage = '⚠️ Không thể lấy thông tin tài khoản!';
           this.resetDiscount();
           Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
         },
       });
+  
+      // Thêm subscription vào danh sách để quản lý
       this.subscriptions.push(sub);
     } else {
-      this.checkDiscountCode(code, this.orderData.sdtNguoiNhan);
+      // Nếu không có idTaiKhoan, sử dụng sdtNguoiNhan
+      const sdtNguoiNhan = this.orderData.sdtNguoiNhan;
+  
+      // Kiểm tra xem sdtNguoiNhan có tồn tại không
+      if (!sdtNguoiNhan) {
+        this.discountErrorMessage = '⚠️ Vui lòng nhập số điện thoại để áp dụng mã giảm giá!';
+        this.resetDiscount();
+        Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
+        return;
+      }
+  
+      // Nếu có sdtNguoiNhan, kiểm tra mã giảm giá
+      this.checkDiscountCode(code, sdtNguoiNhan);
     }
   }
 
-  private checkDiscountCode(code: string, sdt: string) {
+  private checkDiscountCode(code: string, sdt: string): void {
+    // Kiểm tra số điện thoại hợp lệ (10 số, bắt đầu bằng 0)
     if (!sdt || !/^0[0-9]{9}$/.test(sdt)) {
       this.discountErrorMessage = '⚠️ Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)!';
       this.resetDiscount();
       Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
       return;
     }
-
-    Swal.fire({ title: 'Đang kiểm tra mã...', text: 'Vui lòng chờ!', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.tokenService.getToken()}`,
+  
+    // Hiển thị thông báo loading
+    Swal.fire({
+      title: 'Đang kiểm tra mã...',
+      text: 'Vui lòng chờ!',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
-
-    const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan, headers).subscribe({
+  
+    // Gọi API mà không sử dụng token
+    const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan).subscribe({
       next: (response: DiscountResponse) => {
         const now = new Date();
         const startDate = new Date(response.ngayBatDau);
         const endDate = new Date(response.ngayHetHan);
-
+  
+        // Kiểm tra thời gian hiệu lực của mã giảm giá
         if (now < startDate) {
           this.handleDiscountError('⚠️ Mã giảm giá chưa có hiệu lực!');
         } else if (now > endDate) {
@@ -488,6 +512,7 @@ export class OrderComponent implements OnInit, OnDestroy {
         } else if (response.soLuong <= 0) {
           this.handleDiscountError('⚠️ Mã giảm giá đã hết lượt sử dụng!');
         } else {
+          // Tính giá trị giảm giá
           this.discountAmount = this.totalProductPrice * response.giaTriGiam;
           if (response.giaTriToiDa && this.discountAmount > response.giaTriToiDa) {
             this.discountAmount = response.giaTriToiDa;
@@ -496,6 +521,8 @@ export class OrderComponent implements OnInit, OnDestroy {
           this.orderData.maGiamGia = code;
           this.isDiscountApplied = true;
           this.calculateTotals();
+  
+          // Hiển thị thông báo thành công
           Swal.fire({
             title: 'Thành công!',
             text: `Đã áp dụng mã. Bạn được giảm ${this.discountAmount.toLocaleString()} đ!`,
@@ -509,6 +536,8 @@ export class OrderComponent implements OnInit, OnDestroy {
         this.handleDiscountError(err.error?.message || '⚠️ Mã giảm giá không hợp lệ!');
       },
     });
+  
+    // Thêm subscription vào danh sách để quản lý
     this.subscriptions.push(sub);
   }
 
@@ -524,6 +553,20 @@ export class OrderComponent implements OnInit, OnDestroy {
     this.orderData.maGiamGia = '';
     this.isDiscountApplied = false;
     this.calculateTotals();
+  }
+
+  // Thêm phương thức hủy mã giảm giá
+  cancelDiscount(): void {
+    this.orderData.maGiamGia = ''; // Xóa mã giảm giá trong ô nhập
+    this.discountErrorMessage = '';
+    this.resetDiscount();
+    Swal.fire({
+      title: 'Đã hủy!',
+      text: 'Mã giảm giá đã được hủy.',
+      icon: 'info',
+      timer: 1500,
+      showConfirmButton: false,
+    });
   }
 
   updateQuantity(index: number, change: number) {

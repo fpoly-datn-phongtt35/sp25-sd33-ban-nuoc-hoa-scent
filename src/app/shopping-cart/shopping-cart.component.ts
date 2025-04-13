@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { Subscription } from 'rxjs';
+ // Import WebSocketService
 import Swal from 'sweetalert2';
+import { WebSocketService } from '../service/WebSocketService';
 
 @Component({
   selector: 'app-shopping-cart',
@@ -18,10 +20,16 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
   totalPrice: number = 0;
   selectedProducts: CartItemWithKey[] = [];
   private cartSubscription: Subscription;
+  private webSocketSubscription: Subscription | undefined;
 
-  constructor(private cartService: CartService, private router: Router) {}
+  constructor(
+    private cartService: CartService,
+    private router: Router,
+    private webSocketService: WebSocketService // Inject WebSocketService
+  ) {}
 
   ngOnInit(): void {
+    // Lắng nghe cập nhật giỏ hàng từ CartService
     this.cartSubscription = this.cartService.getCartObservable().subscribe(cart => {
       console.log('🛒 Nhận cập nhật giỏ hàng từ observable:', Array.from(cart.entries()));
       this.cartItems = Array.from(cart.entries()).map(([key, value]) => ({
@@ -34,11 +42,72 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       );
       this.calculateTotalPrice();
     });
+
+    // Kết nối WebSocket với userId (giả sử userId là 0 nếu không có user đăng nhập)
+    const userId = 0; // Thay bằng userId thực tế nếu có
+    console.log(`[ShoppingCartComponent] Connecting WebSocket for userId: ${userId}`);
+    this.webSocketService.connect(userId);
+
+    // Lắng nghe cập nhật trạng thái SPCT từ WebSocket
+    this.webSocketSubscription = this.webSocketService.getSpctUpdates().subscribe({
+      next: (update: any) => {
+        console.log('[ShoppingCartComponent] SPCT update received:', update);
+        this.handleSpctUpdate(update);
+      },
+      error: (err) => {
+        console.error('[ShoppingCartComponent] WebSocket error:', err);
+      }
+    });
   }
 
   ngOnDestroy(): void {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
+    }
+    if (this.webSocketSubscription) {
+      this.webSocketSubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
+    console.log('[ShoppingCartComponent] Disconnected WebSocket and unsubscribed');
+  }
+
+  private handleSpctUpdate(update: any) {
+    const spctId = update.idSpct; // ID của SPCT từ thông báo WebSocket
+    const trangThai = update.trangThai; // Trạng thái mới của SPCT
+
+    // Kiểm tra nếu SPCT bị ngưng bán (trangThai = 0)
+    if (trangThai === 0) {
+      // Tìm SPCT trong giỏ hàng
+      const itemIndex = this.cartItems.findIndex(item => item.product.idSpct === spctId);
+      if (itemIndex !== -1) {
+        const removedItem = this.cartItems[itemIndex];
+        const itemKey = removedItem.key;
+
+        // Xóa khỏi cartItems
+        this.cartItems.splice(itemIndex, 1);
+
+        // Xóa khỏi selectedProducts nếu có
+        this.selectedProducts = this.selectedProducts.filter(item => item.key !== itemKey);
+
+        // Đồng bộ với CartService
+        this.cartService.removeFromCart(itemKey);
+
+        // Tính lại tổng giá
+        this.calculateTotalPrice();
+
+        // Thông báo cho người dùng
+       
+
+        // Nếu giỏ hàng trống, thông báo thêm
+        if (this.cartItems.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Giỏ hàng trống',
+            text: 'Giỏ hàng của bạn hiện đang trống!',
+            position: 'bottom-end'
+          });
+        }
+      }
     }
   }
 
