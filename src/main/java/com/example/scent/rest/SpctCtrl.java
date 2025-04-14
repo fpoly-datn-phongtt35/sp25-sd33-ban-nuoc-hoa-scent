@@ -79,6 +79,8 @@ public class SpctCtrl {
             SpctMessage spctMessage = new SpctMessage();
             spctMessage.setIdSpct(updatedSpct.getIdSpct());
             spctMessage.setTrangThai(updatedSpct.getTrangThai());
+            spctMessage.setDungTich(updatedSpct.getDungTich());
+            spctMessage.setDonGia(updatedSpct.getDonGia());
             messagingTemplate.convertAndSend("/topic/spctUpdates", spctMessage);
 
             // Kiểm tra và gửi thông báo WebSocket cho Sp nếu trạng thái thay đổi
