@@ -177,4 +177,10 @@ public class TaiKhoanSv implements UserDetailsService {
     public List<TaiKhoan> findBySdtStartingWithAndVaiTro(String sdt, String vaiTro) {
         return tki.findBySdtStartingWithAndVaiTro(sdt, vaiTro);
     }
+    public TaiKhoan setTrangThaiByIdTaiKhoan(Integer IdTaiKhoan, Integer TrangThai) {
+        TaiKhoan tk = tki.findById(IdTaiKhoan)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với id: " + IdTaiKhoan));
+         tk.setTrangThai(TrangThai);
+         return tki.save(tk);
+    }
 }

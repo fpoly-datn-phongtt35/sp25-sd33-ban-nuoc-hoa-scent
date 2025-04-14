@@ -196,7 +196,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/thong-ke/doanh-thu/nam","/api/thong-ke/doanh-thu/thang","/api/thong-ke/doanh-thu/tuan","/api/thong-ke/doanh-thu/ngay"
                                 ,"/api/thong-ke/so-luong-don/nam","/api/thong-ke/so-luong-don/thang","/api/thong-ke/so-luong-don/tuan","/api/thong-ke/so-luong-don/ngay","/api/thong-ke/tong-quan","/api/thong-ke/count-by-luong-ban-trang-thai"
                                 ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
-                                "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam").permitAll()
+                                "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam","rest/tai-khoan/setTrangThaiByIdTaiKhoan/**").permitAll()
 //                         // // // // // // // // // // // // // // // // // // // //
                         .requestMatchers("/api/cart/remove-multiple/**","/rest/tai-khoan/**","/rest/spct/status/multiple","/rest/spct/status/**","/rest/tai-khoan/search-by-sdt/**","/rest/san-pham/recommended","/rest/don-hang/latest/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
 //                        .requestMatchers("rest/danh-gia-dich-vu/getAll").permitAll()

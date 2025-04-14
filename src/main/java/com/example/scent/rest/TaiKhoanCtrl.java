@@ -1,7 +1,6 @@
 package com.example.scent.rest;
 
 import com.example.scent.dto.TaiKhoanUpdateRequestDTO;
-import com.example.scent.entity.DonHang;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
 import com.example.scent.service.TaiKhoanSv;
@@ -227,7 +226,14 @@ public class TaiKhoanCtrl {
         List<TaiKhoan> taiKhoanList = tks.findBySdtStartingWithAndVaiTro(sdt, "USER");
         return ResponseEntity.ok(taiKhoanList);
     }
+   @PutMapping("setTrangThaiByIdTaiKhoan/{id}")
+   public ResponseEntity<TaiKhoan> setTrangThaiByIdTaiKhoan(
+           @PathVariable Integer id,
+           @RequestParam("trangThai") Integer trangThai
+   ){
+        TaiKhoan tkUpdate= tks.setTrangThaiByIdTaiKhoan(id, trangThai);
+       return ResponseEntity.ok(tkUpdate);
 
-
+   }
 
 }

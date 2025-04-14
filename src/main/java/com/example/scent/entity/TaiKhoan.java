@@ -39,7 +39,8 @@ public class TaiKhoan {
     private String matKhau;
     @Column(name = "vai_tro")
     private String vaiTro;
-
+    @Column(name = "trang_thai")
+    private Integer trangThai;
     @Column(name = "dia_chi")
     private String diaChi;
 
@@ -105,5 +106,13 @@ public class TaiKhoan {
 
     public void setVaiTro(String vaiTro) {
         this.vaiTro = vaiTro;
+    }
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
     }
 }
