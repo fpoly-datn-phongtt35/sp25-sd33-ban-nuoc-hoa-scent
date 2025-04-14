@@ -2,7 +2,8 @@ import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit, ViewChild }
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { SanPhamService } from '../../../service/product.service';
 import { ThuongHieuService } from '../../../service/thuonghieu.service';
 import { DanhMucService } from '../../../service/danhmuc.service';
@@ -54,7 +55,7 @@ export class AddProductComponent implements OnInit {
   @ViewChild('muiHuongSelect') muiHuongSelect!: NgSelectComponent;
 
   productForm: FormGroup;
-  prominenceForm: FormGroup; // Thêm FormGroup cho modal
+  prominenceForm: FormGroup;
   selectedFiles: File[] = [];
   previewUrls: string[] = [];
   danhMucList: DanhMuc[] = [];
@@ -68,6 +69,9 @@ export class AddProductComponent implements OnInit {
   tempMuiHuongId: number | null = null;
   loadingMuiHuong: boolean = true;
   isSubmitting: boolean = false;
+
+  // Subject for debouncing search input
+  private searchSubject = new Subject<string>();
 
   constructor(
     private fb: FormBuilder,
@@ -92,10 +96,41 @@ export class AddProductComponent implements OnInit {
       muiHuongIds: [[]]
     });
 
-    // Khởi tạo FormGroup cho modal
     this.prominenceForm = this.fb.group({
       prominenceLevel: [0.5, [Validators.required, Validators.min(0), Validators.max(1)]]
     });
+
+    // Debounce search input to improve performance
+    this.searchSubject.pipe(debounceTime(300)).subscribe((term: string) => {
+      this.cdr.detectChanges();
+    });
+  }
+
+  // Custom search function for ng-select with Vietnamese tone removal
+  customSearchFn(term: string, item: any): boolean {
+    if (!term || !item) return false;
+
+    const searchTerm = this.removeVietnameseTones(term.toLowerCase());
+    const itemName = this.removeVietnameseTones(
+      (item.tenThuongHieu || item.tenNhomHuong || item.tenDanhMuc || '').toLowerCase()
+    );
+
+    // Ensure "Thêm mới..." option always appears during search
+    if (item.id === -1) return true;
+
+    // Trigger debounced search
+    this.searchSubject.next(term);
+
+    return itemName.includes(searchTerm);
+  }
+
+  // Remove Vietnamese tones for better search matching
+  removeVietnameseTones(str: string): string {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
   }
 
   async ngOnInit() {
@@ -124,6 +159,7 @@ export class AddProductComponent implements OnInit {
       this.danhMucList = data || [];
     } catch (err) {
       console.error('Lỗi lấy danh mục:', err);
+      this.toastr.error('Không thể tải danh mục. Vui lòng thử lại sau.', 'Lỗi');
     }
   }
 
@@ -131,11 +167,13 @@ export class AddProductComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.thuongHieuService.getThuonghieu());
       this.thuongHieuList = data || [];
+      this.thuongHieuList.push({ id: -1, tenThuongHieu: 'Thêm thương hiệu mới...' });
       this.productForm.get('idThuongHieu')?.valueChanges.subscribe(val => {
-        if (val === '-1') this.handleAddThuongHieu();
+        if (val === -1) this.handleAddThuongHieu();
       });
     } catch (err) {
       console.error('Lỗi lấy thương hiệu:', err);
+      this.toastr.error('Không thể tải danh sách thương hiệu. Vui lòng thử lại sau.', 'Lỗi');
     }
   }
 
@@ -143,11 +181,13 @@ export class AddProductComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.nhomHuongService.getnhomHuong());
       this.nhomHuongList = data || [];
+      this.nhomHuongList.push({ id: -1, tenNhomHuong: 'Thêm nhóm hương mới...' });
       this.productForm.get('idNhomHuong')?.valueChanges.subscribe(val => {
-        if (val === '-1') this.handleAddNhomHuong();
+        if (val === -1) this.handleAddNhomHuong();
       });
     } catch (err) {
       console.error('Lỗi lấy nhóm hương:', err);
+      this.toastr.error('Không thể tải danh sách nhóm hương. Vui lòng thử lại sau.', 'Lỗi');
     }
   }
 
@@ -158,6 +198,7 @@ export class AddProductComponent implements OnInit {
       this.notHuongList.push({ id: -1, tenNotHuong: 'Thêm nốt hương mới...' });
     } catch (err) {
       console.error('Lỗi lấy nốt hương:', err);
+      this.toastr.error('Không thể tải danh sách nốt hương. Vui lòng thử lại sau.', 'Lỗi');
     }
   }
 
@@ -166,15 +207,12 @@ export class AddProductComponent implements OnInit {
       const data = await firstValueFrom(this.sanPhamService.getMuiHuong());
       this.muiHuongList = data || [];
       this.muiHuongList = this.muiHuongList.filter(item => typeof item.id === 'number' && item.id > 0);
-      console.log('muiHuongList loaded:', this.muiHuongList);
-      if (!data || data.length === 0) {
-        console.warn('No muiHuong data returned');
-      }
       this.muiHuongList.push({ id: -1, tenMuiHuong: 'Thêm mùi hương mới...' });
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
     } catch (err) {
       console.error('Lỗi lấy mùi hương:', err);
+      this.toastr.error('Không thể tải danh sách mùi hương. Vui lòng thử lại sau.', 'Lỗi');
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
     }
@@ -187,6 +225,7 @@ export class AddProductComponent implements OnInit {
       this.phongCachList.push({ id: -1, tenPhongCach: 'Thêm phong cách mới...' });
     } catch (err) {
       console.error('Lỗi lấy phong cách:', err);
+      this.toastr.error('Không thể tải danh sách phong cách. Vui lòng thử lại sau.', 'Lỗi');
     }
   }
 
@@ -337,8 +376,6 @@ export class AddProductComponent implements OnInit {
   }
 
   onMuiHuongAdd(event: any) {
-    console.log('onMuiHuongAdd triggered with event:', event);
-
     let id: number;
     if (typeof event === 'object' && event !== null && 'id' in event) {
       id = Number(event.id);
@@ -355,9 +392,8 @@ export class AddProductComponent implements OnInit {
 
     if (!this.muiHuongSelections.some((s) => s.id === id)) {
       this.tempMuiHuongId = id;
-      this.prominenceForm.get('prominenceLevel')?.setValue(0.5); // Đặt giá trị mặc định
+      this.prominenceForm.get('prominenceLevel')?.setValue(0.5);
       this.showProminenceModal = true;
-      console.log('showProminenceModal set to true:', this.showProminenceModal);
       document.body.classList.add('modal-open');
       const backdrop = document.createElement('div');
       backdrop.className = 'modal-backdrop fade show';
@@ -367,8 +403,6 @@ export class AddProductComponent implements OnInit {
   }
 
   onMuiHuongRemove(event: any) {
-    console.log('onMuiHuongRemove triggered with event:', event);
-
     let id: number;
     if (typeof event === 'object' && event !== null && 'id' in event) {
       id = Number(event.id);
@@ -399,8 +433,6 @@ export class AddProductComponent implements OnInit {
     this.muiHuongSelections = this.muiHuongSelections.filter((s) => s.id !== this.tempMuiHuongId);
     this.muiHuongSelections.push({ id: this.tempMuiHuongId, prominenceLevel });
 
-    console.log('muiHuongSelections sau khi lưu:', this.muiHuongSelections);
-
     const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
     if (!currentMuiHuongIds.includes(this.tempMuiHuongId)) {
       this.productForm.get('muiHuongIds')?.setValue([...currentMuiHuongIds, this.tempMuiHuongId]);
@@ -415,54 +447,46 @@ export class AddProductComponent implements OnInit {
       const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
       this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== this.tempMuiHuongId));
     }
-    this.prominenceForm.get('prominenceLevel')?.setValue(0.5); // Reset giá trị
+    this.prominenceForm.get('prominenceLevel')?.setValue(0.5);
     this.closeProminenceModal();
   }
 
   closeProminenceModal() {
-    console.log('🔄 Đóng modal con (prominenceModal)...');
-
     this.showProminenceModal = false;
     this.tempMuiHuongId = null;
 
     const backdrops = document.querySelectorAll('.modal-backdrop');
     if (backdrops.length > 1) {
-      console.log('🗑️ Xóa backdrop của modal con:', backdrops[backdrops.length - 1]);
       backdrops[backdrops.length - 1].remove();
     }
 
     const openModals = document.querySelectorAll('.modal.show:not(.prominence-modal)');
     if (openModals.length === 0) {
-      console.log('🔄 Không còn modal nào mở, xóa lớp modal-open');
       document.body.classList.remove('modal-open');
       const remainingBackdrops = document.querySelectorAll('.modal-backdrop');
-      remainingBackdrops.forEach(backdrop => {
-        console.log('🗑️ Xóa backdrop còn lại:', backdrop);
-        backdrop.remove();
-      });
+      remainingBackdrops.forEach(backdrop => backdrop.remove());
       document.body.style.overflow = 'auto';
       document.body.style.paddingRight = '';
     }
 
     this.cdr.detectChanges();
-    console.log('✅ Đã đóng modal con');
   }
 
-  getMuiHuongName(item: number | MuiHuong): string {
+  getMuiHuongName(item: any): string {
     const id = typeof item === 'number' ? item : item.id;
-    const muiHuong = this.muiHuongList.find((mh) => mh.id === id);
+    const muiHuong = this.muiHuongList.find((mh: any) => mh.id === id);
     return muiHuong ? muiHuong.tenMuiHuong : `Không tìm thấy (ID: ${id})`;
   }
 
-  getProminenceLevel(item: number | MuiHuong): number {
+  getProminenceLevel(item: any): number {
     const id = typeof item === 'number' ? item : item.id;
     const selection = this.muiHuongSelections.find((s) => s.id === id);
     return selection ? Number(selection.prominenceLevel) : 0;
   }
 
-  hasProminenceLevel(item: number | MuiHuong): boolean {
+  hasProminenceLevel(item: any): boolean {
     const id = typeof item === 'number' ? item : item.id;
-    return this.muiHuongSelections.some(s => s.id === id);
+    return this.muiHuongSelections.some((s) => s.id === id);
   }
 
   async addProduct() {
@@ -483,17 +507,20 @@ export class AddProductComponent implements OnInit {
     }
 
     const formValues = this.productForm.value;
+    const idThuongHieu = Number(formValues.idThuongHieu);
+    const idDanhMuc = Number(formValues.idDanhMuc);
+    const idNhomHuong = Number(formValues.idNhomHuong);
 
-    // Kiểm tra dữ liệu đầu vào
-    if (!this.thuongHieuList.some((th: any) => th.id === formValues.idThuongHieu)) {
+    // Validate inputs
+    if (!this.thuongHieuList.some((th) => th.id === idThuongHieu)) {
       this.toastr.warning('Thương hiệu không hợp lệ!', 'Cảnh báo');
       return;
     }
-    if (!this.danhMucList.some((dm: any) => dm.id === formValues.idDanhMuc)) {
+    if (!this.danhMucList.some((dm) => dm.id === idDanhMuc)) {
       this.toastr.warning('Danh mục không hợp lệ!', 'Cảnh báo');
       return;
     }
-    if (!this.nhomHuongList.some((nh: any) => nh.id === formValues.idNhomHuong)) {
+    if (!this.nhomHuongList.some((nh) => nh.id === idNhomHuong)) {
       this.toastr.warning('Nhóm hương không hợp lệ!', 'Cảnh báo');
       return;
     }
@@ -510,14 +537,17 @@ export class AddProductComponent implements OnInit {
     if (!validateNotHuong(formValues.notHuongGiuaIds, 'hương giữa')) return;
     if (!validateNotHuong(formValues.notHuongCuoiIds, 'hương cuối')) return;
 
-    if (formValues.phongCachIds && formValues.phongCachIds.length > 0) {
-      const invalidPhongCach = formValues.phongCachIds.some(
-        (id: number) => !this.phongCachList.some((pc: any) => pc.id === id)
-      );
-      if (invalidPhongCach) {
-        this.toastr.warning('Một số phong cách không hợp lệ!', 'Cảnh báo');
-        return;
-      }
+    if (!formValues.phongCachIds || formValues.phongCachIds.length === 0) {
+      this.toastr.warning('Vui lòng chọn ít nhất một phong cách!', 'Cảnh báo');
+      return;
+    }
+
+    const invalidPhongCach = formValues.phongCachIds.some(
+      (id: number) => !this.phongCachList.some((pc: any) => pc.id === id)
+    );
+    if (invalidPhongCach) {
+      this.toastr.warning('Một số phong cách không hợp lệ!', 'Cảnh báo');
+      return;
     }
 
     const invalidMuiHuong = this.muiHuongSelections.some(
@@ -531,39 +561,38 @@ export class AddProductComponent implements OnInit {
     this.isSubmitting = true;
     const formData = new FormData();
 
+    // Gửi các trường cơ bản
     formData.append('ten', formValues.ten || '');
     formData.append('moTa', formValues.moTa || '');
-    formData.append('idThuongHieu', String(formValues.idThuongHieu));
-    formData.append('idDanhMuc', String(formValues.idDanhMuc));
-    formData.append('idNhomHuong', String(formValues.idNhomHuong));
+    formData.append('idThuongHieu', String(idThuongHieu));
+    formData.append('idDanhMuc', String(idDanhMuc));
+    formData.append('idNhomHuong', String(idNhomHuong));
 
-    formValues.notHuongDauIds.forEach((id: number, index: number) => {
-      formData.append(`notHuongDauIds[${index}]`, String(id));
+    // Gửi danh sách nốt hương dưới dạng List<Integer>
+    formValues.notHuongDauIds.forEach((id: number) => {
+      formData.append('notHuongDauIds', String(id));
     });
 
-    formValues.notHuongGiuaIds.forEach((id: number, index: number) => {
-      formData.append(`notHuongGiuaIds[${index}]`, String(id));
+    formValues.notHuongGiuaIds.forEach((id: number) => {
+      formData.append('notHuongGiuaIds', String(id));
     });
 
-    formValues.notHuongCuoiIds.forEach((id: number, index: number) => {
-      formData.append(`notHuongCuoiIds[${index}]`, String(id));
+    formValues.notHuongCuoiIds.forEach((id: number) => {
+      formData.append('notHuongCuoiIds', String(id));
     });
 
-    if (formValues.phongCachIds && formValues.phongCachIds.length > 0) {
-      formValues.phongCachIds.forEach((id: number, index: number) => {
-        formData.append(`phongCachIds[${index}]`, String(id));
-      });
-    }
-
-    this.muiHuongSelections.forEach((selection: any, index: number) => {
-      const muiHuong = this.muiHuongList.find((mh: any) => mh.id === selection.id);
-      if (muiHuong) {
-        formData.append(`muiHuongSelections[${index}].id`, String(selection.id));
-        formData.append(`muiHuongSelections[${index}].tenMuiHuong`, muiHuong.tenMuiHuong);
-        formData.append(`muiHuongSelections[${index}].prominenceLevel`, String(selection.prominenceLevel));
-      }
+    formValues.phongCachIds.forEach((id: number) => {
+      formData.append('phongCachIds', String(id));
     });
 
+    // Gửi muiHuongSelections dưới dạng chuỗi JSON
+    const muiHuongSelectionsForBackend = this.muiHuongSelections.map(selection => ({
+      id: selection.id,
+      prominenceLevel: selection.prominenceLevel
+    }));
+    formData.append('muiHuongSelections', JSON.stringify(muiHuongSelectionsForBackend));
+
+    // Gửi hình ảnh
     this.selectedFiles.forEach((file) => formData.append('images', file));
 
     console.log('FormData gửi lên API:');
@@ -588,7 +617,6 @@ export class AddProductComponent implements OnInit {
         errorMessage += ` Chi tiết: ${err.error.message}`;
       }
       this.toastr.error(errorMessage, 'Lỗi');
-      this.closeModal();
     } finally {
       this.isSubmitting = false;
       this.cdr.detectChanges();
@@ -618,37 +646,25 @@ export class AddProductComponent implements OnInit {
   }
 
   closeModal() {
-    console.log('🛑 Đang cố đóng modal chính...');
-
     if (this.showProminenceModal) {
-      console.log('🔄 Đóng modal con (prominenceModal) trước...');
       this.closeProminenceModal();
     }
 
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
-      console.log('✅ Đã gọi dismiss trên modal chính');
-    } else {
-      console.error('❌ ActiveModal không khả dụng');
     }
 
     this.finalizeModalClose();
   }
 
   private finalizeModalClose() {
-    console.log('🧹 Dọn dẹp trạng thái modal...');
-
     document.body.classList.remove('modal-open');
 
     const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => {
-      console.log('🗑️ Xóa backdrop:', backdrop);
-      backdrop.remove();
-    });
+    backdrops.forEach(backdrop => backdrop.remove());
 
     const modals = document.querySelectorAll('.modal.show');
     modals.forEach(modal => {
-      console.log('🗑️ Xóa lớp show khỏi modal:', modal);
       modal.classList.remove('show');
       modal.remove();
     });
@@ -657,6 +673,5 @@ export class AddProductComponent implements OnInit {
     document.body.style.paddingRight = '';
 
     this.cdr.detectChanges();
-    console.log('✅ Đã dọn dẹp trạng thái modal');
   }
 }

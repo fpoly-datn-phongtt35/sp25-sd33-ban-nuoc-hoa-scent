@@ -2724,10 +2724,10 @@
   dependencies:
     tslib "^2.3.0"
 
-"@ng-select/ng-select@^14.2.8":
-  version "14.2.8"
-  resolved "https://registry.yarnpkg.com/@ng-select/ng-select/-/ng-select-14.2.8.tgz#7f88acb4c59cdfdc40cf058259a736b9b8189824"
-  integrity sha512-585c+adH/q7y+L3YzmxpYzLsz9/fCpgPmRCtBP3YdnT02D3LsAjcjzR/Yjy8u2HkMcjjS/LB1+0kCVAD+R8D0w==
+"@ng-select/ng-select@^14.5.6":
+  version "14.5.6"
+  resolved "https://registry.yarnpkg.com/@ng-select/ng-select/-/ng-select-14.5.6.tgz#6f9de68fadd457c9a6dc19e2305758e0faa4a9b2"
+  integrity sha512-yJD4wptyEJq3PV/50J5YwxSRsZhuNNzaFixRA96+Ke6JV8CbTKPyXqB1b5MeTYve1KDfWX9YLm4O2CfHvm13yg==
   dependencies:
     tslib "^2.3.1"
 

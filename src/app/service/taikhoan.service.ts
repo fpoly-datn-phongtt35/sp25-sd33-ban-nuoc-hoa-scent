@@ -155,5 +155,8 @@ export class AccountService {
   getOrdersByTaiKhoanId(idTaiKhoan: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.ApiDonHangUrl}/getByIdTaiKhoan/${idTaiKhoan}`);
   }
-
+  setTrangThaiByIdTaiKhoan(id: number, trangThai: number): Observable<any> {
+    const params = new HttpParams().set('trangThai', trangThai.toString());
+    return this.http.put<any>(`${this.apiUrl}/setTrangThaiByIdTaiKhoan/${id}`, null, { params });
+  }
 }

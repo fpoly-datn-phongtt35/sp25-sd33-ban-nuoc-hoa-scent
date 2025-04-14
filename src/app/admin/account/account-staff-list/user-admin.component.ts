@@ -9,6 +9,16 @@ import { AccountStaffUpdateComponent } from '../account-staff-update/account-sta
 import { TokenService } from '../../../service/token.service';
 import Swal from 'sweetalert2';
 
+// Thêm interface Account để fix lỗi TS2304
+interface Account {
+  id: number;
+  hoTen: string;
+  tenDangNhap: string;
+  email: string;
+  sdt: string;
+  trangThai: number;
+}
+
 @Component({
   selector: 'app-user-admin',
   standalone: true,
@@ -141,10 +151,37 @@ export class UserAdminComponent implements OnInit {
     }
   }
 
-  deleteAccount(id: number): void {
-    if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
-      alert('Chưa triển khai chức năng xóa tài khoản. ID: ' + id);
-    }
+  toggleStatus(account: Account): void {
+    const newStatus = account.trangThai === 1 ? 0 : 1;
+    const statusText = newStatus === 1 ? 'Tiếp tục làm' : 'Nghỉ làm';
+
+    Swal.fire({
+      title: 'Xác nhận',
+      text: `Đổi trạng thái của ${account.hoTen} thành "${statusText}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.accountService.setTrangThaiByIdTaiKhoan(account.id, newStatus).subscribe({
+          next: (updatedAccount: Account) => {
+            account.trangThai = newStatus;
+            Swal.fire({
+              title: 'Thành công',
+              text: `Trạng thái của ${account.hoTen} đã đổi thành "${statusText}"`,
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          },
+          error: (error) => {
+            console.error('Lỗi đổi trạng thái:', error);
+            Swal.fire('Lỗi', 'Đổi trạng thái thất bại. Vui lòng thử lại!', 'error');
+          }
+        });
+      }
+    });
   }
 
   viewOrders(id: number): void {

@@ -18,42 +18,63 @@
             </div>
 
             <!-- Thương hiệu, Danh mục, Nhóm hương -->
-            <div class="col-md-12">
-              <div class="row g-2">
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">Thương hiệu</label>
-                  <select class="form-select" formControlName="idThuongHieu">
-                    <option value="" disabled selected>Chọn thương hiệu...</option>
-                    <option *ngFor="let dm of thuongHieuList" [value]="dm.id">{{ dm.tenThuongHieu }}</option>
-                    <option value="-1">➕ Thêm thương hiệu mới...</option>
-                  </select>
-                  <div *ngIf="productForm.get('idThuongHieu')?.touched && productForm.get('idThuongHieu')?.invalid" class="text-danger small mt-1">
-                    Vui lòng chọn thương hiệu.
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">Danh mục</label>
-                  <select class="form-select" formControlName="idDanhMuc">
-                    <option value="" disabled selected>Chọn danh mục...</option>
-                    <option *ngFor="let dm of danhMucList" [value]="dm.id">{{ dm.tenDanhMuc }}</option>
-                  </select>
-                  <div *ngIf="productForm.get('idDanhMuc')?.touched && productForm.get('idDanhMuc')?.invalid" class="text-danger small mt-1">
-                    Vui lòng chọn danh mục.
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">Nhóm hương</label>
-                  <select class="form-select" formControlName="idNhomHuong">
-                    <option value="" disabled selected>Chọn nhóm hương...</option>
-                    <option *ngFor="let nh of nhomHuongList" [value]="nh.id">{{ nh.tenNhomHuong }}</option>
-                    <option value="-1">➕ Thêm nhóm hương mới...</option>
-                  </select>
-                  <div *ngIf="productForm.get('idNhomHuong')?.touched && productForm.get('idNhomHuong')?.invalid" class="text-danger small mt-1">
-                    Vui lòng chọn nhóm hương.
-                  </div>
-                </div>
-              </div>
-            </div>
+<div class="col-md-12">
+  <div class="row g-2">
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Thương hiệu</label>
+      <ng-select
+        formControlName="idThuongHieu"
+        [items]="thuongHieuList"
+        bindLabel="tenThuongHieu"
+        bindValue="id"
+        placeholder="Chọn thương hiệu..."
+        [searchable]="true"
+        [searchFn]="customSearchFn">
+        <ng-template ng-option-tmp let-item="item">
+          <div *ngIf="item.id !== -1">{{ item.tenThuongHieu }}</div>
+          <div *ngIf="item.id === -1" class="text-primary">➕ Thêm thương hiệu mới...</div>
+        </ng-template>
+      </ng-select>
+      <div *ngIf="productForm.get('idThuongHieu')?.touched && productForm.get('idThuongHieu')?.invalid" class="text-danger small mt-1">
+        Vui lòng chọn thương hiệu.
+      </div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Danh mục</label>
+      <ng-select
+        formControlName="idDanhMuc"
+        [items]="danhMucList"
+        bindLabel="tenDanhMuc"
+        bindValue="id"
+        placeholder="Chọn danh mục..."
+        [searchable]="true"
+        [searchFn]="customSearchFn">
+      </ng-select>
+      <div *ngIf="productForm.get('idDanhMuc')?.touched && productForm.get('idDanhMuc')?.invalid" class="text-danger small mt-1">
+        Vui lòng chọn danh mục.
+      </div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Nhóm hương</label>
+      <ng-select
+        formControlName="idNhomHuong"
+        [items]="nhomHuongList"
+        bindLabel="tenNhomHuong"
+        bindValue="id"
+        placeholder="Chọn nhóm hương..."
+        [searchable]="true"
+        [searchFn]="customSearchFn">
+        <ng-template ng-option-tmp let-item="item">
+          <div *ngIf="item.id !== -1">{{ item.tenNhomHuong }}</div>
+          <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nhóm hương mới...</div>
+        </ng-template>
+      </ng-select>
+      <div *ngIf="productForm.get('idNhomHuong')?.touched && productForm.get('idNhomHuong')?.invalid" class="text-danger small mt-1">
+        Vui lòng chọn nhóm hương.
+      </div>
+    </div>
+  </div>
+</div>
 
           <!-- Hương đầu -->
 <div class="col-md-4">

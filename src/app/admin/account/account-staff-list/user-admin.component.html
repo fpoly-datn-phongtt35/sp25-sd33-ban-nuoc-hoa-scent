@@ -30,19 +30,19 @@
         <tbody>
           <tr *ngFor="let account of accounts; let i = index">
             <td>{{ i + 1 }}</td>
-            <td>{{ account.hoTen }}</td>
-            <td>{{ account.tenDangNhap }}</td>
-            <td>{{ account.email }}</td>
-            <td>{{ account.sdt }}</td>
-            <td>{{ account.trangThai || 'Đang làm' }}</td>
+            <td>{{ account.hoTen || 'N/A' }}</td>
+            <td>{{ account.tenDangNhap || 'N/A' }}</td>
+            <td>{{ account.email || 'N/A' }}</td>
+            <td>{{ account.sdt || 'N/A' }}</td>
+            <td>{{ account.trangThai === 1 ? 'Tiếp tục làm' : 'Nghỉ làm' }}</td>
             <td class="actions">
-              <button class="btn-action edit" *ngIf="userRole !== 'STAFF'" (click)="openUpdateModal(account)">
+              <button class="btn-action edit" *ngIf="userRole !== 'STAFF'" (click)="openUpdateModal(account)" title="Chỉnh sửa">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn-action delete" *ngIf="userRole !== 'STAFF'" (click)="deleteAccount(account.id)">
-                <i class="bi bi-trash"></i>
+              <button class="btn-action status" *ngIf="userRole !== 'STAFF'" (click)="toggleStatus(account)" title="Thay đổi trạng thái">
+                <i class="bi bi-toggle-{{ account.trangThai === 1 ? 'on' : 'off' }}"></i>
               </button>
-              <button class="btn-action view" (click)="viewOrders(account.id)">
+              <button class="btn-action view" (click)="viewOrders(account.id)" title="Xem đơn hàng">
                 <i class="bi bi-eye"></i>
               </button>
               <button class="btn-action reset-password" *ngIf="userRole !== 'STAFF'" (click)="resetPassword(account.email)" title="Cấp lại mật khẩu">

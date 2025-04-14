@@ -102,12 +102,16 @@ body {
   color: #ffc107;
 }
 
-.btn-action.delete {
-  color: #dc3545;
+.btn-action.status {
+  color: #17a2b8;
 }
 
 .btn-action.view {
   color: #007bff;
+}
+
+.btn-action.reset-password {
+  color: #6f42c1;
 }
 
 .btn-action:hover {
@@ -117,3 +121,4 @@ body {
 .pagination {
   margin-top: 20px;
 }
+
