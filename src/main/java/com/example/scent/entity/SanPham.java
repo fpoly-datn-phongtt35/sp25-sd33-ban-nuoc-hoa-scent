@@ -57,7 +57,6 @@ public class SanPham {
     @ManyToOne
     @JoinColumn(name = "id_huong_cuoi")
     private HuongCuoi huongCuoi;
-
     @JsonIgnore
     @OneToMany(mappedBy = "sanPham")
     private List<Spct> spcts;
@@ -77,6 +76,9 @@ public class SanPham {
     @JsonIgnore
     @OneToMany(mappedBy = "sanPham",cascade = CascadeType.ALL)
     private List<SanPhamMuiHuong> sanPhamMuiHuongs;
+    @ManyToOne
+    @JoinColumn(name = "id_nong_do")
+    private NongDo nongDo;
     public void updateFragranceDescriptions() {
         if (huongDau != null) {
             String moTaHuongDau = huongDau.getNotHuongs().stream()
@@ -211,5 +213,19 @@ public class SanPham {
         this.danhMuc = danhMuc;
     }
 
+    public List<SanPhamMuiHuong> getSanPhamMuiHuongs() {
+        return sanPhamMuiHuongs;
+    }
 
+    public void setSanPhamMuiHuongs(List<SanPhamMuiHuong> sanPhamMuiHuongs) {
+        this.sanPhamMuiHuongs = sanPhamMuiHuongs;
+    }
+
+    public NongDo getNongDo() {
+        return nongDo;
+    }
+
+    public void setNongDo(NongDo nongDo) {
+        this.nongDo = nongDo;
+    }
 }

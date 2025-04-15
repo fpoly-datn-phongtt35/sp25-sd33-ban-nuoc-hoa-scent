@@ -78,6 +78,7 @@ public class SanPhamCtrl {
             @RequestParam("idThuongHieu") @NotNull(message = "ID thương hiệu là bắt buộc") Integer idThuongHieu,
             @RequestParam("idDanhMuc") @NotNull(message = "ID danh mục là bắt buộc") Integer idDanhMuc,
             @RequestParam("idNhomHuong") @NotNull(message = "ID nhóm hương là bắt buộc") Integer idNhomHuong,
+            @RequestParam("idNongDo")@NotNull(message = "ID nồng độ là bắt buộc") Integer idNongDo,
             @RequestParam(value = "notHuongDauIds") @NotEmpty(message = "Phải có ít nhất một nốt hương đầu") List<Integer> notHuongDauIds,
             @RequestParam(value = "notHuongGiuaIds") @NotEmpty(message = "Phải có ít nhất một nốt hương giữa") List<Integer> notHuongGiuaIds,
             @RequestParam(value = "notHuongCuoiIds") @NotEmpty(message = "Phải có ít nhất một nốt hương cuối") List<Integer> notHuongCuoiIds,
@@ -118,7 +119,7 @@ public class SanPhamCtrl {
 
             // Gọi service để lưu sản phẩm
             SanPham savedSanPham = sps.addProductWithDetails(
-                    tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idNhomHuong,
+                    tenSanPham, moTaSanPham, idThuongHieu, idDanhMuc, idNhomHuong,idNongDo,
                     muiHuongSelections, notHuongDauIds, notHuongGiuaIds, notHuongCuoiIds,
                     phongCachIds, images
             );
@@ -141,6 +142,7 @@ public class SanPhamCtrl {
                     request.getIdThuongHieu(),
                     request.getIdDanhMuc(),
                     request.getIdNhomHuong(),
+                    request.getIdNongDo(),
                     request.getMuiHuongSelections(),
                     request.getNotHuongDauIds(),
                     request.getNotHuongGiuaIds(),
@@ -251,6 +253,8 @@ public class SanPhamCtrl {
             }
             if (sp.getNhomHuong() != null) {
                 sanPhamDTO.setIdNhomHuong(sp.getNhomHuong().getId());
+            }if (sp.getNongDo()!= null) {
+                sanPhamDTO.setIdNongDo(sp.getNongDo().getId());
             }
 
             // Map SanPhamMuiHuongs and MuiHuongSelections

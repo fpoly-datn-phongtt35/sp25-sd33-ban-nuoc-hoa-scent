@@ -9,6 +9,7 @@ public class SanPhamReponseUpdateAdminDTO {
     private Integer idThuongHieu; // Added for brand
     private Integer idDanhMuc;   // Added for category
     private Integer idNhomHuong; // Added for fragrance group
+    private Integer idNongDo;
     private List<MuiHuongReponseUpdateDTO> sanPhamMuiHuongs;
     private List<MuiHuongSelectionDTO> muiHuongSelections; // Added for frontend
     private TangHuongDTO huongDau;
@@ -18,6 +19,14 @@ public class SanPhamReponseUpdateAdminDTO {
     private List<Integer> idHinhAnhs; // Added for image IDs
 
     // Getters and setters
+
+    public Integer getIdNongDo() {
+        return idNongDo;
+    }
+
+    public void setIdNongDo(Integer idNongDo) {
+        this.idNongDo = idNongDo;
+    }
 
     public List<MuiHuongSelectionDTO> getMuiHuongSelections() {
         return muiHuongSelections;

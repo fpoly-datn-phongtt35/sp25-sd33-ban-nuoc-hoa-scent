@@ -11,6 +11,7 @@ public class UpdateSanPhamRequestDTO {
     private Integer idThuongHieu;
     private Integer idDanhMuc;
     private Integer idNhomHuong;
+    private Integer idNongDo;
     private List<MuiHuongSelectionDTO> muiHuongSelections;
     private List<Integer> notHuongDauIds;
     private List<Integer> notHuongGiuaIds;
@@ -20,6 +21,15 @@ public class UpdateSanPhamRequestDTO {
     private Integer[] idHinhAnhDelete;
 
     // Getters và setters
+
+    public Integer getIdNongDo() {
+        return idNongDo;
+    }
+
+    public void setIdNongDo(Integer idNongDo) {
+        this.idNongDo = idNongDo;
+    }
+
     public Integer getIdSanPham() {
         return idSanPham;
     }

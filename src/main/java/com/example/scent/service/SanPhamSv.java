@@ -58,6 +58,8 @@
         @Autowired
         private MuiHuongInterface muiHuongInterface;
         @Autowired
+        private NongDoInterface ndi;
+        @Autowired
         private SanPhamMuiHuongInterface sanPhamMuiHuongInterface;
         public List<SanPham> getAll() {
             return spi.findAll();
@@ -173,6 +175,7 @@
                 Integer idThuongHieu,
                 Integer idDanhMuc,
                 Integer idNhomHuong,
+                Integer idNongDo,
                 List<MuiHuongSelectionDTO> muiHuongSelections,
                 List<Integer> notHuongDauIds,
                 List<Integer> notHuongGiuaIds,
@@ -229,6 +232,8 @@
                     .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
             sanPham.setNhomHuong(nhi.findById(idNhomHuong)
                     .orElseThrow(() -> new RuntimeException("Nhóm hương không tồn tại")));
+            sanPham.setNongDo(ndi.findById(idNongDo)
+                    .orElseThrow(() -> new RuntimeException("Nồng độ không tồn tại")));
 
             // Bước 5: Tạo mới các tầng hương
             if (notHuongDauIds != null && !notHuongDauIds.isEmpty()) {
@@ -325,7 +330,8 @@
         }
 
         public SanPham addProductWithDetails(
-                String tenSanPham, String moTaSanPham, Integer idThuongHieu, Integer idDanhMuc, Integer idNhomHuong,
+                String tenSanPham, String moTaSanPham, Integer idThuongHieu,
+                Integer idDanhMuc, Integer idNhomHuong,Integer idNongDo,
                 List<MuiHuongSelectionDTO> muiHuongSelections,
                 List<Integer> notHuongDauIds, List<Integer> notHuongGiuaIds, List<Integer> notHuongCuoiIds,
                 List<Integer> phongCachIds, MultipartFile[] images) {
@@ -340,7 +346,8 @@
                     .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
             sanPham.setNhomHuong(nhi.findById(idNhomHuong)
                     .orElseThrow(() -> new RuntimeException("Nhóm hương không tồn tại")));
-
+            sanPham.setNongDo(ndi.findById(idNongDo)
+                    .orElseThrow(() -> new RuntimeException("Nồng độ không tồn tại")));
             // Handle HuongDau, HuongGiua, HuongCuoi (unchanged)
             HuongDau huongDau = new HuongDau();
             if (notHuongDauIds != null && !notHuongDauIds.isEmpty()) {
