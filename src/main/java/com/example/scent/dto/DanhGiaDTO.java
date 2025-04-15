@@ -10,6 +10,15 @@ public class DanhGiaDTO {
     private String comment;
     private LocalDateTime ngayTao;
     private String tenNguoiDung; // Tên người dùng để hiển thị
+    private Integer idDonHang;
+
+    public Integer getIdDonHang() {
+        return idDonHang;
+    }
+
+    public void setIdDonHang(Integer idDonHang) {
+        this.idDonHang = idDonHang;
+    }
 
     // Getters and Setters
     public Long getId() {

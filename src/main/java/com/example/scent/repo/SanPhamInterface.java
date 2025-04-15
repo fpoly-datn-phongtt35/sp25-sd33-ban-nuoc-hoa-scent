@@ -2,6 +2,7 @@ package com.example.scent.repo;
 
 import com.example.scent.dto.*;
 import com.example.scent.entity.SanPham;
+import com.example.scent.entity.Spct;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -314,6 +315,16 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             @Param("quocGia") String quocGia,
             Pageable pageable);
     //
+
+
+        @Query(value = "SELECT sp.id, COALESCE(SUM(sct.so_luong_ton_kho), 0) as so_luong_ton_kho\n" +
+                "FROM san_pham sp\n" +
+                "LEFT JOIN spct sct ON sp.id = sct.id_san_pham AND sct.trang_thai = 1\n" +
+                "GROUP BY sp.id",
+                nativeQuery = true)
+        List<Object[]> findTongSoLuongBySanPham();
+
+
     @Query("SELECT new com.example.scent.dto.SPTQDTO(" +
             "sp.idSanPham, concat(sp.tenSanPham,' ', spct.dungTich, 'ml'), spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia, " +

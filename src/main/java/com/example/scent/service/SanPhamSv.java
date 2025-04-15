@@ -610,15 +610,38 @@
             return sanPham;
         }
 
-        public Page<SanPhamInfoDTO> searchSanPhamCombined(String searchQuery,
-                                                          BigDecimal minPrice,
-                                                          BigDecimal maxPrice,
-                                                          String tenDanhMuc,
-                                                          String tenNhomHuong,
-                                                          String tenThuongHieu,
-                                                          String quocGia,
-                                                          Pageable pageable) {
-            return spi.searchSanPhamCombined(searchQuery, minPrice, maxPrice, tenDanhMuc, tenNhomHuong, tenThuongHieu, quocGia, pageable);
+        public Page<SanPhamInfoDTO> searchSanPhamCombined(
+                String searchQuery,
+                BigDecimal minPrice,
+                BigDecimal maxPrice,
+                String tenDanhMuc,
+                String tenNhomHuong,
+                String tenThuongHieu,
+                String quocGia,
+                Pageable pageable) {
+
+            // Lấy danh sách sản phẩm từ query hiện tại
+            Page<SanPhamInfoDTO> sanPhamPage = spi.searchSanPhamCombined(
+                    searchQuery, minPrice, maxPrice, tenDanhMuc,
+                    tenNhomHuong, tenThuongHieu, quocGia, pageable);
+
+            // Lấy tổng số lượng tồn kho
+            List<Object[]> tongSoLuongList = spi.findTongSoLuongBySanPham();
+
+            // Chuyển danh sách tổng số lượng thành Map để tra cứu nhanh
+            Map<Integer, Integer> tongSoLuongMap = new HashMap<>();
+            for (Object[] result : tongSoLuongList) {
+                Integer idSanPham = ((Number) result[0]).intValue(); // Convert to Integer
+                Integer tongSoLuong = ((Number) result[1]).intValue(); // Convert to Integer
+                tongSoLuongMap.put(idSanPham, tongSoLuong);
+            }
+
+            sanPhamPage.getContent().forEach(dto -> {
+                Integer tongSoLuong = tongSoLuongMap.getOrDefault(dto.getIdSanPham(), 0); // Use Integer 0
+                dto.setTongSoLuongTonKho(tongSoLuong);
+            });
+
+            return sanPhamPage;
         }
 
         public List<SPTQDTO> getALlSPTQ(String keyword) {

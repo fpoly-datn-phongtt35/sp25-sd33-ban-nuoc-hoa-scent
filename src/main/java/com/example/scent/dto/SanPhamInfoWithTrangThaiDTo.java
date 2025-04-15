@@ -1,16 +1,9 @@
 package com.example.scent.dto;
 
-import jakarta.persistence.Column;
-import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 
 
-public class SanPhamInfoDTO {
+public class SanPhamInfoWithTrangThaiDTo {
     private Integer IdSanPham;
     private String TenSanPham;
     private BigDecimal DonGia;
@@ -24,34 +17,9 @@ public class SanPhamInfoDTO {
     private String tennhomHuong;
     private String QuocGia;
     private Integer trangThai;
-    private Integer tongSoLuongTonKho; // Trường mới
+    private Integer soLuongTonkho;
     public Integer getTrangThai() {
         return trangThai;
-    }
-
-    public Integer getTongSoLuongTonKho() {
-        return tongSoLuongTonKho;
-    }
-
-    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai, Integer tongSoLuongTonKho) {
-        IdSanPham = idSanPham;
-        TenSanPham = tenSanPham;
-        DonGia = donGia;
-        this.imageURL = imageURL;
-        this.tenThuongHieu = tenThuongHieu;
-        this.tenDanhMuc = tenDanhMuc;
-        this.moTaHuongDau = moTaHuongDau;
-        this.moTaHuongGiua = moTaHuongGiua;
-        this.moTaHuongCuoi = moTaHuongCuoi;
-        IdnhomHuong = idnhomHuong;
-        this.tennhomHuong = tennhomHuong;
-        QuocGia = quocGia;
-        this.trangThai = trangThai;
-        this.tongSoLuongTonKho = tongSoLuongTonKho;
-    }
-
-    public void setTongSoLuongTonKho(Integer tongSoLuongTonKho) {
-        this.tongSoLuongTonKho = tongSoLuongTonKho;
     }
 
     public void setTrangThai(Integer trangThai) {
@@ -153,7 +121,18 @@ public class SanPhamInfoDTO {
         this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
-    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai) {
+    public Integer getSoLuongTonkho() {
+        return soLuongTonkho;
+    }
+
+    public void setSoLuongTonkho(Integer soLuongTonkho) {
+        this.soLuongTonkho = soLuongTonkho;
+    }
+
+    public SanPhamInfoWithTrangThaiDTo() {
+    }
+
+    public SanPhamInfoWithTrangThaiDTo(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai, Integer soLuongTonkho) {
         IdSanPham = idSanPham;
         TenSanPham = tenSanPham;
         DonGia = donGia;
@@ -167,9 +146,6 @@ public class SanPhamInfoDTO {
         this.tennhomHuong = tennhomHuong;
         QuocGia = quocGia;
         this.trangThai = trangThai;
-    }
-
-    public SanPhamInfoDTO() {
+        this.soLuongTonkho = soLuongTonkho;
     }
 }
-

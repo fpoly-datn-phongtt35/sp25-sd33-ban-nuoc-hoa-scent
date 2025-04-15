@@ -28,7 +28,19 @@ public class DanhGia {
     @Column(name = "ngay_tao")
     private LocalDateTime ngayTao;
 
+    @ManyToOne
+    @JoinColumn(name = "id_don_hang", nullable = false)
+    private DonHang donHang; // Liên kết với đơn hàng
     // Getters and Setters
+
+    public DonHang getDonHang() {
+        return donHang;
+    }
+
+    public void setDonHang(DonHang donHang) {
+        this.donHang = donHang;
+    }
+
     public Long getId() {
         return id;
     }

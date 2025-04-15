@@ -5,6 +5,7 @@ import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.repo.SanPhamBanChayDto;
+import com.example.scent.repo.SpctInterface;
 import com.example.scent.service.SanPhamSv;
 import com.example.scent.service.SpctSv;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,10 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @CrossOrigin("*")
@@ -419,6 +417,33 @@ class ProductUpdateMessage {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
+    }
+    @Autowired
+    SpctInterface spctInterface;
+    @GetMapping("/statuses")
+    public Map<Integer, Integer> getMultipleProductStatuses(@RequestParam("idSpcts") String idSpcts) {
+        try {
+            // Chuyển chuỗi idSpcts (dạng "1,2,3") thành List<Integer>
+            List<Integer> idList = Arrays.stream(idSpcts.split(","))
+                    .filter(s -> !s.trim().isEmpty()) // Loại bỏ các phần tử rỗng
+                    .map(Integer::parseInt) // Chuyển đổi chuỗi thành Integer
+                    .collect(Collectors.toList());
+
+            // Tìm tất cả Spct theo danh sách ID
+            List<Spct> spcts = spctInterface.findAllById(idList);
+
+            // Tạo Map để lưu idSpct và trạng thái
+            Map<Integer, Integer> statusMap = new HashMap<>();
+            for (Spct spct : spcts) {
+                statusMap.put(spct.getIdSpct(), spct.getTrangThai());
+            }
+
+            return statusMap;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Danh sách idSpcts chứa giá trị không hợp lệ: " + idSpcts, e);
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi lấy trạng thái Spct: " + e.getMessage(), e);
+        }
     }
 }
 
