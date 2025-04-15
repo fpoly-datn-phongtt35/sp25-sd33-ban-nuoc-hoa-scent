@@ -5,7 +5,7 @@
       <h2>Khách Hàng</h2>
       <div class="actions">
         <div class="search-box">
-          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Tìm kiếm" />
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="🔍 Tìm kiếm" />
         </div>
         <button class="export-btn">Export Excel</button>
       </div>
@@ -33,8 +33,8 @@
             <td>{{ account.sdt }}</td>
             <td>{{ account.diaChi }}</td>
             <td>
-              <button class="btn btn-sm btn-outline-primary" (click)="viewOrders(account.id)">
-                Xem đơn hàng
+              <button class="btn-action view" (click)="viewOrders(account.id)" title="Xem đơn hàng">
+                <i class="bi bi-eye"></i>
               </button>
             </td>
           </tr>
@@ -80,7 +80,7 @@
   <div *ngIf="!showMainContent && selectedAccountId !== null">
     <div class="employee-container">
       <a href="javascript:void(0)" (click)="closeOrders()" class="text-decoration-none text-muted fw-medium">
-        <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng
+        <i class="bi bi-arrow-left-circle me-1"></i> Quay lại danh sách khách hàng
       </a>
       <div class="mt-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -92,13 +92,13 @@
         </div>
 
         <div class="btn-group mb-4" role="group">
-          <button class="btn btn-outline-secondary" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
+          <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
           <button *ngIf="selectedTab === 'online'" class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
           <button *ngIf="selectedTab === 'online'" class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
+          <button *ngIf="selectedTab === 'online'" class="btn btn-outline-dark" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
           <button *ngIf="selectedTab === 'online'" class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
-          <button class="btn btn-outline-secondary" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
-          <button class="btn btn-outline-danger" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Hủy</button>
-          <button class="btn btn-outline-dark" *ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+          <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
+          <button class="btn btn-outline-danger" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Hủy</button>
         </div>
 
         <table class="table table-hover text-center">
@@ -123,22 +123,22 @@
               <td>{{ order.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</td>
               <td>
                 <ng-container [ngSwitch]="order.trangThai">
-                  <div *ngSwitchCase="1" class="badge-status status-warning">
+                  <div *ngSwitchCase="1" class="badge-status status-warning" title="Click để xác nhận đơn" (click)="confirmStatusChange(order)">
                     {{ order.phuongThucThanhToan?.toLowerCase().includes('ck') ? '💳 Chờ Thanh Toán' : '🕒 Chờ Xác Nhận' }}
                   </div>
-                  <div *ngSwitchCase="2" class="badge-status status-success">
+                  <div *ngSwitchCase="2" class="badge-status status-success" title="Click để chuyển sang đang giao" (click)="confirmStatusChange(order)">
                     ✅ Đã Xác Nhận
                   </div>
-                  <div *ngSwitchCase="3" class="badge-status status-info">
+                  <div *ngSwitchCase="3" class="badge-status status-info" title="Click để hoàn thành hoặc hủy đơn" (click)="confirmStatusChange(order)">
                     🚚 Đang Giao
                   </div>
-                  <div *ngSwitchCase="4" class="badge-status status-secondary disabled">
+                  <div *ngSwitchCase="4" class="badge-status status-secondary disabled" title="Đơn hàng đã hoàn tất">
                     🎉 Hoàn Thành
                   </div>
-                  <div *ngSwitchCase="5" class="badge-status status-danger disabled">
-                    ❌ Hủy {{ order.lyDoHuy }}
+                  <div *ngSwitchCase="5" class="badge-status status-danger disabled" title="Đơn hàng đã bị hủy">
+                    ❌ Hủy {{ order.lyDoHuy ? '(' + order.lyDoHuy + ')' : '' }}
                   </div>
-                  <div *ngSwitchCase="6" class="badge-status status-dark">
+                  <div *ngSwitchCase="6" class="badge-status status-dark" title="Click để xác nhận giao hàng" (click)="confirmStatusChange(order)">
                     💰 Đã Thanh Toán
                   </div>
                 </ng-container>

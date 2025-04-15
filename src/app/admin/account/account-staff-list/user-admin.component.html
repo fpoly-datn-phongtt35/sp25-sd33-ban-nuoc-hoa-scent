@@ -34,7 +34,7 @@
             <td>{{ account.tenDangNhap || 'N/A' }}</td>
             <td>{{ account.email || 'N/A' }}</td>
             <td>{{ account.sdt || 'N/A' }}</td>
-            <td>{{ account.trangThai === 1 ? 'Tiếp tục làm' : 'Nghỉ làm' }}</td>
+            <td>{{ account.trangThai === 1 ? 'Đang làm' : 'Nghỉ làm' }}</td>
             <td class="actions">
               <button class="btn-action edit" *ngIf="userRole !== 'STAFF'" (click)="openUpdateModal(account)" title="Chỉnh sửa">
                 <i class="bi bi-pencil"></i>
