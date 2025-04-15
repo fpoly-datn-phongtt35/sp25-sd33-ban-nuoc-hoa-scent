@@ -117,13 +117,28 @@
       </div>
     </div>
   </div>
+  <div class="average-rating-container" *ngIf="danhGias.length > 0">
+    <div class="rating-stars">
+      <ng-container *ngFor="let type of starTypes">
+        <span class="star" [ngClass]="type">★</span>
+      </ng-container>
+    </div>
+    <span class="rating-text">
+      {{ averageRating | number:'1.1-1' }}/5 ({{ danhGias.length }} đánh giá)
+    </span>
+  </div>
+
+  <div class="no-rating" *ngIf="danhGias.length === 0">
+    Chưa có đánh giá
+  </div>
+
 
   <!-- Phần Đánh giá sản phẩm -->
   <div class="reviews">
     <h2>Đánh giá sản phẩm</h2>
     <!-- Form gửi đánh giá mới -->
-   
-     
+
+
 
     <div class="filter-stars">
       <button [class.active]="selectedStarFilter === null" (click)="filterByStars(null)">Tất cả</button>
@@ -132,7 +147,6 @@
       </button>
     </div>
     <div class="review-list">
-      <p *ngIf="displayedDanhGias.length === 0">Chưa có đánh giá nào.</p>
       <div *ngFor="let danhGia of displayedDanhGias" class="review-item">
         <div class="review-header">
           <span class="user">{{ danhGia.tenNguoiDung }}</span>

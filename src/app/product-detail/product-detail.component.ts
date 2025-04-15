@@ -202,7 +202,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       }
     }
   }
-
   loadVolumes(): void {
     const productId = this.route.snapshot.paramMap.get('id');
     if (productId) {
@@ -311,14 +310,29 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+
+  starTypes: string[] = [];
+
   calculateAverageRating(): void {
     if (this.danhGias.length > 0) {
-      const totalRating = this.danhGias.reduce((sum, danhGia) => sum + danhGia.rating, 0);
+      const totalRating = this.danhGias.reduce((sum, dg) => sum + dg.rating, 0);
       this.averageRating = totalRating / this.danhGias.length;
     } else {
       this.averageRating = 0;
     }
+
+    this.starTypes = [];
+    for (let i = 1; i <= 5; i++) {
+      if (this.averageRating >= i) {
+        this.starTypes.push('full');
+      } else if (this.averageRating >= i - 0.5) {
+        this.starTypes.push('half');
+      } else {
+        this.starTypes.push('empty');
+      }
+    }
   }
+
 
   scrollImages(direction: string): void {
     if (direction === 'up' && this.selectedImageIndex > 0) {
