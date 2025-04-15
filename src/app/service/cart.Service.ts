@@ -59,7 +59,14 @@ export class CartService {
     this.loadCart();
     this.setupWebSocket();
   }
-
+  updateStock(productId: number, newStock: number): void {
+    this.cart.forEach((item, key) => {
+      if (item.product.idSanPham === productId) {
+        item.product.soLuongTonKho = newStock;
+      }
+    });
+    this.cartSubject.next(this.cart);
+  }
   private setupWebSocket(): void {
     const userId = this.getUserId();
     if (userId) {

@@ -148,7 +148,6 @@
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 30px;
-  
   margin-bottom: 30px;
   align-items: start;
 }
@@ -200,70 +199,152 @@
   color: #000;
 }
 
-/* Order status steps */
+/* Container cho trạng thái đơn hàng */
 .order-status {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  margin: 15px 0;
 }
 
+/* Thanh trạng thái đơn hàng */
+.status-timeline {
+  margin: 20px 0;
+  padding: 10px 0;
+  position: relative;
+}
+
+.status-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Căn giữa các bước theo chiều dọc */
+  position: relative;
+  width: 100%;
+}
+
+/* Đường timeline nền (màu xám nhạt) */
+.status-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 50%; /* Đặt đường timeline ở giữa icon */
+  transform: translateY(-50%); /* Căn giữa chính xác */
+  left: 0; /* Bắt đầu từ icon đầu tiên */
+  right: 0; /* Kết thúc ở icon cuối cùng */
+  height: 2px; /* Đường mỏng */
+  background: #d3d3d3; /* Màu xám nhạt */
+  z-index: 1; /* Đường timeline ở dưới icon */
+}
+
+/* Đường timeline cho các bước đã hoàn thành */
+.status-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #28a745; /* Màu xanh lá cho các bước đã hoàn thành */
+  z-index: 1;
+  transition: width 0.5s ease;
+}
+
+/* Điều chỉnh độ dài đường timeline màu xanh dựa trên trạng thái */
+.status-wrapper:has(.status-step:nth-child(1).active)::after {
+  width: 25%; /* Đến giữa icon 1 và 2 */
+}
+.status-wrapper:has(.status-step:nth-child(2).active)::after {
+  width: 50%; /* Đến giữa icon 2 và 3 */
+}
+.status-wrapper:has(.status-step:nth-child(3).active)::after {
+  width: 75%; /* Đến giữa icon 3 và 4 */
+}
+.status-wrapper:has(.status-step:nth-child(4).active)::after {
+  width: 100%; /* Đến icon cuối */
+}
+
+/* Các bước trạng thái */
 .status-step {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+  width: 20%; /* Chia đều cho 5 bước */
+  position: relative;
+  z-index: 2; /* Icon ở trên đường timeline */
+}
+
+.status-step .status-icon {
+  font-size: 28px; /* Kích thước icon */
+  color: #666; /* Màu icon xám mặc định */
+  background: #fff; /* Nền trắng để không bị đè lên đường timeline */
+  border-radius: 50%;
+  padding: 8px;
+  border: 2px solid #d3d3d3; /* Viền xám nhạt mặc định */
+  transition: all 0.3s ease;
+}
+
+.status-step .status-label {
   font-size: 14px;
-  color: #999;
-}
-
-.status-step i {
-  font-size: 20px;
-  margin-bottom: 5px;
-}
-
-.status-step.active {
-  color: #007bff;
-}
-.order-status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 15px 0;
-}
-
-.status-step {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  color: #ddd;
+  color: #666;
+  margin-top: 10px;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif; /* Font chữ hiện đại */
   transition: color 0.3s ease;
 }
 
-.status-step i {
-  font-size: 20px;
-  margin-right: 6px;
+.status-step .status-time {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+  font-family: 'Roboto', sans-serif;
+  white-space: nowrap;
 }
 
-.status-step.active {
+/* Các bước đã hoàn thành */
+.status-step.active .status-icon {
+  border-color: #28a745; /* Viền xanh lá cho bước đã hoàn thành */
+  color: #28a745; /* Icon màu xanh lá */
+}
+
+.status-step.active .status-label {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-step.active .status-time {
   color: #28a745;
 }
 
-.status-step i.fa-check-circle { color: #28a745; }
-.status-step i.fa-truck { color: #17a2b8; }
-.status-step i.fa-times-circle { color: #dc3545; }
-
-.status-step:not(:last-child)::after {
-  content: "→";
-  font-size: 20px;
-  margin: 0 10px;
-  color: #ddd;
+/* Bước hiện tại */
+.status-step.current .status-icon {
+  border-color: #28a745; /* Viền xanh lá */
+  color: #28a745; /* Icon màu xanh lá */
 }
 
-.status-step.active::after {
+.status-step.current .status-label {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-step.current .status-time {
   color: #28a745;
 }
 
-.status-step:last-child::after {
-  content: "";
+/* Trạng thái Đã hủy */
+.status-step.cancelled .status-icon {
+  border-color: #dc3545; /* Viền đỏ cho trạng thái hủy */
+  color: #dc3545; /* Icon màu đỏ */
+}
+
+.status-step.cancelled .status-label {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.status-step.cancelled .status-time {
+  color: #dc3545;
+}
+
+.status-step.cancelled ~ .status-step.active::before {
+  background: #dc3545 !important; /* Đường timeline màu đỏ nếu hủy */
 }
 
 /* Right column (payment and update form) */
@@ -271,7 +352,6 @@
   position: sticky;
   top: 20px;
   display: flex;
- 
   flex-direction: column;
   gap: 0;
 }
@@ -496,4 +576,115 @@
     flex-direction: column;
     gap: 10px;
   }
+
+  .status-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .status-wrapper::before {
+    width: 2px;
+    height: calc(100% - 40px); /* Điều chỉnh chiều cao timeline */
+    top: 20px;
+    left: 14px; /* Căn đường timeline bên trái */
+    background: #d3d3d3;
+  }
+
+  .status-wrapper::after {
+    width: 2px;
+    height: 0;
+    top: 20px;
+    left: 14px;
+  }
+
+  .status-wrapper:has(.status-step:nth-child(1).active)::after {
+    height: 25%;
+  }
+  .status-wrapper:has(.status-step:nth-child(2).active)::after {
+    height: 50%;
+  }
+  .status-wrapper:has(.status-step:nth-child(3).active)::after {
+    height: 75%;
+  }
+  .status-wrapper:has(.status-step:nth-child(4).active)::after {
+    height: 100%;
+  }
+
+  .status-step {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .status-step .status-icon {
+    font-size: 24px;
+    margin-right: 15px;
+    padding: 6px;
+  }
+
+  .status-step .status-label {
+    font-size: 13px;
+    margin-top: 0;
+    line-height: 24px;
+  }
+
+  .status-step .status-time {
+    font-size: 11px;
+    margin-left: 10px;
+  }
+}
+.form-buttons {
+  display: flex;
+  gap: 10px; /* Space between buttons */
+  margin-top: 10px; /* Space above the buttons */
+}
+
+.form-buttons button {
+  padding: 8px 16px; /* Padding for a comfortable click area */
+  border: none; /* Remove default border */
+  border-radius: 4px; /* Rounded corners */
+  font-size: 14px; /* Readable font size */
+  font-weight: 500; /* Slightly bold text */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s ease, transform 0.1s ease; /* Smooth transitions */
+}
+
+/* Style for the "Cập nhật đánh giá" or "Gửi đánh giá" button */
+.form-buttons button:first-child {
+  background-color: #007bff; /* Primary blue color */
+  color: #fff; /* White text */
+}
+
+.form-buttons button:first-child:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  transform: translateY(-1px); /* Slight lift effect */
+}
+
+.form-buttons button:first-child:active {
+  transform: translateY(0); /* Reset lift on click */
+}
+
+/* Style for the "Xóa đánh giá" button */
+.form-buttons .delete-button {
+  background-color: #dc3545; /* Danger red color */
+  color: #fff; /* White text */
+}
+
+.form-buttons .delete-button:hover {
+  background-color: #b02a37; /* Darker red on hover */
+  transform: translateY(-1px); /* Slight lift effect */
+}
+
+.form-buttons .delete-button:active {
+  transform: translateY(0); /* Reset lift on click */
+}
+
+/* Optional: Add a disabled state if needed */
+.form-buttons button:disabled {
+  background-color: #cccccc; /* Gray background */
+  cursor: not-allowed; /* Disabled cursor */
+  opacity: 0.6; /* Slightly faded */
 }

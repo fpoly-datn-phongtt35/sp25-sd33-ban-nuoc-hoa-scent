@@ -33,13 +33,11 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     completed: 4,
     cancelled: 5,
   };
-  danhGias: { [key: number]: { rating: number; comment: string } } = {};
+  danhGias: { [key: number]: { id?: number; rating: number; comment: string } } = {};
   isUpdateAddressFormVisible: boolean = false;
-
   provinces: { id: number; name: string }[] = [];
   districts: { id: string; name: string }[] = [];
   wards: { id: string; name: string }[] = [];
-
   private webSocketSubscription: Subscription | undefined;
 
   constructor(
@@ -95,29 +93,20 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
     const { idDonHang, trangThai } = update;
     console.log(`Cập nhật trạng thái đơn hàng ${idDonHang}: ${trangThai}`);
-    console.log('Current orders before update:', this.orders);
     const orderToUpdate = this.orders.find((order) => order.maDonHang === idDonHang);
     if (orderToUpdate) {
-      console.log('Found order to update:', orderToUpdate);
       orderToUpdate.trangThai = trangThai;
       orderToUpdate.statusLabel = this.getStatusLabel(trangThai);
       this.filteredOrders = [...this.orders];
 
       if (this.selectedOrder && this.selectedOrder.maDonHang === idDonHang) {
-        console.log('Updating selectedOrder:', this.selectedOrder);
         this.selectedOrder.trangThai = trangThai;
         this.selectedOrder.statusLabel = this.getStatusLabel(trangThai);
+        this.loadUserReviews();
       }
 
       this.cdRef.detectChanges();
-      console.log('Updated orders:', this.orders);
-      console.log('Updated filteredOrders:', this.filteredOrders);
-
-     
     } else {
-      console.log('Order not found in orders array:', idDonHang);
-      console.log('Current orders:', this.orders);
-      // Optionally reload orders if the order isn't in the list
       this.loadOrders();
     }
   }
@@ -129,13 +118,16 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           ...order,
           statusLabel: this.getStatusLabel(order.trangThai),
         }));
+  
+        this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
         this.filteredOrders = [...this.orders];
-        console.log('Dữ liệu đơn hàng:', this.orders);
-
+        console.log('Dữ liệu đơn hàng (sắp xếp theo maDonHang giảm dần):', this.orders);
+  
         if (this.selectedOrder) {
           const updatedOrder = this.orders.find((order) => order.maDonHang === this.selectedOrder.maDonHang);
           if (updatedOrder) {
             this.selectedOrder = { ...updatedOrder };
+            this.loadUserReviews();
           }
         }
       },
@@ -175,8 +167,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           }));
           this.wards = [];
           this.selectedOrder.maQuan = this.selectedOrder.maQuan || '';
-          console.log('Danh sách quận/huyện:', this.districts);
-
           if (this.selectedOrder.maQuan) {
             this.onDistrictChange();
           }
@@ -202,7 +192,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
             name: response.result[key],
           }));
           this.selectedOrder.maPhuong = this.selectedOrder.maPhuong || '';
-          console.log('Danh sách phường/xã:', this.wards);
         },
         error: (error) => {
           console.error('Lỗi khi lấy danh sách phường:', error);
@@ -220,7 +209,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       if (!this.provinces || this.provinces.length === 0) {
         this.loadProvinces();
       }
-
       if (this.selectedOrder?.maTinh) {
         this.onProvinceChange();
       }
@@ -237,13 +225,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       maPhuong: formData.maPhuong,
     };
 
-    console.log('Dữ liệu gửi đi:', updateData);
-
     this.donhangService.updateOrderAddress(this.selectedOrder.maDonHang, updateData).subscribe({
       next: (response) => {
-        console.log('Dữ liệu trả về từ API updateOrderAddress:', response);
         this.isUpdateAddressFormVisible = false;
-
         Swal.fire({
           title: 'Thành công!',
           text: 'Địa chỉ giao hàng đã được cập nhật.',
@@ -251,7 +235,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           timer: 1500,
           showConfirmButton: false,
         });
-
         this.loadOrders();
       },
       error: (error) => {
@@ -288,19 +271,57 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   toggleOrderDetail(order: any): void {
     if (this.selectedOrder === order) {
       this.selectedOrder = null;
+      this.danhGias = {};
     } else {
       this.selectedOrder = order;
+      this.danhGias = {};
+      this.loadUserReviews();
       if (this.selectedOrder.trangThai === 4) {
         this.selectedOrder.chiTietDonHangs.forEach((item: any) => {
           if (!item.idSanPham) {
             console.error('Lỗi: sanPhamId không tồn tại cho sản phẩm:', item);
             return;
           }
-          this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
-          console.log(`Khởi tạo danhGias cho sanPhamId: ${item.idSanPham}`, this.danhGias[item.idSanPham]);
+          if (!this.danhGias[item.idSanPham]) {
+            this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
+          }
         });
       }
     }
+  }
+
+  // Lấy thông tin đánh giá của người dùng cho các sản phẩm trong đơn hàng
+  loadUserReviews(): void {
+    if (!this.selectedOrder || this.selectedOrder.trangThai !== 4) {
+      this.danhGias = {};
+      return;
+    }
+
+    this.selectedOrder.chiTietDonHangs.forEach((item: any) => {
+      if (item.idSanPham) {
+        this.danhGiaService
+          .getUserDanhGia(item.idSanPham, this.userId, this.selectedOrder.maDonHang)
+          .subscribe({
+            next: (danhGia: any) => {
+              if (danhGia) {
+                this.danhGias[item.idSanPham] = {
+                  id: danhGia.id,
+                  rating: danhGia.rating,
+                  comment: danhGia.comment,
+                };
+              } else {
+                this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
+              }
+              this.cdRef.detectChanges();
+            },
+            error: (error) => {
+              console.error(`Lỗi khi lấy đánh giá cho sản phẩm ${item.idSanPham}:`, error);
+              this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
+              this.cdRef.detectChanges();
+            },
+          });
+      }
+    });
   }
 
   setRating(productId: string, rating: number): void {
@@ -312,6 +333,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.selectedOrder = null;
+    this.danhGias = {};
   }
 
   cancelOrder(orderId: number): void {
@@ -361,65 +383,172 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? 0;
     this.selectedStatus = statusCode;
-
+  
     if (statusCode === 0) {
       this.filteredOrders = [...this.orders];
     } else {
       this.filteredOrders = this.orders.filter((order) => order.trangThai === statusCode);
+      this.filteredOrders.sort((a, b) => b.maDonHang - a.maDonHang);
     }
-
-    console.log('Lọc đơn hàng với trạng thái:', status, this.filteredOrders);
   }
 
   submitDanhGia(productId: number): void {
     const danhGia = this.danhGias[productId];
     if (danhGia.rating < 1 || danhGia.rating > 5) {
-      Swal.fire({
-        title: 'Lỗi',
-        text: 'Vui lòng chọn đánh giá từ 1 đến 5 sao!',
-        icon: 'error',
-        confirmButtonText: 'OK',
-      });
-      return;
+        Swal.fire({
+            title: 'Lỗi',
+            text: 'Vui lòng chọn đánh giá từ 1 đến 5 sao!',
+            icon: 'error',
+            confirmButtonText: 'OK',
+        });
+        return;
     }
 
     if (!danhGia.comment.trim()) {
+        Swal.fire({
+            title: 'Lỗi',
+            text: 'Vui lòng nhập bình luận!',
+            icon: 'error',
+            confirmButtonText: 'OK',
+        });
+        return;
+    }
+
+    if (danhGia.id) {
+        // Fetch the existing review to get the correct idDonHang
+        this.danhGiaService.getUserDanhGia(productId, this.userId, this.selectedOrder.maDonHang).subscribe({
+            next: (existingDanhGia: any) => {
+                if (existingDanhGia && existingDanhGia.id === danhGia.id) {
+                    const danhGiaDTO = {
+                        id: danhGia.id,
+                        idSanPham: productId,
+                        idTaiKhoan: this.userId,
+                        idDonHang: existingDanhGia.idDonHang, // Use the idDonHang from the database
+                        rating: danhGia.rating,
+                        comment: danhGia.comment,
+                    };
+
+                    console.log('Updating review with ID:', danhGia.id);
+                    console.log('DanhGiaDTO:', danhGiaDTO);
+
+                    this.danhGiaService.updateDanhGia(danhGia.id, danhGiaDTO).subscribe({
+                        next: (res) => {
+                            Swal.fire({
+                                title: 'Thành công!',
+                                text: 'Đánh giá của bạn đã được cập nhật.',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false,
+                            });
+                            this.loadUserReviews();
+                        },
+                        error: (err) => {
+                            const errorMessage = err.error?.message || 'Có lỗi xảy ra khi cập nhật đánh giá.';
+                            Swal.fire({
+                                title: 'Lỗi',
+                                text: errorMessage,
+                                icon: 'error',
+                                confirmButtonText: 'OK',
+                            });
+                        },
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Lỗi',
+                        text: 'Đánh giá không tồn tại hoặc không khớp. Vui lòng thử lại.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
+                    this.loadUserReviews();
+                }
+            },
+            error: (err) => {
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Không thể kiểm tra đánh giá. Vui lòng thử lại.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+                this.loadUserReviews();
+            },
+        });
+    } else {
+        const danhGiaDTO = {
+            idSanPham: productId,
+            idTaiKhoan: this.userId,
+            idDonHang: this.selectedOrder.maDonHang,
+            rating: danhGia.rating,
+            comment: danhGia.comment,
+        };
+
+        this.danhGiaService.addDanhGia(danhGiaDTO).subscribe({
+            next: (res) => {
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: 'Đánh giá của bạn đã được gửi.',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+                this.loadUserReviews();
+            },
+            error: (err) => {
+                const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gửi đánh giá.';
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: errorMessage,
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+            },
+        });
+    }
+}
+
+  deleteDanhGia(productId: number): void {
+    const danhGia = this.danhGias[productId];
+    if (!danhGia.id) {
       Swal.fire({
         title: 'Lỗi',
-        text: 'Vui lòng nhập bình luận!',
+        text: 'Không tìm thấy đánh giá để xóa.',
         icon: 'error',
         confirmButtonText: 'OK',
       });
       return;
     }
 
-    const danhGiaDTO = {
-      idSanPham: productId,
-      idTaiKhoan: this.userId,
-      rating: danhGia.rating,
-      comment: danhGia.comment,
-    };
-
-    this.danhGiaService.addDanhGia(danhGiaDTO).subscribe({
-      next: (res) => {
-        Swal.fire({
-          title: 'Thành công!',
-          text: 'Đánh giá của bạn đã được gửi.',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false,
+    Swal.fire({
+      title: 'Xác nhận xóa đánh giá',
+      text: 'Bạn có chắc chắn muốn xóa đánh giá này?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.danhGiaService.deleteDanhGia(danhGia.id, this.userId).subscribe({
+          next: () => {
+            Swal.fire({
+              title: 'Thành công!',
+              text: 'Đánh giá đã được xóa.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+            this.danhGias[productId] = { rating: 0, comment: '' };
+            this.loadUserReviews();
+          },
+          error: (err) => {
+            const errorMessage = err.error?.message || 'Có lỗi xảy ra khi xóa đánh giá.';
+            Swal.fire({
+              title: 'Lỗi',
+              text: errorMessage,
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
+          },
         });
-        this.danhGias[productId] = { rating: 0, comment: '' };
-      },
-      error: (err) => {
-        const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gửi đánh giá.';
-        Swal.fire({
-          title: 'Lỗi',
-          text: errorMessage,
-          icon: 'error',
-          confirmButtonText: 'OK',
-        });
-      },
+      }
     });
   }
 }

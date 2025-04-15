@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { Subscription } from 'rxjs';
- // Import WebSocketService
 import Swal from 'sweetalert2';
 import { WebSocketService } from '../service/WebSocketService';
 
@@ -20,15 +19,17 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
   totalPrice: number = 0;
   selectedProducts: CartItemWithKey[] = [];
   private cartSubscription: Subscription;
-  private webSocketSubscription: Subscription | undefined;
+  private spctWebSocketSubscription: Subscription | undefined;
+  private adminWebSocketSubscription: Subscription | undefined; // Thêm subscription cho admin messages
 
   constructor(
     private cartService: CartService,
     private router: Router,
-    private webSocketService: WebSocketService // Inject WebSocketService
+    private webSocketService: WebSocketService
   ) {}
 
   ngOnInit(): void {
+    // Đăng ký observable từ CartService để cập nhật giỏ hàng
     this.cartSubscription = this.cartService.getCartObservable().subscribe(cart => {
       console.log('🛒 Nhận cập nhật giỏ hàng từ observable:', Array.from(cart.entries()));
       this.cartItems = Array.from(cart.entries()).map(([key, value]) => ({
@@ -36,30 +37,46 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
         ...value
       }));
       console.log('🛒 Cập nhật giỏ hàng trên giao diện:', this.cartItems);
-  
-      // Update selectedProducts with the new quantities
+
+      // Đồng bộ selectedProducts với cartItems
       this.selectedProducts = this.selectedProducts.map(selectedItem => {
         const updatedItem = this.cartItems.find(item => item.key === selectedItem.key);
         if (updatedItem) {
-          return { ...selectedItem, quantity: updatedItem.quantity };
+          return {
+            ...selectedItem,
+            quantity: updatedItem.quantity,
+            product: { ...selectedItem.product, soLuongTonKho: updatedItem.product.soLuongTonKho }
+          };
         }
         return selectedItem;
       }).filter(sp => this.cartItems.some(item => item.key === sp.key));
-  
+
       this.calculateTotalPrice();
     });
-  
-    const userId = 0;
-    console.log(`[ShoppingCartComponent] Connecting WebSocket for userId: ${userId}`);
-    this.webSocketService.connect(userId);
-  
-    this.webSocketSubscription = this.webSocketService.getSpctUpdates().subscribe({
+
+    // Kết nối WebSocket
+    console.log('[ShoppingCartComponent] Connecting WebSocket');
+    this.webSocketService.connect(0);
+
+    // Đăng ký lắng nghe thông báo từ /topic/spctUpdates
+    this.spctWebSocketSubscription = this.webSocketService.getSpctUpdates().subscribe({
       next: (update: any) => {
-        console.log('[ShoppingCartComponent] SPCT update received:', update);
-        this.handleSpctUpdate(update);
+        console.log('[ShoppingCartComponent] SPCT update received from /topic/spctUpdates:', update);
+        this.handleStockUpdate(update);
       },
       error: (err) => {
-        console.error('[ShoppingCartComponent] WebSocket error:', err);
+        console.error('[ShoppingCartComponent] WebSocket error (spctUpdates):', err);
+      }
+    });
+
+    // Đăng ký lắng nghe thông báo từ /topic/admin/orders
+    this.adminWebSocketSubscription = this.webSocketService.getAdminMessages().subscribe({
+      next: (update: any) => {
+        console.log('[ShoppingCartComponent] Admin message received from /topic/admin/orders:', update);
+        this.handleStockUpdate(update);
+      },
+      error: (err) => {
+        console.error('[ShoppingCartComponent] WebSocket error (admin/orders):', err);
       }
     });
   }
@@ -68,50 +85,81 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
     }
-    if (this.webSocketSubscription) {
-      this.webSocketSubscription.unsubscribe();
+    if (this.spctWebSocketSubscription) {
+      this.spctWebSocketSubscription.unsubscribe();
+    }
+    if (this.adminWebSocketSubscription) {
+      this.adminWebSocketSubscription.unsubscribe();
     }
     this.webSocketService.disconnect();
     console.log('[ShoppingCartComponent] Disconnected WebSocket and unsubscribed');
   }
 
-  private handleSpctUpdate(update: any) {
-    const spctId = update.idSpct; // ID của SPCT từ thông báo WebSocket
-    const trangThai = update.trangThai; // Trạng thái mới của SPCT
+  private handleStockUpdate(update: any) {
+    const productId = update.productId;
+    const newStock = update.stock;
 
-    // Kiểm tra nếu SPCT bị ngưng bán (trangThai = 0)
-    if (trangThai === 0) {
-      // Tìm SPCT trong giỏ hàng
-      const itemIndex = this.cartItems.findIndex(item => item.product.idSpct === spctId);
-      if (itemIndex !== -1) {
-        const removedItem = this.cartItems[itemIndex];
-        const itemKey = removedItem.key;
+    if (productId === undefined || newStock === undefined) {
+      console.warn('[ShoppingCartComponent] Invalid WebSocket update:', update);
+      return;
+    }
 
-        // Xóa khỏi cartItems
-        this.cartItems.splice(itemIndex, 1);
+    // Cập nhật số lượng tồn kho trong CartService trước
+    this.cartService.updateStock(productId, newStock);
 
-        // Xóa khỏi selectedProducts nếu có
-        this.selectedProducts = this.selectedProducts.filter(item => item.key !== itemKey);
+    // Cập nhật cartItems
+    this.cartItems = this.cartItems.map(item => {
+      if (item.product.idSanPham === productId) {
+        console.log(`[ShoppingCartComponent] Updating stock for product ${productId}: ${item.product.soLuongTonKho} -> ${newStock}`);
+        item.product.soLuongTonKho = newStock;
 
-        // Đồng bộ với CartService
-        this.cartService.removeFromCart(itemKey);
-
-        // Tính lại tổng giá
-        this.calculateTotalPrice();
-
-        // Thông báo cho người dùng
-       
-
-        // Nếu giỏ hàng trống, thông báo thêm
-        if (this.cartItems.length === 0) {
+        if (newStock <= 0) {
+          this.cartService.removeFromCart(item.key);
+          this.selectedProducts = this.selectedProducts.filter(selected => selected.key !== item.key);
           Swal.fire({
-            icon: 'info',
-            title: 'Giỏ hàng trống',
-            text: 'Giỏ hàng của bạn hiện đang trống!',
+            icon: 'warning',
+            title: 'Sản phẩm hết hàng',
+            text: `"${item.product.tenSanPham}" đã hết hàng và được xóa khỏi giỏ hàng!`,
+            position: 'bottom-end'
+          });
+          return null;
+        } else if (item.quantity > newStock) {
+          console.log(`[ShoppingCartComponent] Adjusting quantity for ${item.product.tenSanPham}: ${item.quantity} -> ${newStock}`);
+          item.quantity = newStock;
+          this.cartService.updateCartItem(item.product.idSanPham, item.product.dungTich.toString(), newStock);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Số lượng đã được điều chỉnh',
+            text: `Số lượng của "${item.product.tenSanPham}" đã được điều chỉnh về ${newStock} do tồn kho thay đổi!`,
             position: 'bottom-end'
           });
         }
       }
+      return item;
+    }).filter(item => item !== null);
+
+    // Đồng bộ selectedProducts
+    this.selectedProducts = this.selectedProducts.map(selectedItem => {
+      const updatedItem = this.cartItems.find(item => item.key === selectedItem.key);
+      if (updatedItem) {
+        return {
+          ...selectedItem,
+          quantity: updatedItem.quantity,
+          product: { ...selectedItem.product, soLuongTonKho: updatedItem.product.soLuongTonKho }
+        };
+      }
+      return selectedItem;
+    }).filter(sp => this.cartItems.some(item => item.key === sp.key));
+
+    this.calculateTotalPrice();
+
+    if (this.cartItems.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Giỏ hàng trống',
+        text: 'Giỏ hàng của bạn hiện đang trống!',
+        position: 'bottom-end'
+      });
     }
   }
 
@@ -127,7 +175,7 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       this.removeItem(key);
       return;
     }
-  
+
     const item = this.cartItems.find(i => i.key === key);
     if (item && item.product.soLuongTonKho !== undefined && quantity > item.product.soLuongTonKho) {
       Swal.fire({
@@ -138,22 +186,16 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       });
       return;
     }
-  
+
     console.log('📝 Gọi updateCartItem: productId=', productId, 'volume=', volume, 'quantity=', quantity);
     this.cartService.updateCartItem(Number(productId), volume, quantity);
-  
-    // Update the quantity in both cartItems and selectedProducts
+
     if (item) {
-      // Update the quantity in cartItems
       item.quantity = quantity;
-  
-      // Update the quantity in selectedProducts (if the item is selected)
       const selectedItem = this.selectedProducts.find(sp => sp.key === key);
       if (selectedItem) {
         selectedItem.quantity = quantity;
       }
-  
-      // Recalculate the total price
       this.calculateTotalPrice();
     }
   }
@@ -225,7 +267,6 @@ export class ShoppingCartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Lưu vào CartService và chuyển hướng
     this.cartService.setSelectedCartItems(this.selectedProducts);
     this.router.navigate(['/app-order']);
   }

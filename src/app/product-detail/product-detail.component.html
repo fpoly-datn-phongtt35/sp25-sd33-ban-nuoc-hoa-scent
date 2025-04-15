@@ -20,14 +20,18 @@
 
       <!-- Nút chọn dung tích -->
       <div class="volume-options">
-        <button *ngFor="let volume of volumes"
-                [class.selected]="selectedVolume === volume"
-                (click)="selectVolume(volume)">
+        <button
+          *ngFor="let volume of activeVolumes; let i = index"
+          [disabled]="volume.soLuongTonKho <= 0"
+          [ngClass]="{'disabled-volume': volume.soLuongTonKho <= 0, 'selected': selectedVolume?.idSpct === volume.idSpct}"
+          (click)="volume.soLuongTonKho > 0 ? selectVolume(volume) : null"
+        >
           {{ volume.dungTich }}ml - {{ volume.donGia | number }}đ
+          <span *ngIf="volume.soLuongTonKho <= 0" class="out-of-stock-label">Hết hàng</span>
         </button>
       </div>
 
-      <!-- Giá hiện tại (nổi bật) -->
+      <!-- Giá hiện tại -->
       <div class="current-price" *ngIf="selectedVolume">
         <span class="price">{{ selectedVolume.donGia | number }}đ</span>
       </div>
@@ -75,15 +79,12 @@
 
   <!-- Tabs: Chi tiết sản phẩm và Sử dụng & bảo quản -->
   <div class="tabs">
-    <!-- Nút tab -->
     <div class="tab-buttons">
       <button [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Chi tiết sản phẩm</button>
       <button [class.active]="activeTab === 'usage'" (click)="setActiveTab('usage')">Sử dụng và bảo quản</button>
     </div>
 
-    <!-- Nội dung tab -->
     <div class="tab-content">
-      <!-- Tab 1: Chi tiết sản phẩm -->
       <div class="tab-pane" *ngIf="activeTab === 'details'">
         <div class="product-specs">
           <p><strong>Thương hiệu:</strong> {{ product.tenThuongHieu || 'Không có thông tin' }}</p>
@@ -101,7 +102,6 @@
         </div>
       </div>
 
-      <!-- Tab 2: Sử dụng và bảo quản -->
       <div class="tab-pane" *ngIf="activeTab === 'usage'">
         <div class="usage-section">
           <h3>Sử dụng và bảo quản</h3>
@@ -114,14 +114,17 @@
             <li>Nước hoa có thể bảo quản tốt nhất trong khoảng từ 6 đến 8 năm, nhưng nếu bạn không sử dụng thường xuyên, hãy bảo quản nước hoa ở nơi thoáng mát, tránh ánh nắng trực tiếp để giữ mùi hương lâu dài.</li>
           </ul>
         </div>
-      
       </div>
     </div>
   </div>
 
-  <!-- Phần Đánh giá sản phẩm (ngoài tab) -->
+  <!-- Phần Đánh giá sản phẩm -->
   <div class="reviews">
     <h2>Đánh giá sản phẩm</h2>
+    <!-- Form gửi đánh giá mới -->
+   
+     
+
     <div class="filter-stars">
       <button [class.active]="selectedStarFilter === null" (click)="filterByStars(null)">Tất cả</button>
       <button *ngFor="let star of [1, 2, 3, 4, 5]" [class.active]="selectedStarFilter === star" (click)="filterByStars(star)">
@@ -138,16 +141,44 @@
           </span>
           <span class="date">{{ danhGia.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</span>
         </div>
-        <p>{{ danhGia.comment }}</p>
+        <div *ngIf="isOwnReview(danhGia) && danhGia.isEditing; else viewMode">
+          <div class="edit-rating">
+            <span
+              *ngFor="let star of [1, 2, 3, 4, 5]"
+              (click)="setRatingForEdit(danhGia, star)"
+              [class.selected]="danhGia.newRating >= star"
+            >
+              ★
+            </span>
+          </div>
+          <textarea
+            [(ngModel)]="danhGia.newComment"
+            placeholder="Nhập bình luận của bạn..."
+            rows="4"
+            class="edit-comment"
+          ></textarea>
+          <div class="review-actions">
+            <button class="update-btn" (click)="editDanhGia(danhGia)">Lưu</button>
+            <button class="cancel-btn" (click)="danhGia.isEditing = false">Hủy</button>
+          </div>
+        </div>
+        <ng-template #viewMode>
+          <p>{{ danhGia.comment }}</p>
+          <div class="review-actions" *ngIf="isOwnReview(danhGia)">
+            <button class="update-btn" (click)="danhGia.isEditing = true; danhGia.newRating = danhGia.rating; danhGia.newComment = danhGia.comment">
+              Cập nhật
+            </button>
+            <button class="delete-btn" (click)="deleteDanhGia(danhGia.id)">Xóa</button>
+          </div>
+        </ng-template>
       </div>
       <button *ngIf="filteredDanhGias.length > 2" class="view-more-btn" (click)="toggleShowAllReviews()">
         {{ showAllReviews ? 'Ẩn bớt' : 'Xem thêm' }}
       </button>
     </div>
-   
   </div>
 
-  <!-- Sản phẩm liên quan (đặt dưới cùng) -->
+  <!-- Sản phẩm liên quan -->
   <div class="related-products">
     <h3>Sản phẩm liên quan</h3>
     <div class="related-product-list" *ngIf="recommendedProducts.length > 0; else noRelatedProducts">

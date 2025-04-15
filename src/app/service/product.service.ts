@@ -135,4 +135,16 @@ addPhongCach(body: any): Observable<any> {
 updateSanPhamTrangThai(id: number, trangThai: number): Observable<any> {
   return this.http.put(`${this.baseUrl}/updateTrangThai/${id}?trangThai=${trangThai}`, null);
 }
+getMultipleProductStatuses(idSpcts: number[]): Observable<{ [key: number]: number }> {
+  let params = new HttpParams();
+  params = params.set('idSpcts', idSpcts.join(','));
+
+  return this.http.get<{ [key: number]: number }>(`${this.baseUrl}/statuses`, { params }).pipe(
+    catchError((error) => {
+      console.error('Lỗi khi lấy trạng thái của Spct:', error);
+      return throwError(() => new Error('Không thể lấy trạng thái của Spct'));
+    })
+  );
+}
+
 }

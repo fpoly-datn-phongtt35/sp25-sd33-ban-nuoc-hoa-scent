@@ -288,3 +288,59 @@ body {
 .dots {
   cursor: default;
 }
+.out-of-stock {
+  opacity: 0.5; /* Làm mờ sản phẩm */
+  cursor: not-allowed; /* Thay đổi con trỏ để chỉ ra không thể click */
+  transform: none !important; /* Ngăn hiệu ứng hover */
+}
+
+.out-of-stock-overlay {
+  position: absolute;
+  top: 10px; /* Cách lề trên 10px */
+  left: 10px; /* Cách lề trái 10px */
+  background: rgba(255, 0, 0, 0.8); /* Màu nền đỏ với độ trong suốt */
+  color: #fff; /* Chữ trắng */
+  padding: 3px 8px; /* Padding nhỏ hơn để phù hợp với góc */
+  border-radius: 3px; /* Bo góc nhẹ */
+  font-size: 12px; /* Kích thước chữ nhỏ hơn */
+}
+
+.out-of-stock-text {
+  position: relative;
+  display: inline-block;
+  font-weight: bold;
+
+  /* Tạo hiệu ứng gạch ngang */
+  &:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px; /* Độ dày của gạch ngang */
+    background: #fff; /* Màu gạch ngang */
+    transform: translateY(-50%);
+  }
+}
+.out-of-stock-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(255, 0, 0, 0.8); /* Màu đỏ với độ mờ */
+  color: white;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 3px;
+  z-index: 10;
+}
+
+/* Làm mờ sản phẩm khi hết hàng */
+.disabled-product {
+  opacity: 0.5; /* Làm mờ sản phẩm */
+  cursor: not-allowed; /* Đổi con trỏ chuột để báo hiệu không thể nhấp */
+  
+  &:hover {
+    transform: none; /* Không phóng to khi hover */
+  }
+}

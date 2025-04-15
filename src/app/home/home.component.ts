@@ -189,6 +189,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.sanPhams = data.content || [];
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
+        console.log('producvt',data)
        
       },
       error: (err: any) => {
