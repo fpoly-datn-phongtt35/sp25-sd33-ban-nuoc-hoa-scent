@@ -1,289 +1,324 @@
-<div class="modal d-flex align-items-center justify-content-center show" style="display: flex;" tabindex="-1">
+<div class="modal fade show" style="display: flex" tabindex="-1">
   <div class="modal-dialog custom-modal">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold">Cập nhật sản phẩm</h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
 
       <div class="modal-body">
-        <!-- Hiển thị thông báo lỗi nếu có -->
-        <div *ngIf="errorMessage" class="alert alert-danger text-center">
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="alert alert-danger text-center mb-4">
           {{ errorMessage }}
         </div>
 
-        <!-- Hiển thị loading spinner khi đang tải dữ liệu -->
-        <div *ngIf="loadingMuiHuong && !errorMessage" class="text-muted text-center">
+        <!-- Loading Spinner -->
+        <div *ngIf="loadingMuiHuong && !errorMessage" class="text-center text-muted mb-4">
+          <div class="spinner-border spinner-border-sm" role="status"></div>
           Đang tải dữ liệu sản phẩm...
         </div>
 
-        <!-- Hiển thị form khi dữ liệu đã tải xong và không có lỗi -->
-        <form *ngIf="!loadingMuiHuong && !errorMessage" [formGroup]="productForm">
-          <div class="row g-3">
-            <!-- Tên sản phẩm -->
-            <div class="col-md-12">
-              <label class="form-label fw-semibold">Tên sản phẩm</label>
-              <input type="text" class="form-control" formControlName="ten">
-              <div *ngIf="productForm.get('ten')?.touched && productForm.get('ten')?.invalid" class="text-danger small mt-1">
-                <div *ngIf="productForm.get('ten')?.errors?.['required']">Tên sản phẩm là bắt buộc.</div>
-                <div *ngIf="productForm.get('ten')?.errors?.['minlength']">Tên phải có ít nhất 3 ký tự.</div>
-              </div>
+        <!-- Form -->
+        <form *ngIf="!loadingMuiHuong && !errorMessage" [formGroup]="productForm" class="row g-3">
+          <!-- Product Name -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Tên sản phẩm</label>
+            <input type="text" class="form-control" formControlName="ten" placeholder="Nhập tên sản phẩm" />
+            <div *ngIf="productForm.get('ten')?.touched && productForm.get('ten')?.invalid" class="text-danger small mt-1">
+              <div *ngIf="productForm.get('ten')?.errors?.['required']">Tên sản phẩm là bắt buộc.</div>
+              <div *ngIf="productForm.get('ten')?.errors?.['minlength']">Tên phải có ít nhất 3 ký tự.</div>
             </div>
+          </div>
 
-            <!-- Thương hiệu, Danh mục, Nhóm hương -->
-            <div class="col-md-12">
-              <div class="row g-2">
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">Thương hiệu</label>
-                  <ng-select
-                    formControlName="idThuongHieu"
-                    [items]="thuongHieuList"
-                    bindLabel="tenThuongHieu"
-                    bindValue="id"
-                    placeholder="Chọn thương hiệu..."
-                    [searchable]="true"
-                    [searchFn]="customSearchFn">
-                    <ng-template ng-option-tmp let-item="item">
-                      <div *ngIf="item.id !== -1">{{ item.tenThuongHieu }}</div>
-                      <div *ngIf="item.id === -1" class="text-primary">➕ Thêm thương hiệu mới...</div>
-                    </ng-template>
-                  </ng-select>
-                  <div *ngIf="productForm.get('idThuongHieu')?.touched && productForm.get('idThuongHieu')?.invalid" class="text-danger small mt-1">
-                    Vui lòng chọn thương hiệu.
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">Danh mục</label>
-                  <select class="form-select" formControlName="idDanhMuc">
-                    <option value="" disabled>Chọn danh mục...</option>
-                    <option *ngFor="let dm of danhMucList" [value]="dm.id">{{ dm.tenDanhMuc }}</option>
-                  </select>
-                  <div *ngIf="productForm.get('idDanhMuc')?.touched && productForm.get('idDanhMuc')?.invalid" class="text-danger small mt-1">
-                    Vui lòng chọn danh mục.
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">Nhóm hương</label>
-                  <ng-select
-                    formControlName="idNhomHuong"
-                    [items]="nhomHuongList"
-                    bindLabel="tenNhomHuong"
-                    bindValue="id"
-                    placeholder="Chọn nhóm hương..."
-                    [searchable]="true"
-                    [searchFn]="customSearchFn">
-                    <ng-template ng-option-tmp let-item="item">
-                      <div *ngIf="item.id !== -1">{{ item.tenNhomHuong }}</div>
-                      <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nhóm hương mới...</div>
-                    </ng-template>
-                  </ng-select>
-                  <div *ngIf="productForm.get('idNhomHuong')?.touched && productForm.get('idNhomHuong')?.invalid" class="text-danger small mt-1">
-                    Vui lòng chọn nhóm hương.
-                  </div>
+          <!-- Brand, Category, Concentration, Scent Group -->
+          <div class="col-12">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Thương hiệu</label>
+                <ng-select
+                  formControlName="idThuongHieu"
+                  [items]="thuongHieuList"
+                  bindLabel="tenThuongHieu"
+                  bindValue="id"
+                  placeholder="Chọn thương hiệu..."
+                  [searchable]="true"
+                  [searchFn]="customSearchFn"
+                >
+                  <ng-template ng-option-tmp let-item="item">
+                    <div *ngIf="item.id !== -1">{{ item.tenThuongHieu }}</div>
+                    <div *ngIf="item.id === -1" class="text-primary">➕ Thêm thương hiệu mới...</div>
+                  </ng-template>
+                </ng-select>
+                <div *ngIf="productForm.get('idThuongHieu')?.touched && productForm.get('idThuongHieu')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn thương hiệu.
                 </div>
               </div>
-            </div>
-
-            <!-- Hương đầu -->
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Hương đầu</label>
-              <ng-select
-                [items]="notHuongList"
-                bindLabel="tenNotHuong"
-                bindValue="id"
-                [multiple]="true"
-                [searchable]="true"
-                [searchFn]="customSearchFn"
-                placeholder="Chọn nốt hương đầu..."
-                formControlName="notHuongDauIds"
-                (change)="onNotHuongChange('notHuongDauIds', $event)">
-                <ng-template ng-option-tmp let-item="item">
-                  <div *ngIf="item.id !== -1">{{ item.tenNotHuong }}</div>
-                  <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nốt hương mới...</div>
-                </ng-template>
-              </ng-select>
-              <div *ngIf="productForm.get('notHuongDauIds')?.touched && productForm.get('notHuongDauIds')?.invalid" class="text-danger small mt-1">
-                Vui lòng chọn ít nhất một nốt hương đầu.
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Danh mục</label>
+                <select class="form-select" formControlName="idDanhMuc">
+                  <option value="" disabled>Chọn danh mục...</option>
+                  <option *ngFor="let dm of danhMucList" [value]="dm.id">{{ dm.tenDanhMuc }}</option>
+                </select>
+                <div *ngIf="productForm.get('idDanhMuc')?.touched && productForm.get('idDanhMuc')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn danh mục.
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Nồng độ</label>
+                <ng-select
+                  formControlName="idNongDo"
+                  [items]="nongDoList"
+                  bindLabel="tenNongDo"
+                  bindValue="id"
+                  placeholder="Chọn nồng độ..."
+                  [searchable]="true"
+                  [searchFn]="customSearchFn"
+                >
+                  <ng-template ng-option-tmp let-item="item">
+                    <div *ngIf="item.id !== -1">{{ item.tenNongDo }}</div>
+                    <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nồng độ mới...</div>
+                  </ng-template>
+                </ng-select>
+                <div *ngIf="productForm.get('idNongDo')?.touched && productForm.get('idNongDo')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn nồng độ.
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Nhóm hương</label>
+                <ng-select
+                  formControlName="idNhomHuong"
+                  [items]="nhomHuongList"
+                  bindLabel="tenNhomHuong"
+                  bindValue="id"
+                  placeholder="Chọn nhóm hương..."
+                  [searchable]="true"
+                  [searchFn]="customSearchFn"
+                >
+                  <ng-template ng-option-tmp let-item="item">
+                    <div *ngIf="item.id !== -1">{{ item.tenNhomHuong }}</div>
+                    <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nhóm hương mới...</div>
+                  </ng-template>
+                </ng-select>
+                <div *ngIf="productForm.get('idNhomHuong')?.touched && productForm.get('idNhomHuong')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn nhóm hương.
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Hương giữa -->
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Hương giữa</label>
-              <ng-select
-                [items]="notHuongList"
-                bindLabel="tenNotHuong"
-                bindValue="id"
-                [multiple]="true"
-                [searchable]="true"
-                [searchFn]="customSearchFn"
-                placeholder="Chọn nốt hương giữa..."
-                formControlName="notHuongGiuaIds"
-                (change)="onNotHuongChange('notHuongGiuaIds', $event)">
-                <ng-template ng-option-tmp let-item="item">
-                  <div *ngIf="item.id !== -1">{{ item.tenNotHuong }}</div>
-                  <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nốt hương mới...</div>
-                </ng-template>
-              </ng-select>
-              <div *ngIf="productForm.get('notHuongGiuaIds')?.touched && productForm.get('notHuongGiuaIds')?.invalid" class="text-danger small mt-1">
-                Vui lòng chọn ít nhất một nốt hương giữa.
+          <!-- Scent Notes -->
+          <div class="col-12">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Hương đầu</label>
+                <ng-select
+                  [items]="notHuongList"
+                  bindLabel="tenNotHuong"
+                  bindValue="id"
+                  [multiple]="true"
+                  [searchable]="true"
+                  [searchFn]="customSearchFn"
+                  placeholder="Chọn nốt hương đầu..."
+                  formControlName="notHuongDauIds"
+                  (change)="onNotHuongChange('notHuongDauIds', $event)"
+                >
+                  <ng-template ng-option-tmp let-item="item">
+                    <div *ngIf="item.id !== -1">{{ item.tenNotHuong }}</div>
+                    <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nốt hương mới...</div>
+                  </ng-template>
+                </ng-select>
+                <div *ngIf="productForm.get('notHuongDauIds')?.touched && productForm.get('notHuongDauIds')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn ít nhất một nốt hương đầu.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Hương giữa</label>
+                <ng-select
+                  [items]="notHuongList"
+                  bindLabel="tenNotHuong"
+                  bindValue="id"
+                  [multiple]="true"
+                  [searchable]="true"
+                  [searchFn]="customSearchFn"
+                  placeholder="Chọn nốt hương giữa..."
+                  formControlName="notHuongGiuaIds"
+                  (change)="onNotHuongChange('notHuongGiuaIds', $event)"
+                >
+                  <ng-template ng-option-tmp let-item="item">
+                    <div *ngIf="item.id !== -1">{{ item.tenNotHuong }}</div>
+                    <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nốt hương mới...</div>
+                  </ng-template>
+                </ng-select>
+                <div *ngIf="productForm.get('notHuongGiuaIds')?.touched && productForm.get('notHuongGiuaIds')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn ít nhất một nốt hương giữa.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Hương cuối</label>
+                <ng-select
+                  [items]="notHuongList"
+                  bindLabel="tenNotHuong"
+                  bindValue="id"
+                  [multiple]="true"
+                  [searchable]="true"
+                  [searchFn]="customSearchFn"
+                  placeholder="Chọn nốt hương cuối..."
+                  formControlName="notHuongCuoiIds"
+                  (change)="onNotHuongChange('notHuongCuoiIds', $event)"
+                >
+                  <ng-template ng-option-tmp let-item="item">
+                    <div *ngIf="item.id !== -1">{{ item.tenNotHuong }}</div>
+                    <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nốt hương mới...</div>
+                  </ng-template>
+                </ng-select>
+                <div *ngIf="productForm.get('notHuongCuoiIds')?.touched && productForm.get('notHuongCuoiIds')?.invalid" class="text-danger small mt-1">
+                  Vui lòng chọn ít nhất một nốt hương cuối.
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Hương cuối -->
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Hương cuối</label>
-              <ng-select
-                [items]="notHuongList"
-                bindLabel="tenNotHuong"
-                bindValue="id"
-                [multiple]="true"
-                [searchable]="true"
-                [searchFn]="customSearchFn"
-                placeholder="Chọn nốt hương cuối..."
-                formControlName="notHuongCuoiIds"
-                (change)="onNotHuongChange('notHuongCuoiIds', $event)">
-                <ng-template ng-option-tmp let-item="item">
-                  <div *ngIf="item.id !== -1">{{ item.tenNotHuong }}</div>
-                  <div *ngIf="item.id === -1" class="text-primary">➕ Thêm nốt hương mới...</div>
-                </ng-template>
-              </ng-select>
-              <div *ngIf="productForm.get('notHuongCuoiIds')?.touched && productForm.get('notHuongCuoiIds')?.invalid" class="text-danger small mt-1">
-                Vui lòng chọn ít nhất một nốt hương cuối.
-              </div>
+          <!-- Scents and Prominence -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Mùi hương và Độ nổi hương (0-1, ví dụ: 0.5)</label>
+            <div *ngIf="loadingMuiHuong" class="text-muted">Đang tải danh sách mùi hương...</div>
+            <div *ngIf="!loadingMuiHuong && (!muiHuongList || muiHuongList.length === 0)" class="text-danger small mt-1">
+              Không có mùi hương nào để chọn. Vui lòng kiểm tra dữ liệu.
             </div>
-
-            <!-- Mùi hương và Độ nổi hương -->
-            <div class="col-md-12">
-              <label class="form-label fw-semibold">Mùi hương và Độ nổi hương (0-1, ví dụ: 0.5)</label>
-              <div *ngIf="loadingMuiHuong" class="text-muted">
-                Đang tải danh sách mùi hương...
-              </div>
-              <div *ngIf="!loadingMuiHuong && (!muiHuongList || muiHuongList.length === 0)" class="text-danger small mt-1">
-                Không có mùi hương nào để chọn. Vui lòng kiểm tra dữ liệu.
-              </div>
-              <ng-select
-                *ngIf="!loadingMuiHuong && muiHuongList && muiHuongList.length > 0"
-                #muiHuongSelect
-                [items]="muiHuongList"
-                bindLabel="tenMuiHuong"
-                bindValue="id"
-                [multiple]="true"
-                [searchable]="true"
-                [searchFn]="customSearchFn"
-                placeholder="Chọn mùi hương..."
-                formControlName="muiHuongIds"
-                (add)="onMuiHuongAdd($event)"
-                (remove)="onMuiHuongRemove($event)"
-                (change)="onMuiHuongChange($event)">
-                <ng-template ng-option-tmp let-item="item">
-                  <div *ngIf="item.id !== -1">
-                    {{ item.tenMuiHuong }}
-                    <span *ngIf="hasProminenceLevel(item)" class="text-muted small">
-                      (Độ nổi hương: {{ getProminenceLevel(item) }})
-                    </span>
-                  </div>
-                  <div *ngIf="item.id === -1" class="text-primary">➕ Thêm mùi hương mới...</div>
-                </ng-template>
-                <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
-                  <div class="ng-value" *ngFor="let item of items">
-                    <span class="ng-value-label">{{ getMuiHuongName(item) }} ({{ getProminenceLevel(item) }})</span>
-                    <span class="ng-value-icon" (click)="clear(item)">×</span>
-                  </div>
-                </ng-template>
-              </ng-select>
-              <div *ngIf="productForm.get('muiHuongIds')?.touched && productForm.get('muiHuongIds')?.invalid" class="text-danger small mt-1">
-                Vui lòng chọn ít nhất một mùi hương.
-              </div>
+            <ng-select
+              *ngIf="!loadingMuiHuong && muiHuongList && muiHuongList.length > 0"
+              #muiHuongSelect
+              [items]="muiHuongList"
+              bindLabel="tenMuiHuong"
+              bindValue="id"
+              [multiple]="true"
+              [searchable]="true"
+              [searchFn]="customSearchFn"
+              placeholder="Chọn mùi hương..."
+              formControlName="muiHuongIds"
+              (add)="onMuiHuongAdd($event)"
+              (remove)="onMuiHuongRemove($event)"
+              (change)="onMuiHuongChange($event)"
+            >
+              <ng-template ng-option-tmp let-item="item">
+                <div *ngIf="item.id !== -1">
+                  {{ item.tenMuiHuong }}
+                  <span *ngIf="hasProminenceLevel(item)" class="text-muted small">
+                    (Độ nổi hương: {{ getProminenceLevel(item) }})
+                  </span>
+                </div>
+                <div *ngIf="item.id === -1" class="text-primary">➕ Thêm mùi hương mới...</div>
+              </ng-template>
+              <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+                <div class="ng-value" *ngFor="let item of items">
+                  <span class="ng-value-label">{{ getMuiHuongName(item) }} ({{ getProminenceLevel(item) }})</span>
+                  <span class="ng-value-icon" (click)="clear(item)">×</span>
+                </div>
+              </ng-template>
+            </ng-select>
+            <div *ngIf="productForm.get('muiHuongIds')?.touched && productForm.get('muiHuongIds')?.invalid" class="text-danger small mt-1">
+              Vui lòng chọn ít nhất một mùi hương.
             </div>
+          </div>
 
-            <!-- Prominence Modal -->
-            <div *ngIf="showProminenceModal" class="modal prominence-modal fade show" style="display: block;" role="dialog">
-              <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Nhập độ nổi hương</h5>
-                    <button type="button" class="btn-close" (click)="cancelProminenceModal()"></button>
-                  </div>
-                  <div class="modal-body">
-                    <form [formGroup]="prominenceForm">
-                      <div class="form-group">
-                        <label for="prominenceLevel">Độ nổi hương (0-1):</label>
-                        <input type="number" class="form-control" id="prominenceLevel" formControlName="prominenceLevel" step="0.1" min="0" max="1">
-                        <div *ngIf="prominenceForm.get('prominenceLevel')?.touched && prominenceForm.get('prominenceLevel')?.invalid" class="text-danger small mt-1">
-                          <div *ngIf="prominenceForm.get('prominenceLevel')?.errors?.['required']">Độ nổi hương là bắt buộc.</div>
-                          <div *ngIf="prominenceForm.get('prominenceLevel')?.errors?.['min'] || prominenceForm.get('prominenceLevel')?.errors?.['max']">
-                            Độ nổi hương phải từ 0 đến 1.
-                          </div>
+          <!-- Prominence Modal -->
+          <div *ngIf="showProminenceModal" class="modal prominence-modal fade show" style="display: block" role="dialog">
+            <div class="modal-dialog modal-sm">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Nhập độ nổi hương</h5>
+                  <button type="button" class="btn-close" (click)="cancelProminenceModal()"></button>
+                </div>
+                <div class="modal-body">
+                  <form [formGroup]="prominenceForm">
+                    <div class="form-group">
+                      <label for="prominenceLevel">Độ nổi hương (0-1):</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="prominenceLevel"
+                        formControlName="prominenceLevel"
+                        step="0.1"
+                        min="0"
+                        max="1"
+                      />
+                      <div *ngIf="prominenceForm.get('prominenceLevel')?.touched && prominenceForm.get('prominenceLevel')?.invalid" class="text-danger small mt-1">
+                        <div *ngIf="prominenceForm.get('prominenceLevel')?.errors?.['required']">Độ nổi hương là bắt buộc.</div>
+                        <div *ngIf="prominenceForm.get('prominenceLevel')?.errors?.['min'] || prominenceForm.get('prominenceLevel')?.errors?.['max']">
+                          Độ nổi hương phải từ 0 đến 1.
                         </div>
                       </div>
-                    </form>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" (click)="cancelProminenceModal()">Hủy</button>
-                    <button type="button" class="btn btn-primary" (click)="confirmProminence()">Xác nhận</button>
-                  </div>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" (click)="cancelProminenceModal()">Hủy</button>
+                  <button type="button" class="btn btn-primary" (click)="confirmProminence()">Xác nhận</button>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Phong cách -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Phong cách</label>
-              <ng-select
-                [items]="phongCachList"
-                bindLabel="tenPhongCach"
-                bindValue="id"
-                [multiple]="true"
-                [searchable]="true"
-                [searchFn]="customSearchFn"
-                placeholder="Chọn phong cách..."
-                formControlName="phongCachIds"
-                (change)="onPhongCachChange($event)">
-                <ng-template ng-option-tmp let-item="item">
-                  <div *ngIf="item.id !== -1">{{ item.tenPhongCach }}</div>
-                  <div *ngIf="item.id === -1" class="text-primary">➕ Thêm phong cách mới...</div>
-                </ng-template>
-              </ng-select>
-              <div *ngIf="productForm.get('phongCachIds')?.touched && productForm.get('phongCachIds')?.invalid" class="text-danger small mt-1">
-                Vui lòng chọn ít nhất một phong cách.
-              </div>
+          <!-- Style and Description -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Phong cách</label>
+            <ng-select
+              [items]="phongCachList"
+              bindLabel="tenPhongCach"
+              bindValue="id"
+              [multiple]="true"
+              [searchable]="true"
+              [searchFn]="customSearchFn"
+              placeholder="Chọn phong cách..."
+              formControlName="phongCachIds"
+              (change)="onPhongCachChange($event)"
+            >
+              <ng-template ng-option-tmp let-item="item">
+                <div *ngIf="item.id !== -1">{{ item.tenPhongCach }}</div>
+                <div *ngIf="item.id === -1" class="text-primary">➕ Thêm phong cách mới...</div>
+              </ng-template>
+            </ng-select>
+            <div *ngIf="productForm.get('phongCachIds')?.touched && productForm.get('phongCachIds')?.invalid" class="text-danger small mt-1">
+              Vui lòng chọn ít nhất một phong cách.
             </div>
-
-            <!-- Mô tả -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Mô tả</label>
-              <textarea class="form-control" formControlName="moTa" rows="3"></textarea>
-              <div *ngIf="productForm.get('moTa')?.touched && productForm.get('moTa')?.invalid" class="text-danger small mt-1">
-                <div *ngIf="productForm.get('moTa')?.errors?.['maxlength']">Mô tả tối đa 1000 ký tự.</div>
-              </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Mô tả</label>
+            <textarea class="form-control" formControlName="moTa" rows="3" placeholder="Nhập mô tả sản phẩm"></textarea>
+            <div *ngIf="productForm.get('moTa')?.touched && productForm.get('moTa')?.invalid" class="text-danger small mt-1">
+              <div *ngIf="productForm.get('moTa')?.errors?.['maxlength']">Mô tả tối đa 1000 ký tự.</div>
             </div>
+          </div>
 
-            <!-- Hình ảnh -->
-            <div class="col-md-12">
-              <label class="form-label fw-semibold">Hình ảnh</label>
-              <input type="file" class="form-control" id="fileInput" (change)="onFileChange($event)" multiple>
-              <div class="mt-2">
-                <!-- Ảnh cũ -->
-                <div *ngIf="oldImageUrls.length > 0" class="d-flex flex-wrap gap-2">
-                  <div *ngFor="let img of oldImageUrls; let i = index" class="position-relative border rounded shadow-sm" style="width: 80px; height: 80px;">
-                    <img [src]="img" class="w-100 h-100 object-fit-cover rounded" alt="Ảnh cũ">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 bg-danger rounded-circle" (click)="removeOldImage(i)"></button>
-                  </div>
-                </div>
-                <!-- Ảnh mới -->
-                <div *ngIf="previewUrls.length > 0" class="d-flex flex-wrap gap-2 mt-2">
-                  <div *ngFor="let img of previewUrls; let i = index" class="position-relative border rounded shadow-sm" style="width: 80px; height: 80px;">
-                    <img [src]="img" class="w-100 h-100 object-fit-cover rounded" alt="Ảnh mới">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 bg-danger rounded-circle" (click)="removeFile(i)"></button>
-                  </div>
-                </div>
+          <!-- Images -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Hình ảnh</label>
+            <input type="file" class="form-control" id="fileInput" (change)="onFileChange($event)" multiple />
+            <div class="mt-2 d-flex flex-wrap gap-2">
+              <!-- Old Images -->
+              <div *ngFor="let img of oldImageUrls; let i = index" class="position-relative border rounded" style="width: 80px; height: 80px">
+                <img [src]="img" class="w-100 h-100 object-fit-cover rounded" alt="Ảnh cũ" />
+                <button
+                  type="button"
+                  class="btn-close position-absolute top-0 end-0 bg-danger rounded-circle"
+                  (click)="removeOldImage(i)"
+                ></button>
+              </div>
+              <!-- New Images -->
+              <div *ngFor="let img of previewUrls; let i = index" class="position-relative border rounded" style="width: 80px; height: 80px">
+                <img [src]="img" class="w-100 h-100 object-fit-cover rounded" alt="Ảnh mới" />
+                <button
+                  type="button"
+                  class="btn-close position-absolute top-0 end-0 bg-danger rounded-circle"
+                  (click)="removeFile(i)"
+                ></button>
               </div>
             </div>
           </div>
         </form>
       </div>
 
-      <div class="modal-footer">
+      <div class="modal-footer border-0">
         <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSubmitting">Hủy</button>
         <button type="button" class="btn btn-primary" (click)="updateProduct()" [disabled]="isSubmitting || errorMessage">
           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>

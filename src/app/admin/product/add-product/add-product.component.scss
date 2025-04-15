@@ -1,5 +1,6 @@
 .modal {
   z-index: 1050;
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .modal-backdrop {
@@ -7,28 +8,54 @@
 }
 
 .custom-modal {
-  max-width: 900px; // Increased width for better layout
+  max-width: 900px;
   width: 100%;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  padding: 1rem 1.5rem;
 }
 
 .modal-body {
   padding: 1.5rem;
 }
 
+.modal-footer {
+  padding: 0.75rem 1.5rem;
+}
+
 .form-label {
-  margin-bottom: 0.25rem;
   font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: #333;
 }
 
 .form-control,
 .form-select,
-ng-select {
+ng-select .ng-select-container {
   font-size: 0.9rem;
   padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus,
+ng-select .ng-select-container:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 textarea.form-control {
   resize: none;
+  min-height: 80px;
 }
 
 .ng-select .ng-select-container {
@@ -36,15 +63,17 @@ textarea.form-control {
 }
 
 .ng-value {
-  background-color: #e9ecef;
+  background: #e9ecef;
   border-radius: 12px;
   padding: 2px 8px;
   margin: 2px;
+  font-size: 0.85rem;
 }
 
 .ng-value-icon {
   cursor: pointer;
   margin-left: 5px;
+  font-size: 0.85rem;
 }
 
 .text-danger {
@@ -52,28 +81,43 @@ textarea.form-control {
 }
 
 .prominence-modal {
-  z-index: 1060 !important;
-}
-
-.modal-footer {
-  padding: 0.75rem;
+  z-index: 1060;
 }
 
 .btn {
   font-size: 0.9rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease-in-out;
 }
 
-.d-flex.gap-2 {
-  gap: 0.5rem !important;
+.btn-primary {
+  background: #007bff;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-close {
+  font-size: 0.75rem;
+  padding: 0.25rem;
 }
 
 img {
   border-radius: 4px;
 }
 
-.btn-close {
-  width: 0.75rem;
-  height: 0.75rem;
-  padding: 0.25rem;
+.d-flex.gap-2 {
+  gap: 0.5rem;
 }

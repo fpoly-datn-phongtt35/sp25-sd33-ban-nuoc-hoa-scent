@@ -11,6 +11,7 @@ import { NhomHuongService } from '../../../service/nhomhuong.service';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgSelectModule, NgSelectComponent } from '@ng-select/ng-select';
 import { ToastrService } from 'ngx-toastr';
+import { NongDoService } from '../../../service/nongdo.Service';
 
 interface ThuongHieu {
   id: number;
@@ -26,7 +27,10 @@ interface NhomHuong {
   id: number;
   tenNhomHuong: string;
 }
-
+interface NongDo{
+  id:number;
+  tenNongDo:string;
+}
 interface NotHuong {
   id: number;
   tenNotHuong: string;
@@ -64,6 +68,7 @@ export class UpdateProductComponent implements OnInit {
   deletedImageIds: number[] = [];
   danhMucList: DanhMuc[] = [];
   nhomHuongList: NhomHuong[] = [];
+  nongDoList: NongDo[] = [];
   thuongHieuList: ThuongHieu[] = [];
   muiHuongList: MuiHuong[] = [];
   notHuongList: NotHuong[] = [];
@@ -86,7 +91,8 @@ export class UpdateProductComponent implements OnInit {
     private sanPhamService: SanPhamService,
     public activeModal: NgbActiveModal,
     private cdr: ChangeDetectorRef,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private nongdoService:NongDoService
   ) {
     this.productForm = this.fb.group({
       ten: ['', [Validators.required, Validators.minLength(3)]],
@@ -94,6 +100,7 @@ export class UpdateProductComponent implements OnInit {
       idThuongHieu: ['', Validators.required],
       idDanhMuc: ['', Validators.required],
       idNhomHuong: ['', Validators.required],
+      idNongDo: ['', Validators.required],
       notHuongDauIds: [[], Validators.required],
       notHuongGiuaIds: [[], Validators.required],
       notHuongCuoiIds: [[], Validators.required],
@@ -154,7 +161,8 @@ export class UpdateProductComponent implements OnInit {
         this.getAllNhomHuong(),
         this.getAllMuiHuong(),
         this.getAllNotHuong(),
-        this.getAllPhongCach()
+        this.getAllPhongCach(),
+        this.getAllNongDo()
       ]);
 
       await this.loadProductData();
@@ -167,7 +175,17 @@ export class UpdateProductComponent implements OnInit {
       this.cdr.detectChanges();
     }
   }
-
+  async getAllNongDo() {
+    try {
+      const data = await firstValueFrom(this.nongdoService.getNongDo());
+      this.nongDoList= data || [];
+      this.productForm.get('idNongDo')?.valueChanges.subscribe(val => {
+      });
+      console.log('Nồng độ:',this.nongDoList);
+    } catch (err) {
+      console.error('Lỗi lấy nồng độ:', err);
+      this.toastr.error('Không thể tải danh sách nồng độ. Vui lòng thử lại sau.', 'Lỗi');
+    }}
   async loadProductData() {
     try {
       const productResp = await firstValueFrom(
@@ -185,7 +203,7 @@ export class UpdateProductComponent implements OnInit {
       const idThuongHieu = Number(productResp.idThuongHieu);
       const idDanhMuc = Number(productResp.idDanhMuc);
       const idNhomHuong = Number(productResp.idNhomHuong);
-
+      const idNongDo = Number(productResp.idNongDo);
       if (!this.thuongHieuList.some((th) => th.id === idThuongHieu)) {
         console.warn(`Thương hiệu ID ${idThuongHieu} không tồn tại trong danh sách`);
       }
@@ -202,6 +220,7 @@ export class UpdateProductComponent implements OnInit {
         idThuongHieu: idThuongHieu,
         idDanhMuc: idDanhMuc,
         idNhomHuong: idNhomHuong,
+        idNongDo: idNongDo,
         notHuongDauIds: productResp.huongDau?.notHuongs?.map((nh: any) => Number(nh.id)) || [],
         notHuongGiuaIds: productResp.huongGiua?.notHuongs?.map((nh: any) => Number(nh.id)) || [],
         notHuongCuoiIds: productResp.huongCuoi?.notHuongs?.map((nh: any) => Number(nh.id)) || [],
@@ -587,6 +606,7 @@ export class UpdateProductComponent implements OnInit {
     const idThuongHieu = Number(formValues.idThuongHieu);
     const idDanhMuc = Number(formValues.idDanhMuc);
     const idNhomHuong = Number(formValues.idNhomHuong);
+    const idNongDo = Number(formValues.idNongDo);
 
     if (!this.thuongHieuList.some((th) => th.id === idThuongHieu)) {
       this.toastr.warning('Thương hiệu không hợp lệ!', 'Cảnh báo');
@@ -600,7 +620,11 @@ export class UpdateProductComponent implements OnInit {
       this.toastr.warning('Nhóm hương không hợp lệ!', 'Cảnh báo');
       return;
     }
-
+    if (!this.nongDoList.some((nd) => nd.id === idNongDo
+  )) {
+      this.toastr.warning('Nồng độ không hợp lệ!', 'Cảnh báo');
+      return;
+    }
     const validateNotHuong = (ids: number[], type: string) => {
       if (!ids || ids.length === 0) {
         this.toastr.warning(`Vui lòng chọn ít nhất một nốt ${type}!`, 'Cảnh báo');
@@ -640,7 +664,7 @@ export class UpdateProductComponent implements OnInit {
     formData.append('idThuongHieu', String(idThuongHieu));
     formData.append('idDanhMuc', String(idDanhMuc));
     formData.append('idNhomHuong', String(idNhomHuong));
-
+    formData.append('idNongDo', String(idNongDo));
     formValues.notHuongDauIds.forEach((id: number, index: number) => {
       formData.append(`notHuongDauIds[${index}]`, String(id));
     });
