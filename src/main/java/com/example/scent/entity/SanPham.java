@@ -7,10 +7,11 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
+import java.time.LocalDateTime;
 import lombok.NoArgsConstructor;
 
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,8 @@ public class SanPham {
     @Size(max = 500, message = "Mô tả sản phẩm không được vượt quá 500 ký tự")
     @Column(name = "mo_ta")
     private String moTaSanPham;
+    @Column(name = "create_date", insertable = false, updatable = false)
+    private LocalDateTime createDate;
     @ManyToOne
     @JoinColumn(name = "id_thuong_hieu")
     private ThuongHieu thuongHieu;

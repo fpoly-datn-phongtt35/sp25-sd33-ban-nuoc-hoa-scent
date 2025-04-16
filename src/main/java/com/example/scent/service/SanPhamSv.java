@@ -624,13 +624,13 @@
                 String tenDanhMuc,
                 String tenNhomHuong,
                 String tenThuongHieu,
-                String quocGia,
+                String quocGia,String sort, // Tham số sort
                 Pageable pageable) {
 
             // Lấy danh sách sản phẩm từ query hiện tại
             Page<SanPhamInfoDTO> sanPhamPage = spi.searchSanPhamCombined(
                     searchQuery, minPrice, maxPrice, tenDanhMuc,
-                    tenNhomHuong, tenThuongHieu, quocGia, pageable);
+                    tenNhomHuong, tenThuongHieu, quocGia,sort,pageable);
 
             // Lấy tổng số lượng tồn kho
             List<Object[]> tongSoLuongList = spi.findTongSoLuongBySanPham();

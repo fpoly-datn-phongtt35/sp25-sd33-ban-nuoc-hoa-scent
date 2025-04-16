@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 public class SanPhamInfoDTO {
@@ -24,7 +26,8 @@ public class SanPhamInfoDTO {
     private String tennhomHuong;
     private String QuocGia;
     private Integer trangThai;
-    private Integer tongSoLuongTonKho; // Trường mới
+    private Integer tongSoLuongTonKho;
+    private LocalDateTime createDate;
     public Integer getTrangThai() {
         return trangThai;
     }
@@ -33,7 +36,15 @@ public class SanPhamInfoDTO {
         return tongSoLuongTonKho;
     }
 
-    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai, Integer tongSoLuongTonKho) {
+    public LocalDateTime getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(LocalDateTime createDate) {
+        this.createDate = createDate;
+    }
+
+    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai, Integer tongSoLuongTonKho, LocalDateTime createDate) {
         IdSanPham = idSanPham;
         TenSanPham = tenSanPham;
         DonGia = donGia;
@@ -48,6 +59,7 @@ public class SanPhamInfoDTO {
         QuocGia = quocGia;
         this.trangThai = trangThai;
         this.tongSoLuongTonKho = tongSoLuongTonKho;
+        this.createDate = createDate;
     }
 
     public void setTongSoLuongTonKho(Integer tongSoLuongTonKho) {
@@ -153,7 +165,7 @@ public class SanPhamInfoDTO {
         this.moTaHuongCuoi = moTaHuongCuoi;
     }
 
-    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai) {
+    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai, LocalDateTime createDate) {
         IdSanPham = idSanPham;
         TenSanPham = tenSanPham;
         DonGia = donGia;
@@ -167,6 +179,7 @@ public class SanPhamInfoDTO {
         this.tennhomHuong = tennhomHuong;
         QuocGia = quocGia;
         this.trangThai = trangThai;
+        this.createDate=createDate;
     }
 
     public SanPhamInfoDTO() {

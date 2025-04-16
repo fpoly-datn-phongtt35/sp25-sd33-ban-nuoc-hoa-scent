@@ -195,6 +195,7 @@ public class SanPhamCtrl {
             @RequestParam(value = "tenNhomHuong", required = false) String tenNhomHuong,
             @RequestParam(value = "tenThuongHieu", required = false) String tenThuongHieu,
             @RequestParam(value = "quocGia", required = false) String quocGia,
+            @RequestParam(value = "sort", required = false) String sort, // Tham số sort là tùy chọn
             @PageableDefault(size = 12) Pageable pageable) {
 
         // Kiểm tra xem tất cả tham số lọc có phải là null hoặc chuỗi rỗng không
@@ -208,7 +209,7 @@ public class SanPhamCtrl {
 
         // Nếu tất cả tham số lọc đều rỗng, trả về tất cả sản phẩm
         if (allFiltersEmpty) {
-            return sps.searchSanPhamCombined(null, null, null, null, null, null, null, pageable);
+            return sps.searchSanPhamCombined(null, null, null, null, null, null, null,null,pageable);
         }
 
         // Nếu có ít nhất một tham số hợp lệ, gọi service với các tham số đã lọc
@@ -219,7 +220,7 @@ public class SanPhamCtrl {
                 tenDanhMuc != null && !tenDanhMuc.isEmpty() ? tenDanhMuc : null,
                 tenNhomHuong != null && !tenNhomHuong.isEmpty() ? tenNhomHuong : null,
                 tenThuongHieu != null && !tenThuongHieu.isEmpty() ? tenThuongHieu : null,
-                quocGia != null && !quocGia.isEmpty() ? quocGia : null,
+                quocGia != null && !quocGia.isEmpty() ? quocGia : null,sort,
                 pageable
         );
     }
