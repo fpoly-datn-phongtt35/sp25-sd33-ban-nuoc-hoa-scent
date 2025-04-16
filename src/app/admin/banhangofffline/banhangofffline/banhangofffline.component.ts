@@ -470,7 +470,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
             if (result.isConfirmed) {
               this.finalizeOrder(orderData);
             } else {
-              this.orderStateService.updateState({ 
+              this.orderStateService.updateState({
                 vietQRString: null,
                 isLoading: false
               });
@@ -483,7 +483,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
               });
             }
           } catch (error) {
-            this.orderStateService.updateState({ 
+            this.orderStateService.updateState({
               vietQRString: null,
               isLoading: false
             });

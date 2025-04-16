@@ -77,20 +77,32 @@
               placeholder="🔍 Tìm kiếm sản phẩm..."
               class="form-control">
           </div>
+          <div class="sort-container">
+            <label for="sort-filter" class="sort-label">Sắp xếp theo</label>
+            <select id="sort-filter" class="form-select" [(ngModel)]="selectedFilters.sort" (ngModelChange)="sortProducts(selectedFilters.sort)">
+              <option value="">Mặc định</option>
+              <option value="createDate,desc">Mới nhất</option>
+              <option value="createDate,asc">Cũ nhất</option>
+            </select>
+          </div>
         </div>
 
-        <div class="product-grid">
+        <!-- Hiển thị trạng thái loading -->
+        <div class="loading-state" *ngIf="isLoading">
+          <p>Đang tải sản phẩm...</p>
+        </div>
+
+        <!-- Danh sách sản phẩm -->
+        <div class="product-grid" *ngIf="!isLoading">
           <div *ngFor="let product of sanPhams" class="product-card">
-            <!-- Chỉ thêm sự kiện (click) nếu sản phẩm còn hàng -->
-            <div 
-              [ngClass]="{'disabled-product': product.tongSoLuongTonKho <= 0}" 
+            <div
+              [ngClass]="{'disabled-product': product.tongSoLuongTonKho <= 0}"
               (click)="product.tongSoLuongTonKho > 0 ? viewProductDetail(product.idSanPham) : null"
             >
               <div class="product-image-container">
                 <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
-                <!-- Hiển thị thông báo "Hết hàng" nếu tongSoLuongTonKho <= 0 -->
                 <div *ngIf="product.tongSoLuongTonKho <= 0" class="out-of-stock-overlay">
-                  Hết hàng
+                  <span class="out-of-stock-text">Hết hàng</span>
                 </div>
               </div>
               <div class="product-info">
@@ -99,14 +111,12 @@
               </div>
             </div>
           </div>
-          <!-- Empty State -->
           <div class="empty-state" *ngIf="sanPhams.length === 0">
             <p>Không tìm thấy sản phẩm nào.</p>
           </div>
         </div>
 
-        <!-- Pagination -->
-        <nav aria-label="Page navigation" *ngIf="sanPhams.length > 0" class="pagination-container">
+        <nav aria-label="Page navigation" *ngIf="sanPhams.length > 0 && !isLoading" class="pagination-container">
           <ul class="pagination justify-content-center">
             <li class="page-item" [class.disabled]="page === 0">
               <button class="page-link page-nav" (click)="goToPage(0)">

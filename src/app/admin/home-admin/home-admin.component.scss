@@ -15,7 +15,7 @@
   .profile {
     text-align: center;
     margin-bottom: 20px;
-    position: relative; /* Để dropdown định vị tương đối với profile */
+    position: relative;
 
     img {
       width: 80px;
@@ -99,14 +99,33 @@
           }
         }
       }
+
+      .sub-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        .sub-item {
+          margin-left: 20px; // Thụt lề để thể hiện là mục con
+
+          .nav-link {
+            font-size: 13px; // Kích thước chữ nhỏ hơn
+            padding: 8px 10px; // Giảm padding để trông nhỏ gọn hơn
+
+            i {
+              font-size: 13px; // Icon nhỏ hơn
+            }
+          }
+        }
+      }
     }
   }
 }
 
 .col-md-10.col-lg-10 {
-  margin-left: 250px; // Đảm bảo nội dung không bị che bởi sidebar
-  width: calc(100% - 250px); // Tăng độ rộng của nội dung chính
+  margin-left: 250px;
+  width: calc(100% - 250px);
   padding: 20px;
-  overflow-x: auto; // Cho phép cuộn ngang toàn bộ nội dung
-  -webkit-overflow-scrolling: touch; // Cải thiện cuộn trên thiết bị di động
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

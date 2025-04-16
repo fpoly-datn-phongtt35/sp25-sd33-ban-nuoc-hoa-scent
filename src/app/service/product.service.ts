@@ -81,13 +81,13 @@ private apiURLbb = 'http://localhost:8080/rest/san-pham/search-combined'; // API
     if (queryParams.quocGia != null && queryParams.quocGia !== '') {
       params = params.set('quocGia', queryParams.quocGia);
     }
+    if (queryParams.sort != null && queryParams.sort !== '') {
+      params = params.set('sort', queryParams.sort); // Thêm tham số sort
+    }
 
     // page và size luôn được gửi, với giá trị mặc định nếu không có
     params = params.set('page', queryParams.page?.toString() || '0');
     params = params.set('size', queryParams.size?.toString() || '12');
-
-   
-
 
     return this.http.get<any>(this.apiURLbb, { params });
   }

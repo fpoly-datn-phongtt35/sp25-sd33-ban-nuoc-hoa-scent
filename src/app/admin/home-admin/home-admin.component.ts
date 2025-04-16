@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap'; // Import NgbModal
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { StatisticsComponent } from '../statistics/statistics.component';
 import { TokenService } from '../../service/token.service';
 import { AccountService } from '../../service/taikhoan.service';
@@ -15,7 +15,7 @@ import { InvoiceComponent } from '../order/order-list/invoice.component';
 import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.component';
 import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhangofffline.component';
 import { ChangePasswordModalComponent } from '../../change-password/change-password.component';
-
+import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-list.component';
 
 @Component({
   selector: 'app-home-admin',
@@ -32,6 +32,7 @@ import { ChangePasswordModalComponent } from '../../change-password/change-passw
     InvoiceComponent,
     LichsuthaotacComponent,
     OfflineOrderComponent,
+    FragranceListComponent,
   ],
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'],
@@ -44,11 +45,13 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
   userID: number | null = null;
   isDropdownVisible: boolean = false;
   isComponentSwitched: boolean = false;
+  isSubMenuOpen: { [key: string]: boolean } = { products: false }; // Theo dõi trạng thái đóng/mở của menu
+
   constructor(
     private tokenService: TokenService,
     private accountService: AccountService,
     private router: Router,
-    private modalService: NgbModal // Inject NgbModal
+    private modalService: NgbModal
   ) {}
 
   ngOnInit(): void {
@@ -73,9 +76,11 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
     }
     this.isComponentSwitched = false;
   }
+
   private generateSessionId(): string {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
+
   showComponent(component: string): void {
     const role = this.tokenService.getRole();
     console.log('Vai trò hiện tại khi nhấn vào menu:', role);
@@ -88,6 +93,14 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
     } else {
       console.error('Người dùng không phải admin. Điều hướng về trang chủ.');
       this.router.navigate(['/']);
+    }
+  }
+
+  toggleSubMenu(menu: string): void {
+    this.isSubMenuOpen[menu] = !this.isSubMenuOpen[menu];
+    // Luôn hiển thị component "products" khi nhấp vào "Sản phẩm"
+    if (menu === 'products') {
+      this.showComponent('products');
     }
   }
 
@@ -111,8 +124,8 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
   logout(): void {
     const token = this.tokenService.getToken();
     if (token) {
-      this.tokenService.removeToken(); // Xóa token
-      this.clearLocalStorage(); // Xóa các dữ liệu khác trong localStorage
+      this.tokenService.removeToken();
+      this.clearLocalStorage();
       this.isComponentSwitched = false;
       alert('Bạn đã đăng xuất thành công!');
       this.router.navigate(['/login']);
@@ -120,10 +133,9 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
       alert('Bạn chưa đăng nhập!');
     }
   }
+
   private clearLocalStorage(): void {
     console.log('Dữ liệu localStorage trước khi xóa:', { ...localStorage });
-  
-    // Xóa các key cố định
     localStorage.removeItem('offlineOrders');
     localStorage.removeItem('currentOrderIndex');
     localStorage.removeItem('discountCodeInput');
@@ -146,27 +158,25 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
     localStorage.removeItem('showQuantityModal');
     localStorage.removeItem('selectedProduct');
     localStorage.removeItem('selectedQuantity');
-    localStorage.removeItem('cart'); // Xóa giỏ hàng chính
+    localStorage.removeItem('cart');
     localStorage.removeItem('orderData');
     localStorage.removeItem('quantity');
     localStorage.removeItem('volume');
     localStorage.removeItem('product');
-  
-    // Xóa các key động có tiền tố "cart-"
+
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith('cart-')) {
         localStorage.removeItem(key);
       }
     });
-  
-    // Xóa các key động có tiền tố "discountUsed_"
+
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith('discountUsed_')) {
         localStorage.removeItem(key);
       }
     });
-  
-    console.log('Đã xóa tất cả dữ liệu Kiênnnnnnnn localStorage khi đăng xuất');
+
+    console.log('Đã xóa tất cả dữ liệu localStorage khi đăng xuất');
     console.log('Dữ liệu localStorage sau khi xóa:', { ...localStorage });
   }
 
