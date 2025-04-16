@@ -427,21 +427,21 @@ export class OrderComponent implements OnInit, OnDestroy {
   onDiscountCodeEntered(code: string): void {
     this.discountErrorMessage = '';
     this.isDiscountApplied = false;
-  
+
     // Nếu không có mã giảm giá, reset và thoát
     if (!code) {
       this.resetDiscount();
       Swal.fire('Thông báo', 'Vui lòng nhập mã giảm giá!', 'info');
       return;
     }
-  
+
     // Kiểm tra xem có idTaiKhoan hay không
     if (this.orderData.idTaiKhoan) {
       // Gọi API để lấy thông tin tài khoản (không dùng token)
       const sub = this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`).subscribe({
         next: (account) => {
           const registeredSdt = account?.sdt;
-  
+
           // Kiểm tra xem tài khoản có số điện thoại không
           if (!registeredSdt) {
             this.discountErrorMessage = '⚠️ Tài khoản không có số điện thoại đăng ký!';
@@ -449,7 +449,7 @@ export class OrderComponent implements OnInit, OnDestroy {
             Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
             return;
           }
-  
+
           // Nếu có số điện thoại, kiểm tra mã giảm giá
           this.checkDiscountCode(code, registeredSdt);
         },
@@ -460,13 +460,13 @@ export class OrderComponent implements OnInit, OnDestroy {
           Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
         },
       });
-  
+
       // Thêm subscription vào danh sách để quản lý
       this.subscriptions.push(sub);
     } else {
       // Nếu không có idTaiKhoan, sử dụng sdtNguoiNhan
       const sdtNguoiNhan = this.orderData.sdtNguoiNhan;
-  
+
       // Kiểm tra xem sdtNguoiNhan có tồn tại không
       if (!sdtNguoiNhan) {
         this.discountErrorMessage = '⚠️ Vui lòng nhập số điện thoại để áp dụng mã giảm giá!';
@@ -474,7 +474,7 @@ export class OrderComponent implements OnInit, OnDestroy {
         Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
         return;
       }
-  
+
       // Nếu có sdtNguoiNhan, kiểm tra mã giảm giá
       this.checkDiscountCode(code, sdtNguoiNhan);
     }
@@ -488,7 +488,7 @@ export class OrderComponent implements OnInit, OnDestroy {
       Swal.fire('Lỗi', this.discountErrorMessage, 'warning');
       return;
     }
-  
+
     // Hiển thị thông báo loading
     Swal.fire({
       title: 'Đang kiểm tra mã...',
@@ -496,14 +496,14 @@ export class OrderComponent implements OnInit, OnDestroy {
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading(),
     });
-  
+
     // Gọi API mà không sử dụng token
     const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan).subscribe({
       next: (response: DiscountResponse) => {
         const now = new Date();
         const startDate = new Date(response.ngayBatDau);
         const endDate = new Date(response.ngayHetHan);
-  
+
         // Kiểm tra thời gian hiệu lực của mã giảm giá
         if (now < startDate) {
           this.handleDiscountError('⚠️ Mã giảm giá chưa có hiệu lực!');
@@ -521,7 +521,7 @@ export class OrderComponent implements OnInit, OnDestroy {
           this.orderData.maGiamGia = code;
           this.isDiscountApplied = true;
           this.calculateTotals();
-  
+
           // Hiển thị thông báo thành công
           Swal.fire({
             title: 'Thành công!',
@@ -536,7 +536,7 @@ export class OrderComponent implements OnInit, OnDestroy {
         this.handleDiscountError(err.error?.message || '⚠️ Mã giảm giá không hợp lệ!');
       },
     });
-  
+
     // Thêm subscription vào danh sách để quản lý
     this.subscriptions.push(sub);
   }
@@ -674,16 +674,14 @@ export class OrderComponent implements OnInit, OnDestroy {
 
     const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`, orderId: 'ORDER_' + orderRes.id };
     const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
-
+    console.log('momoRequest:',extraDataObj)
     const momoRequest = {
       orderId: extraDataObj.orderId,
-      requestId: 'REQ_' + new Date().getTime(),
       orderInfo: extraDataObj.orderInfo,
       amount: this.finalAmount.toString(),
       returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
       notifyUrl: 'http://localhost:8080/api/momo/callback',
-      requestType: 'captureWallet',
-      extraData,
+      requestType: 'captureWallet'
     };
 
     const sub = this.momoPaymentService.createPayment(momoRequest).subscribe({
@@ -693,6 +691,7 @@ export class OrderComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('MoMo error:', err);
+
         Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
       },
     });

@@ -9,9 +9,17 @@ export class MomoPaymentService {
   constructor(private http: HttpClient) {}
 
   createPayment(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/pay`, payload);
+    const filteredPayload = {
+      amount: payload.amount,
+      orderId: payload.orderId,
+      orderInfo: payload.orderInfo,
+      notifyUrl: payload.notifyUrl,
+      returnUrl: payload.returnUrl,
+      requestType: payload.requestType,
+    };
+    console.log('thông tin ck:', filteredPayload);
+    return this.http.post(`${this.baseUrl}/pay`, filteredPayload);
   }
-
   checkStatus(orderId: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/check-status`, { orderId });
   }

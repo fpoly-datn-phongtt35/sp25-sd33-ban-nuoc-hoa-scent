@@ -84,7 +84,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
     this.spctSubscription = this.webSocketService.getSpctUpdates().subscribe({
       next: (update: any) => {
-        console.log('Nhận được cập nhật Spct:', update);
+        // console.log('Nhận được cập nhật Spct:', update);
         this.updateSpctStatus(update);
       },
       error: (error) => console.error('Lỗi WebSocket trong ProductDetailComponent:', error),
@@ -92,7 +92,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
     this.inventorySubscription = this.webSocketService.getInventoryUpdates().subscribe({
       next: (update: { productId: number; stock: number }) => {
-        console.log('Nhận được cập nhật tồn kho:', update);
+        // console.log('Nhận được cập nhật tồn kho:', update);
         this.updateStock(update.productId, update.stock);
       },
       error: (error) => console.error('Lỗi WebSocket trong ProductDetailComponent:', error),
@@ -103,13 +103,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const idSpct = update.idSpct;
     const trangThai = update.trangThai;
 
-    console.log('Cập nhật Spct:', update);
-    console.log('Volumes trước cập nhật:', this.volumes);
+    // console.log('Cập nhật Spct:', update);
+    // console.log('Volumes trước cập nhật:', this.volumes);
 
     const volumeExists = this.volumes.some(volume => volume.idSpct === idSpct);
 
     if (!volumeExists) {
-      console.log(`idSpct ${idSpct} không có trong volumes, tải lại volumes...`);
+      // console.log(`idSpct ${idSpct} không có trong volumes, tải lại volumes...`);
       this.loadVolumes();
       return;
     }
@@ -121,28 +121,28 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       return volume;
     });
 
-    console.log('Volumes sau cập nhật:', this.volumes);
+    // console.log('Volumes sau cập nhật:', this.volumes);
 
     this.activeVolumes = [...this.volumes.filter(volume => volume.trangThai === 1)];
 
-    console.log('Active Volumes sau cập nhật:', this.activeVolumes);
+    // console.log('Active Volumes sau cập nhật:', this.activeVolumes);
 
     if (this.selectedVolume && this.selectedVolume.idSpct === idSpct) {
       this.selectedVolume.trangThai = trangThai;
       this.product.trangThai = trangThai;
 
       if (trangThai === 0) {
-        console.log('Dung tích đang chọn bị ẩn, chuyển sang dung tích khác...');
+        // console.log('Dung tích đang chọn bị ẩn, chuyển sang dung tích khác...');
         this.selectedVolume = this.activeVolumes.length > 0 ? this.activeVolumes[0] : null;
         if (this.selectedVolume) {
-          console.log('Chọn dung tích mới:', this.selectedVolume);
+          // console.log('Chọn dung tích mới:', this.selectedVolume);
           this.product.dungTich = this.selectedVolume.dungTich;
           this.product.donGia = this.selectedVolume.donGia;
           this.product.idSpct = this.selectedVolume.idSpct;
           this.product.soLuongTonKho = this.selectedVolume.soLuongTonKho;
           this.product.trangThai = this.selectedVolume.trangThai;
         } else {
-          console.log('Không còn dung tích nào đang bán, đặt lại thông tin sản phẩm...');
+          // console.log('Không còn dung tích nào đang bán, đặt lại thông tin sản phẩm...');
           this.product.dungTich = null;
           this.product.donGia = null;
           this.product.idSpct = null;
@@ -182,7 +182,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           next: (data: any) => {
             if (data && data.length > 0) {
               this.product = { ...data[0] };
-              console.log('Chi tiết sản phẩm:', data);
+              // console.log('Chi tiết sản phẩm:', data);
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }
@@ -283,7 +283,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       const sub = this.detailService.getRecommendedProducts1(this.product).subscribe({
         next: (data: any[]) => {
           this.recommendedProducts = data;
-          console.log('Sản phẩm gợi ý:', this.recommendedProducts);
+          // console.log('Sản phẩm gợi ý:', this.recommendedProducts);
         },
         error: (err) => console.error('Lỗi khi tải sản phẩm gợi ý:', err),
       });
@@ -598,7 +598,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   setActiveTab(tab: string): void {
     this.activeTab = tab;
-    console.log('Tab hiện tại:', this.activeTab);
+    // console.log('Tab hiện tại:', this.activeTab);
   }
 
   increaseQuantity(): void {

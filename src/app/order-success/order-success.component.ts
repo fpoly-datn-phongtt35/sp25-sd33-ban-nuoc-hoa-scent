@@ -135,13 +135,11 @@ export class OrderSuccessComponent implements OnInit {
 
     const momoRequest = {
       orderId: newMomoOrderId,
-      requestId: 'REQ_' + new Date().getTime(),
       orderInfo: this.orderInfo,
       amount: this.amount,
       returnUrl: `http://localhost:4200/order-success/${this.orderId}?extraData=${extraData}`,
       notifyUrl: 'http://localhost:8080/api/momo/callback',
-      requestType: 'captureWallet',
-      extraData,
+      requestType: 'captureWallet'
     };
 
     console.log('🔁 Gửi lại thanh toán với ID mới:', momoRequest);
