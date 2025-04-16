@@ -672,7 +672,8 @@ export class OrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`, orderId: 'ORDER_' + orderRes.id };
+    const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`,
+       orderId: 'ORDERTOSCENT_' + orderRes.id };
     const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
     console.log('momoRequest:',extraDataObj)
     const momoRequest = {

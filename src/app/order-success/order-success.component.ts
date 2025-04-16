@@ -122,7 +122,7 @@ export class OrderSuccessComponent implements OnInit {
     const utf8ToBase64 = (str: string) =>
       btoa(unescape(encodeURIComponent(str)));
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const newMomoOrderId = `ORDER_${this.orderId}_${randomSuffix}`;
+    const newMomoOrderId = `ORDERTOSCENT_${this.orderId}_${randomSuffix}`;
 
     const extraData = utf8ToBase64(
       JSON.stringify({
