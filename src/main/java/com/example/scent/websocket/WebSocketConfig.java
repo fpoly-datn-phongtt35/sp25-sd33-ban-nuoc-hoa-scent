@@ -1,5 +1,7 @@
 package com.example.scent.websocket;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
@@ -29,7 +31,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public boolean configureMessageConverters(List<MessageConverter> messageConverters) {
-        messageConverters.add(new MappingJackson2MessageConverter());
-        return true; // Return true to indicate that we have added our custom converters
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // Register JSR310 module
+        converter.setObjectMapper(objectMapper);
+        messageConverters.add(converter);
+        return true;
     }
 }

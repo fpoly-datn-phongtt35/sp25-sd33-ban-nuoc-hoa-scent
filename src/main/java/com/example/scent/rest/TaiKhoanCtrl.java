@@ -45,7 +45,12 @@ public class TaiKhoanCtrl {
     public TaiKhoan register(@RequestBody TaiKhoan taiKhoan) {
         return tks.create(taiKhoan);
     }
-
+    @GetMapping("/users")
+    public List<TaiKhoan> getUsers() {
+        return taiKhoanInterface.findAll().stream()
+                .filter(taiKhoan -> "USER".equals(taiKhoan.getVaiTro()))
+                .toList();
+    }
     @GetMapping("/getAll")
     public List<TaiKhoan> getAll() {
         return tks.getAll();

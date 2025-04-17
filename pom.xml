@@ -85,7 +85,12 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.13</version> <!-- Cập nhật phiên bản nếu cần -->
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
 
+        </dependency>
         <!--api làm việc với jwt, định nghĩa interface và kiểu dữ liệu-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

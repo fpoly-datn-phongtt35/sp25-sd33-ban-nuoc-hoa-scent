@@ -17,6 +17,10 @@ public interface TaiKhoanInterface extends JpaRepository<TaiKhoan, Integer>{
 //    TaiKhoan findByUsername(@Param("tenDangNhap") String tenDangNhap);
 //    @Query("SELECT tk.vaiTro FROM TaiKhoan tk WHERE tk.tenDangNhap = :tenDangNhap")
 //    String getRole(@Param("tenDangNhap") String tenDangNhap);
+@Query("SELECT t FROM TaiKhoan t WHERE t.vaiTro IN ('ADMIN', 'STAFF')")
+List<TaiKhoan> findAllAdminsAndStaff();
+List<TaiKhoan> findByVaiTroIn(List<String> vaiTro);
+    List<TaiKhoan> findByIdIn(List<Integer> userIds);
     @Query(value = "select * from tai_khoan where ten_dang_nhap = :tenDangNhap", nativeQuery = true)
     TaiKhoan findByUsername(@Param("tenDangNhap") String tenDangNhap);
     @Query(value = "select vai_tro from tai_khoan where ten_dang_nhap = :tenDangNhap", nativeQuery = true)
