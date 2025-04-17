@@ -13,6 +13,7 @@ import { RegisterComponent } from './register/register.component';
 import { ProductAdminComponent } from './admin/product/product-list/product-admin.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { AccountInfoComponent } from './account-info/account-info.component';
+import { ContactComponent } from './contact/contact.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -21,6 +22,7 @@ export const routes: Routes = [
   { path: 'product/detail/:id', component: ProductDetailComponent },
   { path: 'app-order-id', component: OrderDetailUserIDComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'contact', component: ContactComponent },
   { path: 'product_detail', component: ProductDetailComponent },
   { path: 'admin', component: HomeAdminComponent, canActivate: [AdminGuard] },
   { path: 'order-success/:orderId', component: OrderSuccessComponent },

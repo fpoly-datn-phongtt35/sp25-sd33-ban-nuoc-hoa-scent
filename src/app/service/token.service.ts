@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // Sửa import
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
@@ -11,29 +11,74 @@ export class TokenService {
   private readonly USER_KEY = 'user';
   private jwtHelper = new JwtHelperService();
   private userInfoSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
-  constructor() {}
+
+  constructor() {
+    const userInfo = this.getUserInfo();
+    if (userInfo) {
+      this.userInfoSubject.next(userInfo);
+    }
+  }
+
+  private clearLocalStorageIfFull(): void {
+    try {
+      let total = 0;
+      for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+          total += (localStorage[key].length + key.length) * 2;
+        }
+      }
+      console.log('[TokenService] Tổng dung lượng localStorage:', total / 1024, 'KB');
+
+      if (total > 4.5 * 1024 * 1024) {
+        console.warn('[TokenService] Dung lượng gần đầy, tiến hành dọn dẹp...');
+        for (let key in localStorage) {
+          if (localStorage.hasOwnProperty(key) && key !== this.TOKEN_KEY && key !== this.USER_KEY) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[TokenService] Lỗi khi kiểm tra và dọn dẹp localStorage:', error);
+      localStorage.clear();
+    }
+  }
 
   private isLocalStorageAvailable(): boolean {
-    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+    try {
+      return typeof window !== 'undefined' && typeof localStorage !== 'undefined' && localStorage !== null;
+    } catch (error) {
+      console.warn('[TokenService] localStorage không khả dụng:', error);
+      return false;
+    }
   }
-  
 
   getToken(): string | null {
     if (this.isLocalStorageAvailable()) {
       const token = localStorage.getItem(this.TOKEN_KEY);
-      console.log('Token từ localStorage:', token);
+      console.log('[TokenService] Token từ localStorage:', token);
       return token ? token : null;
     }
-    console.warn('localStorage is not available');
+    console.warn('[TokenService] localStorage không khả dụng');
     return null;
   }
 
   setToken(token: string): void {
-    if (this.isLocalStorageAvailable()) {
-      console.log('Lưu token:', token);
+    if (!this.isLocalStorageAvailable()) {
+      console.warn('[TokenService] localStorage không khả dụng');
+      return;
+    }
+
+    this.clearLocalStorageIfFull();
+    try {
+      console.log('[TokenService] Lưu token:', token);
       localStorage.setItem(this.TOKEN_KEY, token);
-    } else {
-      console.warn('localStorage is not available');
+      const userInfo = this.getUserInfo();
+      this.userInfoSubject.next(userInfo);
+    } catch (error) {
+      console.error('[TokenService] Lỗi khi lưu token:', error);
+      localStorage.clear();
+      localStorage.setItem(this.TOKEN_KEY, token);
+      this.userInfoSubject.next(this.getUserInfo());
     }
   }
 
@@ -41,46 +86,56 @@ export class TokenService {
     if (this.isLocalStorageAvailable()) {
       localStorage.removeItem(this.TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);
+      this.userInfoSubject.next(null);
+      console.log('[TokenService] Đã xóa token và thông tin người dùng');
     } else {
-      console.warn('localStorage is not available');
+      console.warn('[TokenService] localStorage không khả dụng');
     }
   }
 
   setUser(user: any): void {
-    if (this.isLocalStorageAvailable()) {
+    if (!this.isLocalStorageAvailable()) {
+      console.warn('[TokenService] localStorage không khả dụng');
+      return;
+    }
+
+    this.clearLocalStorageIfFull();
+    try {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-    } else {
-      console.warn('localStorage is not available');
+      console.log('[TokenService] Đã lưu thông tin người dùng:', user);
+      this.userInfoSubject.next(user);
+    } catch (error) {
+      console.error('[TokenService] Lỗi khi lưu thông tin người dùng:', error);
+      localStorage.removeItem(this.USER_KEY);
+      this.userInfoSubject.next(null);
     }
   }
 
   getUserId(): number {
-    const userInfo = this.getUserInfo(); // Đảm bảo phương thức này trả về payload chính xác của token
+    const userInfo = this.getUserInfo();
     if (userInfo) {
-        console.log('User Info:', userInfo); // Đây là lệnh log để bạn có thể kiểm tra đầu ra
-        return userInfo.UserID || 0; // Chú ý: Sử dụng 'UserID' như trong token
+      console.log('[TokenService] User Info:', userInfo);
+      return userInfo.UserID || 0;
     }
+    console.log('[TokenService] Không lấy được user info');
     return 0;
-}
+  }
 
-
-
-// Get tenDangNhap
-getTenDangNhap(): string {
-  const userInfo = this.getUserInfo();
-  return userInfo ? userInfo.tenDangNhap : '';
-}
+  getTenDangNhap(): string {
+    const userInfo = this.getUserInfo();
+    return userInfo ? userInfo.tenDangNhap || '' : '';
+  }
 
   isTokenExpired(): boolean {
     const token = this.getToken();
     if (!token) {
-      console.warn('Token không tồn tại hoặc rỗng');
+      console.warn('[TokenService] Token không tồn tại hoặc rỗng');
       return true;
     }
     try {
       return this.jwtHelper.isTokenExpired(token);
     } catch (error) {
-      console.error('Lỗi khi kiểm tra token hết hạn:', error);
+      console.error('[TokenService] Lỗi khi kiểm tra token hết hạn:', error);
       return true;
     }
   }
@@ -94,46 +149,34 @@ getTenDangNhap(): string {
     return false;
   }
 
-  // Lấy thông tin người dùng từ token
   getUserInfo(): any {
     const token = this.getToken();
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Payload từ token:', payload);
-        return payload;
+        const decoded = jwtDecode(token); // Sử dụng jwtDecode thay vì jwt_decode
+        console.log('[TokenService] Payload từ token:', decoded);
+        return decoded;
       } catch (error) {
-        console.error('Lỗi khi giải mã token:', error);
+        console.error('[TokenService] Lỗi khi giải mã token:', error);
         return null;
       }
-    }
-    else{
-      console.log("Token tu localStorage: null");
+    } else {
+      console.log('[TokenService] Token từ localStorage: null');
       return null;
     }
-    
   }
 
-  // Lấy vai trò người dùng từ token
   getRole(): string | null {
-    const token = this.getToken();
-    if (!token) {
-      console.warn('Token không tồn tại.');
-      return null;
+    const userInfo = this.getUserInfo();
+    if (userInfo) {
+      console.log('[TokenService] Vai trò từ token:', userInfo.roles);
+      return userInfo.roles || null;
     }
-  
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1])); // Giải mã payload
-      console.log('Vai trò từ token:', payload);
-      return payload.roles || null;
-    } catch (error) {
-      console.error('Lỗi khi giải mã token:', error);
-      return null;
-    }
+    console.warn('[TokenService] Không lấy được thông tin người dùng hoặc vai trò');
+    return null;
   }
+
   getUserInfoObservable(): Observable<any> {
     return this.userInfoSubject.asObservable();
   }
-
-  
 }

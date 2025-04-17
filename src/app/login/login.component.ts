@@ -32,11 +32,19 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const state = history.state as { username: string };
-    if (state && state.username) {
-      this.loginForm.patchValue({
-        username: state.username
-      });
+    // Lấy dữ liệu từ queryParams hoặc state
+    const state = this.route.snapshot.queryParams['state'];
+    if (state) {
+      try {
+        const parsedState = JSON.parse(state) as { username: string };
+        if (parsedState && parsedState.username) {
+          this.loginForm.patchValue({
+            username: parsedState.username,
+          });
+        }
+      } catch (error) {
+        console.error('[LoginComponent] Lỗi khi parse state:', error);
+      }
     }
   }
 
@@ -47,39 +55,63 @@ export class LoginComponent implements OnInit {
       this.authService.login(username, password).subscribe({
         next: (token: string) => {
           console.log('Token nhận được:', token);
-          this.tokenService.setToken(token);
-          const role = this.tokenService.getRole();
-          console.log('Vai trò sau khi đăng nhập:', role);
-          const UserID: number = this.tokenService.getUserId();
-          console.log('ID:', UserID);
-          this.cartService.setUserId(UserID.toString());
-
-          Swal.fire({
-            title: 'Đăng nhập thành công!',
-            text: 'Chào mừng bạn đến với hệ thống!',
-            icon: 'success',
-            confirmButtonText: 'OK',
-            position: 'center',
-            customClass: {
-              popup: 'swal2-centered',
-              icon: 'swal2-icon',
-              title: 'swal2-title',
-              htmlContainer: 'swal2-content',
-              confirmButton: 'swal2-confirm',
-            },
-            timer: 3000,
-            timerProgressBar: true,
-            backdrop: true,
-            allowOutsideClick: true,
-          }).then(() => {
-            if (role === 'ADMIN') {
-              this.router.navigate(['/admin']);
-            } else if (role === 'STAFF') {
-              this.router.navigate(['/admin']);
+          try {
+            this.tokenService.setToken(token);
+            const role = this.tokenService.getRole();
+            console.log('Vai trò sau khi đăng nhập:', role);
+            const UserID: number = this.tokenService.getUserId();
+            console.log('ID:', UserID);
+            if (UserID) {
+              this.cartService.setUserId(UserID.toString());
             } else {
-              this.router.navigate(['/']);
+              throw new Error('Không lấy được UserID từ token');
             }
-          });
+
+            Swal.fire({
+              title: 'Đăng nhập thành công!',
+              text: 'Chào mừng bạn đến với hệ thống!',
+              icon: 'success',
+              confirmButtonText: 'OK',
+              position: 'center',
+              customClass: {
+                popup: 'swal2-centered',
+                icon: 'swal2-icon',
+                title: 'swal2-title',
+                htmlContainer: 'swal2-content',
+                confirmButton: 'swal2-confirm',
+              },
+              timer: 3000,
+              timerProgressBar: true,
+              backdrop: true,
+              allowOutsideClick: true,
+            }).then(() => {
+              if (role === 'ADMIN' || role === 'STAFF') {
+                this.router.navigate(['/admin']);
+              } else {
+                this.router.navigate(['/']);
+              }
+            });
+          } catch (error) {
+            console.error('Lỗi khi xử lý token sau đăng nhập:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Lỗi đăng nhập',
+              text: 'Không thể lưu thông tin đăng nhập do bộ nhớ trình duyệt đầy. Vui lòng xóa dữ liệu trình duyệt và thử lại!',
+              confirmButtonText: 'Thử lại',
+              position: 'center',
+              customClass: {
+                popup: 'swal2-centered',
+                icon: 'swal2-icon',
+                title: 'swal2-title',
+                htmlContainer: 'swal2-content',
+                confirmButton: 'swal2-confirm',
+              },
+              timer: 5000,
+              timerProgressBar: true,
+              backdrop: true,
+              allowOutsideClick: true,
+            });
+          }
         },
         error: (error: any) => {
           console.error('Đăng nhập thất bại', error);

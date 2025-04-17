@@ -1,0 +1,31 @@
+<app-header></app-header>
+
+<div class="chat-container">
+  <div class="chat-header">
+    💬 Chat với chúng tôi
+  </div>
+
+  <div class="chat-messages" #chatMessages>
+    <div *ngFor="let message of messages"
+         [ngClass]="(message.sender?.id ?? message.senderId) === userId ? 'message message-right' : 'message message-left'">
+      <div class="message-wrapper">
+        <div class="message-sender">
+          {{ message.sender?.tenDangNhap}}
+        </div>
+        <div class="message-content">
+          {{ message.content }}
+          <div class="message-timestamp">
+            {{ message.timestamp | date:'dd/MM/yyyy, HH:mm' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()" placeholder="Nhập tin nhắn..." />
+    <button (click)="sendMessage()">Gửi</button>
+  </div>
+</div>
+
+<app-footer></app-footer>

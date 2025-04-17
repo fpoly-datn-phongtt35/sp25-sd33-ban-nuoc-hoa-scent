@@ -125,7 +125,21 @@
         </a>
       </li>
 
+
       <!-- Lịch sử -->
+
+      <!-- Tin nhắn -->
+      <li class="nav-item mb-3">
+        <a
+          class="nav-link"
+          [ngClass]="{'active': selectedComponent === 'chat'}"
+          (click)="showComponent('chat')">
+          <i class="bi bi-chat-dots"></i> Tin nhắn
+          <span *ngIf="totalUnreadMessages > 0" class="badge">
+            {{ totalUnreadMessages }}
+          </span>
+        </a>
+      </li>
 
     </nav>
   </div>
@@ -142,6 +156,56 @@
       <app-customer *ngSwitchCase="'customer'"></app-customer>
       <app-lichsuthaotac *ngSwitchCase="'ls'"></app-lichsuthaotac>
       <app-fragrance-list *ngSwitchCase="'fragrance'"></app-fragrance-list>
+
+      <div *ngSwitchCase="'chat'" class="chat-container">
+        <h2>Tin nhắn</h2>
+        <div class="chat-content">
+          <div class="chat-users">
+            <h3>Danh sách khách hàng</h3>
+            <ul>
+              <li
+                *ngFor="let user of chatUsers"
+                (click)="selectChatUser(user.id)"
+                [class.active]="selectedChatUserId === user.id">
+                {{ user.hoTen || 'Khách ' + user.id }} (ID: {{ user.id }})
+                <span *ngIf="newMessageCount.get(user.id) > 0" class="badge">
+                  {{ newMessageCount.get(user.id) }}
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div class="chat-box">
+            <!-- Incoming Message Notifications -->
+            <div *ngFor="let incoming of incomingMessages" class="incoming-message-notification">
+              <span>Tin nhắn mới từ {{ incoming.hoTen }}: {{ incoming.content }}</span>
+              <button (click)="selectChatUser(incoming.customerId)">Xem ngay</button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" *ngIf="selectedChatUserId; else noChatSelected" #chatMessages>
+              <div
+                *ngFor="let message of messages"
+                [ngClass]="{'sent': message.sender.id === userID, 'received': message.sender.id !== userID}">
+                <p class="message-content">{{ message.content }}</p>
+                <p class="timestamp">{{ message.timestamp | date: 'short' }}</p>
+              </div>
+            </div>
+            <ng-template #noChatSelected>
+              <p>Vui lòng chọn một khách hàng để xem tin nhắn.</p>
+            </ng-template>
+            <div class="chat-input">
+              <input
+                type="text"
+                [(ngModel)]="newMessage"
+                placeholder="Nhập tin nhắn..."
+                (keyup.enter)="sendMessage()"
+                [disabled]="!selectedChatUserId">
+              <button (click)="sendMessage()" [disabled]="!selectedChatUserId">Gửi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </ng-container>
   </div>
 </div>
