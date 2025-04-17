@@ -6,6 +6,7 @@
       <p>ID: {{userID}} || Tên: {{tenDangNhap?.sub}}</p>
       <!-- Dropdown -->
       <div class="dropdown" *ngIf="isDropdownVisible">
+        <a class="dropdown-item" (click)="openUpdateInfo()">Thông tin tài khoản</a>
         <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi mật khẩu</a>
         <a class="dropdown-item logout" (click)="logout()">Đăng xuất</a>
       </div>
@@ -58,10 +59,10 @@
     [ngClass]="{'active': selectedComponent === 'products'}"
     (click)="toggleSubMenu('products')">
     <i class="bi bi-bag icon"></i> Sản phẩm
-    <i class="bi bi-chevron-up ms-auto" *ngIf="isSubMenuOpen['products']"></i>
+    <i class="bi bi-chevron-up ms-auto" *ngIf="isSubMenuOpen['products']&&userRole !== 'STAFF'"></i>
   </a>
   <!-- Danh sách mục con -->
-  <ul class="sub-menu" *ngIf="isSubMenuOpen['products']">
+  <ul class="sub-menu" *ngIf="isSubMenuOpen['products']&&userRole !== 'STAFF'">
     <li class="nav-item sub-item">
       <a
         class="nav-link"
@@ -115,7 +116,7 @@
       </li>
 
       <!-- Khách hàng -->
-      <li class="nav-item mb-3" *ngIf="userRole !== 'STAFF'">
+      <li class="nav-item mb-3">
         <a
           class="nav-link"
           [ngClass]="{'active': selectedComponent === 'customer'}"

@@ -1,0 +1,24 @@
+<div class="modal-backdrop" *ngIf="showModal">
+  <div class="modal-content">
+    <h2>Thông Tin Tài Khoản</h2>
+
+    <form (ngSubmit)="updateAccount()">
+      <div class="field">
+        <label>Email:</label>
+        <input type="email" [(ngModel)]="userInfo.email" name="email" />
+      </div>
+      <div class="field">
+        <label>Họ và tên:</label>
+        <input type="text" [(ngModel)]="userInfo.hoTen" name="hoTen" />
+      </div>
+      <div class="field">
+        <label>SĐT:</label>
+        <input type="text" [(ngModel)]="userInfo.sdt" name="sdt" />
+      </div>
+      <div class="actions">
+        <button type="submit">Lưu</button>
+        <button type="button" (click)="closeModal()">Hủy</button>
+      </div>
+    </form>
+  </div>
+</div>

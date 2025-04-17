@@ -16,6 +16,8 @@ import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.compon
 import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhangofffline.component';
 import { ChangePasswordModalComponent } from '../../change-password/change-password.component';
 import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-list.component';
+import { AccountInfoComponent } from '../../account-info/account-info.component';
+import { AccountInfoAdminComponent } from '../account-info-admin/account-info-admin.component';
 
 @Component({
   selector: 'app-home-admin',
@@ -111,7 +113,14 @@ export class HomeAdminComponent implements OnInit, OnDestroy {
   hideDropdown(): void {
     this.isDropdownVisible = false;
   }
-
+  openUpdateInfo():void{
+    this.isDropdownVisible = false;
+    const modalRef = this.modalService.open(AccountInfoAdminComponent, {
+      centered: true,
+      backdrop: 'static',
+      keyboard: false,
+    });
+  }
   openChangePasswordModal(): void {
     this.isDropdownVisible = false;
     const modalRef = this.modalService.open(ChangePasswordModalComponent, {
