@@ -21,8 +21,9 @@ import { WebSocketService } from '../service/WebSocketService';
 })
 export class HomeComponent implements OnInit, OnDestroy {
   sanPhams: any[] = [];
+  bestSellingProducts: any[] = []; // New property for best-selling products
   page: number = 0;
-  size: number = 12;
+  size: number = 16;
   totalPages: number = 1;
   visiblePages: number[] = [];
 
@@ -37,7 +38,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   tenThuongHieus: any[] = [];
   quocGias: any[] = [];
 
-  isLoading: boolean = false; // Thêm trạng thái loading
+  isLoading: boolean = false; // For main product list
+  isBestSellingLoading: boolean = false; // For best-selling products
 
   selectedFilters = {
     searchQuery: '',
@@ -64,6 +66,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     console.log('[HomeComponent] Initializing component');
     this.fetchFilters();
     this.loadProducts();
+    this.loadBestSellingProducts(); // Load best-selling products
 
     const userId = 0;
     console.log(`[HomeComponent] Connecting WebSocket for userId: ${userId}`);
@@ -78,6 +81,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         if (trangThai === 0) {
           const oldLength = this.sanPhams.length;
           this.sanPhams = this.sanPhams.filter(product => String(product.idSanPham) !== String(productId));
+          this.bestSellingProducts = this.bestSellingProducts.filter(product => String(product.idSanPham) !== String(productId));
           if (this.sanPhams.length < oldLength && this.sanPhams.length === 0 && this.page > 0) {
             this.page--;
             this.loadProducts();
@@ -97,6 +101,8 @@ export class HomeComponent implements OnInit, OnDestroy {
               return product;
             });
           }
+          // Check if the update affects best-selling products (e.g., stock or order completion)
+          this.loadBestSellingProducts();
         }
       },
       error: (err) => console.error('[HomeComponent] WebSocket error:', err),
@@ -153,8 +159,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   loadProducts(): void {
-    this.isLoading = true; // Bật trạng thái loading
-
+    this.isLoading = true;
     const queryParams = {
       searchQuery: this.selectedFilters.searchQuery || '',
       minPrice: this.selectedFilters.minPrice || null,
@@ -174,13 +179,29 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
         console.log('product', data);
-        this.isLoading = false; // Tắt trạng thái loading
+        this.isLoading = false;
       },
       error: (err: any) => {
         this.sanPhams = [];
         this.totalPages = 1;
         this.visiblePages = [];
-        this.isLoading = false; // Tắt trạng thái loading
+        this.isLoading = false;
+      },
+    });
+  }
+
+  loadBestSellingProducts(): void {
+    this.isBestSellingLoading = true;
+    this.sanPhamService.getBestSellingProducts(5).subscribe({
+      next: (data: any) => {
+        this.bestSellingProducts = data || [];
+        console.log('[HomeComponent] Best-selling products loaded:', this.bestSellingProducts);
+        this.isBestSellingLoading = false;
+      },
+      error: (err: any) => {
+        console.error('[HomeComponent] Failed to load best-selling products:', err);
+        this.bestSellingProducts = [];
+        this.isBestSellingLoading = false;
       },
     });
   }

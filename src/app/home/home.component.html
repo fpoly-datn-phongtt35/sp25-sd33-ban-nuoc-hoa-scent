@@ -64,6 +64,43 @@
             Giá: <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
           </div>
         </div>
+
+        <!-- Best-Selling Products Section -->
+       <!-- Best-Selling Products Section -->
+<div class="best-selling-section">
+  <h4 class="filter-subtitle">Sản Phẩm Bán Chạy</h4>
+  <!-- Loading state -->
+  <div class="loading-state text-center" *ngIf="isBestSellingLoading">
+    <div class="spinner-border spinner-border-sm" role="status">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+  <!-- Product list -->
+  <div class="best-selling-list" *ngIf="!isBestSellingLoading">
+    <div *ngFor="let product of bestSellingProducts" class="best-selling-card">
+      <div
+        [ngClass]="{'disabled-product': product.tongSoLuongTonKho <= 0}"
+        (click)="product.tongSoLuongTonKho > 0 ? viewProductDetail(product.idSanPham) : null"
+      >
+        <div class="best-selling-image-container">
+          <img [src]="product.imageURL || 'assets/images/placeholder.png'" alt="{{ product.tenSanPham }}" class="best-selling-image" />
+          <span class="hot-badge">HOT</span> <!-- Added HOT badge -->
+          <div *ngIf="product.tongSoLuongTonKho <= 0" class="out-of-stock-overlay">
+            <span class="out-of-stock-text">Hết hàng</span>
+          </div>
+        </div>
+        <div class="best-selling-info">
+          <h5 class="best-selling-title">{{ product.tenSanPham }}</h5>
+          <p class="best-selling-price">{{ product.donGia | number }} VND</p>
+          <p class="best-selling-sales">Đã bán: {{ product.totalQuantitySold }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="empty-state text-center" *ngIf="bestSellingProducts.length === 0 && !isBestSellingLoading">
+      <p>Chưa có sản phẩm bán chạy.</p>
+    </div>
+  </div>
+</div>
       </div>
 
       <!-- Danh sách sản phẩm bên phải -->
@@ -100,7 +137,7 @@
               (click)="product.tongSoLuongTonKho > 0 ? viewProductDetail(product.idSanPham) : null"
             >
               <div class="product-image-container">
-                <img [src]="product.imageURL" alt="{{ product.tenSanPham }}" class="product-image" />
+                <img [src]="product.imageURL || 'assets/images/placeholder.png'" alt="{{ product.tenSanPham }}" class="product-image" />
                 <div *ngIf="product.tongSoLuongTonKho <= 0" class="out-of-stock-overlay">
                   <span class="out-of-stock-text">Hết hàng</span>
                 </div>

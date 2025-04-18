@@ -3,8 +3,7 @@
   <div class="sidebar">
     <div class="profile" (mouseenter)="showDropdown()" (mouseleave)="hideDropdown()">
       <img src="logo.webp" alt="Profile Picture">
-      <p>ID: {{userID}} || Tên: {{tenDangNhap?.sub}}</p>
-      <!-- Dropdown -->
+      <p>ID: {{userID}} | Tên: {{tenDangNhap?.sub}}</p>
       <div class="dropdown" *ngIf="isDropdownVisible">
         <a class="dropdown-item" (click)="openUpdateInfo()">Thông tin tài khoản</a>
         <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi mật khẩu</a>
@@ -12,140 +11,80 @@
       </div>
     </div>
     <nav class="menu">
-      <!-- Bán hàng tại quầy -->
-      <li class="nav-item mb-3">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'bho'}"
-          (click)="showComponent('bho')">
+      <li class="nav-item">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'bho'}" (click)="showComponent('bho')">
           <i class="bi bi-house"></i> Bán hàng tại quầy
         </a>
       </li>
-
-      <!-- Thống kê -->
-      <li class="nav-item mb-3" *ngIf="userRole !== 'STAFF'">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'dashboard'}"
-          (click)="showComponent('dashboard')">
+      <li class="nav-item" *ngIf="userRole !== 'STAFF'">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'dashboard'}" (click)="showComponent('dashboard')">
           <i class="bi bi-house"></i> Thống kê
         </a>
       </li>
-
-      <!-- Voucher -->
-      <li class="nav-item mb-3" *ngIf="userRole !== 'STAFF'">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'voucher'}"
-          (click)="showComponent('voucher')">
+      <li class="nav-item" *ngIf="userRole !== 'STAFF'">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'voucher'}" (click)="showComponent('voucher')">
           <i class="bi bi-gift"></i> Voucher
         </a>
       </li>
-
-      <!-- Hóa đơn -->
-      <li class="nav-item mb-3">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'invoice'}"
-          (click)="showComponent('invoice')">
+      <li class="nav-item">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'invoice'}" (click)="showComponent('invoice')">
           <i class="bi bi-receipt"></i> Đơn hàng
         </a>
       </li>
-
-<!-- Sản phẩm -->
-<li class="nav-item mb-3">
-  <a
-    class="nav-link"
-    [ngClass]="{'active': selectedComponent === 'products'}"
-    (click)="toggleSubMenu('products')">
-    <i class="bi bi-bag icon"></i> Sản phẩm
-    <i class="bi bi-chevron-up ms-auto" *ngIf="isSubMenuOpen['products']&&userRole !== 'STAFF'"></i>
-  </a>
-  <!-- Danh sách mục con -->
-  <ul class="sub-menu" *ngIf="isSubMenuOpen['products']&&userRole !== 'STAFF'">
-    <li class="nav-item sub-item">
-      <a
-        class="nav-link"
-        [ngClass]="{'active': selectedComponent === 'brand'}"
-        (click)="showComponent('brand')">
-        <i class="bi bi-building icon"></i> Quản lý thương hiệu
-      </a>
-    </li>
-    <li class="nav-item sub-item">
-      <a
-        class="nav-link"
-        [ngClass]="{'active': selectedComponent === 'fragranceGroup'}"
-        (click)="showComponent('fragranceGroup')">
-        <i class="bi bi-flower2 icon"></i> Quản lý nhóm hương
-      </a>
-    </li>
-    <li class="nav-item sub-item">
-      <a
-        class="nav-link"
-        [ngClass]="{'active': selectedComponent === 'style'}"
-        (click)="showComponent('style')">
-        <i class="bi bi-palette icon"></i> Quản lý phong cách
-      </a>
-    </li>
-    <li class="nav-item sub-item">
-      <a
-        class="nav-link"
-        [ngClass]="{'active': selectedComponent === 'fragrance'}"
-        (click)="showComponent('fragrance')">
-        <i class="bi bi-flower1 icon"></i> Quản lý mùi hương
-      </a>
-    </li>
-    <li class="nav-item sub-item">
-      <a
-        class="nav-link"
-        [ngClass]="{'active': selectedComponent === 'note'}"
-        (click)="showComponent('note')">
-        <i class="bi bi-music-note icon"></i> Quản lý nốt hương
-      </a>
-    </li>
-  </ul>
-</li>
-      <!-- Nhân viên -->
-      <li class="nav-item mb-3" *ngIf="userRole !== 'STAFF'">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'staff'}"
-          (click)="showComponent('staff')">
+      <li class="nav-item">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'products'}" (click)="toggleSubMenu('products')">
+          <i class="bi bi-bag"></i> Sản phẩm
+          <i class="bi bi-chevron-up ms-auto" *ngIf="isSubMenuOpen['products'] && userRole !== 'STAFF'"></i>
+        </a>
+        <ul class="sub-menu" *ngIf="isSubMenuOpen['products'] && userRole !== 'STAFF'">
+          <li class="nav-item sub-item">
+            <a class="nav-link" [ngClass]="{'active': selectedComponent === 'brand'}" (click)="showComponent('brand')">
+              <i class="bi bi-building"></i> Quản lý thương hiệu
+            </a>
+          </li>
+          <li class="nav-item sub-item">
+            <a class="nav-link" [ngClass]="{'active': selectedComponent === 'fragranceGroup'}" (click)="showComponent('fragranceGroup')">
+              <i class="bi bi-flower2"></i> Quản lý nhóm hương
+            </a>
+          </li>
+          <li class="nav-item sub-item">
+            <a class="nav-link" [ngClass]="{'active': selectedComponent === 'style'}" (click)="showComponent('style')">
+              <i class="bi bi-palette"></i> Quản lý phong cách
+            </a>
+          </li>
+          <li class="nav-item sub-item">
+            <a class="nav-link" [ngClass]="{'active': selectedComponent === 'fragrance'}" (click)="showComponent('fragrance')">
+              <i class="bi bi-flower1"></i> Quản lý mùi hương
+            </a>
+          </li>
+          <li class="nav-item sub-item">
+            <a class="nav-link" [ngClass]="{'active': selectedComponent === 'note'}" (click)="showComponent('note')">
+              <i class="bi bi-music-note"></i> Quản lý nốt hương
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="nav-item" *ngIf="userRole !== 'STAFF'">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'staff'}" (click)="showComponent('staff')">
           <i class="bi bi-person"></i> Nhân viên
         </a>
       </li>
-
-      <!-- Khách hàng -->
-      <li class="nav-item mb-3">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'customer'}"
-          (click)="showComponent('customer')">
+      <li class="nav-item">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'customer'}" (click)="showComponent('customer')">
           <i class="bi bi-people"></i> Khách hàng
         </a>
       </li>
-
-
-      <!-- Lịch sử -->
-
-      <!-- Tin nhắn -->
-      <li class="nav-item mb-3">
-        <a
-          class="nav-link"
-          [ngClass]="{'active': selectedComponent === 'chat'}"
-          (click)="showComponent('chat')">
+      <li class="nav-item">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'chat'}" (click)="showComponent('chat')">
           <i class="bi bi-chat-dots"></i> Tin nhắn
-          <span *ngIf="totalUnreadMessages > 0" class="badge">
-            {{ totalUnreadMessages }}
-          </span>
+          <span *ngIf="totalUnreadMessages > 0" class="badge">{{ totalUnreadMessages }}</span>
         </a>
       </li>
-
     </nav>
   </div>
 
   <!-- Main Content -->
-  <div class="col-md-10 col-lg-10 overflow-auto p-4">
+  <div class="main-content">
     <ng-container [ngSwitch]="selectedComponent">
       <app-banhangoffline [isComponentSwitched]="isComponentSwitched" *ngSwitchCase="'bho'"></app-banhangoffline>
       <app-statistics *ngSwitchCase="'dashboard'"></app-statistics>
@@ -156,36 +95,25 @@
       <app-customer *ngSwitchCase="'customer'"></app-customer>
       <app-lichsuthaotac *ngSwitchCase="'ls'"></app-lichsuthaotac>
       <app-fragrance-list *ngSwitchCase="'fragrance'"></app-fragrance-list>
-
       <div *ngSwitchCase="'chat'" class="chat-container">
         <h2>Tin nhắn</h2>
         <div class="chat-content">
           <div class="chat-users">
             <h3>Danh sách khách hàng</h3>
             <ul>
-              <li
-                *ngFor="let user of chatUsers"
-                (click)="selectChatUser(user.id)"
-                [class.active]="selectedChatUserId === user.id">
+              <li *ngFor="let user of chatUsers" (click)="selectChatUser(user.id)" [class.active]="selectedChatUserId === user.id">
                 {{ user.hoTen || 'Khách ' + user.id }} (ID: {{ user.id }})
-                <span *ngIf="newMessageCount.get(user.id) > 0" class="badge">
-                  {{ newMessageCount.get(user.id) }}
-                </span>
+                <span *ngIf="newMessageCount.get(user.id) > 0" class="badge">{{ newMessageCount.get(user.id) }}</span>
               </li>
             </ul>
           </div>
           <div class="chat-box">
-            <!-- Incoming Message Notifications -->
             <div *ngFor="let incoming of incomingMessages" class="incoming-message-notification">
               <span>Tin nhắn mới từ {{ incoming.hoTen }}: {{ incoming.content }}</span>
               <button (click)="selectChatUser(incoming.customerId)">Xem ngay</button>
             </div>
-
-            <!-- Chat Messages -->
             <div class="chat-messages" *ngIf="selectedChatUserId; else noChatSelected" #chatMessages>
-              <div
-                *ngFor="let message of messages"
-                [ngClass]="{'sent': message.sender.id === userID, 'received': message.sender.id !== userID}">
+              <div *ngFor="let message of messages" [ngClass]="{'sent': message.sender.id === userID, 'received': message.sender.id !== userID}">
                 <p class="message-content">{{ message.content }}</p>
                 <p class="timestamp">{{ message.timestamp | date: 'short' }}</p>
               </div>
@@ -194,18 +122,12 @@
               <p>Vui lòng chọn một khách hàng để xem tin nhắn.</p>
             </ng-template>
             <div class="chat-input">
-              <input
-                type="text"
-                [(ngModel)]="newMessage"
-                placeholder="Nhập tin nhắn..."
-                (keyup.enter)="sendMessage()"
-                [disabled]="!selectedChatUserId">
+              <input type="text" [(ngModel)]="newMessage" placeholder="Nhập tin nhắn..." (keyup.enter)="sendMessage()" [disabled]="!selectedChatUserId">
               <button (click)="sendMessage()" [disabled]="!selectedChatUserId">Gửi</button>
             </div>
           </div>
         </div>
       </div>
-
     </ng-container>
   </div>
 </div>

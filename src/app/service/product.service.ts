@@ -17,11 +17,14 @@ export class SanPhamService {
 private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll';
 private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-admin';
 private apiURLbb = 'http://localhost:8080/rest/san-pham/search-combined'; // API mới
-
+private urb ='http://localhost:8080/api';
   constructor(private http: HttpClient) {
     console.log('SanPhamService đã được khởi tạo.');
   }
-
+  getBestSellingProducts(topN: number = 5): Observable<any[]> {
+    const params = new HttpParams().set('topN', topN.toString());
+    return this.http.get<any[]>(`${this.urb}/thong-ke/top-san-pham`, { params });
+  }
   // Phương thức để lấy danh sách sản phẩm
   getSanPhamDetails(page: number = 0, size: number = 12): Observable<any> {
     console.log(`Requesting API: ${this.apiURL}?page=${page}&size=${size}`);
@@ -87,7 +90,7 @@ private apiURLbb = 'http://localhost:8080/rest/san-pham/search-combined'; // API
 
     // page và size luôn được gửi, với giá trị mặc định nếu không có
     params = params.set('page', queryParams.page?.toString() || '0');
-    params = params.set('size', queryParams.size?.toString() || '12');
+    params = params.set('size', queryParams.size?.toString() || '16');
 
     return this.http.get<any>(this.apiURLbb, { params });
   }
