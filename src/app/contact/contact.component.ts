@@ -104,7 +104,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  private initializeChat(): void {
+  initializeChat(): void {
     if (!isPlatformBrowser(this.platformId)) {
       console.warn('[ContactComponent] Bỏ qua initializeChat trên server-side');
       return;
@@ -127,8 +127,8 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (this.webSocketService.isWebSocketConnected()) {
         clearInterval(checkConnection);
         console.log('[ContactComponent] WebSocket đã kết nối thành công cho khách hàng:', this.userId);
-        this.subscribeToMessages();
-        this.loadMessages();
+        this.loadMessages(); // Tải tin nhắn trước
+        this.subscribeToMessages(); // Chỉ subscribe sau khi tải xong
         this.setupWebSocketReconnect();
       } else {
         retryCount++;
@@ -167,8 +167,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     });
   }
-
-  private subscribeToMessages(): void {
+  subscribeToMessages(): void {
     if (!isPlatformBrowser(this.platformId)) {
       console.warn('[ContactComponent] Bỏ qua subscribeToMessages trên server-side');
       return;
@@ -197,7 +196,6 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         console.log(`[ContactComponent] Kiểm tra tin nhắn: senderId=${senderId}, receiverId=${receiverId}, userId=${this.userId}`);
 
-        // Xử lý tin nhắn mà user là sender hoặc receiver
         if (senderId === this.userId || receiverId === this.userId) {
           this.ngZone.run(() => {
             const normalizedMessage = {
@@ -206,23 +204,59 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
               receiver: message.receiver || (receiverId ? { id: receiverId } : null),
               senderId,
               receiverId,
+              content: message.content.trim(),
+              timestamp: message.timestamp,
             };
 
-            // Sử dụng ID tin nhắn để kiểm tra trùng lặp
-            const messageKey = normalizedMessage.id 
-              ? normalizedMessage.id.toString()
-              : `${normalizedMessage.content}-${senderId}-${normalizedMessage.timestamp}-${receiverId || 'null'}`;
+            // Tạo contentKey để kiểm tra trùng lặp dựa trên nội dung và senderId
+            const contentKey = `${normalizedMessage.content}-${senderId}-${receiverId || 'null'}`;
 
-            if (!this.processedMessages.has(messageKey)) {
+            // Kiểm tra xem có tin nhắn tương tự trong khoảng thời gian gần đây không
+            const isDuplicate = this.messages.some(
+              msg =>
+                msg.content === normalizedMessage.content &&
+                msg.senderId === senderId &&
+                Math.abs(new Date(normalizedMessage.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000 // Trong vòng 1 giây
+            );
+
+            if (isDuplicate) {
+              console.log('[ContactComponent] Bỏ qua tin nhắn trùng lặp:', normalizedMessage);
+              return;
+            }
+
+            // Kiểm tra xem có tin nhắn tạm thời nào cần thay thế không
+            const tempMessageIndex = this.messages.findIndex(
+              msg =>
+                msg.tempId &&
+                msg.content === normalizedMessage.content &&
+                msg.senderId === senderId &&
+                Math.abs(new Date(normalizedMessage.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 5000 // Trong vòng 5 giây
+            );
+
+            // Tạo messageKey để lưu vào processedMessages
+            const messageKey = normalizedMessage.id
+              ? normalizedMessage.id.toString()
+              : contentKey + '-' + normalizedMessage.timestamp;
+
+            if (tempMessageIndex !== -1) {
+              // Thay thế tin nhắn tạm thời bằng tin nhắn thực
+              const tempMessageKey = this.messages[tempMessageIndex].tempId;
+              this.processedMessages.delete(tempMessageKey);
+              this.messages[tempMessageIndex] = normalizedMessage;
+              console.log('[ContactComponent] Đã thay thế tin nhắn tạm thời:', normalizedMessage);
+            } else if (!this.processedMessages.has(messageKey)) {
+              // Thêm tin nhắn mới nếu chưa xử lý
               this.processedMessages.add(messageKey);
               this.messages.push(normalizedMessage);
-              this.sortMessages();
-              console.log('[ContactComponent] Đã thêm tin nhắn vào messages:', normalizedMessage);
-              this.shouldScroll = true;
-              this.cdr.detectChanges(); // Đảm bảo giao diện cập nhật
+              console.log('[ContactComponent] Đã thêm tin nhắn mới:', normalizedMessage);
             } else {
               console.log('[ContactComponent] Tin nhắn đã được xử lý trước đó, bỏ qua:', normalizedMessage);
+              return;
             }
+
+            this.sortMessages();
+            this.shouldScroll = true;
+            this.cdr.detectChanges();
           });
         } else {
           console.warn('[ContactComponent] Bỏ qua tin nhắn không phù hợp:', message);
@@ -235,7 +269,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  private loadMessages(): void {
+  loadMessages(): void {
     if (!isPlatformBrowser(this.platformId)) {
       console.warn('[ContactComponent] Bỏ qua loadMessages trên server-side');
       return;
@@ -248,7 +282,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.isLoading = true;
     this.errorMessage = null;
-    this.messages = []; // Reset messages để tránh trùng lặp
+    this.messages = []; // Reset messages
     this.processedMessages.clear(); // Xóa các tin nhắn đã xử lý
 
     this.http.get<any[]>(`http://localhost:8080/api/chat/messages/user/${this.userId}`).subscribe({
@@ -260,14 +294,15 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
           const senderId = msg.sender?.id ?? msg.senderId;
           const receiverId = msg.receiver?.id ?? msg.receiverId;
           if (senderId === this.userId || receiverId === this.userId) {
-            const messageKey = msg.id 
+            const messageKey = msg.id
               ? msg.id.toString()
-              : `${msg.content}-${senderId}-${msg.timestamp}-${receiverId || 'null'}`;
+              : `${msg.content.trim()}-${senderId}-${receiverId || 'null'}`; // Loại bỏ timestamp
             if (!uniqueMessages.has(messageKey)) {
               uniqueMessages.set(messageKey, {
                 ...msg,
                 senderId,
                 receiverId,
+                content: msg.content.trim(),
               });
             }
           }
@@ -275,9 +310,9 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         this.messages = Array.from(uniqueMessages.values());
         this.messages.forEach(msg => {
-          const messageKey = msg.id 
+          const messageKey = msg.id
             ? msg.id.toString()
-            : `${msg.content}-${msg.senderId}-${msg.timestamp}-${msg.receiverId || 'null'}`;
+            : `${msg.content}-${msg.senderId}-${msg.receiverId || 'null'}`;
           this.processedMessages.add(messageKey);
         });
 
@@ -288,7 +323,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.isChatOpen = true;
         }
         this.shouldScroll = true;
-        this.cdr.detectChanges(); // Đảm bảo giao diện cập nhật
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('[ContactComponent] Lỗi khi tải tin nhắn:', error);
@@ -299,7 +334,11 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private sortMessages(): void {
-    this.messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    this.messages.sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return timeA - timeB;
+    });
     console.log('[ContactComponent] Đã sắp xếp tin nhắn:', this.messages.length);
   }
 
@@ -337,30 +376,31 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     console.log('[ContactComponent] Gửi tin nhắn từ user', this.userId, ':', this.newMessage);
 
     try {
+      // Tạo tempId duy nhất
+      const tempId = `temp-${Date.now()}-${Math.random()}`;
+
       // Gửi tin nhắn qua WebSocket
       this.webSocketService.sendChatMessage(this.userId, null, this.newMessage);
       console.log('[ContactComponent] Đã gửi tin nhắn, chờ WebSocket cập nhật');
 
-      // Thêm tin nhắn tạm thời vào messages để hiển thị ngay lập tức
+      // Thêm tin nhắn tạm thời vào messages
       const tempMessage = {
         id: null,
+        tempId, // Thêm tempId để theo dõi
         sender: { id: this.userId },
         receiver: null,
-        content: this.newMessage,
+        content: this.newMessage.trim(), // Loại bỏ khoảng trắng thừa
         timestamp: new Date().toISOString(),
         senderId: this.userId,
         receiverId: null,
       };
-      const messageKey = tempMessage.id 
-        ? tempMessage.id.toString()
-        : `${tempMessage.content}-${tempMessage.senderId}-${tempMessage.timestamp}-${tempMessage.receiverId || 'null'}`;
-      
+      const messageKey = tempId;
       if (!this.processedMessages.has(messageKey)) {
         this.processedMessages.add(messageKey);
         this.messages.push(tempMessage);
         this.sortMessages();
         this.shouldScroll = true;
-        this.cdr.detectChanges(); // Đảm bảo giao diện cập nhật
+        this.cdr.detectChanges();
       }
 
       this.newMessage = '';
