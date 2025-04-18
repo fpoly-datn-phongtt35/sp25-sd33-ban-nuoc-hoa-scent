@@ -280,19 +280,21 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
 
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
-            "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
             "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
-            "JOIN sp.hinhAnhs ha " +
             "JOIN sp.thuongHieu th " +
-            "JOIN sp.huongDau hd " +
-            "JOIN sp.huongGiua hg " +
-            "JOIN sp.nhomHuong nh " +
             "JOIN sp.danhMuc dm " +
-            "JOIN sp.huongCuoi hc " +
-            "WHERE sp.trangThai = 1 AND (:searchQuery IS NULL OR :searchQuery = '' OR " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "LEFT JOIN sp.nhomHuong nh " +
+            "WHERE sp.trangThai = 1 " +
+            "AND (:searchQuery IS NULL OR " +
             "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
@@ -302,17 +304,13 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
             "AND (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
             "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
-            "AND (:tenDanhMuc IS NULL OR :tenDanhMuc = '' OR dm.tenDanhMuc = :tenDanhMuc) " +
-            "AND (:tenNhomHuong IS NULL OR :tenNhomHuong = '' OR nh.tenNhomHuong = :tenNhomHuong) " +
-            "AND (:tenThuongHieu IS NULL OR :tenThuongHieu = '' OR th.tenThuongHieu = :tenThuongHieu) " +
-            "AND (:quocGia IS NULL OR :quocGia = '' OR th.quocGia = :quocGia) " +
+            "AND (:tenDanhMuc IS NULL OR dm.tenDanhMuc = :tenDanhMuc) " +
+            "AND (:tenNhomHuong IS NULL OR nh.tenNhomHuong = :tenNhomHuong) " +
+            "AND (:tenThuongHieu IS NULL OR th.tenThuongHieu = :tenThuongHieu) " +
+            "AND (:quocGia IS NULL OR th.quocGia = :quocGia) " +
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
-            "nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate " +
-            "ORDER BY " +
-            "CASE WHEN :sort = 'createDate,desc' THEN sp.createDate END DESC, " +
-            "CASE WHEN :sort = 'createDate,asc' THEN sp.createDate END ASC, " +
-            "CASE WHEN :sort IS NULL OR :sort = '' THEN 1 ELSE 0 END ")
+            "nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate")
     Page<SanPhamInfoDTO> searchSanPhamCombined(
             @Param("searchQuery") String searchQuery,
             @Param("minPrice") BigDecimal minPrice,
@@ -321,7 +319,6 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             @Param("tenNhomHuong") String tenNhomHuong,
             @Param("tenThuongHieu") String tenThuongHieu,
             @Param("quocGia") String quocGia,
-            @Param("sort") String sort,
             Pageable pageable);
 
 

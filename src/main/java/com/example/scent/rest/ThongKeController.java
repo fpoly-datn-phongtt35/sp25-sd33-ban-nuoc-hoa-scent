@@ -1,22 +1,33 @@
 package com.example.scent.controller;
 
+import com.example.scent.dto.BestSellingSanPhamInfoDTO;
 import com.example.scent.entity.ThongKe.BestSellingProductDTO;
 import com.example.scent.entity.ThongKe.SoLuongDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeDonHangDTO;
 import com.example.scent.entity.ThongKe.ThongKeTheoThoiGianDTO;
+import com.example.scent.repo.CTDHInterface;
 import com.example.scent.service.ThongKeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/thong-ke")
 public class ThongKeController {
-
+@Autowired
+    CTDHInterface ctdhInterface;
     @Autowired
     private ThongKeService thongKeService;
-
+    @GetMapping("/top-san-pham")
+    public List<BestSellingSanPhamInfoDTO> getTopSellingProducts(
+            @RequestParam(defaultValue = "5") int topN) {
+        return ctdhInterface.findTopSellingProducts()
+                .stream()
+                .limit(topN)
+                .collect(Collectors.toList());
+    }
     // Endpoint for overall statistics (Tổng quan Cố định)
     @GetMapping("/tong-quan")
     public ThongKeDonHangDTO thongKeTongQuan() {

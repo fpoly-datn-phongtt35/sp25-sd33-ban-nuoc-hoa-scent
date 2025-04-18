@@ -56,21 +56,20 @@ public class ChatService {
         return chatMessageRepository.findBySenderIdAndReceiverIdOrReceiverIdAndSenderId(user1Id, user2Id, user1Id, user2Id);
     }
     public List<ChatMessage> getMessagesForUser(Integer userId, List<Integer> adminStaffIds) {
-        // Lấy tất cả tin nhắn mà user gửi hoặc nhận từ admin/staff
-        List<ChatMessage> messages = new ArrayList<>();
-
-        // Tin nhắn user gửi (senderId = userId)
+        // Lấy tất cả tin nhắn mà user gửi (bao gồm cả tin nhắn gửi cho tất cả admin/staff với receiverId = null)
         List<ChatMessage> sentMessages = chatMessageRepository.findBySenderId(userId);
 
-        // Tin nhắn user nhận (receiverId = userId)
+        // Lấy tin nhắn user nhận (receiverId = userId)
         List<ChatMessage> receivedMessages = chatMessageRepository.findByReceiverId(userId);
 
         // Kết hợp tất cả tin nhắn
+        List<ChatMessage> messages = new ArrayList<>();
         messages.addAll(sentMessages);
         messages.addAll(receivedMessages);
 
-        // Loại bỏ trùng lặp và sắp xếp theo thời gian
+        // Loại bỏ trùng lặp dựa trên ID tin nhắn và sắp xếp theo thời gian
         messages = messages.stream()
+                .filter(msg -> msg.getId() != null) // Đảm bảo tin nhắn có ID
                 .distinct()
                 .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()))
                 .collect(Collectors.toList());
@@ -78,7 +77,6 @@ public class ChatService {
 
         return messages;
     }
-
     public List<TaiKhoan> getUsersWithMessages(Integer adminId) {
         List<ChatMessage> messages = chatMessageRepository.findBySenderIdOrReceiverId(adminId, adminId);
         Set<Integer> userIds = messages.stream()

@@ -196,7 +196,7 @@ public class SanPhamCtrl {
             @RequestParam(value = "tenThuongHieu", required = false) String tenThuongHieu,
             @RequestParam(value = "quocGia", required = false) String quocGia,
             @RequestParam(value = "sort", required = false) String sort, // Tham số sort là tùy chọn
-            @PageableDefault(size = 12) Pageable pageable) {
+            @PageableDefault(size = 16) Pageable pageable) {
 
         // Kiểm tra xem tất cả tham số lọc có phải là null hoặc chuỗi rỗng không
         boolean allFiltersEmpty = (searchQuery == null || searchQuery.isEmpty())

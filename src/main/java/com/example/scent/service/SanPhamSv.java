@@ -7,9 +7,7 @@
     import org.slf4j.Logger;
     import org.slf4j.LoggerFactory;
     import org.springframework.beans.factory.annotation.Autowired;
-    import org.springframework.data.domain.Page;
-    import org.springframework.data.domain.PageImpl;
-    import org.springframework.data.domain.Pageable;
+    import org.springframework.data.domain.*;
     import org.springframework.http.*;
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
@@ -624,13 +622,48 @@
                 String tenDanhMuc,
                 String tenNhomHuong,
                 String tenThuongHieu,
-                String quocGia,String sort, // Tham số sort
+                String quocGia,
+                String sort,
                 Pageable pageable) {
 
-            // Lấy danh sách sản phẩm từ query hiện tại
+            // Convert empty strings to null
+            searchQuery = (searchQuery != null && searchQuery.trim().isEmpty()) ? null : searchQuery;
+            tenDanhMuc = (tenDanhMuc != null && tenDanhMuc.trim().isEmpty()) ? null : tenDanhMuc;
+            tenNhomHuong = (tenNhomHuong != null && tenNhomHuong.trim().isEmpty()) ? null : tenNhomHuong;
+            tenThuongHieu = (tenThuongHieu != null && tenThuongHieu.trim().isEmpty()) ? null : tenThuongHieu;
+            quocGia = (quocGia != null && quocGia.trim().isEmpty()) ? null : quocGia;
+
+            // Handle sorting dynamically
+            if (sort != null && !sort.trim().isEmpty()) {
+                String sortField;
+                Sort.Direction direction = Sort.Direction.ASC;
+                if (sort.startsWith("-")) {
+                    sortField = sort.substring(1);
+                    direction = Sort.Direction.DESC;
+                } else {
+                    sortField = sort;
+                }
+
+                // Validate sortField to prevent invalid fields
+                switch (sortField) {
+                    case "tenSanPham":
+                    case "donGia":
+                    case "createDate":
+                        break;
+                    default:
+                        sortField = "idSanPham"; // Default sort field
+                }
+
+                // Create a new Sort object
+                Sort sortOrder = Sort.by(direction, sortField);
+                // Override pageable's sort with the new sort order
+                pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortOrder);
+            }
+
+            // Call repository method without sort parameter
             Page<SanPhamInfoDTO> sanPhamPage = spi.searchSanPhamCombined(
                     searchQuery, minPrice, maxPrice, tenDanhMuc,
-                    tenNhomHuong, tenThuongHieu, quocGia,sort,pageable);
+                    tenNhomHuong, tenThuongHieu, quocGia, pageable);
 
             // Lấy tổng số lượng tồn kho
             List<Object[]> tongSoLuongList = spi.findTongSoLuongBySanPham();
@@ -638,13 +671,14 @@
             // Chuyển danh sách tổng số lượng thành Map để tra cứu nhanh
             Map<Integer, Integer> tongSoLuongMap = new HashMap<>();
             for (Object[] result : tongSoLuongList) {
-                Integer idSanPham = ((Number) result[0]).intValue(); // Convert to Integer
-                Integer tongSoLuong = ((Number) result[1]).intValue(); // Convert to Integer
+                Integer idSanPham = ((Number) result[0]).intValue();
+                Integer tongSoLuong = ((Number) result[1]).intValue();
                 tongSoLuongMap.put(idSanPham, tongSoLuong);
             }
 
+            // Cập nhật tổng số lượng tồn kho vào DTO
             sanPhamPage.getContent().forEach(dto -> {
-                Integer tongSoLuong = tongSoLuongMap.getOrDefault(dto.getIdSanPham(), 0); // Use Integer 0
+                Integer tongSoLuong = tongSoLuongMap.getOrDefault(dto.getIdSanPham(), 0);
                 dto.setTongSoLuongTonKho(tongSoLuong);
             });
 

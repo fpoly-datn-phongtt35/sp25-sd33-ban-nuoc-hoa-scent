@@ -1,5 +1,6 @@
 package com.example.scent.repo;
 
+import com.example.scent.dto.BestSellingSanPhamInfoDTO;
 import com.example.scent.entity.ChiTietDonHang;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -102,4 +103,29 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             "ORDER BY total_quantity_sold DESC", nativeQuery = true)
     List<Object[]> findBestSellingProductsByYear(@Param("year") Integer year);
+
+
+    @Query("SELECT new com.example.scent.dto.BestSellingSanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, " +
+            "(SELECT SUM(spct2.soLuongTonKho) FROM Spct spct2 WHERE spct2.sanPham.idSanPham = sp.idSanPham), " +
+            "sp.createDate, SUM(ctdh.soLuong)) " +
+            "FROM ChiTietDonHang ctdh " +
+            "JOIN ctdh.spct spct " +
+            "JOIN spct.sanPham sp " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "LEFT JOIN sp.nhomHuong nh " +
+            "JOIN ctdh.donHang dh " +
+            "WHERE dh.trangThai = 4 " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate " +
+            "ORDER BY SUM(ctdh.soLuong) DESC")
+    List<BestSellingSanPhamInfoDTO> findTopSellingProducts();
 }
