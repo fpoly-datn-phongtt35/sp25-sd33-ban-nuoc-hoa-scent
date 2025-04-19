@@ -1,0 +1,133 @@
+<!-- MAIN CONTAINER -->
+<div class="container mx-auto p-4">
+  <h2 class="text-2xl font-bold mb-4">Quản Lý Thương Hiệu</h2>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="bg-red-100 text-red-700 p-3 rounded mb-4">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="text-center p-4">
+    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+    </svg>
+  </div>
+
+  <!-- Add Button -->
+  <div class="mb-6">
+    <button (click)="openAddModal()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+      Thêm Thương Hiệu
+    </button>
+  </div>
+
+  <!-- Brand Table -->
+  <table class="w-full border-collapse bg-white shadow rounded">
+    <thead>
+      <tr class="bg-gray-200">
+        <th class="p-2 text-left">ID</th>
+        <th class="p-2 text-left">Tên Thương Hiệu</th>
+        <th class="p-2 text-left">Quốc Gia</th>
+        <th class="p-2 text-left">Mô Tả</th>
+        <th class="p-2 text-left">Hành Động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let thuongHieu of thuongHieus" class="border-b">
+        <td class="p-2">{{ thuongHieu.id }}</td>
+        <td class="p-2">{{ thuongHieu.tenThuongHieu }}</td>
+        <td class="p-2">{{ thuongHieu.quocGia }}</td>
+        <td class="p-2">{{ thuongHieu.moTa }}</td>
+        <td class="p-2">
+          <button (click)="openUpdateModal(thuongHieu)" class="bg-yellow-500 text-white p-1 rounded mr-1 hover:bg-yellow-600">Sửa</button>
+          <button (click)="openDeleteModal(thuongHieu.id)" class="bg-red-500 text-white p-1 rounded hover:bg-red-600">Xóa</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Pagination Controls -->
+  <nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+      <!-- Nút "Trang đầu" -->
+      <li class="page-item" [class.disabled]="currentPage === 0">
+        <button class="page-link" (click)="goToPage(0)">«</button>
+      </li>
+
+      <!-- Nút "Trước" -->
+      <li class="page-item" [class.disabled]="currentPage === 0">
+        <button class="page-link" (click)="prevPage()">‹</button>
+      </li>
+
+      <!-- Hiển thị trang đầu nếu currentPage > 2 -->
+      <li class="page-item" *ngIf="currentPage > 2 && totalPages > 0">
+        <button class="page-link" (click)="goToPage(0)">1</button>
+      </li>
+
+      <!-- Dấu "..." nếu cần -->
+      <li class="page-item disabled" *ngIf="currentPage > 3 && totalPages > 0">
+        <span class="page-link">...</span>
+      </li>
+
+      <!-- Hiển thị các trang gần nhất -->
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === currentPage">
+        <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+      </li>
+
+      <!-- Dấu "..." nếu có nhiều trang -->
+      <li class="page-item disabled" *ngIf="currentPage < totalPages - 4 && totalPages > 0">
+        <span class="page-link">...</span>
+      </li>
+
+      <!-- Hiển thị trang cuối nếu currentPage < totalPages - 3 -->
+      <li class="page-item" *ngIf="currentPage < totalPages - 3 && totalPages > 0">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+      </li>
+
+      <!-- Nút "Sau" -->
+      <li class="page-item" [class.disabled]="currentPage >= totalPages - 1">
+        <button class="page-link" (click)="nextPage()">›</button>
+      </li>
+
+      <!-- Nút "Trang cuối" -->
+      <li class="page-item" [class.disabled]="currentPage >= totalPages - 1">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+<!-- MODALS - OUTSIDE MAIN CONTAINER -->
+
+<!-- Add Brand Modal -->
+<div *ngIf="showAddModal" class="modal-overlay">
+  <div class="modal-content w-full max-w-sm">
+    <h3 class="text-base font-semibold mb-3 text-center text-gray-800">Thêm Thương Hiệu</h3>
+    <app-add-brand (close)="closeAddModal()" (brandAdded)="closeAddModal()"></app-add-brand>
+  </div>
+</div>
+
+<!-- Update Brand Modal -->
+<div *ngIf="showUpdateModal" class="modal-overlay">
+  <div class="modal-content w-full max-w-sm">
+    <h3 class="text-base font-semibold mb-3 text-center text-gray-800">Sửa Thương Hiệu</h3>
+    <app-update-brand
+      [thuongHieu]="selectedThuongHieu"
+      (close)="closeUpdateModal()"
+      (brandUpdated)="closeUpdateModal()"
+    ></app-update-brand>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div *ngIf="showDeleteModal" class="modal-overlay">
+  <div class="modal-content w-full max-w-md">
+    <h3 class="text-lg font-semibold mb-4">Xác Nhận Xóa</h3>
+    <p>Bạn có chắc muốn xóa thương hiệu này?</p>
+    <div class="mt-4 flex justify-end gap-2">
+      <button (click)="confirmDelete()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Xóa</button>
+      <button (click)="closeDeleteModal()" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Hủy</button>
+    </div>
+  </div>
+</div>

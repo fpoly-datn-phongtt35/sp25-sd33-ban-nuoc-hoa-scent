@@ -24,6 +24,7 @@ import { HttpClient } from '@angular/common/http';
 import { WebSocketService } from '../../service/WebSocketService';
 import { isPlatformBrowser } from '@angular/common';
 import { Subscription, interval } from 'rxjs';
+import { BrandComponent } from '../thuonghieu/brand/brand.component';
 
 
 @Component({
@@ -42,6 +43,7 @@ import { Subscription, interval } from 'rxjs';
     LichsuthaotacComponent,
     OfflineOrderComponent,
     FragranceListComponent,
+    BrandComponent
   ],
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'],

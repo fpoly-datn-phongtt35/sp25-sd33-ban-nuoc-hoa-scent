@@ -1,4 +1,3 @@
-import { NongDoService } from './../../../service/nongdo.Service';
 import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -9,43 +8,48 @@ import { SanPhamService } from '../../../service/product.service';
 import { ThuongHieuService } from '../../../service/thuonghieu.service';
 import { DanhMucService } from '../../../service/danhmuc.service';
 import { NhomHuongService } from '../../../service/nhomhuong.service';
+
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgSelectModule, NgSelectComponent } from '@ng-select/ng-select';
 import { ToastrService } from 'ngx-toastr';
+import { NongDoService } from '../../../service/NongDo.Service';
 
-interface MuiHuong {
+// Shared model files (create these in src/app/models/)
+export interface MuiHuong {
   id: number;
   tenMuiHuong: string;
 }
 
-interface NhomHuong {
+export interface NhomHuong {
   id: number;
   tenNhomHuong: string;
 }
 
-interface ThuongHieu {
-  id: number;
-  tenThuongHieu: string;
-}
-
-interface DanhMuc {
+export interface DanhMuc {
   id: number;
   tenDanhMuc: string;
 }
-interface NongDo{
-  id:number;
-  tenNongDo:string;
+
+export interface NongDo {
+  id: number;
+  tenNongDo: string;
 }
-interface NotHuong {
+
+export interface NotHuong {
   id: number;
   tenNotHuong: string;
 }
 
-interface PhongCach {
+export interface PhongCach {
   id: number;
   tenPhongCach: string;
 }
-
+export interface ThuongHieu {
+  id: number; // Optional for creating new brands
+  tenThuongHieu: string;
+  quocGia: string;
+  moTa: string;
+}
 @Component({
   selector: 'app-add-product',
   standalone: true,
@@ -75,7 +79,6 @@ export class AddProductComponent implements OnInit {
   loadingMuiHuong: boolean = true;
   isSubmitting: boolean = false;
 
-  // Subject for debouncing search input
   private searchSubject = new Subject<string>();
 
   constructor(
@@ -84,10 +87,10 @@ export class AddProductComponent implements OnInit {
     private nhomHuongService: NhomHuongService,
     private thuongHieuService: ThuongHieuService,
     private sanPhamService: SanPhamService,
+    private nongDoService: NongDoService,
     public activeModal: NgbActiveModal,
     private cdr: ChangeDetectorRef,
-    private toastr: ToastrService,
-    private nongdoService:NongDoService
+    private toastr: ToastrService
   ) {
     this.productForm = this.fb.group({
       ten: ['', [Validators.required, Validators.minLength(3)]],
@@ -107,31 +110,25 @@ export class AddProductComponent implements OnInit {
       prominenceLevel: [0.5, [Validators.required, Validators.min(0), Validators.max(1)]]
     });
 
-    // Debounce search input to improve performance
     this.searchSubject.pipe(debounceTime(300)).subscribe((term: string) => {
       this.cdr.detectChanges();
     });
   }
 
-  // Custom search function for ng-select with Vietnamese tone removal
   customSearchFn(term: string, item: any): boolean {
     if (!term || !item) return false;
 
     const searchTerm = this.removeVietnameseTones(term.toLowerCase());
     const itemName = this.removeVietnameseTones(
-      (item.tenThuongHieu || item.tenNhomHuong || item.tenDanhMuc || '').toLowerCase()
+      (item.tenThuongHieu || item.tenNhomHuong || item.tenDanhMuc || item.tenNongDo || item.tenMuiHuong || item.tenNotHuong || item.tenPhongCach || '').toLowerCase()
     );
 
-    // Ensure "Thêm mới..." option always appears during search
     if (item.id === -1) return true;
 
-    // Trigger debounced search
     this.searchSubject.next(term);
-
     return itemName.includes(searchTerm);
   }
 
-  // Remove Vietnamese tones for better search matching
   removeVietnameseTones(str: string): string {
     return str
       .normalize('NFD')
@@ -150,27 +147,17 @@ export class AddProductComponent implements OnInit {
         this.getAllMuiHuong(),
         this.getAllNotHuong(),
         this.getAllPhongCach(),
-        this.getAllNongDo(),
+        this.getAllNongDo()
       ]);
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
     } catch (err) {
       console.error('Error in ngOnInit:', err);
+      this.toastr.error('Không thể tải dữ liệu. Vui lòng thử lại sau.', 'Lỗi');
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
     }
   }
-  async getAllNongDo() {
-    try {
-      const data = await firstValueFrom(this.nongdoService.getNongDo());
-      this.nongDoList= data || [];
-      this.productForm.get('idNongDo')?.valueChanges.subscribe(val => {
-      });
-      console.log('Nồng độ:',this.nongDoList);
-    } catch (err) {
-      console.error('Lỗi lấy nồng độ:', err);
-      this.toastr.error('Không thể tải danh sách nồng độ. Vui lòng thử lại sau.', 'Lỗi');
-    }}
 
   async getAllDanhMuc() {
     try {
@@ -178,7 +165,7 @@ export class AddProductComponent implements OnInit {
       this.danhMucList = data || [];
     } catch (err) {
       console.error('Lỗi lấy danh mục:', err);
-      this.toastr.error('Không thể tải danh mục. Vui lòng thử lại sau.', 'Lỗi');
+      this.toastr.error('Không thể tải danh mục.', 'Lỗi');
     }
   }
 
@@ -186,13 +173,13 @@ export class AddProductComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.thuongHieuService.getThuonghieu());
       this.thuongHieuList = data || [];
-      this.thuongHieuList.push({ id: -1, tenThuongHieu: 'Thêm thương hiệu mới...' });
+      this.thuongHieuList.push({ id: -1, tenThuongHieu: 'Thêm thương hiệu mới...', quocGia: '', moTa: '' });
       this.productForm.get('idThuongHieu')?.valueChanges.subscribe(val => {
         if (val === -1) this.handleAddThuongHieu();
       });
     } catch (err) {
       console.error('Lỗi lấy thương hiệu:', err);
-      this.toastr.error('Không thể tải danh sách thương hiệu. Vui lòng thử lại sau.', 'Lỗi');
+      this.toastr.error('Không thể tải danh sách thương hiệu.', 'Lỗi');
     }
   }
 
@@ -206,45 +193,54 @@ export class AddProductComponent implements OnInit {
       });
     } catch (err) {
       console.error('Lỗi lấy nhóm hương:', err);
-      this.toastr.error('Không thể tải danh sách nhóm hương. Vui lòng thử lại sau.', 'Lỗi');
+      this.toastr.error('Không thể tải danh sách nhóm hương.', 'Lỗi');
     }
   }
 
-  async getAllNotHuong() {
+  async getAllNongDo() {
     try {
-      const data = await firstValueFrom(this.sanPhamService.getNotHuong());
-      this.notHuongList = data || [];
-      this.notHuongList.push({ id: -1, tenNotHuong: 'Thêm nốt hương mới...' });
+      const data = await firstValueFrom(this.nongDoService.getNongDo());
+      this.nongDoList = data || [];
     } catch (err) {
-      console.error('Lỗi lấy nốt hương:', err);
-      this.toastr.error('Không thể tải danh sách nốt hương. Vui lòng thử lại sau.', 'Lỗi');
+      console.error('Lỗi lấy nồng độ:', err);
+      this.toastr.error('Không thể tải danh sách nồng độ.', 'Lỗi');
     }
   }
 
   async getAllMuiHuong() {
     try {
       const data = await firstValueFrom(this.sanPhamService.getMuiHuong());
-      this.muiHuongList = data || [];
-      this.muiHuongList = this.muiHuongList.filter(item => typeof item.id === 'number' && item.id > 0);
+      this.muiHuongList = (data || []).filter(item => typeof item.id === 'number' && item.id > 0);
       this.muiHuongList.push({ id: -1, tenMuiHuong: 'Thêm mùi hương mới...' });
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
     } catch (err) {
       console.error('Lỗi lấy mùi hương:', err);
-      this.toastr.error('Không thể tải danh sách mùi hương. Vui lòng thử lại sau.', 'Lỗi');
+      this.toastr.error('Không thể tải danh sách mùi hương.', 'Lỗi');
       this.loadingMuiHuong = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  async getAllNotHuong() {
+    try {
+      const data = await firstValueFrom(this.sanPhamService.getNotHuong());
+      this.notHuongList = (data || []).filter(item => typeof item.id === 'number' && item.id > 0);
+      this.notHuongList.push({ id: -1, tenNotHuong: 'Thêm nốt hương mới...' });
+    } catch (err) {
+      console.error('Lỗi lấy nốt hương:', err);
+      this.toastr.error('Không thể tải danh sách nốt hương.', 'Lỗi');
     }
   }
 
   async getAllPhongCach() {
     try {
       const data = await firstValueFrom(this.sanPhamService.getPhongCach());
-      this.phongCachList = data || [];
+      this.phongCachList = (data || []).filter(item => typeof item.id === 'number' && item.id > 0);
       this.phongCachList.push({ id: -1, tenPhongCach: 'Thêm phong cách mới...' });
     } catch (err) {
       console.error('Lỗi lấy phong cách:', err);
-      this.toastr.error('Không thể tải danh sách phong cách. Vui lòng thử lại sau.', 'Lỗi');
+      this.toastr.error('Không thể tải danh sách phong cách.', 'Lỗi');
     }
   }
 
@@ -259,12 +255,12 @@ export class AddProductComponent implements OnInit {
     const moTa = prompt('📄 Nhập mô tả cho thương hiệu (nếu có):') || '';
     const body = { tenThuongHieu: tenThuongHieu.trim(), quocGia: quocGia.trim(), moTa: moTa.trim() };
     try {
-      const response = (await firstValueFrom(this.thuongHieuService.addThuongHieu(body))) as { id: number };
+      const response = await firstValueFrom(this.thuongHieuService.addThuongHieu(body));
       this.toastr.success('Đã thêm thương hiệu mới!', 'Thành công');
       await this.getAllThuongHieu();
       this.productForm.get('idThuongHieu')?.setValue(response.id);
     } catch (err) {
-      console.error('❌ Lỗi khi thêm thương hiệu:', err);
+      console.error('Lỗi khi thêm thương hiệu:', err);
       this.toastr.error('Không thể thêm thương hiệu mới!', 'Lỗi');
       this.productForm.get('idThuongHieu')?.setValue('');
     }
@@ -280,12 +276,12 @@ export class AddProductComponent implements OnInit {
     const moTa = prompt('📄 Nhập mô tả cho nhóm hương (nếu có):') || '';
     const body = { tenNhomHuong: tenNhomHuong.trim(), moTa: moTa.trim() };
     try {
-      const response = (await firstValueFrom(this.nhomHuongService.createnhomHuong(body))) as { id: number };
+      const response = await firstValueFrom(this.nhomHuongService.createnhomHuong(body));
       this.toastr.success('Đã thêm nhóm hương mới!', 'Thành công');
       await this.getAllNhomHuong();
       this.productForm.get('idNhomHuong')?.setValue(response.id);
     } catch (err) {
-      console.error('❌ Lỗi khi thêm nhóm hương:', err);
+      console.error('Lỗi khi thêm nhóm hương:', err);
       this.toastr.error('Không thể thêm nhóm hương mới!', 'Lỗi');
       this.productForm.get('idNhomHuong')?.setValue('');
     }
@@ -301,7 +297,7 @@ export class AddProductComponent implements OnInit {
     const moTa = prompt('📄 Nhập mô tả cho nốt hương (nếu có):') || '';
     const body = { tenNotHuong: tenNotHuong.trim(), moTa: moTa.trim() };
     try {
-      const response = (await firstValueFrom(this.sanPhamService.addNotHuong(body))) as { id: number };
+      const response = await firstValueFrom(this.sanPhamService.addNotHuong(body));
       this.toastr.success('Đã thêm nốt hương mới!', 'Thành công');
       await this.getAllNotHuong();
       const currentIds = this.productForm.get(controlName)?.value || [];
@@ -309,7 +305,7 @@ export class AddProductComponent implements OnInit {
         this.productForm.get(controlName)?.setValue([...currentIds, response.id]);
       }
     } catch (err) {
-      console.error('❌ Lỗi khi thêm nốt hương:', err);
+      console.error('Lỗi khi thêm nốt hương:', err);
       this.toastr.error('Không thể thêm nốt hương mới!', 'Lỗi');
       this.removeNotHuongSelection(controlName, -1);
     }
@@ -319,14 +315,15 @@ export class AddProductComponent implements OnInit {
     const tenMuiHuong = prompt('📝 Nhập tên mùi hương mới:');
     if (!tenMuiHuong || tenMuiHuong.trim().length < 2) {
       this.toastr.warning('Tên mùi hương không hợp lệ!', 'Cảnh báo');
-      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
-      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== -1));
+      this.productForm.get('muiHuongIds')?.setValue(
+        (this.productForm.get('muiHuongIds')?.value || []).filter((id: number) => id !== -1)
+      );
       return;
     }
     const moTa = prompt('📄 Nhập mô tả cho mùi hương (nếu có):') || '';
     const body = { tenMuiHuong: tenMuiHuong.trim(), moTa: moTa.trim() };
     try {
-      const response = (await firstValueFrom(this.sanPhamService.addMuiHuong(body))) as { id: number };
+      const response = await firstValueFrom(this.sanPhamService.addMuiHuong(body));
       this.toastr.success('Đã thêm mùi hương mới!', 'Thành công');
       await this.getAllMuiHuong();
       const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
@@ -335,10 +332,11 @@ export class AddProductComponent implements OnInit {
         this.onMuiHuongAdd(response.id);
       }
     } catch (err) {
-      console.error('❌ Lỗi khi thêm mùi hương:', err);
+      console.error('Lỗi khi thêm mùi hương:', err);
       this.toastr.error('Không thể thêm mùi hương mới!', 'Lỗi');
-      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
-      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== -1));
+      this.productForm.get('muiHuongIds')?.setValue(
+        (this.productForm.get('muiHuongIds')?.value || []).filter((id: number) => id !== -1)
+      );
     }
   }
 
@@ -346,14 +344,15 @@ export class AddProductComponent implements OnInit {
     const tenPhongCach = prompt('📝 Nhập tên phong cách mới:');
     if (!tenPhongCach || tenPhongCach.trim().length < 2) {
       this.toastr.warning('Tên phong cách không hợp lệ!', 'Cảnh báo');
-      const currentPhongCachIds = this.productForm.get('phongCachIds')?.value || [];
-      this.productForm.get('phongCachIds')?.setValue(currentPhongCachIds.filter((id: number) => id !== -1));
+      this.productForm.get('phongCachIds')?.setValue(
+        (this.productForm.get('phongCachIds')?.value || []).filter((id: number) => id !== -1)
+      );
       return;
     }
     const moTa = prompt('📄 Nhập mô tả cho phong cách (nếu có):') || '';
     const body = { tenPhongCach: tenPhongCach.trim(), moTa: moTa.trim() };
     try {
-      const response = (await firstValueFrom(this.sanPhamService.addPhongCach(body))) as { id: number };
+      const response = await firstValueFrom(this.sanPhamService.addPhongCach(body));
       this.toastr.success('Đã thêm phong cách mới!', 'Thành công');
       await this.getAllPhongCach();
       const currentPhongCachIds = this.productForm.get('phongCachIds')?.value || [];
@@ -361,10 +360,11 @@ export class AddProductComponent implements OnInit {
         this.productForm.get('phongCachIds')?.setValue([...currentPhongCachIds, response.id]);
       }
     } catch (err) {
-      console.error('❌ Lỗi khi thêm phong cách:', err);
+      console.error('Lỗi khi thêm phong cách:', err);
       this.toastr.error('Không thể thêm phong cách mới!', 'Lỗi');
-      const currentPhongCachIds = this.productForm.get('phongCachIds')?.value || [];
-      this.productForm.get('phongCachIds')?.setValue(currentPhongCachIds.filter((id: number) => id !== -1));
+      this.productForm.get('phongCachIds')?.setValue(
+        (this.productForm.get('phongCachIds')?.value || []).filter((id: number) => id !== -1)
+      );
     }
   }
 
@@ -404,8 +404,9 @@ export class AddProductComponent implements OnInit {
 
     if (isNaN(id) || id <= 0) {
       console.error('Invalid ID:', id);
-      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
-      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((sId: number) => sId !== id));
+      this.productForm.get('muiHuongIds')?.setValue(
+        (this.productForm.get('muiHuongIds')?.value || []).filter((sId: number) => sId !== id)
+      );
       return;
     }
 
@@ -435,8 +436,9 @@ export class AddProductComponent implements OnInit {
     }
 
     this.muiHuongSelections = this.muiHuongSelections.filter((s) => s.id !== id);
-    const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
-    this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((sId: number) => sId !== id));
+    this.productForm.get('muiHuongIds')?.setValue(
+      (this.productForm.get('muiHuongIds')?.value || []).filter((sId: number) => sId !== id)
+    );
     this.cdr.detectChanges();
   }
 
@@ -463,8 +465,9 @@ export class AddProductComponent implements OnInit {
 
   cancelProminenceModal() {
     if (this.tempMuiHuongId !== null) {
-      const currentMuiHuongIds = this.productForm.get('muiHuongIds')?.value || [];
-      this.productForm.get('muiHuongIds')?.setValue(currentMuiHuongIds.filter((id: number) => id !== this.tempMuiHuongId));
+      this.productForm.get('muiHuongIds')?.setValue(
+        (this.productForm.get('muiHuongIds')?.value || []).filter((id: number) => id !== this.tempMuiHuongId)
+      );
     }
     this.prominenceForm.get('prominenceLevel')?.setValue(0.5);
     this.closeProminenceModal();
@@ -493,7 +496,7 @@ export class AddProductComponent implements OnInit {
 
   getMuiHuongName(item: any): string {
     const id = typeof item === 'number' ? item : item.id;
-    const muiHuong = this.muiHuongList.find((mh: any) => mh.id === id);
+    const muiHuong = this.muiHuongList.find((mh) => mh.id === id);
     return muiHuong ? muiHuong.tenMuiHuong : `Không tìm thấy (ID: ${id})`;
   }
 
@@ -530,7 +533,7 @@ export class AddProductComponent implements OnInit {
     const idDanhMuc = Number(formValues.idDanhMuc);
     const idNhomHuong = Number(formValues.idNhomHuong);
     const idNongDo = Number(formValues.idNongDo);
-    // Validate inputs
+
     if (!this.thuongHieuList.some((th) => th.id === idThuongHieu)) {
       this.toastr.warning('Thương hiệu không hợp lệ!', 'Cảnh báo');
       return;
@@ -543,17 +546,17 @@ export class AddProductComponent implements OnInit {
       this.toastr.warning('Nhóm hương không hợp lệ!', 'Cảnh báo');
       return;
     }
-    if (!this.nongDoList.some((nd) => nd.id === idNongDo
-  )) {
+    if (!this.nongDoList.some((nd) => nd.id === idNongDo)) {
       this.toastr.warning('Nồng độ không hợp lệ!', 'Cảnh báo');
       return;
     }
+
     const validateNotHuong = (ids: number[], type: string) => {
       if (!ids || ids.length === 0) {
         this.toastr.warning(`Vui lòng chọn ít nhất một nốt ${type}!`, 'Cảnh báo');
         return false;
       }
-      return ids.every((id: number) => this.notHuongList.some((nh: any) => nh.id === id));
+      return ids.every((id: number) => this.notHuongList.some((nh) => nh.id === id));
     };
 
     if (!validateNotHuong(formValues.notHuongDauIds, 'hương đầu')) return;
@@ -566,7 +569,7 @@ export class AddProductComponent implements OnInit {
     }
 
     const invalidPhongCach = formValues.phongCachIds.some(
-      (id: number) => !this.phongCachList.some((pc: any) => pc.id === id)
+      (id: number) => !this.phongCachList.some((pc) => pc.id === id)
     );
     if (invalidPhongCach) {
       this.toastr.warning('Một số phong cách không hợp lệ!', 'Cảnh báo');
@@ -574,7 +577,7 @@ export class AddProductComponent implements OnInit {
     }
 
     const invalidMuiHuong = this.muiHuongSelections.some(
-      (selection: any) => !this.muiHuongList.some((mh: any) => mh.id === selection.id)
+      (selection) => !this.muiHuongList.some((mh) => mh.id === selection.id)
     );
     if (invalidMuiHuong) {
       this.toastr.warning('Một số mùi hương không hợp lệ!', 'Cảnh báo');
@@ -584,44 +587,25 @@ export class AddProductComponent implements OnInit {
     this.isSubmitting = true;
     const formData = new FormData();
 
-    // Gửi các trường cơ bản
     formData.append('ten', formValues.ten || '');
     formData.append('moTa', formValues.moTa || '');
     formData.append('idThuongHieu', String(idThuongHieu));
     formData.append('idDanhMuc', String(idDanhMuc));
     formData.append('idNhomHuong', String(idNhomHuong));
     formData.append('idNongDo', String(idNongDo));
-    // Gửi danh sách nốt hương dưới dạng List<Integer>
-    formValues.notHuongDauIds.forEach((id: number) => {
-      formData.append('notHuongDauIds', String(id));
-    });
 
-    formValues.notHuongGiuaIds.forEach((id: number) => {
-      formData.append('notHuongGiuaIds', String(id));
-    });
+    formValues.notHuongDauIds.forEach((id: number) => formData.append('notHuongDauIds', String(id)));
+    formValues.notHuongGiuaIds.forEach((id: number) => formData.append('notHuongGiuaIds', String(id)));
+    formValues.notHuongCuoiIds.forEach((id: number) => formData.append('notHuongCuoiIds', String(id)));
+    formValues.phongCachIds.forEach((id: number) => formData.append('phongCachIds', String(id)));
 
-    formValues.notHuongCuoiIds.forEach((id: number) => {
-      formData.append('notHuongCuoiIds', String(id));
-    });
-
-    formValues.phongCachIds.forEach((id: number) => {
-      formData.append('phongCachIds', String(id));
-    });
-
-    // Gửi muiHuongSelections dưới dạng chuỗi JSON
     const muiHuongSelectionsForBackend = this.muiHuongSelections.map(selection => ({
       id: selection.id,
       prominenceLevel: selection.prominenceLevel
     }));
     formData.append('muiHuongSelections', JSON.stringify(muiHuongSelectionsForBackend));
 
-    // Gửi hình ảnh
     this.selectedFiles.forEach((file) => formData.append('images', file));
-
-    console.log('FormData gửi lên API:');
-    for (let pair of (formData as any).entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
 
     try {
       const response = await firstValueFrom(this.sanPhamService.addProductOnAdmin(formData));
@@ -629,12 +613,12 @@ export class AddProductComponent implements OnInit {
       this.productAdd.emit(response);
       this.closeModal();
     } catch (err: any) {
-      console.error('❌ Lỗi khi thêm sản phẩm:', err);
+      console.error('Lỗi khi thêm sản phẩm:', err);
       let errorMessage = 'Thêm sản phẩm thất bại!';
       if (err.status === 400) {
-        errorMessage += ' Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+        errorMessage += ' Dữ liệu không hợp lệ.';
       } else if (err.status === 500) {
-        errorMessage += ' Lỗi server. Vui lòng thử lại sau.';
+        errorMessage += ' Lỗi server.';
       }
       if (err.error?.message) {
         errorMessage += ` Chi tiết: ${err.error.message}`;
@@ -669,32 +653,37 @@ export class AddProductComponent implements OnInit {
   }
 
   closeModal() {
-    if (this.showProminenceModal) {
-      this.closeProminenceModal();
-    }
+    console.log('🛑 Attempting to close modal...', this.activeModal);
 
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
+      console.log('✅ Dismiss method called');
+    } else {
+      console.error('❌ ActiveModal is not available');
     }
 
-    this.finalizeModalClose();
+    setTimeout(() => {
+      const modalElement = document.querySelector('.modal');
+      if (modalElement) {
+        modalElement.remove();
+      }
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+      document.body.classList.remove('modal-open');
+      console.log('✅ Forced modal removal executed');
+
+      this.cdr.detectChanges();
+    }, 100);
   }
 
   private finalizeModalClose() {
     document.body.classList.remove('modal-open');
-
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => backdrop.remove());
-
-    const modals = document.querySelectorAll('.modal.show');
-    modals.forEach(modal => {
-      modal.classList.remove('show');
-      modal.remove();
-    });
-
     document.body.style.overflow = 'auto';
     document.body.style.paddingRight = '';
-
     this.cdr.detectChanges();
   }
 }

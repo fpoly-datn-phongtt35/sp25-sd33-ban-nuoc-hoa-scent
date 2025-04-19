@@ -1,0 +1,28 @@
+<h3 class="text-lg font-semibold mb-4">Thêm Thương Hiệu</h3>
+
+<!-- Error Message -->
+<div *ngIf="errorMessage" class="bg-red-100 text-red-700 p-3 rounded mb-4">
+  {{ errorMessage }}
+</div>
+
+<!-- Add Brand Form -->
+<form [formGroup]="brandForm" (ngSubmit)="addThuongHieu()">
+  <div class="grid grid-cols-1 gap-4">
+    <input formControlName="tenThuongHieu" placeholder="Tên Thương Hiệu" class="p-2 border rounded" required>
+    <div *ngIf="brandForm.get('tenThuongHieu')?.touched && brandForm.get('tenThuongHieu')?.invalid" class="text-red-500 text-sm">
+      Tên thương hiệu là bắt buộc và tối đa 100 ký tự
+    </div>
+    <input formControlName="quocGia" placeholder="Quốc Gia" class="p-2 border rounded" required>
+    <div *ngIf="brandForm.get('quocGia')?.touched && brandForm.get('quocGia')?.invalid" class="text-red-500 text-sm">
+      Quốc gia là bắt buộc và tối đa 100 ký tự
+    </div>
+    <input formControlName="moTa" placeholder="Mô Tả" class="p-2 border rounded">
+    <div *ngIf="brandForm.get('moTa')?.touched && brandForm.get('moTa')?.invalid" class="text-red-500 text-sm">
+      Mô tả tối đa 500 ký tự
+    </div>
+  </div>
+  <div class="mt-4 flex justify-end gap-2">
+    <button type="submit" [disabled]="brandForm.invalid" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Thêm</button>
+    <button type="button" (click)="cancel()" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Hủy</button>
+  </div>
+</form>
