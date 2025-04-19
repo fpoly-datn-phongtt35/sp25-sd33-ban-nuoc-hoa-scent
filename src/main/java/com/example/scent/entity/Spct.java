@@ -45,7 +45,9 @@ public class Spct {
     private Integer dungTich;
     @Column(name = "trang_thai")
     private Integer trangThai;
-
+    @JsonIgnore
+    @OneToMany(mappedBy = "spct",cascade = CascadeType.ALL)
+    private List<ChiTietDonHang> ctdh;
     @ManyToOne
     @JoinColumn(name = "id_san_pham")
     private SanPham sanPham;

@@ -634,36 +634,58 @@
             quocGia = (quocGia != null && quocGia.trim().isEmpty()) ? null : quocGia;
 
             // Handle sorting dynamically
+            Page<SanPhamInfoDTO> sanPhamPage;
             if (sort != null && !sort.trim().isEmpty()) {
-                String sortField;
-                Sort.Direction direction = Sort.Direction.ASC;
-                if (sort.startsWith("-")) {
-                    sortField = sort.substring(1);
-                    direction = Sort.Direction.DESC;
-                } else {
-                    sortField = sort;
-                }
+                // Tách sort thành sortField và direction (dạng "field,direction")
+                String[] sortParts = sort.split(",");
+                String sortField = sortParts[0];
+                Sort.Direction direction = (sortParts.length > 1 && sortParts[1].equalsIgnoreCase("desc"))
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
 
                 // Validate sortField to prevent invalid fields
                 switch (sortField) {
                     case "tenSanPham":
                     case "donGia":
                     case "createDate":
+                        // Create a new Sort object for standard fields
+                        Sort sortOrder = Sort.by(direction, sortField);
+                        // Override pageable's sort with the new sort order
+                        pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortOrder);
+                        sanPhamPage = spi.searchSanPhamCombined(
+                                searchQuery, minPrice, maxPrice, tenDanhMuc,
+                                tenNhomHuong, tenThuongHieu, quocGia, pageable);
+                        break;
+                    case "soLuongBan":
+                        // For soLuongBan, use the specific query with ORDER BY
+                        // Remove any sort from pageable to prevent Hibernate from appending invalid order by
+                        pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                        if (direction == Sort.Direction.DESC) {
+                            sanPhamPage = spi.searchSanPhamCombinedByBestSelling(
+                                    searchQuery, minPrice, maxPrice, tenDanhMuc,
+                                    tenNhomHuong, tenThuongHieu, quocGia, pageable);
+                        } else {
+                            sanPhamPage = spi.searchSanPhamCombinedByBestSellingAsc(
+                                    searchQuery, minPrice, maxPrice, tenDanhMuc,
+                                    tenNhomHuong, tenThuongHieu, quocGia, pageable);
+                        }
                         break;
                     default:
                         sortField = "idSanPham"; // Default sort field
+                        Sort defaultSortOrder = Sort.by(Sort.Direction.ASC, sortField);
+                        pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSortOrder);
+                        sanPhamPage = spi.searchSanPhamCombined(
+                                searchQuery, minPrice, maxPrice, tenDanhMuc,
+                                tenNhomHuong, tenThuongHieu, quocGia, pageable);
+                        break;
                 }
-
-                // Create a new Sort object
-                Sort sortOrder = Sort.by(direction, sortField);
-                // Override pageable's sort with the new sort order
-                pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortOrder);
+            } else {
+                // No sort specified, use default pageable
+                pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                sanPhamPage = spi.searchSanPhamCombined(
+                        searchQuery, minPrice, maxPrice, tenDanhMuc,
+                        tenNhomHuong, tenThuongHieu, quocGia, pageable);
             }
-
-            // Call repository method without sort parameter
-            Page<SanPhamInfoDTO> sanPhamPage = spi.searchSanPhamCombined(
-                    searchQuery, minPrice, maxPrice, tenDanhMuc,
-                    tenNhomHuong, tenThuongHieu, quocGia, pageable);
 
             // Lấy tổng số lượng tồn kho
             List<Object[]> tongSoLuongList = spi.findTongSoLuongBySanPham();
@@ -684,7 +706,6 @@
 
             return sanPhamPage;
         }
-
         public List<SPTQDTO> getALlSPTQ(String keyword) {
            return spi.getALLSPQT(keyword);
         }

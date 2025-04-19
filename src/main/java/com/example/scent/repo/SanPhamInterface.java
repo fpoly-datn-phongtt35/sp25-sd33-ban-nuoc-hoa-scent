@@ -37,6 +37,100 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
 //        "where\n" +
 //        "    sp.id = :idSanPham", nativeQuery = true)
 //List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, " +
+
+            "sp.createDate, " +
+            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham)) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "LEFT JOIN spct.ctdh ctdh " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "LEFT JOIN sp.nhomHuong nh " +
+            "WHERE sp.trangThai = 1 " +
+            "AND (:searchQuery IS NULL OR " +
+            "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hd.moTaHuongDau, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hg.moTaHuongGiua, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hc.moTaHuongCuoi, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(nh.tenNhomHuong, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
+            "AND (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
+            "AND (:tenDanhMuc IS NULL OR dm.tenDanhMuc = :tenDanhMuc) " +
+            "AND (:tenNhomHuong IS NULL OR nh.tenNhomHuong = :tenNhomHuong) " +
+            "AND (:tenThuongHieu IS NULL OR th.tenThuongHieu = :tenThuongHieu) " +
+            "AND (:quocGia IS NULL OR th.quocGia = :quocGia) " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
+            "nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate " +
+            "ORDER BY (SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham) DESC")
+    Page<SanPhamInfoDTO> searchSanPhamCombinedByBestSelling(
+            @Param("searchQuery") String searchQuery,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("tenDanhMuc") String tenDanhMuc,
+            @Param("tenNhomHuong") String tenNhomHuong,
+            @Param("tenThuongHieu") String tenThuongHieu,
+            @Param("quocGia") String quocGia,
+            Pageable pageable);
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, " +
+
+            "sp.createDate, " +
+            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham)) " +
+            "FROM SanPham sp " +
+            "JOIN sp.spcts spct " +
+            "LEFT JOIN spct.ctdh ctdh " +
+            "JOIN sp.thuongHieu th " +
+            "JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.hinhAnhs ha " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "LEFT JOIN sp.nhomHuong nh " +
+            "WHERE sp.trangThai = 1 " +
+            "AND (:searchQuery IS NULL OR " +
+            "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hd.moTaHuongDau, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hg.moTaHuongGiua, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hc.moTaHuongCuoi, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(nh.tenNhomHuong, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
+            "AND (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
+            "AND (:tenDanhMuc IS NULL OR dm.tenDanhMuc = :tenDanhMuc) " +
+            "AND (:tenNhomHuong IS NULL OR nh.tenNhomHuong = :tenNhomHuong) " +
+            "AND (:tenThuongHieu IS NULL OR th.tenThuongHieu = :tenThuongHieu) " +
+            "AND (:quocGia IS NULL OR th.quocGia = :quocGia) " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
+            "nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate " +
+            "ORDER BY (SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham) ASC")
+    Page<SanPhamInfoDTO> searchSanPhamCombinedByBestSellingAsc(
+            @Param("searchQuery") String searchQuery,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("tenDanhMuc") String tenDanhMuc,
+            @Param("tenNhomHuong") String tenNhomHuong,
+            @Param("tenThuongHieu") String tenThuongHieu,
+            @Param("quocGia") String quocGia,
+            Pageable pageable);
     @Query(value = "select\n" +
             "    sp.id as idSanPham,\n" +
             "    sp.ten as tenSanPham,\n" +
@@ -152,7 +246,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
-            "nh.id, nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate) " +
+            "nh.id, nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate,SUM(spct.soLuongTonKho)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.hinhAnhs ha " +
@@ -172,7 +266,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
-            "nh.id,nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate) " +
+            "nh.id,nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate,SUM(spct.soLuongTonKho)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.thuongHieu th " +
@@ -205,7 +299,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
-            "nh.id, nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate) " +
+            "nh.id, nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate,SUM(spct.soLuongTonKho)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.hinhAnhs ha " +
@@ -232,7 +326,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
-            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, MIN(sp.createDate)) " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, MIN(sp.createDate),SUM(spct.soLuongTonKho)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.hinhAnhs ha " +
@@ -257,7 +351,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "MIN(ha.link), th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
-            "nh.id, nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate) " +
+            "nh.id, nh.tenNhomHuong, th.quocGia,sp.trangThai,sp.createDate,SUM(spct.soLuongTonKho)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "JOIN sp.nhomHuong nh " +
@@ -283,9 +377,12 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
             "th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
-            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate) " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, " +
+            "sp.createDate, " +
+            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
+            "LEFT JOIN spct.ctdh ctdh " +
             "JOIN sp.thuongHieu th " +
             "JOIN sp.danhMuc dm " +
             "LEFT JOIN sp.hinhAnhs ha " +
@@ -298,10 +395,10 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(dm.tenDanhMuc) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-            "LOWER(hd.moTaHuongDau) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-            "LOWER(hg.moTaHuongGiua) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-            "LOWER(hc.moTaHuongCuoi) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-            "LOWER(nh.tenNhomHuong) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
+            "LOWER(COALESCE(hd.moTaHuongDau, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hg.moTaHuongGiua, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(hc.moTaHuongCuoi, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+            "LOWER(COALESCE(nh.tenNhomHuong, '')) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
             "AND (:minPrice IS NULL OR spct.donGia >= :minPrice) " +
             "AND (:maxPrice IS NULL OR spct.donGia <= :maxPrice) " +
             "AND (:tenDanhMuc IS NULL OR dm.tenDanhMuc = :tenDanhMuc) " +
@@ -320,8 +417,6 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             @Param("tenThuongHieu") String tenThuongHieu,
             @Param("quocGia") String quocGia,
             Pageable pageable);
-
-
         @Query(value = "SELECT sp.id, COALESCE(SUM(sct.so_luong_ton_kho), 0) as so_luong_ton_kho\n" +
                 "FROM san_pham sp\n" +
                 "LEFT JOIN spct sct ON sp.id = sct.id_san_pham AND sct.trang_thai = 1\n" +
