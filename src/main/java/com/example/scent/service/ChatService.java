@@ -9,10 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,15 +65,27 @@ public class ChatService {
         messages.addAll(sentMessages);
         messages.addAll(receivedMessages);
 
-        // Loại bỏ trùng lặp dựa trên ID tin nhắn và sắp xếp theo thời gian
-        messages = messages.stream()
-                .filter(msg -> msg.getId() != null) // Đảm bảo tin nhắn có ID
-                .distinct()
+        // Gộp tin nhắn trùng lặp dựa trên content, senderId và timestamp (làm tròn đến giây)
+        Map<String, ChatMessage> uniqueMessages = new HashMap<>();
+        for (ChatMessage msg : messages) {
+            // Làm tròn timestamp đến giây
+            LocalDateTime timestamp = msg.getTimestamp().truncatedTo(ChronoUnit.SECONDS);
+            String key = msg.getContent() + "-" + msg.getSender().getId() + "-" + timestamp.toString();
+
+            // Chỉ giữ bản ghi đầu tiên cho mỗi khóa duy nhất
+            uniqueMessages.putIfAbsent(key, msg);
+        }
+
+        // Chuyển về danh sách và sắp xếp theo timestamp
+        return uniqueMessages.values().stream()
                 .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()))
                 .collect(Collectors.toList());
-
-
-        return messages;
+    }
+    public ChatMessage save(ChatMessage message) {
+        return chatMessageRepository.save(message);
+    }
+    public ChatMessage findById(Long messageId) {
+        return chatMessageRepository.findById(messageId).orElse(null);
     }
     public List<TaiKhoan> getUsersWithMessages(Integer adminId) {
         List<ChatMessage> messages = chatMessageRepository.findBySenderIdOrReceiverId(adminId, adminId);

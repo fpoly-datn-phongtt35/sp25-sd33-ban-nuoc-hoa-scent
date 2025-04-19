@@ -11,6 +11,16 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+    @Column(name = "is_recalled", nullable = false)
+    private Boolean isRecalled = false;
+
+    public Boolean getRecalled() {
+        return isRecalled;
+    }
+
+    public void setRecalled(Boolean recalled) {
+        isRecalled = recalled;
+    }
 
     @ManyToOne
     @JoinColumn(name = "sender_id", referencedColumnName = "id")

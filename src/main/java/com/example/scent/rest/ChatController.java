@@ -7,11 +7,15 @@ import com.example.scent.service.ChatService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -138,7 +142,56 @@ public class ChatController {
     public List<ChatMessage> getMessages(@PathVariable Integer user1Id, @PathVariable Integer user2Id) {
         return chatService.getMessagesBetweenUsers(user1Id, user2Id);
     }
+    @PostMapping("/recall/{messageId}")
+    public ResponseEntity<Map<String, Object>> recallMessage(
+            @PathVariable Long messageId,
+            @RequestParam Long userId) {
+        Map<String, Object> response = new HashMap<>();
 
+        try {
+            // Tìm tin nhắn theo ID
+            ChatMessage message = chatService.findById(messageId);
+            if (message == null) {
+                response.put("success", false);
+                response.put("message", "Tin nhắn không tồn tại.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Kiểm tra xem người dùng có phải là người gửi tin nhắn không
+            if (!message.getSender().getId().equals(userId)) {
+                response.put("success", false);
+                response.put("message", "Bạn không có quyền thu hồi tin nhắn này.");
+                return ResponseEntity.status(403).body(response);
+            }
+
+            // Kiểm tra thời gian thu hồi (ví dụ: chỉ cho phép thu hồi trong vòng 2 phút)
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime messageTime = message.getTimestamp();
+            if (messageTime.plusMinutes(2).isBefore(now)) {
+                response.put("success", false);
+                response.put("message", "Đã quá thời gian cho phép để thu hồi tin nhắn (2 phút).");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Đánh dấu tin nhắn là đã thu hồi
+            message.setRecalled(true);
+            message.setContent("[Tin nhắn đã được thu hồi]");
+            chatService.save(message);
+
+            // Gửi thông báo qua WebSocket để cập nhật giao diện thời gian thực
+            messagingTemplate.convertAndSend("/topic/messages/" + message.getReceiver().getId(), message);
+            messagingTemplate.convertAndSend("/topic/messages/" + message.getSender().getId(), message);
+
+            response.put("success", true);
+            response.put("message", "Thu hồi tin nhắn thành công.");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi thu hồi tin nhắn: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
     @GetMapping("/messages/user/{userId}")
     public List<ChatMessage> getMessagesForUser(@PathVariable Integer userId) {
         List<TaiKhoan> adminsAndStaff = taiKhoanRepository.findByVaiTroIn(List.of("ADMIN", "STAFF"));
