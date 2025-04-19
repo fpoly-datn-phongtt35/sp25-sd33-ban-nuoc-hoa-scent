@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, ChangeDetectorRef, AfterViewChecked, ViewChild, ElementRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, AfterViewChecked, ViewChild, ElementRef, PLATFORM_ID, Inject, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TokenService } from '../service/token.service';
@@ -17,9 +17,11 @@ import { HeaderComponent } from '../header/header.component';
   styleUrls: ['./contact.component.scss'],
 })
 export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
-  isChatOpen: boolean = false;
+  isChatOpen: boolean = true;
   messages: any[] = [];
   newMessage: string = '';
+  private lastSentTime: number = 0;
+  private readonly DEBOUNCE_TIME: number = 1000;
   userId: number | null = null;
   errorMessage: string | null = null;
   isLoading: boolean = false;
@@ -27,8 +29,8 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   private chatSubscription: Subscription | null = null;
   private reconnectSubscription: Subscription | null = null;
   private lastScrollHeight: number = 0;
-  private processedMessages: Set<string> = new Set(); // Theo dõi các tin nhắn đã xử lý
-  private shouldScroll: boolean = false; // Kiểm soát việc cuộn khung chat
+  private processedMessages: Set<string> = new Set();
+  private shouldScroll: boolean = false;
 
   @ViewChild('chatMessages', { static: false }) chatMessagesRef!: ElementRef<HTMLDivElement>;
 
@@ -53,6 +55,8 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (this.userId >= 1000) {
         console.log('[ContactComponent] Sử dụng userId từ localStorage:', this.userId);
         this.initializeChat();
+        this.initializeTawkTo();
+        this.addInitialMessages();
         return;
       } else {
         console.warn('[ContactComponent] userId trong localStorage không hợp lệ, xóa và tạo mới:', this.userId);
@@ -70,7 +74,222 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       console.log('[ContactComponent] Sử dụng userId từ token:', this.userId);
       localStorage.setItem('userId', this.userId.toString());
       this.initializeChat();
+      this.initializeTawkTo();
+      this.addInitialMessages();
     }
+  }
+
+  private normalizeTimestamp(timestamp: string): string {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      console.error('[ContactComponent] Timestamp không hợp lệ:', timestamp);
+      return new Date().toISOString();
+    }
+    return date.toISOString(); // Giữ nguyên mili giây
+  }
+
+  private generateMessageKey(message: any): string {
+    const senderId = message.sender?.id ?? message.senderId;
+    return `${message.content}-${senderId}`;
+  }
+
+  private addInitialMessages(): void {
+    const welcomeMessage = `Chào bạn! Cảm ơn bạn đã liên hệ với chúng tôi. Chúng tôi sẽ hỗ trợ bạn ngay lập tức.`;
+    const welcomeKey = `welcome-${this.userId}-${Date.now()}`;
+    if (!this.processedMessages.has(welcomeKey)) {
+      this.processedMessages.add(welcomeKey);
+      const timestamp = new Date().toISOString();
+      this.messages.push({
+        id: null,
+        sender: { id: 0, hoTen: 'Hệ thống', tenDangNhap: 'Hệ thống' },
+        receiver: { id: this.userId },
+        content: welcomeMessage,
+        timestamp: timestamp,
+        senderId: 0,
+        receiverId: this.userId,
+        source: 'system',
+        isOption: false,
+      });
+    }
+
+    const options = [
+      { content: 'Tôi cần tư vấn', key: `option-consult-${this.userId}-${Date.now()}` },
+      { content: 'Giá sản phẩm này bao nhiêu?', key: `option-price-${this.userId}-${Date.now()}` },
+    ];
+
+    options.forEach(option => {
+      if (!this.processedMessages.has(option.key)) {
+        this.processedMessages.add(option.key);
+        const timestamp = new Date().toISOString();
+        this.messages.push({
+          id: null,
+          sender: { id: 0, hoTen: 'Hệ thống', tenDangNhap: 'Hệ thống' },
+          receiver: { id: this.userId },
+          content: option.content,
+          timestamp: timestamp,
+          senderId: 0,
+          receiverId: this.userId,
+          source: 'system',
+          isOption: true,
+        });
+      }
+    });
+
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+    console.log('[ContactComponent] Đã thêm tin nhắn chào mừng và tùy chọn ban đầu:', this.messages);
+  }
+
+  private initializeTawkTo(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.warn('[ContactComponent] Bỏ qua khởi tạo Tawk.to trên server-side');
+      return;
+    }
+
+    const checkTawkInterval = setInterval(() => {
+      if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+        clearInterval(checkTawkInterval);
+        console.log('[ContactComponent] Tawk.to API đã sẵn sàng');
+        this.setupTawkTo();
+      } else {
+        console.log('[ContactComponent] Đang chờ Tawk.to API tải...');
+      }
+    }, 500);
+
+    setTimeout(() => {
+      if (typeof window.Tawk_API === 'undefined') {
+        clearInterval(checkTawkInterval);
+        console.error('[ContactComponent] Không thể tải Tawk.to API sau 10 giây');
+      }
+    }, 10000);
+  }
+
+  private setupTawkTo(): void {
+    if (!window.Tawk_API) {
+      console.error('[ContactComponent] Tawk_API không tồn tại');
+      return;
+    }
+
+    window.Tawk_API.hideWidget();
+    console.log('[ContactComponent] Đã ẩn widget Tawk.to');
+
+    window.Tawk_API.startChat();
+    console.log('[ContactComponent] Đã khởi tạo phiên chat Tawk.to');
+
+    this.notifyAdminOfNewChat();
+
+    window.Tawk_API.onMessageSent = (message: any) => {
+      console.log('[ContactComponent] Tawk.to: Tin nhắn từ người dùng:', message);
+      this.handleTawkToMessage(message);
+    };
+
+    window.Tawk_API.onMessageReceived = (message: any) => {
+      console.log('[ContactComponent] Tawk.to: Tin nhắn từ admin:', message);
+      this.handleTawkToMessage(message);
+    };
+  }
+
+  selectOption(optionContent: string): void {
+    const currentTime = Date.now();
+    if (currentTime - this.lastSentTime < this.DEBOUNCE_TIME) {
+      console.log('[ContactComponent] Bỏ qua nhấn liên tiếp:', optionContent);
+      return;
+    }
+
+    if (!this.userId) return;
+
+    const timestamp = new Date().toISOString();
+    const message = {
+      content: optionContent,
+      senderId: this.userId,
+      receiverId: null,
+      timestamp: timestamp,
+    };
+    const messageKey = this.generateMessageKey(message);
+
+    // Thêm tin nhắn vào messages trước để đảm bảo thứ tự
+    if (!this.processedMessages.has(messageKey)) {
+      this.processedMessages.add(messageKey);
+      this.messages.push({
+        id: null,
+        sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
+        receiver: null,
+        content: optionContent,
+        timestamp: timestamp,
+        senderId: this.userId,
+        receiverId: null,
+        source: 'tawk.to',
+        isOption: false,
+      });
+    } else {
+      const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
+      if (existingMessage && new Date(timestamp) > new Date(existingMessage.timestamp)) {
+        existingMessage.timestamp = timestamp;
+      }
+    }
+
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+
+    // Gửi tin nhắn sau khi đã thêm vào messages
+    if (window.Tawk_API) {
+      try {
+        window.Tawk_API.addMessage({
+          message: optionContent,
+          sender: `Khách ${this.userId}`,
+        });
+        console.log('[ContactComponent] Đã gửi tùy chọn qua Tawk.to:', optionContent);
+      } catch (error) {
+        console.error('[ContactComponent] Lỗi khi gửi tùy chọn Tawk.to:', error);
+      }
+    }
+
+    this.webSocketService.sendChatMessage(this.userId, null, optionContent);
+    console.log('[ContactComponent] Đã gửi tùy chọn qua WebSocket:', optionContent);
+
+    this.lastSentTime = currentTime;
+  }
+
+  private notifyAdminOfNewChat(): void {
+    if (!this.userId || !this.webSocketService.isWebSocketConnected()) return;
+
+    const notificationMessage = `Người dùng ${this.userId} đã bắt đầu phiên chat qua Tawk.to`;
+    this.webSocketService.sendChatMessage(this.userId, null, notificationMessage);
+    console.log('[ContactComponent] Đã thông báo cho admin về phiên chat Tawk.to mới:', notificationMessage);
+  }
+
+  private handleTawkToMessage(message: any): void {
+    const timestamp = this.normalizeTimestamp(new Date().toISOString());
+    const senderId = message.sender === 'Hệ thống' || message.sender === 'Admin' ? 0 : this.userId;
+    const newMessage = {
+      id: null,
+      sender: { id: senderId, hoTen: senderId === 0 ? message.sender : `Khách ${this.userId}`, tenDangNhap: senderId === 0 ? message.sender : `Khách ${this.userId}` },
+      receiver: { id: senderId === 0 ? this.userId : 0 },
+      content: message.message,
+      timestamp: timestamp,
+      senderId: senderId,
+      receiverId: senderId === 0 ? this.userId : 0,
+      source: 'tawk.to',
+      isOption: false,
+    };
+
+    const messageKey = this.generateMessageKey(newMessage);
+    if (!this.processedMessages.has(messageKey)) {
+      this.processedMessages.add(messageKey);
+      this.messages.push(newMessage);
+    } else {
+      const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
+      if (existingMessage && new Date(timestamp) > new Date(existingMessage.timestamp)) {
+        existingMessage.timestamp = timestamp;
+      }
+    }
+
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+    console.log('[ContactComponent] Đã xử lý tin nhắn Tawk.to:', newMessage);
   }
 
   private createGuestUser(): void {
@@ -95,6 +314,8 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
         localStorage.setItem('userId', this.userId.toString());
         this.isLoading = false;
         this.initializeChat();
+        this.initializeTawkTo();
+        this.addInitialMessages();
       },
       error: (error) => {
         console.error('[ContactComponent] Lỗi khi tạo guest user:', error);
@@ -127,8 +348,8 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (this.webSocketService.isWebSocketConnected()) {
         clearInterval(checkConnection);
         console.log('[ContactComponent] WebSocket đã kết nối thành công cho khách hàng:', this.userId);
-        this.loadMessages(); // Tải tin nhắn trước
-        this.subscribeToMessages(); // Chỉ subscribe sau khi tải xong
+        this.loadMessages();
+        this.subscribeToMessages();
         this.setupWebSocketReconnect();
       } else {
         retryCount++;
@@ -158,7 +379,9 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
         console.warn('[ContactComponent] WebSocket đã mất kết nối. Thử kết nối lại...');
         this.errorMessage = 'Mất kết nối chat. Đang thử kết nối lại...';
         this.webSocketService.connect(this.userId!);
-        this.subscribeToMessages();
+        if (!this.chatSubscription || this.chatSubscription.closed) {
+          this.subscribeToMessages();
+        }
       } else {
         if (this.errorMessage === 'Mất kết nối chat. Đang thử kết nối lại...') {
           this.errorMessage = null;
@@ -167,6 +390,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     });
   }
+
   subscribeToMessages(): void {
     if (!isPlatformBrowser(this.platformId)) {
       console.warn('[ContactComponent] Bỏ qua subscribeToMessages trên server-side');
@@ -200,58 +424,24 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.ngZone.run(() => {
             const normalizedMessage = {
               ...message,
-              sender: message.sender || { id: senderId },
+              sender: message.sender || { id: senderId, tenDangNhap: senderId === this.userId ? `Khách ${this.userId}` : 'Admin' },
               receiver: message.receiver || (receiverId ? { id: receiverId } : null),
               senderId,
               receiverId,
               content: message.content.trim(),
-              timestamp: message.timestamp,
+              timestamp: this.normalizeTimestamp(message.timestamp),
+              isOption: false,
             };
 
-            // Tạo contentKey để kiểm tra trùng lặp dựa trên nội dung và senderId
-            const contentKey = `${normalizedMessage.content}-${senderId}-${receiverId || 'null'}`;
-
-            // Kiểm tra xem có tin nhắn tương tự trong khoảng thời gian gần đây không
-            const isDuplicate = this.messages.some(
-              msg =>
-                msg.content === normalizedMessage.content &&
-                msg.senderId === senderId &&
-                Math.abs(new Date(normalizedMessage.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000 // Trong vòng 1 giây
-            );
-
-            if (isDuplicate) {
-              console.log('[ContactComponent] Bỏ qua tin nhắn trùng lặp:', normalizedMessage);
-              return;
-            }
-
-            // Kiểm tra xem có tin nhắn tạm thời nào cần thay thế không
-            const tempMessageIndex = this.messages.findIndex(
-              msg =>
-                msg.tempId &&
-                msg.content === normalizedMessage.content &&
-                msg.senderId === senderId &&
-                Math.abs(new Date(normalizedMessage.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 5000 // Trong vòng 5 giây
-            );
-
-            // Tạo messageKey để lưu vào processedMessages
-            const messageKey = normalizedMessage.id
-              ? normalizedMessage.id.toString()
-              : contentKey + '-' + normalizedMessage.timestamp;
-
-            if (tempMessageIndex !== -1) {
-              // Thay thế tin nhắn tạm thời bằng tin nhắn thực
-              const tempMessageKey = this.messages[tempMessageIndex].tempId;
-              this.processedMessages.delete(tempMessageKey);
-              this.messages[tempMessageIndex] = normalizedMessage;
-              console.log('[ContactComponent] Đã thay thế tin nhắn tạm thời:', normalizedMessage);
-            } else if (!this.processedMessages.has(messageKey)) {
-              // Thêm tin nhắn mới nếu chưa xử lý
+            const messageKey = this.generateMessageKey(normalizedMessage);
+            if (!this.processedMessages.has(messageKey)) {
               this.processedMessages.add(messageKey);
               this.messages.push(normalizedMessage);
-              console.log('[ContactComponent] Đã thêm tin nhắn mới:', normalizedMessage);
             } else {
-              console.log('[ContactComponent] Tin nhắn đã được xử lý trước đó, bỏ qua:', normalizedMessage);
-              return;
+              const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
+              if (existingMessage && new Date(normalizedMessage.timestamp) > new Date(existingMessage.timestamp)) {
+                existingMessage.timestamp = normalizedMessage.timestamp;
+              }
             }
 
             this.sortMessages();
@@ -282,46 +472,40 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.isLoading = true;
     this.errorMessage = null;
-    this.messages = []; // Reset messages
-    this.processedMessages.clear(); // Xóa các tin nhắn đã xử lý
 
     this.http.get<any[]>(`http://localhost:8080/api/chat/messages/user/${this.userId}`).subscribe({
       next: (messages) => {
         console.log('[ContactComponent] Dữ liệu tin nhắn từ API:', messages);
 
-        const uniqueMessages = new Map();
-        messages.forEach(msg => {
+        const processedMessages = messages.map(msg => {
           const senderId = msg.sender?.id ?? msg.senderId;
           const receiverId = msg.receiver?.id ?? msg.receiverId;
-          if (senderId === this.userId || receiverId === this.userId) {
-            const messageKey = msg.id
-              ? msg.id.toString()
-              : `${msg.content.trim()}-${senderId}-${receiverId || 'null'}`; // Loại bỏ timestamp
-            if (!uniqueMessages.has(messageKey)) {
-              uniqueMessages.set(messageKey, {
-                ...msg,
-                senderId,
-                receiverId,
-                content: msg.content.trim(),
-              });
-            }
-          }
+          return {
+            ...msg,
+            sender: { id: senderId, tenDangNhap: senderId === this.userId ? `Khách ${this.userId}` : (msg.sender?.tenDangNhap || 'Admin') },
+            receiver: msg.receiver || (receiverId ? { id: receiverId } : null),
+            senderId,
+            receiverId,
+            content: msg.content.trim(),
+            timestamp: this.normalizeTimestamp(msg.timestamp),
+            isOption: false,
+          };
         });
 
-        this.messages = Array.from(uniqueMessages.values());
-        this.messages.forEach(msg => {
-          const messageKey = msg.id
-            ? msg.id.toString()
-            : `${msg.content}-${msg.senderId}-${msg.receiverId || 'null'}`;
-          this.processedMessages.add(messageKey);
+        const existingMessages = this.messages.filter(msg => msg.source === 'system');
+        this.messages = [...existingMessages];
+
+        processedMessages.forEach(msg => {
+          const messageKey = this.generateMessageKey(msg);
+          if (!this.processedMessages.has(messageKey)) {
+            this.processedMessages.add(messageKey);
+            this.messages.push(msg);
+          }
         });
 
         this.sortMessages();
         this.isLoading = false;
         console.log('[ContactComponent] Đã cập nhật tin nhắn cho khách hàng:', this.messages);
-        if (this.messages.length > 0) {
-          this.isChatOpen = true;
-        }
         this.shouldScroll = true;
         this.cdr.detectChanges();
       },
@@ -337,19 +521,30 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.messages.sort((a, b) => {
       const timeA = new Date(a.timestamp).getTime();
       const timeB = new Date(b.timestamp).getTime();
-      return timeA - timeB;
+      if (timeA !== timeB) {
+        return timeA - timeB; // Sắp xếp theo thời gian nếu timestamp khác nhau
+      }
+      // Nếu timestamp bằng nhau, ưu tiên tin nhắn từ người dùng trước
+      const senderIdA = a.sender?.id ?? a.senderId;
+      const senderIdB = b.sender?.id ?? b.senderId;
+      if (senderIdA === this.userId && senderIdB !== this.userId) {
+        return -1; // Tin nhắn từ người dùng (userId) hiển thị trước
+      }
+      if (senderIdB === this.userId && senderIdA !== this.userId) {
+        return 1; // Tin nhắn từ admin hiển thị sau
+      }
+      return 0; // Giữ nguyên thứ tự nếu cả hai đều từ cùng nguồn
     });
-    console.log('[ContactComponent] Đã sắp xếp tin nhắn:', this.messages.length);
-  }
-
-  toggleChat(): void {
-    this.isChatOpen = !this.isChatOpen;
-    if (this.isChatOpen) {
-      this.shouldScroll = true;
-    }
+    console.log('[ContactComponent] Đã sắp xếp tin nhắn:', this.messages);
   }
 
   sendMessage(): void {
+    const currentTime = Date.now();
+    if (currentTime - this.lastSentTime < this.DEBOUNCE_TIME) {
+      console.log('[ContactComponent] Bỏ qua gửi tin nhắn liên tiếp:', this.newMessage);
+      return;
+    }
+
     if (!isPlatformBrowser(this.platformId)) {
       console.warn('[ContactComponent] Không thể gửi tin nhắn: Đang chạy trên server-side');
       return;
@@ -376,37 +571,43 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     console.log('[ContactComponent] Gửi tin nhắn từ user', this.userId, ':', this.newMessage);
 
     try {
-      // Tạo tempId duy nhất
-      const tempId = `temp-${Date.now()}-${Math.random()}`;
-
-      // Gửi tin nhắn qua WebSocket
-      this.webSocketService.sendChatMessage(this.userId, null, this.newMessage);
-      console.log('[ContactComponent] Đã gửi tin nhắn, chờ WebSocket cập nhật');
-
-      // Thêm tin nhắn tạm thời vào messages
-      const tempMessage = {
+      const timestamp = new Date().toISOString();
+      const message = {
         id: null,
-        tempId, // Thêm tempId để theo dõi
-        sender: { id: this.userId },
+        sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
         receiver: null,
-        content: this.newMessage.trim(), // Loại bỏ khoảng trắng thừa
-        timestamp: new Date().toISOString(),
+        content: this.newMessage.trim(),
+        timestamp: timestamp,
         senderId: this.userId,
         receiverId: null,
+        isOption: false,
       };
-      const messageKey = tempId;
+      const messageKey = this.generateMessageKey(message);
+
+      // Thêm tin nhắn vào messages trước để đảm bảo thứ tự
       if (!this.processedMessages.has(messageKey)) {
         this.processedMessages.add(messageKey);
-        this.messages.push(tempMessage);
-        this.sortMessages();
-        this.shouldScroll = true;
-        this.cdr.detectChanges();
+        this.messages.push(message);
+      } else {
+        const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
+        if (existingMessage && new Date(timestamp) > new Date(existingMessage.timestamp)) {
+          existingMessage.timestamp = timestamp;
+        }
       }
+
+      this.sortMessages();
+      this.shouldScroll = true;
+      this.cdr.detectChanges();
+
+      // Gửi tin nhắn sau khi đã thêm vào messages
+      this.webSocketService.sendChatMessage(this.userId, null, this.newMessage);
+      console.log('[ContactComponent] Đã gửi tin nhắn qua WebSocket, chờ cập nhật');
 
       this.newMessage = '';
       this.isSending = false;
+      this.lastSentTime = currentTime;
     } catch (error) {
-      console.error('[ContactComponent] Lỗi khi gửi tin nhắn qua WebSocket:', error);
+      console.error('[ContactComponent] Lỗi khi gửi tin nhắn:', error);
       this.errorMessage = 'Không thể gửi tin nhắn do lỗi kết nối. Vui lòng thử lại.';
       this.isSending = false;
     }
@@ -433,9 +634,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     this.webSocketService.disconnect();
-    if
-
- (this.chatSubscription) {
+    if (this.chatSubscription) {
       this.chatSubscription.unsubscribe();
       console.log('[ContactComponent] Đã hủy chat subscription');
     }
@@ -447,5 +646,9 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       localStorage.removeItem('userId');
     }
     this.processedMessages.clear();
+
+    if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+      window.Tawk_API.endChat();
+    }
   }
 }

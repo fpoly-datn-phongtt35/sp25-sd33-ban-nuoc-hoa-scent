@@ -8,15 +8,23 @@
   <div class="chat-messages" #chatMessages>
     <div *ngFor="let message of messages"
          [ngClass]="(message.sender?.id ?? message.senderId) === userId ? 'message message-right' : 'message message-left'">
-      <div class="message-wrapper">
+      <!-- Hiển thị tin nhắn thông thường -->
+      <div *ngIf="!message.isOption" class="message-wrapper">
         <div class="message-sender">
-          {{ message.sender?.tenDangNhap}}
+          {{ message.sender?.hoTen || message.sender?.tenDangNhap || 'Khách ' + userId }}
         </div>
         <div class="message-content">
           {{ message.content }}
           <div class="message-timestamp">
             {{ message.timestamp | date:'dd/MM/yyyy, HH:mm' }}
           </div>
+        </div>
+      </div>
+
+      <!-- Hiển thị tin nhắn tùy chọn (có thể nhấn) -->
+      <div *ngIf="message.isOption" class="message-option" (click)="selectOption(message.content)">
+        <div class="option-text">
+          {{ message.content }}
         </div>
       </div>
     </div>

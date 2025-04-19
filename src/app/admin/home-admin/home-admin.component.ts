@@ -15,18 +15,13 @@ import { InvoiceComponent } from '../order/order-list/invoice.component';
 import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.component';
 import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhangofffline.component';
 import { ChangePasswordModalComponent } from '../../change-password/change-password.component';
-
-
-import { AccountInfoComponent } from '../../account-info/account-info.component';
 import { AccountInfoAdminComponent } from '../account-info-admin/account-info-admin.component';
-
 import { HttpClient } from '@angular/common/http';
 import { WebSocketService } from '../../service/WebSocketService';
 import { isPlatformBrowser } from '@angular/common';
 import { Subscription, interval } from 'rxjs';
 import { BrandComponent } from '../thuonghieu/brand/brand.component';
 import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-list.component';
-
 
 @Component({
   selector: 'app-home-admin',
@@ -57,12 +52,10 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   userID: number | null = null;
   isDropdownVisible: boolean = false;
   isComponentSwitched: boolean = false;
+  isSubMenuOpen: { [key: string]: boolean } = { products: false };
 
-  isSubMenuOpen: { [key: string]: boolean } = { products: false }; // Theo dõi trạng thái đóng/mở của menu
-
-
-  messages: any[] = []; // Filtered messages for display
-  allMessages: any[] = []; // Store all received messages
+  messages: any[] = [];
+  allMessages: any[] = [];
   newMessage: string = '';
   selectedChatUserId: number | null = null;
   chatUsers: any[] = [];
@@ -70,29 +63,24 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   totalUnreadMessages: number = 0;
   errorMessage: string | null = null;
   isSending: boolean = false;
-  incomingMessages: { customerId: number; content: string; hoTen: string }[] = []; // Store incoming messages for notification
+  incomingMessages: { customerId: number; content: string; hoTen: string }[] = [];
   private lastScrollHeight: number = 0;
   private chatSubscription: Subscription | null = null;
   private reconnectSubscription: Subscription | null = null;
-  private recentlySentMessages: Set<string> = new Set(); // Track recently sent message IDs
+  private recentlySentMessages: Set<string> = new Set();
 
   @ViewChild('chatMessages', { static: false }) chatMessagesRef!: ElementRef<HTMLDivElement>;
-
 
   constructor(
     private tokenService: TokenService,
     private accountService: AccountService,
     private router: Router,
-
     private modalService: NgbModal,
-
-   
     private http: HttpClient,
     private webSocketService: WebSocketService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     @Inject(PLATFORM_ID) private platformId: Object
-
   ) {}
 
   ngOnInit(): void {
@@ -116,9 +104,9 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       console.log('[HomeAdmin] Tạo sessionId mới:', newSessionId);
 
       this.router.navigate(['/admin']);
-
       this.initializeWebSocket();
       this.loadChatUsers();
+      this.initializeTawkTo();
 
       if (isPlatformBrowser(this.platformId)) {
         const savedUserId = localStorage.getItem('selectedChatUserId');
@@ -141,10 +129,75 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.isComponentSwitched = false;
   }
 
+  private initializeTawkTo(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.warn('[HomeAdmin] Bỏ qua khởi tạo Tawk.to trên server-side');
+      return;
+    }
+
+    if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+      console.log('[HomeAdmin] Tawk.to API đã sẵn sàng');
+      this.setupTawkToEvents();
+    } else {
+      const checkTawkInterval = setInterval(() => {
+        if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+          clearInterval(checkTawkInterval);
+          console.log('[HomeAdmin] Tawk.to API đã tải xong');
+          this.setupTawkToEvents();
+        }
+      }, 500);
+
+      if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API && typeof window.Tawk_API.onLoad === 'function') {
+        window.Tawk_API.onLoad = () => {
+          console.log('[HomeAdmin] Tawk.to onLoad triggered');
+          this.setupTawkToEvents();
+        };
+      }
+    }
+  }
+
+  private setupTawkToEvents(): void {
+    if (!window.Tawk_API) {
+      console.error('[HomeAdmin] Tawk_API không tồn tại');
+      return;
+    }
+
+    window.Tawk_API.onMessageReceived = (message: any) => {
+      console.log('[HomeAdmin] Tawk.to: Tin nhắn từ người dùng:', message);
+      this.handleTawkToMessage(message);
+    };
+  }
+
+  private handleTawkToMessage(message: any): void {
+    if (!this.selectedChatUserId) return;
+
+    const messageId = this.generateMessageId({
+      sender: { id: this.selectedChatUserId },
+      receiver: { id: this.userID },
+      content: message.message,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (!this.recentlySentMessages.has(messageId)) {
+      this.allMessages.push({
+        sender: { id: this.selectedChatUserId, hoTen: `Khách ${this.selectedChatUserId}` },
+        receiver: { id: this.userID },
+        content: message.message,
+        timestamp: new Date().toISOString(),
+        senderId: this.selectedChatUserId,
+        receiverId: this.userID,
+        messageId,
+        source: 'tawk.to',
+      });
+      this.updateMessagesForDisplay();
+      this.sortMessages();
+      this.cdr.detectChanges();
+    }
+  }
+
   private generateSessionId(): string {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
-
 
   private setLocalStorageSafely(key: string, value: string): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -170,7 +223,6 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-
   showComponent(component: string): void {
     const role = this.tokenService.getRole();
     console.log('[HomeAdmin] Vai trò hiện tại:', role);
@@ -194,7 +246,6 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   toggleSubMenu(menu: string): void {
     this.isSubMenuOpen[menu] = !this.isSubMenuOpen[menu];
-    // Luôn hiển thị component "products" khi nhấp vào "Sản phẩm"
     if (menu === 'products') {
       this.showComponent('products');
     }
@@ -209,7 +260,8 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.isDropdownVisible = false;
     console.log('[HomeAdmin] Ẩn dropdown menu');
   }
-  openUpdateInfo():void{
+
+  openUpdateInfo(): void {
     this.isDropdownVisible = false;
     const modalRef = this.modalService.open(AccountInfoAdminComponent, {
       centered: true,
@@ -217,6 +269,7 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       keyboard: false,
     });
   }
+
   openChangePasswordModal(): void {
     this.isDropdownVisible = false;
     console.log('[HomeAdmin] Mở modal đổi mật khẩu');
@@ -270,7 +323,7 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     console.log('[HomeAdmin] Đã xóa dữ liệu localStorage khi đăng xuất');
     console.log('[HomeAdmin] Dữ liệu localStorage sau khi xóa:', { ...localStorage });
   }
-    
+
   private initializeWebSocket(): void {
     if (!isPlatformBrowser(this.platformId)) {
       console.warn('[HomeAdmin] Bỏ qua initializeWebSocket trên server-side');
@@ -343,148 +396,180 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  // Helper to generate a unique message identifier with normalized timestamp
   private generateMessageId(message: any): string {
     const senderId = message.sender?.id ?? message.senderId;
     const receiverId = message.receiver?.id ?? message.receiverId;
-    // Normalize timestamp to the nearest second to avoid small differences
     const normalizedTimestamp = new Date(message.timestamp).setMilliseconds(0);
     return `${senderId}-${receiverId}-${message.content}-${normalizedTimestamp}`;
   }
 
-  private subscribeToMessages(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[HomeAdmin] Bỏ qua subscribeToMessages trên server-side');
-      return;
-    }
+ private subscribeToMessages(): void {
+  if (!isPlatformBrowser(this.platformId)) {
+    console.warn('[HomeAdmin] Bỏ qua subscribeToMessages trên server-side');
+    return;
+  }
 
-    if (this.chatSubscription) {
-      this.chatSubscription.unsubscribe();
-      console.log('[HomeAdmin] Đã hủy subscription cũ');
-    }
+  if (this.chatSubscription) {
+    this.chatSubscription.unsubscribe();
+    console.log('[HomeAdmin] Đã hủy subscription cũ');
+  }
 
-    console.log(`[HomeAdmin] Đăng ký subscription cho /topic/admin-messages/${this.userID}`);
-    this.chatSubscription = this.webSocketService.getChatMessages().subscribe({
-      next: (message: any) => {
-        console.log('[HomeAdmin] Admin nhận được tin nhắn:', message);
-        if (!message || (!message.sender && !message.senderId)) {
-          console.error('[HomeAdmin] Tin nhắn không hợp lệ, thiếu sender:', message);
-          return;
-        }
+  console.log(`[HomeAdmin] Đăng ký subscription cho /topic/admin-messages/${this.userID}`);
+  this.chatSubscription = this.webSocketService.getChatMessages().subscribe({
+    next: (message: any) => {
+      console.log('[HomeAdmin] Admin nhận được tin nhắn:', message);
+      if (!message || (!message.sender && !message.senderId)) {
+        console.error('[HomeAdmin] Tin nhắn không hợp lệ, thiếu sender:', message);
+        return;
+      }
 
-        const senderId = message.sender?.id ?? message.senderId;
-        const receiverId = message.receiver?.id ?? message.receiverId;
+      const senderId = message.sender?.id ?? message.senderId;
+      const receiverId = message.receiver?.id ?? message.receiverId;
 
-        console.log('[HomeAdmin] Kiểm tra sender và receiver:', { senderId, receiverId });
+      console.log('[HomeAdmin] Kiểm tra sender và receiver:', { senderId, receiverId });
 
-        if (!senderId || (receiverId !== null && !receiverId && receiverId !== 0)) {
-          console.error('[HomeAdmin] Sender hoặc receiver không có ID hợp lệ:', { senderId, receiverId });
-          return;
-        }
+      if (!senderId || (receiverId !== null && !receiverId && receiverId !== 0)) {
+        console.error('[HomeAdmin] Sender hoặc receiver không có ID hợp lệ:', { senderId, receiverId });
+        return;
+      }
 
-        if (senderId < 1000 || (receiverId !== null && receiverId < 1000)) {
-          console.warn('[HomeAdmin] ID không hợp lệ:', { senderId, receiverId });
-          return;
-        }
+      if (senderId < 1000 || (receiverId !== null && receiverId < 1000)) {
+        console.warn('[HomeAdmin] ID không hợp lệ:', { senderId, receiverId });
+        return;
+      }
 
-        let customerId: number;
-        if (senderId === this.userID) {
-          customerId = receiverId; // Admin gửi tin nhắn cho khách hàng
-        } else {
-          customerId = senderId; // Khách hàng gửi tin nhắn cho admin
-        }
+      let customerId: number;
+      if (senderId === this.userID) {
+        customerId = receiverId;
+      } else {
+        customerId = senderId;
+      }
 
-        if (receiverId === null && senderId !== this.userID) {
-          customerId = senderId; // Khách hàng gửi tin nhắn đến tất cả admin
-        }
+      if (receiverId === null && senderId !== this.userID) {
+        customerId = senderId;
+      }
 
-        console.log('[HomeAdmin] Xử lý tin nhắn:', { senderId, receiverId, customerId, selectedChatUserId: this.selectedChatUserId });
+      console.log('[HomeAdmin] Xử lý tin nhắn:', { senderId, receiverId, customerId, selectedChatUserId: this.selectedChatUserId });
 
-        if (!this.chatUsers.some(user => user.id === customerId)) {
-          const userName = senderId === customerId ? message.sender?.hoTen : message.receiver?.hoTen;
-          const newUser = {
-            id: customerId,
-            hoTen: userName || `Khách ${customerId}`,
-            vaiTro: 'GUEST' || 'USER'
+      if (!this.chatUsers.some(user => user.id === customerId)) {
+        const userName = senderId === customerId ? message.sender?.hoTen : message.receiver?.hoTen;
+        const newUser = {
+          id: customerId,
+          hoTen: userName || `Khách ${customerId}`,
+          vaiTro: 'GUEST' || 'USER'
+        };
+        this.chatUsers.push(newUser);
+        console.log('[HomeAdmin] Đã thêm khách hàng vào chatUsers:', newUser);
+
+        this.http.post(`http://localhost:8080/api/chat/add-user/${this.userID}`, newUser).subscribe({
+          next: () => {
+            console.log('[HomeAdmin] Đã lưu user vào backend:', newUser);
+            this.loadChatUsers();
+          },
+          error: (err) => console.error('[HomeAdmin] Lỗi khi lưu user vào backend:', err)
+        });
+      }
+
+      const messageId = this.generateMessageId(message);
+
+      console.log('[HomeAdmin] Trước khi kiểm tra trùng lặp:', { messageId, senderId, isAdmin: senderId === this.userID });
+
+      if (senderId === this.userID && this.recentlySentMessages.has(messageId)) {
+        console.log('[HomeAdmin] Bỏ qua tin nhắn vừa gửi từ admin:', message);
+        this.recentlySentMessages.delete(messageId);
+        return;
+      }
+
+     
+
+      this.ngZone.run(() => {
+        this.allMessages.push({ ...message, senderId, receiverId, messageId });
+        console.log('[HomeAdmin] Đã thêm tin nhắn vào allMessages:', { messageId, senderId, content: message.content });
+        console.log('[HomeAdmin] Số tin nhắn trong allMessages sau khi thêm:', this.allMessages.length);
+
+        console.log('[HomeAdmin] Trạng thái trước khi xử lý:', {
+          selectedChatUserId: this.selectedChatUserId,
+          customerId,
+          isMatch: this.selectedChatUserId === customerId
+        });
+        const twoSecondsAgo = new Date(Date.now() - 2000); // lùi 2s
+        // Kiểm tra nếu tin nhắn là "Tôi cần tư vấn" thì tự động trả lời
+        if (message.content === 'Tôi cần tư vấn') {
+          const autoReplyMessage = 'Bạn vui lòng hờ chúng tôi trong giây lát.Nhân viên tư vấn sẽ liên hệ lại bạn ngay.';
+          const autoReplyObj = {
+            sender: { id: this.userID },
+            receiver: { id: customerId },
+            content: autoReplyMessage,
+            timestamp: twoSecondsAgo.toISOString(),
+            senderId: this.userID,
+            receiverId: customerId,
+            messageId: ''
           };
-          this.chatUsers.push(newUser);
-          console.log('[HomeAdmin] Đã thêm khách hàng vào chatUsers:', newUser);
 
-          this.http.post(`http://localhost:8080/api/chat/add-user/${this.userID}`, newUser).subscribe({
-            next: () => {
-              console.log('[HomeAdmin] Đã lưu user vào backend:', newUser);
-              this.loadChatUsers();
-            },
-            error: (err) => console.error('[HomeAdmin] Lỗi khi lưu user vào backend:', err)
-          });
-        }
+          autoReplyObj.messageId = this.generateMessageId(autoReplyObj);
 
-        // Generate a unique message ID
-        const messageId = this.generateMessageId(message);
+          const autoReplyExists = this.allMessages.some(msg => msg.messageId === autoReplyObj.messageId);
+          if (!autoReplyExists) {
+            this.allMessages.push(autoReplyObj);
+            console.log('[HomeAdmin] Đã thêm tin nhắn tự động vào allMessages:', autoReplyObj);
 
-        // Debug: Log message details before deduplication
-        console.log('[HomeAdmin] Trước khi kiểm tra trùng lặp:', { messageId, senderId, isAdmin: senderId === this.userID });
+            // Gửi tin nhắn tự động qua WebSocket
+            this.webSocketService.sendChatMessage(this.userID!, customerId, autoReplyMessage);
+            console.log('[HomeAdmin] Đã gửi tin nhắn tự động qua WebSocket:', autoReplyMessage);
 
-        // Skip if the message was recently sent by this admin to avoid duplication
-        if (senderId === this.userID && this.recentlySentMessages.has(messageId)) {
-          console.log('[HomeAdmin] Bỏ qua tin nhắn vừa gửi từ admin:', message);
-          this.recentlySentMessages.delete(messageId); // Clean up
-          return;
-        }
+            // Gửi tin nhắn tự động qua Tawk.to
+            if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+              window.Tawk_API.addMessage({
+                message: autoReplyMessage,
+                sender: 'Admin',
+              });
+              console.log('[HomeAdmin] Đã gửi tin nhắn tự động qua Tawk.to:', autoReplyMessage);
+            }
 
-        // Check for duplicates
-        const messageExists = this.allMessages.some(msg => this.generateMessageId(msg) === messageId);
-        if (messageExists) {
-          console.log('[HomeAdmin] Tin nhắn đã tồn tại, bỏ qua:', message);
-          return;
-        }
+            this.recentlySentMessages.add(autoReplyObj.messageId);
+            setTimeout(() => this.recentlySentMessages.delete(autoReplyObj.messageId), 5000);
 
-        this.ngZone.run(() => {
-          this.allMessages.push({ ...message, senderId, receiverId, messageId });
-          console.log('[HomeAdmin] Đã thêm tin nhắn vào allMessages:', { messageId, senderId, content: message.content });
-          console.log('[HomeAdmin] Số tin nhắn trong allMessages sau khi thêm:', this.allMessages.length);
-
-          console.log('[HomeAdmin] Trạng thái trước khi xử lý:', {
-            selectedChatUserId: this.selectedChatUserId,
-            customerId,
-            isMatch: this.selectedChatUserId === customerId
-          });
-
-          if (this.selectedChatUserId !== customerId) {
-            const userName = senderId === customerId ? message.sender?.hoTen : message.receiver?.hoTen;
-            this.incomingMessages.push({
-              customerId,
-              content: message.content,
-              hoTen: userName || `Khách ${customerId}`
-            });
-            const currentCount = this.newMessageCount.get(customerId) || 0;
-            this.newMessageCount.set(customerId, currentCount + 1);
-            console.log('[HomeAdmin] Tăng số tin nhắn chưa đọc cho user', customerId, ':', this.newMessageCount.get(customerId));
-            this.updateTotalUnreadMessages();
-          } else {
-            console.log('[HomeAdmin] Hiển thị tin nhắn ngay lập tức cho user:', customerId);
             this.updateMessagesForDisplay();
             this.sortMessages();
-            this.newMessageCount.set(customerId, 0);
-            console.log('[HomeAdmin] Đã thêm tin nhắn và hiển thị ngay cho user:', customerId);
-            this.messages = [...this.messages];
-            console.log('[HomeAdmin] Số tin nhắn hiển thị:', this.messages.length);
+            this.cdr.detectChanges();
           }
+        }
 
-          this.cdr.detectChanges();
-          console.log('[HomeAdmin] Đã gọi detectChanges()');
-        });
-      },
-      error: (error) => {
-        console.error('[HomeAdmin] Lỗi khi nhận tin nhắn:', error);
-        this.errorMessage = 'Lỗi khi nhận tin nhắn. Vui lòng kiểm tra kết nối.';
+        if (this.selectedChatUserId !== customerId) {
+          const userName = senderId === customerId ? message.sender?.hoTen : message.receiver?.hoTen;
+          this.incomingMessages.push({
+            customerId,
+            content: message.content,
+            hoTen: userName || `Khách ${customerId}`
+          });
+          const currentCount = this.newMessageCount.get(customerId) || 0;
+          this.newMessageCount.set(customerId, currentCount + 1);
+          console.log('[HomeAdmin] Tăng số tin nhắn chưa đọc cho user', customerId, ':', this.newMessageCount.get(customerId));
+          this.updateTotalUnreadMessages();
+        } else {
+          console.log('[HomeAdmin] Hiển thị tin nhắn ngay lập tức cho user:', customerId);
+          this.updateMessagesForDisplay();
+          this.sortMessages();
+          this.newMessageCount.set(customerId, 0);
+          console.log('[HomeAdmin] Đã thêm tin nhắn và hiển thị ngay cho user:', customerId);
+          this.messages = [...this.messages];
+          console.log('[HomeAdmin] Số tin nhắn hiển thị:', this.messages.length);
+        }
+
         this.cdr.detectChanges();
-      },
-      complete: () => {
-        console.log('[HomeAdmin] Subscription đã hoàn tất');
-      }
-    });
-  }
+        console.log('[HomeAdmin] Đã gọi detectChanges()');
+      });
+    },
+    error: (error) => {
+      console.error('[HomeAdmin] Lỗi khi nhận tin nhắn:', error);
+      this.errorMessage = 'Lỗi khi nhận tin nhắn. Vui lòng kiểm tra kết nối.';
+      this.cdr.detectChanges();
+    },
+    complete: () => {
+      console.log('[HomeAdmin] Subscription đã hoàn tất');
+    }
+  });
+}
 
   private updateMessagesForDisplay(): void {
     if (this.selectedChatUserId) {
@@ -516,7 +601,7 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.http.get<any[]>(`http://localhost:8080/api/chat/users-with-messages/${this.userID}`).subscribe({
       next: (users) => {
         const uniqueUsers = Array.from(new Set(users.map(user => user.id)))
-          .map(id => users.find(user => user.id === id))
+          .map(id => users.find(user => user.id === user.id))
           .filter(user => (user.vaiTro === 'USER' || user.vaiTro === 'GUEST') && user.id >= 1000);
 
         this.chatUsers = uniqueUsers;
@@ -555,11 +640,19 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedChatUserId = userId;
     this.setLocalStorageSafely('selectedChatUserId', userId.toString());
     console.log('[HomeAdmin] Đã gán selectedChatUserId:', this.selectedChatUserId);
+    this.startTawkToChat(userId);
     this.loadMessages(userId);
     this.newMessageCount.set(userId, 0);
     this.updateTotalUnreadMessages();
     this.incomingMessages = this.incomingMessages.filter(msg => msg.customerId !== userId);
     this.cdr.detectChanges();
+  }
+
+  private startTawkToChat(userId: number): void {
+    if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+      window.Tawk_API.startChat();
+      console.log(`[HomeAdmin] Đã khởi tạo phiên chat Tawk.to cho user ${userId}`);
+    }
   }
 
   private loadMessages(userId: number): void {
@@ -574,7 +667,6 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
             return senderId >= 1000 && (receiverId >= 1000 || receiverId === null);
           });
 
-          // Add messageId to each message and deduplicate
           newMessages.forEach(msg => {
             msg.messageId = this.generateMessageId(msg);
             const messageExists = this.allMessages.some(existingMsg => existingMsg.messageId === msg.messageId);
@@ -638,10 +730,8 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       messageId: ''
     };
 
-    // Generate messageId for the new message
     newMessageObj.messageId = this.generateMessageId(newMessageObj);
 
-    // Check if the message already exists (unlikely, but for safety)
     const messageExists = this.allMessages.some(msg => msg.messageId === newMessageObj.messageId);
     if (!messageExists) {
       this.allMessages.push(newMessageObj);
@@ -651,15 +741,15 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
       console.warn('[HomeAdmin] Tin nhắn vừa gửi đã tồn tại, không thêm lại:', newMessageObj);
     }
 
-    // Track the message as recently sent to avoid duplication when received via WebSocket
     this.recentlySentMessages.add(newMessageObj.messageId);
-    setTimeout(() => this.recentlySentMessages.delete(newMessageObj.messageId), 5000); // Clean up after 5 seconds
+    setTimeout(() => this.recentlySentMessages.delete(newMessageObj.messageId), 5000);
 
+    // Bỏ phần gửi qua Tawk.to vì phương thức addMessage không tồn tại
     this.cdr.detectChanges();
 
     try {
       this.webSocketService.sendChatMessage(this.userID, this.selectedChatUserId, this.newMessage);
-      console.log('[HomeAdmin] Đã gửi tin nhắn, chờ WebSocket cập nhật');
+      console.log('[HomeAdmin] Đã gửi tin nhắn qua WebSocket, chờ cập nhật');
     } catch (error) {
       console.error('[HomeAdmin] Lỗi khi gửi tin nhắn qua WebSocket:', error);
       this.errorMessage = 'Không thể gửi tin nhắn do lỗi kết nối. Vui lòng thử lại.';
@@ -706,6 +796,11 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.reconnectSubscription) {
       this.reconnectSubscription.unsubscribe();
       console.log('[HomeAdmin] Đã hủy reconnect subscription');
+    }
+
+    // Kết thúc phiên chat Tawk.to
+    if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
+      window.Tawk_API.endChat();
     }
   }
 }
