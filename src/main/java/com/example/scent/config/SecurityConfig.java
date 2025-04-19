@@ -46,14 +46,14 @@ public class SecurityConfig {
                          * test, mà còn vì trong thực tế
                          * yêu cầu xác thực mới cho đăng ký hay đăng nhập là ngu
                          */
-                        .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login",
+                        .requestMatchers("/rest/tai-khoan/register", "/rest/tai-khoan/login","/rest/danh-muc/getAll",
                                 "rest/tai-khoan/getAll", "rest/tai-khoan/page",
                                 "rest/tai-khoan/update", "rest/tai-khoan/del/**",
                                 "rest/tai-khoan/get-staff-accounts",
                                 "rest/tai-khoan/get-user-accounts")
                         .permitAll()
-                        .requestMatchers("/rest/danh-muc/getAll").permitAll()
-                        .requestMatchers("rest/thuong-hieu/getAll", "rest/thuong-hieu/add")
+                        .requestMatchers("/rest/thuong-hieu","/rest/thuong-hieu/getAll").permitAll()
+                        .requestMatchers("/rest/thuong-hieu", "/rest/thuong-hieu/**","/rest/thuong-hieu/**","/rest/thuong-hieu/**")
                         .permitAll()
                         .requestMatchers("rest/huong-dau/add", "rest/huong-giua/add",
                                 "rest/huong-cuoi/add")
