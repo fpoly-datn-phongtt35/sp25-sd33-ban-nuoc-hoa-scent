@@ -1,5 +1,6 @@
 package com.example.scent.rest;
 
+import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.ThuongHieu;
 import com.example.scent.service.ThuongHieuSv;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +30,16 @@ public class ThuongHieuCtrl {
 
     // Read (Get all)
     @GetMapping
-    public ResponseEntity<Page<ThuongHieu>> getAllThuongHieu(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<ThuongHieu> thuongHieuPage = thuongHieuService.getAllThuongHieu(pageable);
-        return ResponseEntity.ok(thuongHieuPage);
+    public Page<ThuongHieu> getAllThuongHieu(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        if (size < 1) {
+            size = 10; // Fallback to default size
+        }
+       return thuongHieuService.getAllThuongHieu(page,size);
+
     }
+
 
     // Read (Get by ID)
     @GetMapping("/{id}")

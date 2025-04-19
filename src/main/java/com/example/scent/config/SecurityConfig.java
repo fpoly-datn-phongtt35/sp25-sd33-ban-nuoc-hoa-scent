@@ -52,7 +52,7 @@ public class SecurityConfig {
                                 "rest/tai-khoan/get-staff-accounts",
                                 "rest/tai-khoan/get-user-accounts")
                         .permitAll()
-                        .requestMatchers("/rest/thuong-hieu","/rest/thuong-hieu/getAll").permitAll()
+                        .requestMatchers("/rest/nhom-huong/paged/**","/rest/thuong-hieu/**","/rest/thuong-hieu/getAll").permitAll()
                         .requestMatchers("/rest/thuong-hieu", "/rest/thuong-hieu/**","/rest/thuong-hieu/**","/rest/thuong-hieu/**")
                         .permitAll()
                         .requestMatchers("rest/huong-dau/add", "rest/huong-giua/add",
