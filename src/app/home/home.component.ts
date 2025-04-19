@@ -21,7 +21,7 @@ import { WebSocketService } from '../service/WebSocketService';
 })
 export class HomeComponent implements OnInit, OnDestroy {
   sanPhams: any[] = [];
-  bestSellingProducts: any[] = []; // New property for best-selling products
+  bestSellingProducts: any[] = [];
   page: number = 0;
   size: number = 16;
   totalPages: number = 1;
@@ -38,8 +38,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   tenThuongHieus: any[] = [];
   quocGias: any[] = [];
 
-  isLoading: boolean = false; // For main product list
-  isBestSellingLoading: boolean = false; // For best-selling products
+  isLoading: boolean = false;
+  isBestSellingLoading: boolean = false;
 
   selectedFilters = {
     searchQuery: '',
@@ -66,7 +66,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     console.log('[HomeComponent] Initializing component');
     this.fetchFilters();
     this.loadProducts();
-    this.loadBestSellingProducts(); // Load best-selling products
+    this.loadBestSellingProducts();
 
     const userId = 0;
     console.log(`[HomeComponent] Connecting WebSocket for userId: ${userId}`);
@@ -101,7 +101,6 @@ export class HomeComponent implements OnInit, OnDestroy {
               return product;
             });
           }
-          // Check if the update affects best-selling products (e.g., stock or order completion)
           this.loadBestSellingProducts();
         }
       },
@@ -175,19 +174,28 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
       next: (data: any) => {
+        console.log('[HomeComponent] Products loaded:', data);
         this.sanPhams = data.content || [];
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
-        console.log('product', data);
         this.isLoading = false;
       },
       error: (err: any) => {
+        console.error('[HomeComponent] Failed to load products:', err);
         this.sanPhams = [];
         this.totalPages = 1;
         this.visiblePages = [];
         this.isLoading = false;
       },
     });
+  }
+
+  isNewProduct(createDate: string | Date): boolean {
+    const today = new Date();
+    const productDate = new Date(createDate);
+    const timeDiff = today.getTime() - productDate.getTime();
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+    return daysDiff <= 10;
   }
 
   loadBestSellingProducts(): void {
@@ -207,6 +215,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   sortProducts(sortOption: string): void {
+    console.log('[HomeComponent] Sorting products with option:', sortOption);
     this.selectedFilters.sort = sortOption;
     this.page = 0;
     this.loadProducts();
@@ -217,6 +226,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     const startPage = Math.max(0, this.page - Math.floor(pagesToShow / 2));
     const endPage = Math.min(this.totalPages - 1, startPage + pagesToShow - 1);
     this.visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    console.log('[HomeComponent] Updated visible pages:', this.visiblePages);
   }
 
   viewProductDetail(productId: number): void {
@@ -249,6 +259,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       this.page = p;
+      console.log('[HomeComponent] Navigating to page:', this.page);
       this.loadProducts();
     }
   }

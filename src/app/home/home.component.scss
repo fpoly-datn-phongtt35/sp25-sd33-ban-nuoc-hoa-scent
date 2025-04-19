@@ -254,6 +254,24 @@ body {
   text-transform: uppercase;
 }
 
+.low-stock-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 0, 0, 0.85); /* Nền đỏ */
+  padding: 4px 8px;
+  border-radius: 3px;
+  transform: rotate(45deg); /* Xoay 45 độ */
+  z-index: 2;
+}
+
+.low-stock-text {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
 .disabled-product {
   opacity: 0.7; /* Slightly less opaque for visibility */
   cursor: not-allowed;
@@ -401,19 +419,40 @@ body {
 /* Out of Stock Overlay for Product Grid */
 .product-section .out-of-stock-overlay {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  background-color: rgba(255, 0, 0, 0.85);
-  color: white;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: 3px;
-  z-index: 10;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
 .product-section .out-of-stock-text {
+  color: #fff;
   font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.product-section .low-stock-overlay {
+  position: absolute;
+  top: 27px;
+  right: 2px;
+  background-color: rgba(255, 0, 0, 0.85);
+  padding: 4px 8px;
+  border-radius: 3px;
+  transform: rotate(40deg);
+  z-index: 2;
+}
+
+.product-section .low-stock-text {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
 
 /* Pagination */
@@ -458,4 +497,50 @@ body {
 
 .dots {
   cursor: default;
+}
+/* New Product Overlay (Nhãn NEW) */
+.new-product-overlay {
+  position: absolute;
+  top: 5px;
+  left: 5px; /* Đặt ở góc trên bên trái để tránh trùng với nhãn SẮP HẾT HÀNG */
+  background-color: rgba(34, 139, 34, 0.85); /* Nền xanh lá cây */
+  padding: 4px 16px;
+  border-radius: 3px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 60px; /* Đảm bảo nhãn đủ rộng để chứa chữ "NEW" */
+}
+
+.new-product-text {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Product Section - Đảm bảo áp dụng đúng cho product-grid */
+.product-section .new-product-overlay {
+  top: 5px;
+  left: 5px;
+  background-color: rgba(238, 110, 77, 0.85);
+  padding: 4px 16px;
+  border-radius: 3px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 60px;
+}
+
+.product-section .new-product-text {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
 }
