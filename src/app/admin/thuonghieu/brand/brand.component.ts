@@ -18,7 +18,7 @@ export interface ThuongHieu {
   styleUrls: ['./brand.component.scss']
 })
 export class BrandComponent implements OnInit {
-  thuongHieus: ThuongHieu[] = [];
+  thuongHieus: any[] = [];
   isLoading = false;
   errorMessage = '';
   showAddModal = false;
@@ -26,13 +26,76 @@ export class BrandComponent implements OnInit {
   showDeleteModal = false;
   selectedThuongHieu: ThuongHieu | null = null;
   brandToDelete: number | null = null;
+
   currentPage: number = 0;
-  pageSize: number = 10;
-  totalPages: number = 0;
+  page: number = 0;
+  size: number = 5;
+  totalPages: number = 20;
   totalElements: number = 0;
 
   constructor(private thuongHieuService: ThuongHieuService) {}
+  goToPage(p: number): void {
+    if (p >= 0 && p < this.totalPages && p !== this.page) {
+      console.log('🔄 Chuyển đến trang:', p);
+      this.page = p;
+      this.loadThuongHieus();
+    }
+  }
 
+  prevPage(): void {
+    if (this.page > 0) {
+      this.page--;
+      this.loadThuongHieus();
+    }
+  }
+
+  nextPage(): void {
+    if (this.page < this.totalPages - 1) {
+      this.page++;
+      this.loadThuongHieus();
+    }
+  }
+
+  getPaginationRange(): { page: number, isEllipsis: boolean }[] {
+    const range: { page: number, isEllipsis: boolean }[] = [];
+    const maxVisiblePages = 3;
+
+    if (this.totalPages <= 5) {
+      for (let i = 0; i < this.totalPages; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+    } else {
+      range.push({ page: 0, isEllipsis: false });
+
+      let start = Math.max(1, this.page - 1);
+      let end = Math.min(this.totalPages - 2, this.page + 1);
+
+      if (end - start + 1 < maxVisiblePages) {
+        if (start === 1) {
+          end = Math.min(start + maxVisiblePages - 1, this.totalPages - 2);
+        } else if (end === this.totalPages - 2) {
+          start = Math.max(1, end - maxVisiblePages + 1);
+        }
+      }
+
+      if (start > 1) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      for (let i = start; i <= end; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+
+      if (end < this.totalPages - 2) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      range.push({ page: this.totalPages - 1, isEllipsis: false });
+    }
+
+    console.log('📌 Pagination range:', range);
+    return range;
+  }
   ngOnInit(): void {
     this.loadThuongHieus();
   }
@@ -40,13 +103,11 @@ export class BrandComponent implements OnInit {
   loadThuongHieus(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.thuongHieuService.getThuongHieu1(this.currentPage, this.pageSize).subscribe({
+    this.thuongHieuService.getThuongHieu1(this.page, this.size).subscribe({
       next: (res) => {
         this.thuongHieus = res.content;
-        this.totalPages = res.totalPages;
-        this.totalElements = res.totalElements;
+        this.totalPages = res.page?.totalPages || 1;
         this.isLoading = false;
-        console.log('list',this.thuongHieus)
       },
       error: (error) => {
         this.errorMessage = error.message;
@@ -98,38 +159,5 @@ export class BrandComponent implements OnInit {
         }
       });
     }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages - 1) {
-      this.currentPage++;
-      this.loadThuongHieus();
-    }
-  }
-
-  prevPage(): void {
-    if (this.currentPage > 0) {
-      this.currentPage--;
-      this.loadThuongHieus();
-    }
-  }
-
-  goToPage(page: number): void {
-    if (page >= 0 && page < this.totalPages) {
-      this.currentPage = page;
-      this.loadThuongHieus();
-    }
-  }
-
-  getPaginationRange(): number[] {
-    const delta = 2; // Số trang hiển thị trước và sau trang hiện tại
-    const range: number[] = [];
-    const start = Math.max(0, this.currentPage - delta);
-    const end = Math.min(this.totalPages - 1, this.currentPage + delta);
-
-    for (let i = start; i <= end; i++) {
-      range.push(i);
-    }
-    return range;
   }
 }

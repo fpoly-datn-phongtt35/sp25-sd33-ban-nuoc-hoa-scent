@@ -16,11 +16,12 @@ import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 export class VourcherComponent {
   phieuGiamGias: any[] = [];
   filteredPhieuGiamGias: any[] = []; // Danh sách đã lọc để hiển thị
+  currentPage: number = 0;
   page: number = 0;
   size: number = 5;
   totalPages: number = 20;
   filterType: string = 'all'; // Trạng thái bộ lọc: 'all', 'online', 'offline'
-
+  
   constructor(
     private phieuGiamGiaService: PhieugiamgiaService,
     private modalService: NgbModal,
@@ -68,7 +69,7 @@ export class VourcherComponent {
   }
 
   // Cập nhật các hàm khác để dùng filteredPhieuGiamGias thay vì phieuGiamGias
-  goToPage(p: number) {
+  goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
@@ -76,20 +77,60 @@ export class VourcherComponent {
     }
   }
 
-  prevPage() {
+  prevPage(): void {
     if (this.page > 0) {
       this.page--;
       this.loadAllPhieuGiamGia();
     }
   }
 
-  nextPage() {
+  nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
       this.loadAllPhieuGiamGia();
     }
   }
 
+  getPaginationRange(): { page: number, isEllipsis: boolean }[] {
+    const range: { page: number, isEllipsis: boolean }[] = [];
+    const maxVisiblePages = 3;
+
+    if (this.totalPages <= 5) {
+      for (let i = 0; i < this.totalPages; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+    } else {
+      range.push({ page: 0, isEllipsis: false });
+
+      let start = Math.max(1, this.page - 1);
+      let end = Math.min(this.totalPages - 2, this.page + 1);
+
+      if (end - start + 1 < maxVisiblePages) {
+        if (start === 1) {
+          end = Math.min(start + maxVisiblePages - 1, this.totalPages - 2);
+        } else if (end === this.totalPages - 2) {
+          start = Math.max(1, end - maxVisiblePages + 1);
+        }
+      }
+
+      if (start > 1) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      for (let i = start; i <= end; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+
+      if (end < this.totalPages - 2) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      range.push({ page: this.totalPages - 1, isEllipsis: false });
+    }
+
+    console.log('📌 Pagination range:', range);
+    return range;
+  }
   openAddVoucherModal() {
     const modalRef = this.modalService.open(AddVoucherComponent, { backdrop: 'static', keyboard: false });
 
@@ -136,15 +177,5 @@ export class VourcherComponent {
     });
   }
 
-  getPaginationRange(): number[] {
-    let range: number[] = [];
-    let start = Math.max(0, this.page - 2);
-    let end = Math.min(this.totalPages, this.page + 3);
-
-    for (let i = start; i < end; i++) {
-      range.push(i);
-    }
-    console.log('📌 Pagination range:', range);
-    return range;
-  }
+  
 }

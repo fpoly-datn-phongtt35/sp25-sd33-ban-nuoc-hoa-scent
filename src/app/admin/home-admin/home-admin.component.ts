@@ -16,7 +16,7 @@ import { LichsuthaotacComponent } from '../../lichsuthaotac/lichsuthaotac.compon
 import { OfflineOrderComponent } from '../banhangofffline/banhangofffline/banhangofffline.component';
 import { ChangePasswordModalComponent } from '../../change-password/change-password.component';
 
-import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-list.component';
+
 import { AccountInfoComponent } from '../../account-info/account-info.component';
 import { AccountInfoAdminComponent } from '../account-info-admin/account-info-admin.component';
 
@@ -25,6 +25,7 @@ import { WebSocketService } from '../../service/WebSocketService';
 import { isPlatformBrowser } from '@angular/common';
 import { Subscription, interval } from 'rxjs';
 import { BrandComponent } from '../thuonghieu/brand/brand.component';
+import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-list.component';
 
 
 @Component({

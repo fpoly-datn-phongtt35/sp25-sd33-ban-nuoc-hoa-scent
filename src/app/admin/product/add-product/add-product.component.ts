@@ -185,7 +185,7 @@ export class AddProductComponent implements OnInit {
 
   async getAllNhomHuong() {
     try {
-      const data = await firstValueFrom(this.nhomHuongService.getnhomHuong());
+      const data = await firstValueFrom(this.nhomHuongService.getNhomHuong());
       this.nhomHuongList = data || [];
       this.nhomHuongList.push({ id: -1, tenNhomHuong: 'Thêm nhóm hương mới...' });
       this.productForm.get('idNhomHuong')?.valueChanges.subscribe(val => {
@@ -276,7 +276,7 @@ export class AddProductComponent implements OnInit {
     const moTa = prompt('📄 Nhập mô tả cho nhóm hương (nếu có):') || '';
     const body = { tenNhomHuong: tenNhomHuong.trim(), moTa: moTa.trim() };
     try {
-      const response = await firstValueFrom(this.nhomHuongService.createnhomHuong(body));
+      const response = await firstValueFrom(this.nhomHuongService.createNhomHuong(body));
       this.toastr.success('Đã thêm nhóm hương mới!', 'Thành công');
       await this.getAllNhomHuong();
       this.productForm.get('idNhomHuong')?.setValue(response.id);

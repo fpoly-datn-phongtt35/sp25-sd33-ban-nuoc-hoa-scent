@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient,HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable,throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TokenService } from './token.service';
@@ -18,32 +18,12 @@ export interface ThuongHieu1 {
 }
 export interface PageResponse<T> {
   content: T[];
-  pageable: {
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-      empty: boolean;
-    };
-    offset: number;
-    pageNumber: number;
-    pageSize: number;
-    paged: boolean;
-    unpaged: boolean;
-  };
-  totalPages: number;
   totalElements: number;
-  last: boolean;
+  totalPages: number;
   size: number;
-  number: number;
-  sort: {
-    sorted: boolean;
-    unsorted: boolean;
-    empty: boolean;
-  };
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
+  number: number; // current page
 }
+
 @Injectable({
   providedIn: 'root'
 })
@@ -62,16 +42,31 @@ export class ThuongHieuService {
     addThuongHieu(thuonghieu: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/add`, thuonghieu);
     }
-
-    getThuongHieu1(page: number = 0, size: number = 10): Observable<PageResponse<ThuongHieu>> {
-      const url = `${this.apiUrl}?page=${page}&size=${size}`;
-      return this.http.get<PageResponse<ThuongHieu>>(url).pipe(
-        catchError((error) => {
-          console.error('Lỗi khi lấy danh sách thương hiệu:', error);
-          return throwError(() => new Error('Failed to fetch brands'));
-        })
+    
+    
+    getThuongHieu1(page: number, size: number = 12): Observable<any> {
+      let params = `?page=${page}&size=${size}`;
+      return this.http.get(`${this.apiUrl}${params}`).pipe(
+        catchError(this.handleError)
       );
     }
+    private handleError(error: HttpErrorResponse) {
+      let errorMessage = 'Có lỗi xảy ra khi xử lý yêu cầu.';
+      if (error.error instanceof ErrorEvent) {
+          // Client-side error
+          errorMessage = `Lỗi: ${error.error.message}`;
+      } else {
+          // Server-side error
+          if (error.status === 400 && error.error && error.error.message) {
+              errorMessage = error.error.message;
+          } else {
+              errorMessage = `Mã lỗi: ${error.status} - ${error.statusText}\nThông báo: ${error.message}`;
+          }
+      }
+      return throwError(() => new Error(errorMessage));
+    }
+    
+  
     
   
     addThuongHieu1(thuongHieu: Omit<ThuongHieu, 'id'>): Observable<ThuongHieu> {

@@ -65,58 +65,30 @@
       </tr>
     </tbody>
   </table>
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="goToPage(0)">«</button>
+      </li>
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="prevPage()">‹</button>
+      </li>
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === page" [class.disabled]="p.isEllipsis">
+        <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+        <span *ngIf="p.isEllipsis" class="page-link">...</span>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="nextPage()">›</button>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+      </li>
+    </ul>
+  </nav>
 </div>
 
   <!-- Pagination -->
 <!-- ✅ Phân trang với Bootstrap -->
 <!-- ✅ Phân trang với Bootstrap -->
 <!-- ✅ Phân trang đẹp với Bootstrap -->
-<nav aria-label="Page navigation">
-  <ul class="pagination justify-content-center">
 
-    <!-- Nút "Trang đầu" -->
-    <li class="page-item" [class.disabled]="page === 0">
-      <button class="page-link" (click)="goToPage(0)">«</button>
-    </li>
-
-    <!-- Nút "Trước" -->
-    <li class="page-item" [class.disabled]="page === 0">
-      <button class="page-link" (click)="prevPage()">‹</button>
-    </li>
-
-    <!-- Hiển thị trang đầu nếu page > 2 -->
-    <li class="page-item" *ngIf="page > 2">
-      <button class="page-link" (click)="goToPage(0)">1</button>
-    </li>
-
-    <!-- Dấu "..." nếu cần -->
-    <li class="page-item disabled" *ngIf="page > 3">
-      <span class="page-link">...</span>
-    </li>
-
-    <!-- Hiển thị các trang gần nhất -->
-    <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
-      <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
-    </li>
-
-    <!-- Dấu "..." nếu có nhiều trang -->
-    <li class="page-item disabled" *ngIf="page < totalPages - 4">
-      <span class="page-link">...</span>
-    </li>
-
-    <!-- Hiển thị trang cuối nếu page < totalPages - 3 -->
-    <li class="page-item" *ngIf="page < totalPages - 3">
-      <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
-    </li>
-
-    <!-- Nút "Sau" -->
-    <li class="page-item" [class.disabled]="page >= totalPages - 1">
-      <button class="page-link" (click)="nextPage()">›</button>
-    </li>
-
-    <!-- Nút "Trang cuối" -->
-    <li class="page-item" [class.disabled]="page >= totalPages - 1">
-      <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
-    </li>
-  </ul>
-</nav>

@@ -127,7 +127,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       error: (err: any) => console.error('[HomeComponent] Failed to get thuong hieu:', err),
     });
 
-    this.nhomHuongService.getnhomHuong().subscribe({
+    this.nhomHuongService.getNhomHuong().subscribe({
       next: (data: any) => {
         if (Array.isArray(data)) {
           this.tenNhomHuongs = Array.from(new Set(data.map((item: any) => item.tenNhomHuong)));

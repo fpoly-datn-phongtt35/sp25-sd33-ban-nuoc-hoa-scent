@@ -1,0 +1,46 @@
+
+<div class="container mt-4">
+  <h2>Fragrance Group List</h2>
+  <button (click)="openAddNhomHuongModal()" class="btn btn-primary mb-3">Add New NhomHuong</button>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let nhomHuong of nhomHuongs">
+        <td>{{ nhomHuong.id }}</td>
+        <td>{{ nhomHuong.tenNhomHuong }}</td>
+        <td>{{ nhomHuong.mota }}</td>
+        <td>
+          <button (click)="openEditNhomHuongModal(nhomHuong)" class="btn btn-sm btn-warning">Edit</button>
+          <button (click)="deleteNhomHuong(nhomHuong.id)" class="btn btn-sm btn-danger">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="goToPage(0)">«</button>
+      </li>
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="prevPage()">‹</button>
+      </li>
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === page" [class.disabled]="p.isEllipsis">
+        <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+        <span *ngIf="p.isEllipsis" class="page-link">...</span>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="nextPage()">›</button>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+      </li>
+    </ul>
+  </nav>
+</div>
