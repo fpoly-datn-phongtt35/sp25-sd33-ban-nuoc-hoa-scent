@@ -1,5 +1,6 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.ThuongHieuWithStatusDTO;
 import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.ThuongHieu;
 import com.example.scent.service.ThuongHieuSv;
@@ -30,14 +31,14 @@ public class ThuongHieuCtrl {
 
     // Read (Get all)
     @GetMapping
-    public Page<ThuongHieu> getAllThuongHieu(
+    public Page<ThuongHieuWithStatusDTO> getAllThuongHieu(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
         if (size < 1) {
-            size = 10; // Fallback to default size
+            size = 10;
         }
-       return thuongHieuService.getAllThuongHieu(page,size);
-
+        Pageable pageable = PageRequest.of(page, size);
+        return thuongHieuService.findAllWithStatusPaged(pageable);
     }
 
 

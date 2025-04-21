@@ -1,16 +1,19 @@
 package com.example.scent.service;
 
 
+import com.example.scent.dto.ThuongHieuWithStatusDTO;
 import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.ThuongHieu;
 import com.example.scent.repo.ThuongHieuInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ThuongHieuSv {
@@ -22,9 +25,20 @@ public class ThuongHieuSv {
     public List<ThuongHieu> getAll() {
         return thuongHieuRepository.findAll();
     }
-    public Page<ThuongHieu> getAllThuongHieu(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return thuongHieuRepository.findAll(pageable);
+    // Phương thức mới trả về Page<ThuongHieuWithStatusDTO>
+    public Page<ThuongHieuWithStatusDTO> findAllWithStatusPaged(Pageable pageable) {
+        Page<ThuongHieu> thuongHieuPage = thuongHieuRepository.findAll(pageable);
+        List<ThuongHieuWithStatusDTO> dtos = thuongHieuPage.getContent().stream().map(thuongHieu -> {
+            boolean hasProduct = thuongHieuRepository.existsSanPhamByThuongHieuId(thuongHieu.getId());
+            return new ThuongHieuWithStatusDTO(
+                    thuongHieu.getId(),
+                    thuongHieu.getTenThuongHieu(),
+                    thuongHieu.getQuocGia(), // Ánh xạ quốc gia
+                    thuongHieu.getMoTa(),
+                    hasProduct
+            );
+        }).collect(Collectors.toList());
+        return new PageImpl<>(dtos, pageable, thuongHieuPage.getTotalElements());
     }
     // Create
     public ThuongHieu createThuongHieu(ThuongHieu thuongHieu) {

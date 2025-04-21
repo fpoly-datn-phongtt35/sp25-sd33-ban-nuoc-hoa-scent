@@ -20,6 +20,7 @@ public class SanPhamDetailDto {
     private String tenNhomHuong;
     private String phongCachs;
     private List<MuiHuongDto> muiHuongs;
+    private String nongDo;
 
     // Constructor
     public SanPhamDetailDto(SanPhamDto sanPhamDto, List<MuiHuongDto> muiHuongs) {
@@ -38,6 +39,7 @@ public class SanPhamDetailDto {
             this.moTaHuongCuoi = sanPhamDto.getMoTaHuongCuoi();
             this.tenNhomHuong = sanPhamDto.getTenNhomHuong();
             this.phongCachs = sanPhamDto.getPhongCachs();
+            this.nongDo=sanPhamDto.getNongDo();
         }
         this.muiHuongs = muiHuongs;
     }
@@ -187,5 +189,13 @@ public class SanPhamDetailDto {
 
     public void setMuiHuongs(List<MuiHuongDto> muiHuongs) {
         this.muiHuongs = muiHuongs;
+    }
+
+    public String getNongDo() {
+        return nongDo;
+    }
+
+    public void setNongDo(String nongDo) {
+        this.nongDo = nongDo;
     }
 }

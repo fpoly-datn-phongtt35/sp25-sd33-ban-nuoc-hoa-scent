@@ -102,9 +102,10 @@
             // Tạo danh sách SanPhamDetailDto
             List<SanPhamDetailDto> sanPhamDetailDtos = new ArrayList<>();
             for (SanPhamDto sanPhamDto : sanPhamDtos) {
+
                 // Tạo đối tượng SanPhamDetailDto mới
                 SanPhamDetailDto detailDto = new SanPhamDetailDto(sanPhamDto, muiHuongs);
-
+                detailDto.setNongDo(sanPhamDto.getNongDo());
                 // Gắn danh sách hình ảnh đã gộp
                 detailDto.setImageURL(finalImageURLs);
 

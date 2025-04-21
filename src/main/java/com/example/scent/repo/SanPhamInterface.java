@@ -146,7 +146,8 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "    hc.mota as moTaHuongCuoi,\n" +
             "    nh.ten_nhom as tenNhomHuong,\n" + // Sửa từ nh.ten_nhom_huong thành nh.ten_nhom
             "    STRING_AGG(pc.ten_phong_cach, ', ') as phongCachs,\n" +
-            "    STRING_AGG(ha.link, ', ') as imageURL\n" +
+            "    STRING_AGG(ha.link, ', ') as imageURL,\n" +
+            "nd.ten_nong_do as nongDo\n" +
             "from \n" +
             "    san_pham sp\n" +
             "LEFT JOIN hinh_anh ha on sp.id = ha.id_san_pham\n" +
@@ -159,9 +160,11 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "LEFT JOIN nhom_huong nh on sp.id_nhom_huong = nh.id\n" +
             "LEFT JOIN san_pham_phong_cach sppc on sp.id = sppc.id_san_pham\n" +
             "LEFT JOIN phong_cach pc on sppc.id_phong_cach = pc.id\n" +
+            "LEFT JOIN nong_do nd on sp.id_nong_do=nd.id\n" +
             "where\n" +
             "    sp.id = :idSanPham\n" +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, spct.dung_tich, th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota, nh.ten_nhom", // Sửa từ nh.ten_nhom_huong thành nh.ten_nhom
+            "GROUP BY sp.id, sp.ten, sp.mo_ta, spct.id, spct.don_gia, spct.so_luong_ton_kho, " +
+            "spct.dung_tich, th.ten_thuong_hieu, dm.ten_danh_muc, hd.mota, hg.mota, hc.mota, nh.ten_nhom,nd.ten_nong_do", // Sửa từ nh.ten_nhom_huong thành nh.ten_nhom
             nativeQuery = true)
     List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
     @Query(value = "select\n" +

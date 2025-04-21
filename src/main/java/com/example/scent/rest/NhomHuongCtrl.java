@@ -1,9 +1,12 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.NhomHuongWithStatusDTO;
 import com.example.scent.entity.NhomHuong;
 import com.example.scent.service.NhomHuongService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.constraints.Min;
@@ -25,13 +28,16 @@ public class NhomHuongCtrl {
 
     // New: Get all NhomHuong with pagination
     @GetMapping("/paged")
-    public Page<NhomHuong> getAllPaged(
+    public Page<NhomHuongWithStatusDTO> getAllPaged(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
         if (size < 1) {
             size = 10; // Fallback to default size
         }
-        return nhomHuongService.findAllPaged(page, size);
+        // Tạo đối tượng Pageable từ page và size
+        Pageable pageable = PageRequest.of(page, size);
+        // Gọi phương thức findAllWithStatusPaged với Pageable
+        return nhomHuongService.findAllWithStatusPaged(pageable);
     }
 
 

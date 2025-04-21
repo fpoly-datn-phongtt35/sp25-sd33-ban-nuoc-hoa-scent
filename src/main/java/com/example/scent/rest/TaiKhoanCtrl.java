@@ -217,11 +217,6 @@ public class TaiKhoanCtrl {
         }
 
         TaiKhoan tk = tkOpt.get();
-        // Check if the role (vai_tro) is "USER"
-        if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaiKhoan with email " + email + " does not have role USER");
-        }
-
         // Return the TaiKhoan with 200 OK (default status for a successful response)
         return tk;
     }

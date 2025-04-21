@@ -25,4 +25,5 @@ public interface SanPhamDto {
     String getTenNhomHuong(); // Tên nhóm hương
 
     String getPhongCachs(); // Danh sách phong cách (chuỗi, phân tách bởi dấu phẩy)
+    String getNongDo();
 }
