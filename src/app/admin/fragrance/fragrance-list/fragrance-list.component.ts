@@ -1,4 +1,3 @@
-
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbModal, NgbModalModule, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
@@ -31,27 +30,24 @@ export class FragranceListComponent implements OnInit {
     this.loadNhomHuongs();
   }
 
-  
   loadNhomHuongs(): void {
     this.isLoading = true;
     this.errorMessage = '';
     this.nhomHuongService.getPagedNhomHuong(this.page, this.size).subscribe({
       next: (res) => {
-        this.nhomHuongs = res.content;
+        this.nhomHuongs = res.content.map((nhomHuong: any) => ({
+          ...nhomHuong,
+          isNew: false
+        }));
         this.totalPages = res.page?.totalPages || 1;
         this.isLoading = false;
+        console.log('nhomhuong:', this.nhomHuongs);
       },
       error: (error) => {
         this.errorMessage = error.message;
         this.isLoading = false;
       }
     });
-  }
-  
-
-  changePage(page: number): void {
-    this.currentPage = page;
-    this.loadNhomHuongs();
   }
 
   deleteNhomHuong(id: number): void {
@@ -62,6 +58,20 @@ export class FragranceListComponent implements OnInit {
       });
     }
   }
+
+  undoAddNhomHuong(nhomHuong: any): void {
+    this.nhomHuongService.deleteNhomHuong(nhomHuong.id).subscribe({
+      next: () => {
+        nhomHuong.isNew = false;
+        this.loadNhomHuongs();
+        console.log(`Undid adding NhomHuong with ID: ${nhomHuong.id}`);
+      },
+      error: (err) => {
+        console.error('Error undoing NhomHuong addition:', err);
+      }
+    });
+  }
+
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       console.log('🔄 Chuyển đến trang:', p);
@@ -124,6 +134,7 @@ export class FragranceListComponent implements OnInit {
     console.log('📌 Pagination range:', range);
     return range;
   }
+
   openAddNhomHuongModal(): void {
     const modalRef = this.modalService.open(AddNhomhuongComponent, {
       backdrop: 'static',
@@ -132,7 +143,11 @@ export class FragranceListComponent implements OnInit {
 
     modalRef.componentInstance.nhomHuongAdded.subscribe((newNhomHuong: any) => {
       console.log('🎉 New NhomHuong added:', newNhomHuong);
-      this.loadNhomHuongs(); // Refresh the list
+      // Đánh dấu nhóm hương vừa thêm là mới
+      // Thêm nhóm hương vào danh sách mà không cần tải lại toàn bộ
+      this.nhomHuongs.unshift(newNhomHuong);
+      // Tải lại danh sách để cập nhật totalPages từ API
+      this.loadNhomHuongs();
     });
   }
 
@@ -146,7 +161,7 @@ export class FragranceListComponent implements OnInit {
 
     modalRef.componentInstance.nhomHuongUpdated.subscribe((updatedNhomHuong: any) => {
       console.log('🔄 Updated NhomHuong:', updatedNhomHuong);
-      this.loadNhomHuongs(); // Refresh the list
+      this.loadNhomHuongs();
     });
   }
 }

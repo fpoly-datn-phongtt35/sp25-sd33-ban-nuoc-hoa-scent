@@ -41,7 +41,7 @@
         <td class="p-2">{{ thuongHieu.moTa }}</td>
         <td class="p-2">
           <button (click)="openUpdateModal(thuongHieu)" class="bg-yellow-500 text-white p-1 rounded mr-1 hover:bg-yellow-600">Sửa</button>
-          <button (click)="openDeleteModal(thuongHieu.id)" class="bg-red-500 text-white p-1 rounded hover:bg-red-600">Xóa</button>
+          <button *ngIf="!thuongHieu.hasProduct" (click)="openDeleteModal(thuongHieu.id)" class="btn btn-sm btn-success">Undo</button>
         </td>
       </tr>
     </tbody>

@@ -5,11 +5,14 @@ import { UpdateBrandComponent } from '../update-brand/update-brand.component';
 import { ThuongHieuService } from '../../../service/thuonghieu.service';
 
 export interface ThuongHieu {
-  id?: number; // Optional for creating new brands
+  id?: number;
   tenThuongHieu: string;
   quocGia: string;
   moTa: string;
+  hasProduct?: boolean;
+  isNew?: boolean;
 }
+
 @Component({
   selector: 'app-brand',
   standalone: true,
@@ -18,7 +21,7 @@ export interface ThuongHieu {
   styleUrls: ['./brand.component.scss']
 })
 export class BrandComponent implements OnInit {
-  thuongHieus: any[] = [];
+  thuongHieus: ThuongHieu[] = [];
   isLoading = false;
   errorMessage = '';
   showAddModal = false;
@@ -27,13 +30,107 @@ export class BrandComponent implements OnInit {
   selectedThuongHieu: ThuongHieu | null = null;
   brandToDelete: number | null = null;
 
-  currentPage: number = 0;
   page: number = 0;
   size: number = 5;
-  totalPages: number = 20;
+  totalPages: number = 1;
   totalElements: number = 0;
 
   constructor(private thuongHieuService: ThuongHieuService) {}
+
+  ngOnInit(): void {
+    this.loadThuongHieus();
+  }
+
+  loadThuongHieus(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.thuongHieuService.getThuongHieu1(this.page, this.size).subscribe({
+      next: (res) => {
+        this.thuongHieus = res.content.map((thuongHieu: ThuongHieu) => ({
+          ...thuongHieu,
+          
+          isNew: false
+
+        }));
+        this.totalPages = res.page?.totalPages || 1;
+        this.totalElements = res.totalElements || 0;
+        this.isLoading = false;
+        console.log('thương hiệu:', this.thuongHieus);
+      },
+      error: (error) => {
+        this.errorMessage = error.message;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  openAddModal(): void {
+    this.showAddModal = true;
+  }
+
+  closeAddModal(): void {
+    this.showAddModal = false;
+  }
+
+  handleBrandAdded(newThuongHieu: ThuongHieu): void {
+    newThuongHieu.isNew = true;
+    this.thuongHieus.unshift(newThuongHieu);
+    this.closeAddModal();
+    this.loadThuongHieus();
+  }
+
+  undoAddThuongHieu(thuongHieu: ThuongHieu): void {
+    if (thuongHieu.id !== undefined) {
+      this.thuongHieuService.deleteThuongHieu(thuongHieu.id).subscribe({
+        next: () => {
+          thuongHieu.isNew = false;
+          this.loadThuongHieus();
+          console.log(`Undid adding ThuongHieu with ID: ${thuongHieu.id}`);
+        },
+        error: (err) => {
+          console.error('Error undoing ThuongHieu addition:', err);
+          this.errorMessage = 'Không thể hoàn tác thêm thương hiệu.';
+        }
+      });
+    }
+  }
+
+  openUpdateModal(thuongHieu: ThuongHieu): void {
+    this.selectedThuongHieu = { ...thuongHieu };
+    this.showUpdateModal = true;
+  }
+
+  closeUpdateModal(): void {
+    this.showUpdateModal = false;
+    this.selectedThuongHieu = null;
+    this.loadThuongHieus();
+  }
+
+  openDeleteModal(id: number): void {
+    this.brandToDelete = id;
+    this.showDeleteModal = true;
+  }
+
+  closeDeleteModal(): void {
+    this.brandToDelete = null;
+    this.showDeleteModal = false;
+  }
+
+  confirmDelete(): void {
+    if (this.brandToDelete !== null) {
+      this.thuongHieuService.deleteThuongHieu(this.brandToDelete).subscribe({
+        next: () => {
+          this.closeDeleteModal();
+          this.loadThuongHieus();
+        },
+        error: (error) => {
+          this.errorMessage = error.message;
+          this.closeDeleteModal();
+        }
+      });
+    }
+  }
+
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       console.log('🔄 Chuyển đến trang:', p);
@@ -95,69 +192,5 @@ export class BrandComponent implements OnInit {
 
     console.log('📌 Pagination range:', range);
     return range;
-  }
-  ngOnInit(): void {
-    this.loadThuongHieus();
-  }
-
-  loadThuongHieus(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.thuongHieuService.getThuongHieu1(this.page, this.size).subscribe({
-      next: (res) => {
-        this.thuongHieus = res.content;
-        this.totalPages = res.page?.totalPages || 1;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorMessage = error.message;
-        this.isLoading = false;
-      }
-    });
-  }
-
-  openAddModal(): void {
-    this.showAddModal = true;
-  }
-
-  closeAddModal(): void {
-    this.showAddModal = false;
-    this.loadThuongHieus();
-  }
-
-  openUpdateModal(thuongHieu: ThuongHieu): void {
-    this.selectedThuongHieu = { ...thuongHieu };
-    this.showUpdateModal = true;
-  }
-
-  closeUpdateModal(): void {
-    this.showUpdateModal = false;
-    this.selectedThuongHieu = null;
-    this.loadThuongHieus();
-  }
-
-  openDeleteModal(id: number): void {
-    this.brandToDelete = id;
-    this.showDeleteModal = true;
-  }
-
-  closeDeleteModal(): void {
-    this.brandToDelete = null;
-    this.showDeleteModal = false;
-  }
-
-  confirmDelete(): void {
-    if (this.brandToDelete !== null) {
-      this.thuongHieuService.deleteThuongHieu(this.brandToDelete).subscribe({
-        next: () => {
-          this.closeDeleteModal();
-          this.loadThuongHieus();
-        },
-        error: (error) => {
-          this.errorMessage = error.message;
-          this.closeDeleteModal();
-        }
-      });
-    }
   }
 }
