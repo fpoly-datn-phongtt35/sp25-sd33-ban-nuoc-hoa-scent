@@ -215,15 +215,21 @@ body {
 
 .chat-users li {
   padding: 10px;
-  cursor: pointer;
+  
   border-radius: 5px;
   margin-bottom: 5px;
   font-size: 14px;
+  pointer-events: auto; /* Đảm bảo có thể click */
+  cursor: pointer; /* Hiển thị con trỏ tay khi hover */
 }
 
 .chat-users li.active,
 .chat-users li:hover {
   background: #f1f1f1;
+}
+/* Ẩn widget Tawk.to */
+#tawkchat-container {
+  display: none !important;
 }
 
 .chat-box {

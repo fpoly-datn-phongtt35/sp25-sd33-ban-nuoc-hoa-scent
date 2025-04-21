@@ -172,16 +172,51 @@ export class WebSocketService {
   }
 
   private handleMessage(message: IMessage, subject: BehaviorSubject<any>, type: string): void {
-    if (message.body) {
-      try {
-        const update = JSON.parse(message.body);
-        console.log(`[WebSocketService] Đã phân tích ${type} update:`, update);
-        subject.next(update);
-      } catch (error) {
-        console.error(`[WebSocketService] Lỗi khi phân tích ${type} message:`, error);
-      }
-    } else {
+    if (!message.body) {
       console.warn(`[WebSocketService] Nhận được tin nhắn trống cho ${type}`);
+      // Không phát tin nhắn rỗng
+      return;
+    }
+
+    try {
+      const update = JSON.parse(message.body);
+      console.log(`[WebSocketService] Đã phân tích ${type} update:`, update);
+
+      // Chuẩn hóa tin nhắn chat nếu là chat message
+      if (type === 'chat message') {
+        if (!update || typeof update !== 'object') {
+          console.warn(`[WebSocketService] Tin nhắn chat không hợp lệ:`, update);
+          return;
+        }
+
+        // Đảm bảo các trường cần thiết tồn tại
+        const normalizedMessage = {
+          sender: update.sender || null,
+          senderId: update.sender?.id ?? update.senderId ?? null,
+          receiver: update.receiver || null,
+          receiverId: update.receiver?.id ?? update.receiverId ?? null,
+          content: update.content || '',
+          timestamp: update.timestamp || new Date().toISOString(),
+          type: update.type || null,
+          messageId: update.messageId || null,
+          isRecalled: update.isRecalled || false,
+        };
+
+        // Kiểm tra các trường bắt buộc cho tin nhắn chat
+        if (normalizedMessage.senderId === null || !normalizedMessage.content) {
+          console.warn(`[WebSocketService] Tin nhắn chat thiếu các trường bắt buộc:`, normalizedMessage);
+          return;
+        }
+
+        console.log(`[WebSocketService] Tin nhắn chat chuẩn hóa:`, normalizedMessage);
+        subject.next(normalizedMessage);
+      } else {
+        // Các loại tin nhắn khác (order, inventory, product updates, v.v.)
+        subject.next(update);
+      }
+    } catch (error) {
+      console.error(`[WebSocketService] Lỗi khi phân tích ${type} message:`, error, `Raw message:`, message.body);
+      // Không phát tin nhắn lỗi
     }
   }
 

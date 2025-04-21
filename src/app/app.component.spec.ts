@@ -1,29 +1,44 @@
-import { TestBed } from '@angular/core/testing';
-import { AppComponent } from './app.component';
+import { Component, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ChatOverlayService } from './service/ChatOverlay.service';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
-describe('AppComponent', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [AppComponent],
-    }).compileComponents();
-  });
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, OverlayModule],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+})
+export class AppComponent implements OnInit {
+  shouldShowChatButton = true;
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
+  constructor(
+    private chatOverlayService: ChatOverlayService,
+    private router: Router
+  ) {}
 
-  it(`should have the 'DATN_FE' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('DATN_FE');
-  });
+  ngOnInit(): void {
+    // Kiểm tra URL ban đầu
+    this.checkUrl();
+    // Lắng nghe sự kiện thay đổi URL
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        console.log('[AppComponent] NavigationEnd event:', event.urlAfterRedirects);
+        this.checkUrl();
+      });
+  }
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, DATN_FE');
-  });
-});
+  private checkUrl(): void {
+    const currentUrl = this.router.url;
+    this.shouldShowChatButton = !currentUrl.includes('/admin');
+    console.log('[AppComponent] Current URL:', currentUrl, 'Should show chat button:', this.shouldShowChatButton);
+  }
+
+  toggleChat(): void {
+    this.chatOverlayService.toggleChat();
+  }
+}

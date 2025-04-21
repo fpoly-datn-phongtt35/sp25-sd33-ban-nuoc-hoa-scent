@@ -1,0 +1,75 @@
+/* Nút chat toggle */
+.chat-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+  
+    /* Hiệu ứng nhấp nháy nhẹ */
+    animation: pulse 2s infinite ease-in-out;
+  
+    /* Biểu tượng chat */
+    .chat-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+    }
+  
+    /* Chữ "Chat" */
+    .chat-text {
+      font-family: 'Arial', sans-serif;
+      font-weight: bold;
+      font-size: 14px;
+      line-height: 1;
+    }
+  
+    /* Hiệu ứng hover */
+    &:hover {
+      background-color: #0056b3;
+      transform: scale(1.1);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+  
+    /* Hiệu ứng khi nhấn */
+    &:active {
+      transform: scale(0.95);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  }
+  
+  /* Hiệu ứng nhấp nháy */
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+  }
+  
+  /* Ẩn widget Tawk.to */
+  #tawk-widget-container,
+  div[id^="tawk-"],
+  iframe[src*="tawk.to"] {
+    display: none !important;
+  }

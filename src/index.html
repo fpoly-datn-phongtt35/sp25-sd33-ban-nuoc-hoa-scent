@@ -9,17 +9,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <!--Start of Tawk.to Script-->
-<script type="text/javascript">
-  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-  (function(){
-  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-  s1.async=true;
-  s1.src='https://embed.tawk.to/67fe2ae8471a4a1909568767/1iosdf7p2';
-  s1.charset='UTF-8';
-  s1.setAttribute('crossorigin','*');
-  s0.parentNode.insertBefore(s1,s0);
-  })();
+  <script>
+    var Tawk_API = Tawk_API || {};
+    var Tawk_LoadStart = new Date();
+  
+    Tawk_API.onLoad = function () {
+      const hideTawkButton = () => {
+        const tawkButtons = document.querySelectorAll('.tawk-button, .tawk-min-container');
+        tawkButtons.forEach(el => {
+          el.style.display = 'none';
+        });
+      };
+  
+      // Lặp đi lặp lại để chắc chắn ẩn được kể cả khi widget reload lại
+      setInterval(hideTawkButton, 1000);
+    };
   </script>
+  
   <!--End of Tawk.to Script-->
   <script>
     window.global = window;
@@ -27,6 +33,7 @@
       window.global = globalThis;
     }
   </script>
+ 
 </head>
 <body>
   <!-- <app-login></app-login> -->

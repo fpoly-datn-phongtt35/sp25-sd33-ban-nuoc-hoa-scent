@@ -1,39 +1,27 @@
-<app-header></app-header>
-
-<div class="chat-container">
+<div class="chat-container" *ngIf="isChatOpen">
   <div class="chat-header">
-    💬 Chat với chúng tôi
+    <span>Chat với chúng tôi</span>
+    <button (click)="closeChat()" class="close-button">✖</button>
   </div>
-
-  <div class="chat-messages" #chatMessages>
-    <div *ngFor="let message of messages"
-         [ngClass]="(message.sender?.id ?? message.senderId) === userId ? 'message message-right' : 'message message-left'">
-      <!-- Hiển thị tin nhắn thông thường -->
-      <div *ngIf="!message.isOption" class="message-wrapper">
-        <div class="message-sender">
-          {{ message.sender?.hoTen || message.sender?.tenDangNhap || 'Khách ' + userId }}
-        </div>
-        <div class="message-content">
-          {{ message.content }}
-          <div class="message-timestamp">
-            {{ message.timestamp | date:'dd/MM/yyyy, HH:mm' }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Hiển thị tin nhắn tùy chọn (có thể nhấn) -->
-      <div *ngIf="message.isOption" class="message-option" (click)="selectOption(message.content)">
-        <div class="option-text">
+  <div class="chat-body">
+    <div *ngIf="isLoading" class="loading">Đang tải...</div>
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div #chatMessages class="chat-messages">
+      <div *ngFor="let message of messages" [ngClass]="{'message': true, 'sent': message.senderId === userId, 'received': message.senderId !== userId, 'option': message.isOption}">
+        <div *ngIf="message.isOption" class="option" (click)="selectOption(message.content)">
           {{ message.content }}
         </div>
+        <div *ngIf="!message.isOption" class="message-content">
+          <span class="sender-name">{{ message.sender.tenDangNhap }}</span>
+          <span class="message-text">{{ message.content }}</span>
+          <span class="timestamp">{{ message.timestamp | date:'short' }}</span>
+        </div>
+        
       </div>
     </div>
   </div>
-
-  <div class="chat-input">
-    <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()" placeholder="Nhập tin nhắn..." />
-    <button (click)="sendMessage()">Gửi</button>
+  <div class="chat-footer">
+    <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()" placeholder="Nhập tin nhắn..." [disabled]="isSending" />
+    <button (click)="sendMessage()" [disabled]="isSending || !newMessage">Gửi</button>
   </div>
 </div>
-
-<app-footer></app-footer>

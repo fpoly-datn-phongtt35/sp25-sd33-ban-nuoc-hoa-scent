@@ -6,6 +6,8 @@ interface TawkAPI {
   onMessageSent: (message: any) => void;
   onMessageReceived: (message: any) => void;
   endChat: () => void;
+  maximize: () => void;
+  minimize: () => void;
 }
 
 declare global {
