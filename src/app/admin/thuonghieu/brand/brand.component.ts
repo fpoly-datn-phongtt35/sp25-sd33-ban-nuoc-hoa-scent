@@ -31,7 +31,7 @@ export class BrandComponent implements OnInit {
   brandToDelete: number | null = null;
 
   page: number = 0;
-  size: number = 5;
+  size: number = 10;
   totalPages: number = 1;
   totalElements: number = 0;
 
@@ -48,7 +48,7 @@ export class BrandComponent implements OnInit {
       next: (res) => {
         this.thuongHieus = res.content.map((thuongHieu: ThuongHieu) => ({
           ...thuongHieu,
-          
+
           isNew: false
 
         }));

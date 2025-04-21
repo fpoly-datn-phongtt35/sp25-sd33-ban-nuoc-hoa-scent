@@ -1,7 +1,6 @@
-<<<<<<< HEAD
-script csdl: https://drive.google.com/file/d/1_nYiMV3pjLtA0QxQFFszkk1Lu2WRWKhE/view?usp=sharing
+script csdl: https://drive.google.com/file/d/1ASX7UsmTwIf_iY0jjuy-lZKmAIMrYNMo/view?usp=sharing
+script fake data: https://drive.google.com/file/d/1N0hD47A495nXJrPaPKWiI6rZxjES-v6J/view?usp=sharing
 trong quá trình làm có thay đổi gì đối với csdl t sẽ lập tức commit lại nên hàng ngày pull cái mới về (nếu có commit đối với readme)
-=======
 # DATNFE
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.8.

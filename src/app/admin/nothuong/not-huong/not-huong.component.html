@@ -1,0 +1,106 @@
+<!-- MAIN CONTAINER -->
+<div class="container mx-auto p-4">
+  <h2 class="text-2xl font-bold mb-4">Quản Lý Nốt Hương</h2>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="bg-red-100 text-red-700 p-3 rounded mb-4">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="text-center p-4">
+    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+    </svg>
+  </div>
+
+  <!-- Add Button -->
+  <div class="mb-6">
+    <button (click)="openAddModal()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+      Thêm Nốt Hương
+    </button>
+  </div>
+
+  <!-- Not Huong Table -->
+  <table class="w-full border-collapse bg-white shadow rounded">
+    <thead>
+      <tr class="bg-gray-200">
+        <th class="p-2 text-left">ID</th>
+        <th class="p-2 text-left">Tên Nốt Hương</th>
+        <th class="p-2 text-left">Mô Tả</th>
+        <th class="p-2 text-left">Mùi Hương</th>
+        <th class="p-2 text-left">Hành Động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let notHuong of notHuongs" class="border-b">
+        <td class="p-2">{{ notHuong.id }}</td>
+        <td class="p-2">{{ notHuong.tenNotHuong }}</td>
+        <td class="p-2">{{ notHuong.moTa }}</td>
+        <td class="p-2">{{ notHuong.tenMuiHuong || 'Chưa có' }}</td>
+        <td class="p-2">
+          <button (click)="openUpdateModal(notHuong)" class="bg-yellow-500 text-white p-1 rounded mr-1 hover:bg-yellow-600">Sửa</button>
+          <button *ngIf="!notHuong.hasProduct" (click)="openDeleteModal(notHuong.id)" class="bg-red-500 text-white p-1 rounded mr-1 hover:bg-red-600">Xóa</button>
+          <button *ngIf="!notHuong.hasProduct && notHuong.isNew" (click)="undoAddNotHuong(notHuong)" class="bg-green-500 text-white p-1 rounded mr-1 hover:bg-green-600">Undo</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Pagination Controls -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="goToPage(0)">«</button>
+      </li>
+      <li class="page-item" [class.disabled]="page === 0">
+        <button class="page-link" (click)="prevPage()">‹</button>
+      </li>
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === page" [class.disabled]="p.isEllipsis">
+        <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+        <span *ngIf="p.isEllipsis" class="page-link">...</span>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="nextPage()">›</button>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+<!-- MODALS - OUTSIDE MAIN CONTAINER -->
+
+<!-- Add Not Huong Modal -->
+<div *ngIf="showAddModal" class="modal-overlay">
+  <div class="modal-content w-full max-w-sm">
+    <h3 class="text-base font-semibold mb-3 text-center text-gray-800">Thêm Nốt Hương</h3>
+    <app-add-not-huong (close)="closeAddModal()" (notHuongAdded)="handleNotHuongAdded($event)"></app-add-not-huong>
+  </div>
+</div>
+
+<!-- Update Not Huong Modal -->
+<div *ngIf="showUpdateModal" class="modal-overlay">
+  <div class="modal-content w-full max-w-sm">
+    <h3 class="text-base font-semibold mb-3 text-center text-gray-800">Sửa Nốt Hương</h3>
+    <app-update-not-huong
+      [notHuong]="selectedNotHuong"
+      (close)="closeUpdateModal()"
+      (notHuongUpdated)="closeUpdateModal()"
+    ></app-update-not-huong>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div *ngIf="showDeleteModal" class="modal-overlay">
+  <div class="modal-content w-full max-w-md">
+    <h3 class="text-lg font-semibold mb-4">Xác Nhận Xóa</h3>
+    <p>Bạn có chắc muốn xóa nốt hương này?</p>
+    <div class="mt-4 flex justify-end gap-2">
+      <button (click)="confirmDelete()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Xóa</button>
+      <button (click)="closeDeleteModal()" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Hủy</button>
+    </div>
+  </div>
+</div>

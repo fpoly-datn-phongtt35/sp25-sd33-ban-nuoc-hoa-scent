@@ -22,6 +22,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { Subscription, interval } from 'rxjs';
 import { BrandComponent } from '../thuonghieu/brand/brand.component';
 import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-list.component';
+import { PhongCachComponent } from "../phongcach/phong-cach/phong-cach.component";
+import { MuiHuongComponent } from "../muihuong/mui-huong/mui-huong.component";
+import { NotHuongComponent } from "../nothuong/not-huong/not-huong.component";
 
 @Component({
   selector: 'app-home-admin',
@@ -39,8 +42,11 @@ import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-li
     LichsuthaotacComponent,
     OfflineOrderComponent,
     FragranceListComponent,
-    BrandComponent
-  ],
+    BrandComponent,
+    PhongCachComponent,
+    MuiHuongComponent,
+    NotHuongComponent
+],
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'],
 })
@@ -480,7 +486,7 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
         return;
       }
 
-     
+
 
       this.ngZone.run(() => {
         this.allMessages.push({ ...message, senderId, receiverId, messageId });

@@ -1,0 +1,21 @@
+<div class="modal-header">
+  <h4 class="modal-title">Sửa Mùi Hương</h4>
+  <button type="button" class="close" (click)="close.emit()">×</button>
+</div>
+<div class="modal-body">
+  <form #muiHuongForm="ngForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="tenMuiHuong">Tên Mùi Hương</label>
+      <input type="text" class="form-control" id="tenMuiHuong" name="tenMuiHuong"
+             [(ngModel)]="muiHuong.tenMuiHuong" required>
+    </div>
+    <div class="form-group">
+      <label for="moTa">Mô Tả</label>
+      <textarea class="form-control" id="moTa" name="moTa" [(ngModel)]="muiHuong.moTa"></textarea>
+    </div>
+    <div class="mt-4 flex justify-end gap-2">
+      <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600" [disabled]="!muiHuongForm.valid">Lưu</button>
+      <button type="button" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600" (click)="close.emit()">Hủy</button>
+    </div>
+  </form>
+</div>
