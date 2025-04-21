@@ -591,42 +591,45 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private loadChatUsers(): void {
+    console.log('[HomeAdmin] Bắt đầu loadChatUsers, userID:', this.userID);
     if (!this.userID) {
-      console.error('[HomeAdmin] userID không hợp lệ, không thể tải danh sách khách hàng.');
-      this.errorMessage = 'Không thể tải danh sách khách hàng do ID không hợp lệ.';
-      return;
+        console.error('[HomeAdmin] userID không hợp lệ, không thể tải danh sách khách hàng.');
+        this.errorMessage = 'Không thể tải danh sách khách hàng do ID không hợp lệ.';
+        return;
     }
 
-    console.log('[HomeAdmin] Tải danh sách khách hàng nhắn tin với admin ID:', this.userID);
     this.http.get<any[]>(`http://localhost:8080/api/chat/users-with-messages/${this.userID}`).subscribe({
-      next: (users) => {
-        const uniqueUsers = Array.from(new Set(users.map(user => user.id)))
-          .map(id => users.find(user => user.id === user.id))
-          .filter(user => (user.vaiTro === 'USER' || user.vaiTro === 'GUEST') && user.id >= 1000);
+        next: (users) => {
+            console.log('[HomeAdmin] Dữ liệu users thô từ API:', users);
 
-        this.chatUsers = uniqueUsers;
-        console.log('[HomeAdmin] Đã tải danh sách chatUsers:', this.chatUsers);
+            // Sửa lỗi: Sử dụng user.id === id để tìm đúng user theo id
+            const uniqueUsers = Array.from(new Set(users.map(user => user.id)))
+                .map(id => users.find(user => user.id === id))
+                .filter(user => user && (user.vaiTro === 'USER' || user.vaiTro === 'GUEST') && user.id >= 1000);
 
-        if (this.chatUsers.length === 0) {
-          console.warn('[HomeAdmin] Không có khách hàng nào nhắn tin với admin ID:', this.userID);
-        } else {
-          this.chatUsers.forEach(user => {
-            console.log('[HomeAdmin] User trong chatUsers:', user);
-          });
+            console.log('[HomeAdmin] Đã tải danh sách chatUsers:', uniqueUsers);
+            this.chatUsers = uniqueUsers;
 
-          if (this.chatUsers.length === 1 && !this.selectedChatUserId) {
-            this.selectChatUser(this.chatUsers[0].id);
-          }
+            if (this.chatUsers.length === 0) {
+                console.warn('[HomeAdmin] Không có khách hàng nào nhắn tin với admin ID:', this.userID);
+            } else {
+                this.chatUsers.forEach(user => {
+                    console.log('[HomeAdmin] User trong chatUsers:', user);
+                });
+
+                if (this.chatUsers.length === 1 && !this.selectedChatUserId) {
+                    this.selectChatUser(this.chatUsers[0].id);
+                }
+            }
+            this.cdr.detectChanges();
+        },
+        error: (error) => {
+            console.error('[HomeAdmin] Lỗi khi tải danh sách chatUsers:', error);
+            this.errorMessage = 'Lỗi khi tải danh sách khách hàng. Vui lòng thử lại.';
+            this.cdr.detectChanges();
         }
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('[HomeAdmin] Lỗi khi tải danh sách chatUsers:', error);
-        this.errorMessage = 'Lỗi khi tải danh sách khách hàng. Vui lòng thử lại.';
-        this.cdr.detectChanges();
-      }
     });
-  }
+}
 
   selectChatUser(userId: number): void {
     if (userId < 1000) {
