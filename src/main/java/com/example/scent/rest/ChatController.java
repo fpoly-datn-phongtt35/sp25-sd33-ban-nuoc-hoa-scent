@@ -13,7 +13,8 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
-
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
     @Autowired
     private ChatService chatService;
 
@@ -145,7 +146,7 @@ public class ChatController {
     @PostMapping("/recall/{messageId}")
     public ResponseEntity<Map<String, Object>> recallMessage(
             @PathVariable Long messageId,
-            @RequestParam Long userId) {
+            @RequestParam Integer userId) {  // Đổi từ Long sang Integer để khớp với TaiKhoan.id
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -157,16 +158,32 @@ public class ChatController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // Kiểm tra sender có tồn tại không
+            TaiKhoan sender = message.getSender();
+            if (sender == null || sender.getId() == null) {
+                response.put("success", false);
+                response.put("message", "Thông tin người gửi không hợp lệ.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            log.info("Sender ID: {}, User ID: {}", sender.getId(), userId);
+
             // Kiểm tra xem người dùng có phải là người gửi tin nhắn không
-            if (!message.getSender().getId().equals(userId)) {
+            if (!sender.getId().equals(userId)) {
                 response.put("success", false);
                 response.put("message", "Bạn không có quyền thu hồi tin nhắn này.");
                 return ResponseEntity.status(403).body(response);
             }
 
-            // Kiểm tra thời gian thu hồi (ví dụ: chỉ cho phép thu hồi trong vòng 2 phút)
-            LocalDateTime now = LocalDateTime.now();
+            // Kiểm tra thời gian thu hồi (chỉ cho phép trong vòng 2 phút)
             LocalDateTime messageTime = message.getTimestamp();
+            if (messageTime == null) {
+                response.put("success", false);
+                response.put("message", "Thời gian tin nhắn không hợp lệ.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            LocalDateTime now = LocalDateTime.now();
             if (messageTime.plusMinutes(2).isBefore(now)) {
                 response.put("success", false);
                 response.put("message", "Đã quá thời gian cho phép để thu hồi tin nhắn (2 phút).");
@@ -179,14 +196,18 @@ public class ChatController {
             chatService.save(message);
 
             // Gửi thông báo qua WebSocket để cập nhật giao diện thời gian thực
-            messagingTemplate.convertAndSend("/topic/messages/" + message.getReceiver().getId(), message);
-            messagingTemplate.convertAndSend("/topic/messages/" + message.getSender().getId(), message);
+            TaiKhoan receiver = message.getReceiver();
+            if (receiver != null && receiver.getId() != null) {
+                messagingTemplate.convertAndSend("/topic/messages/" + receiver.getId(), message);
+            }
+            messagingTemplate.convertAndSend("/topic/messages/" + sender.getId(), message);
 
             response.put("success", true);
             response.put("message", "Thu hồi tin nhắn thành công.");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            log.error("Lỗi khi thu hồi tin nhắn: {}", e.getMessage(), e);
             response.put("success", false);
             response.put("message", "Lỗi khi thu hồi tin nhắn: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
