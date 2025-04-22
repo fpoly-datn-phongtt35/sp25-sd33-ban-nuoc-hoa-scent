@@ -15,4 +15,39 @@ public class MuiHuongWithStatusDTO {
         this.moTa = moTa;
         this.hasProduct = hasProduct;
     }
+
+    public MuiHuongWithStatusDTO() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTenMuiHuong() {
+        return tenMuiHuong;
+    }
+
+    public void setTenMuiHuong(String tenMuiHuong) {
+        this.tenMuiHuong = tenMuiHuong;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public boolean isHasProduct() {
+        return hasProduct;
+    }
+
+    public void setHasProduct(boolean hasProduct) {
+        this.hasProduct = hasProduct;
+    }
 }

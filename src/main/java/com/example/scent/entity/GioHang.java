@@ -31,7 +31,48 @@ public class GioHang {
     @Column(name = "trang_thai")
     private Integer trangThai;
 
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getIdTaiKhoan() {
+        return idTaiKhoan;
+    }
+
+    public void setIdTaiKhoan(Integer idTaiKhoan) {
+        this.idTaiKhoan = idTaiKhoan;
+    }
+
+    public LocalDateTime getNgayTao() {
+        return ngayTao;
+    }
+
+    public void setNgayTao(LocalDateTime ngayTao) {
+        this.ngayTao = ngayTao;
+    }
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public List<ChiTietGioHang> getChiTietGioHangs() {
+        return chiTietGioHangs;
+    }
+
+    public void setChiTietGioHangs(List<ChiTietGioHang> chiTietGioHangs) {
+        this.chiTietGioHangs = chiTietGioHangs;
+    }
+
     @JsonIgnore
     @OneToMany(mappedBy = "gioHang", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ChiTietGioHang> chiTietGioHangs;
+
 }

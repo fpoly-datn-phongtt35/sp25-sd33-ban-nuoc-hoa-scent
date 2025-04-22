@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
+
 @Entity
 @Table(name = "mui_huong")
 public class MuiHuong {
@@ -76,5 +76,8 @@ public class MuiHuong {
         this.moTa = moTa;
         this.notHuongs = notHuongs;
         this.nhomHuongOnMuiHuongs = nhomHuongOnMuiHuongs;
+    }
+
+    public MuiHuong() {
     }
 }

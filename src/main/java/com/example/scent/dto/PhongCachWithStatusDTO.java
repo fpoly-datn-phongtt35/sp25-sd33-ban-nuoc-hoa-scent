@@ -15,4 +15,39 @@ public class PhongCachWithStatusDTO {
         this.moTa = moTa;
         this.hasProduct = hasProduct;
     }
+
+    public PhongCachWithStatusDTO() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTenPhongCach() {
+        return tenPhongCach;
+    }
+
+    public void setTenPhongCach(String tenPhongCach) {
+        this.tenPhongCach = tenPhongCach;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public boolean isHasProduct() {
+        return hasProduct;
+    }
+
+    public void setHasProduct(boolean hasProduct) {
+        this.hasProduct = hasProduct;
+    }
 }

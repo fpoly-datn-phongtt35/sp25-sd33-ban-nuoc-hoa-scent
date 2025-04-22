@@ -19,4 +19,55 @@ public class NotHuongWithStatusDTO {
         this.tenMuiHuong = tenMuiHuong;
         this.hasProduct = hasProduct;
     }
+
+    public NotHuongWithStatusDTO() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTenNotHuong() {
+        return tenNotHuong;
+    }
+
+    public void setTenNotHuong(String tenNotHuong) {
+        this.tenNotHuong = tenNotHuong;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public Integer getMuiHuongId() {
+        return muiHuongId;
+    }
+
+    public void setMuiHuongId(Integer muiHuongId) {
+        this.muiHuongId = muiHuongId;
+    }
+
+    public String getTenMuiHuong() {
+        return tenMuiHuong;
+    }
+
+    public void setTenMuiHuong(String tenMuiHuong) {
+        this.tenMuiHuong = tenMuiHuong;
+    }
+
+    public boolean isHasProduct() {
+        return hasProduct;
+    }
+
+    public void setHasProduct(boolean hasProduct) {
+        this.hasProduct = hasProduct;
+    }
 }
