@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewChecked, ChangeDetectorRef, ViewChild, ElementRef, PLATFORM_ID, Inject, NgZone, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewChecked, ViewChildren, QueryList, ChangeDetectorRef, ViewChild, ElementRef, PLATFORM_ID, Inject, NgZone, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TokenService } from '../service/token.service';
@@ -18,6 +18,7 @@ import { HeaderComponent } from '../header/header.component';
 })
 export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   @Output() onClose = new EventEmitter<void>();
+ 
   isChatOpen: boolean = true;
   messages: any[] = [];
   private mutationObserver: MutationObserver | null = null;
@@ -59,11 +60,11 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       console.warn('[ContactComponent] Đang chạy trên server-side, bỏ qua khởi tạo chat');
       return;
     }
-
+  
     console.log('[ContactComponent] Khởi tạo component, isChatOpen:', this.isChatOpen);
     const storedUserId = localStorage.getItem('userId');
     console.log('[ContactComponent] storedUserId từ localStorage:', storedUserId);
-
+  
     if (storedUserId) {
       this.userId = parseInt(storedUserId, 10);
       console.log('[ContactComponent] userId sau khi parse:', this.userId);
@@ -74,21 +75,20 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (!this.hasAddedInitialMessages) {
           this.addInitialMessages();
           this.hasAddedInitialMessages = true;
-          console.log('goi 1 lan')
+          console.log('goi 1 lan');
         }
-        
-      
+        this.shouldScroll = true; // Đặt cờ để cuộn trong ngAfterViewChecked
         return;
       } else {
         console.warn('[ContactComponent] userId trong localStorage không hợp lệ, xóa và tạo mới:', this.userId);
         localStorage.removeItem('userId');
       }
     }
-
+  
     const userInfo = this.tokenService.getUserInfo();
     this.userId = userInfo?.UserID;
     console.log('[ContactComponent] userId từ tokenService:', this.userId);
-
+  
     if (!this.userId) {
       console.log('[ContactComponent] Không có userId, tạo guest user');
       this.createGuestUser();
@@ -98,8 +98,8 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.initializeChat();
       this.initializeTawkTo();
       this.addInitialMessages();
+      this.shouldScroll = true; // Đặt cờ để cuộn trong ngAfterViewChecked
     }
-    this.setupMutationObserver();
   }
 
   private normalizeTimestamp(timestamp: string): string {
@@ -169,10 +169,11 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
 
     this.sortMessages();
-    this.shouldScroll = true;
+    
     this.cdr.detectChanges();
+    this.shouldScroll = true;
     console.log('[ContactComponent] Messages sau khi thêm tin nhắn ban đầu:', this.messages);
-    this.scrollToBottom();
+  
   }
 
   private initializeTawkTo(): void {
@@ -597,9 +598,10 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.sortMessages();
         this.isLoading = false;
         console.log('[ContactComponent] Đã cập nhật tin nhắn:', this.messages);
-        this.shouldScroll = true;
+    
         this.cdr.detectChanges();
-        this.scrollToBottom();
+        this.shouldScroll = true;
+        
       },
       error: (error) => {
         console.error('[ContactComponent] Lỗi khi tải tin nhắn:', error);
@@ -711,67 +713,27 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngAfterViewChecked(): void {
     if (isPlatformBrowser(this.platformId) && this.chatMessagesRef && this.shouldScroll) {
-      setTimeout(() => {
-        if (this.isFirstScroll) {
-          if (this.lastMessageRef) {
-            this.lastMessageRef.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            console.log('[ContactComponent] Cuộn đến tin nhắn cuối cùng (lần đầu tiên)');
-          }
-          this.isFirstScroll = false;
-          this.shouldScroll = false;
-        } else {
+      this.ngZone.runOutsideAngular(() => {
+        setTimeout(() => {
           const chatMessages = this.chatMessagesRef.nativeElement;
-          const isAtBottom = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 10;
-          if (isAtBottom) {
-            if (this.lastMessageRef) {
-              this.lastMessageRef.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-              console.log('[ContactComponent] Cuộn đến tin nhắn cuối cùng');
-            }
-            this.shouldScroll = false;
+          if (chatMessages.scrollHeight > chatMessages.clientHeight) { // Đảm bảo có nội dung để cuộn
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            console.log('[ContactComponent] Cuộn xuống đáy chat-messages trong ngAfterViewChecked', {
+              scrollHeight: chatMessages.scrollHeight,
+              scrollTop: chatMessages.scrollTop,
+              clientHeight: chatMessages.clientHeight
+            });
           } else {
-            console.log('[ContactComponent] Người dùng đang xem tin nhắn cũ, không cuộn xuống');
-            this.shouldScroll = false;
+            console.log('[ContactComponent] Không đủ nội dung để cuộn trong ngAfterViewChecked');
           }
-        }
-      }, 300);
-    }
-  }
-  private setupMutationObserver(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-  
-    this.mutationObserver = new MutationObserver(() => {
-      this.scrollToBottomIfNeeded();
-    });
-  
-    if (this.chatMessagesRef?.nativeElement) {
-      this.mutationObserver.observe(this.chatMessagesRef.nativeElement, {
-        childList: true,
-        subtree: true,
+          this.shouldScroll = false;
+        }, 100);
       });
     }
   }
+ 
   
-  private scrollToBottomIfNeeded(): void {
-    if (!this.chatMessagesRef?.nativeElement || !this.lastMessageRef?.nativeElement) return;
-  
-    const chatMessages = this.chatMessagesRef.nativeElement;
-    const isAtBottom = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 10;
-  
-    if (isAtBottom) {
-      this.lastMessageRef.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      console.log('[ContactComponent] Cuộn xuống tin nhắn cuối cùng (MutationObserver)');
-    } else {
-      console.log('[ContactComponent] Người dùng đang xem tin nhắn cũ, không cuộn xuống');
-    }
-  }
-  private scrollToBottom(): void {
-    if (!isPlatformBrowser(this.platformId) || !this.chatMessagesRef?.nativeElement || !this.lastMessageRef?.nativeElement) return;
-  
-    setTimeout(() => {
-      this.lastMessageRef.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      console.log('[ContactComponent] Cuộn xuống tin nhắn cuối cùng khi mở chat');
-    }, 0); // Độ trễ 0ms để đảm bảo DOM đã render
-  }
+ 
   ngOnDestroy(): void {
     console.log('[ContactComponent] Hủy component, ngắt kết nối WebSocket và subscription');
     if (!isPlatformBrowser(this.platformId)) {

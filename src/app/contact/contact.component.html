@@ -7,12 +7,12 @@
     <div *ngIf="isLoading" class="loading">Đang tải...</div>
     <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
     <div #chatMessages class="chat-messages">
-      <div *ngFor="let message of messages; let isLast = last" [ngClass]="{'message': true, 'sent': message.senderId === userId, 'received': message.senderId !== userId, 'option': message.isOption}">
+      <div *ngFor="let message of messages; let isLast = last" [ngClass]="{'message': true, 'sent': message.senderId === userId, 'received': message.senderId !== userId, 'option': message.isOption, 'last-message': isLast}">
         <div *ngIf="message.isOption" class="option" (click)="selectOption(message.content)">
           {{ message.content }}
         </div>
-        <div *ngIf="!message.isOption" class="message-content" #lastMessage>
-          <span class="sender-name">{{ message.sender.tenDangNhap }}</span>
+        <div *ngIf="!message.isOption" class="message-content">
+          <span class="sender-name">{{ message.sender?.tenDangNhap || 'Khách ' + userId }}</span>
           <span class="message-text">{{ message.content }}</span>
           <span class="timestamp">{{ message.timestamp | date:'short' }}</span>
         </div>

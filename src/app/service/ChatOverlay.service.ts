@@ -32,12 +32,7 @@ export class ChatOverlayService {
     console.log('[ChatOverlayService] Đã mở chat nổi');
   
     // Tăng thời gian trì hoãn để đảm bảo DOM được render
-    setTimeout(() => {
-      if (componentRef.instance) {
-        componentRef.instance.ngOnInit();
-        componentRef.instance.initializeChat();
-      }
-    }, 200); // Tăng lên 200ms để đảm bảo DOM sẵn sàng
+     // Tăng lên 200ms để đảm bảo DOM sẵn sàng
   
     componentRef.instance.onClose.subscribe(() => {
       this.closeChat();

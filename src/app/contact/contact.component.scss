@@ -3,7 +3,7 @@
   bottom: 80px;
   right: 20px;
   width: 350px;
-  height: 400px;
+  height: 450px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -104,6 +104,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  height: 100%; /* Đảm bảo chiếm toàn bộ chiều cao của chat-body */
+  overflow-y: auto;
+  scroll-behavior: smooth; /* Cuộn mượt mà */
 }
 
 .message {
