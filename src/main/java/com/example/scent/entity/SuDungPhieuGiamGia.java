@@ -27,4 +27,36 @@ public class SuDungPhieuGiamGia {
     @Column(name = "ngay_su_dung", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date ngaySuDung;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getPhieuGiamGiaId() {
+        return phieuGiamGiaId;
+    }
+
+    public void setPhieuGiamGiaId(Integer phieuGiamGiaId) {
+        this.phieuGiamGiaId = phieuGiamGiaId;
+    }
+
+    public String getSdt() {
+        return sdt;
+    }
+
+    public void setSdt(String sdt) {
+        this.sdt = sdt;
+    }
+
+    public Date getNgaySuDung() {
+        return ngaySuDung;
+    }
+
+    public void setNgaySuDung(Date ngaySuDung) {
+        this.ngaySuDung = ngaySuDung;
+    }
 }

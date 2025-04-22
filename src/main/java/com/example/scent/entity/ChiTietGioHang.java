@@ -36,4 +36,44 @@ public class ChiTietGioHang {
 
     @Column(name = "don_gia", precision = 19, scale = 4)
     private BigDecimal donGia;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public GioHang getGioHang() {
+        return gioHang;
+    }
+
+    public void setGioHang(GioHang gioHang) {
+        this.gioHang = gioHang;
+    }
+
+    public Spct getSpct() {
+        return spct;
+    }
+
+    public void setSpct(Spct spct) {
+        this.spct = spct;
+    }
+
+    public Integer getSoLuong() {
+        return soLuong;
+    }
+
+    public void setSoLuong(Integer soLuong) {
+        this.soLuong = soLuong;
+    }
+
+    public BigDecimal getDonGia() {
+        return donGia;
+    }
+
+    public void setDonGia(BigDecimal donGia) {
+        this.donGia = donGia;
+    }
 }

@@ -15,4 +15,39 @@ public class NhomHuongWithStatusDTO {
         this.mota = mota;
         this.hasProduct = hasProduct;
     }
+
+    public NhomHuongWithStatusDTO() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTenNhomHuong() {
+        return tenNhomHuong;
+    }
+
+    public void setTenNhomHuong(String tenNhomHuong) {
+        this.tenNhomHuong = tenNhomHuong;
+    }
+
+    public String getMota() {
+        return mota;
+    }
+
+    public void setMota(String mota) {
+        this.mota = mota;
+    }
+
+    public Integer getHasProduct() {
+        return hasProduct;
+    }
+
+    public void setHasProduct(Integer hasProduct) {
+        this.hasProduct = hasProduct;
+    }
 }

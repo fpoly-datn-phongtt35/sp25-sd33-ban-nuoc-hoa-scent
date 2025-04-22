@@ -77,4 +77,7 @@ public class MuiHuong {
         this.notHuongs = notHuongs;
         this.nhomHuongOnMuiHuongs = nhomHuongOnMuiHuongs;
     }
+
+    public MuiHuong() {
+    }
 }

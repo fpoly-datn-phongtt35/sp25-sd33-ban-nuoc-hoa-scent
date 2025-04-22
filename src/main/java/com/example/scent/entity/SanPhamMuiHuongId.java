@@ -18,4 +18,12 @@ public class SanPhamMuiHuongId implements Serializable {
 
     @Column(name = "id_mui_huong")
     private Integer idMuiHuong;
+
+    public SanPhamMuiHuongId() {
+    }
+
+    public SanPhamMuiHuongId(Integer idSanPham, Integer idMuiHuong) {
+        this.idSanPham = idSanPham;
+        this.idMuiHuong = idMuiHuong;
+    }
 }

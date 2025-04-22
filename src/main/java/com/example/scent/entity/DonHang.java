@@ -365,5 +365,13 @@ private Integer trungBinhCacCanh =10;
     public void setLuongBan(Integer luongBan) {
         this.luongBan = luongBan;
     }
+
+    public Integer getTrungBinhCacCanh() {
+        return trungBinhCacCanh;
+    }
+
+    public void setTrungBinhCacCanh(Integer trungBinhCacCanh) {
+        this.trungBinhCacCanh = trungBinhCacCanh;
+    }
 }
 

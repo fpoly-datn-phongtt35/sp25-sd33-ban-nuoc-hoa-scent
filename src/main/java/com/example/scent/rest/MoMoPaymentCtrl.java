@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -26,8 +27,12 @@ public class MoMoPaymentCtrl {
 
     private static final Logger log = LoggerFactory.getLogger(MoMoPaymentCtrl.class);
 
-    private final MoMoPaymentService moMoPaymentService;
-    private final ObjectMapper objectMapper;
+    //private final MoMoPaymentService moMoPaymentService;
+    @Autowired
+    private MoMoPaymentService moMoPaymentService;
+    //private final ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Value("${momo.accessKey}")
     private String accessKey;

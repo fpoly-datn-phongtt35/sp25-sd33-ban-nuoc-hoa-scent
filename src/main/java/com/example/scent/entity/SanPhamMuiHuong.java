@@ -29,4 +29,36 @@ public class SanPhamMuiHuong implements Serializable {
 
     @Column(name = "prominence")
     private Double prominence;
+
+    public SanPhamMuiHuongId getId() {
+        return id;
+    }
+
+    public void setId(SanPhamMuiHuongId id) {
+        this.id = id;
+    }
+
+    public SanPham getSanPham() {
+        return sanPham;
+    }
+
+    public void setSanPham(SanPham sanPham) {
+        this.sanPham = sanPham;
+    }
+
+    public MuiHuong getMuiHuong() {
+        return muiHuong;
+    }
+
+    public void setMuiHuong(MuiHuong muiHuong) {
+        this.muiHuong = muiHuong;
+    }
+
+    public Double getProminence() {
+        return prominence;
+    }
+
+    public void setProminence(Double prominence) {
+        this.prominence = prominence;
+    }
 }
