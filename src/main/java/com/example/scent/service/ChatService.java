@@ -1,9 +1,7 @@
 package com.example.scent.service;
 
-import com.example.scent.entity.ChatMessage;
-import com.example.scent.entity.TaiKhoan;
-import com.example.scent.repo.ChatMessageInterface;
-import com.example.scent.repo.TaiKhoanInterface;
+import com.example.scent.entity.*;
+import com.example.scent.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,13 +13,19 @@ import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
-
+@Autowired
+private SpctInterface spctInterface;
     @Autowired
     private ChatMessageInterface chatMessageRepository;
 
     @Autowired
     private TaiKhoanInterface taiKhoanRepository;
-
+@Autowired
+private SanPhamInterface sanPhamRepository;
+@Autowired
+private HinhAnhInterface hinhAnhInterface;
+@Autowired
+private DanhGiaInterface danhGiaInterface;
     public Integer createGuestUser() {
         TaiKhoan guest = new TaiKhoan();
         guest.setTenDangNhap("guest_" + System.currentTimeMillis());
@@ -93,5 +97,116 @@ public class ChatService {
                 .map(msg -> msg.getSender().getId().equals(adminId) ? msg.getReceiver().getId() : msg.getSender().getId())
                 .collect(Collectors.toSet());
         return taiKhoanRepository.findByIdIn(new ArrayList<>(userIds));
+    }
+
+
+    public List<Map<String, Object>> searchProductsByName(String name) {
+        List<SanPham> products = sanPhamRepository.searchByTenSanPham(name);
+        return products.stream().map(p -> {
+            Map<String, Object> productInfo = new HashMap<>();
+            productInfo.put("id", p.getIdSanPham());
+            productInfo.put("name", p.getTenSanPham());
+
+            // Lấy thương hiệu
+            productInfo.put("brand", p.getThuongHieu() != null ? p.getThuongHieu().getTenThuongHieu() : "Không có");
+
+            // Lấy nhóm hương
+            productInfo.put("fragranceGroup", p.getNhomHuong() != null ? p.getNhomHuong().getTenNhomHuong() : "Không có");
+
+            // Lấy hình ảnh
+            List<HinhAnh> hinhAnhs = hinhAnhInterface.findBySanPhamIdSanPham(p.getIdSanPham());
+            if (!hinhAnhs.isEmpty()) {
+                productInfo.put("image", hinhAnhs.get(0).getLink());
+            } else {
+                productInfo.put("image", "https://example.com/default-image.jpg");
+            }
+
+            // Lấy đánh giá tốt nhất
+            List<DanhGia> danhGias = danhGiaInterface.findTopRatedBySanPham_IdSanPham(p.getIdSanPham());
+            if (!danhGias.isEmpty()) {
+                DanhGia topDanhGia = danhGias.get(0);
+                Map<String, Object> topReview = new HashMap<>();
+                topReview.put("rating", topDanhGia.getRating());
+                topReview.put("content", topDanhGia.getComment());
+                productInfo.put("topReview", topReview);
+            } else {
+                productInfo.put("topReview", null);
+            }
+
+            return productInfo;
+        }).collect(Collectors.toList());
+    }
+
+    // Lấy thông tin chi tiết của sản phẩm (giữ nguyên như trước)
+    public Map<String, Object> getProductDetails(Integer productId, String infoType) {
+        SanPham sanPham = sanPhamRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + productId));
+        List<Spct> spcts = spctInterface.findByidSanPham(productId);
+        List<HinhAnh> hinhAnhs = hinhAnhInterface.findHinhAnhBySanPhamId(productId);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("productName", sanPham.getTenSanPham());
+
+        switch (infoType.toLowerCase()) {
+            case "volume_price": // Thêm case mới để trả về danh sách dung tích-giá
+                if (!spcts.isEmpty()) {
+                    List<Map<String, Object>> volumePriceList = spcts.stream().map(spct -> {
+                        Map<String, Object> volumePrice = new HashMap<>();
+                        volumePrice.put("volume", spct.getDungTich() != null ? spct.getDungTich() : "Không có");
+                        volumePrice.put("price", spct.getDonGia() != null ? spct.getDonGia() : "Không có");
+                        return volumePrice;
+                    }).collect(Collectors.toList());
+                    details.put("volumePriceList", volumePriceList);
+                } else {
+                    details.put("volumePriceList", List.of());
+                }
+                break;
+            case "price":
+                if (!spcts.isEmpty()) {
+                    details.put("price", spcts.get(0).getDonGia());
+                } else {
+                    details.put("price", "Không có thông tin giá");
+                }
+                break;
+            case "stock":
+                if (!spcts.isEmpty()) {
+                    details.put("stock", spcts.get(0).getSoLuongTonKho());
+                } else {
+                    details.put("stock", "Không có thông tin tồn kho");
+                }
+                break;
+            case "volume":
+                if (!spcts.isEmpty()) {
+                    details.put("volume", spcts.get(0).getDungTich());
+                } else {
+                    details.put("volume", "Không có thông tin dung tích");
+                }
+                break;
+            case "description":
+                details.put("description", sanPham.getMoTaSanPham());
+                break;
+            case "top_notes":
+                details.put("topNotes", sanPham.getHuongDau() != null ? sanPham.getHuongDau().getMoTaHuongDau() : "Không có");
+                break;
+            case "middle_notes":
+                details.put("middleNotes", sanPham.getHuongGiua() != null ? sanPham.getHuongGiua().getMoTaHuongGiua() : "Không có");
+                break;
+            case "base_notes":
+                details.put("baseNotes", sanPham.getHuongCuoi() != null ? sanPham.getHuongCuoi().getMoTaHuongCuoi() : "Không có");
+                break;
+            case "concentration":
+                details.put("concentration", sanPham.getNongDo() != null ? sanPham.getNongDo().getTenNongDo() : "Không có");
+                break;
+            case "images":
+                if (!hinhAnhs.isEmpty()) {
+                    details.put("images", hinhAnhs.stream().map(HinhAnh::getLink).collect(Collectors.toList()));
+                } else {
+                    details.put("images", List.of());
+                }
+                break;
+            default:
+                throw new RuntimeException("Loại thông tin không hợp lệ: " + infoType);
+        }
+        return details;
     }
 }

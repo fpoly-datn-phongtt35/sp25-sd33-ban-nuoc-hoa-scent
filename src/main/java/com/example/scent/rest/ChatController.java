@@ -8,14 +8,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/chat")
 public class ChatController {
     private static final Logger log = LoggerFactory.getLogger(ChatService.class);
+
     @Autowired
     private ChatService chatService;
 
@@ -33,6 +35,19 @@ public class ChatController {
 
     @Autowired
     private TaiKhoanInterface taiKhoanRepository;
+
+    private static final String TRIGGER_PRICE_QUESTION = "giá sản phẩm này bao nhiêu"; // Từ khóa kích hoạt bot
+    private static final Integer BOT_SENDER_ID = 0; // ID của bot (giả sử bot có ID là 0)
+
+    @GetMapping("/chat-search")
+    public List<Map<String, Object>> searchProductsByName(@RequestParam String name) {
+        return chatService.searchProductsByName(name);
+    }
+
+    @GetMapping("/{productId}/details")
+    public Map<String, Object> getProductDetails(@PathVariable Integer productId, @RequestParam String infoType) {
+        return chatService.getProductDetails(productId, infoType);
+    }
 
     @MessageMapping("/admin-to-user/{senderId}/{receiverId}")
     public void sendMessageFromAdminToUser(
@@ -113,10 +128,211 @@ public class ChatController {
             return;
         }
 
-        // Gửi tin nhắn đến từng admin/staff và lưu tin nhắn
+        // Kiểm tra nếu khách hàng muốn thoát luồng bot và nói chuyện trực tiếp với admin
+        String userMessage = chatMessage.getContent().toLowerCase().trim();
+        List<String> exitKeywords = Arrays.asList("admin", "thoát", "nói chuyện với admin", "người thật");
+        if (exitKeywords.stream().anyMatch(keyword -> userMessage.contains(keyword))) {
+            String botResponse = "Được rồi, tôi sẽ chuyển bạn đến admin ngay bây giờ. Vui lòng chờ trong giây lát!";
+            sendBotResponse(senderId, adminsAndStaff, botResponse);
+
+            // Gửi tin nhắn khởi tạo để admin biết khách hàng muốn nói chuyện trực tiếp
+            String initMessage = "Khách hàng " + sender.getTenDangNhap() + " muốn nói chuyện trực tiếp với admin.";
+            for (TaiKhoan admin : adminsAndStaff) {
+                Integer adminId = admin.getId();
+                ChatMessage savedMessage = chatService.saveMessage(senderId, adminId, initMessage);
+                if (savedMessage == null) {
+                    System.out.println("[ChatController] Lưu tin nhắn thất bại cho admin: " + adminId);
+                    continue;
+                }
+                savedMessage.setSender(sender);
+                savedMessage.setReceiver(admin);
+
+                messagingTemplate.convertAndSend("/topic/admin-messages/" + adminId, savedMessage);
+                messagingTemplate.convertAndSend("/topic/messages/" + senderId, savedMessage);
+            }
+            return; // Thoát luồng bot
+        }
+
+        // Kiểm tra nếu tin nhắn khớp với trigger "Giá sản phẩm này bao nhiêu?"
+        if (userMessage.equals(TRIGGER_PRICE_QUESTION)) {
+            String botResponse = "Bạn cần tư vấn về sản phẩm nào ạ?";
+            sendBotResponse(senderId, adminsAndStaff, botResponse);
+            return;
+        }
+
+        // Kiểm tra xem người dùng có đang trong quá trình hỏi về sản phẩm không
+        List<ChatMessage> recentMessages = chatService.getMessagesForUser(senderId, adminsAndStaff.stream().map(TaiKhoan::getId).collect(Collectors.toList()));
+        boolean isAskingProductName = recentMessages.stream()
+                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                .anyMatch(msg -> msg.getContent().equals("Bạn cần tư vấn về sản phẩm nào ạ?"));
+
+        if (isAskingProductName) {
+            String productName = chatMessage.getContent().trim();
+            List<Map<String, Object>> products = chatService.searchProductsByName(productName);
+
+            if (products.isEmpty()) {
+                String botResponse = "Rất tiếc, cửa hàng hiện không có sản phẩm này. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                sendBotResponse(senderId, adminsAndStaff, botResponse);
+                return;
+            }
+
+            StringBuilder botResponse = new StringBuilder("Cửa hàng hiện có các sản phẩm:\n");
+            for (int i = 0; i < products.size(); i++) {
+                Map<String, Object> product = products.get(i);
+                botResponse.append(i + 1).append(". ").append(product.get("name")).append("\n");
+            }
+            botResponse.append("Bạn muốn hỏi về sản phẩm nào ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+            sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
+            return;
+        }
+
+        // Kiểm tra xem người dùng có đang chọn sản phẩm từ danh sách không
+        boolean isAskingProductChoice = recentMessages.stream()
+                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                .anyMatch(msg -> msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"));
+
+        if (isAskingProductChoice) {
+            String selectedProduct = chatMessage.getContent().trim();
+            List<Map<String, Object>> products = chatService.searchProductsByName(selectedProduct);
+
+            if (products.isEmpty()) {
+                String botResponse = "Sản phẩm bạn chọn không hợp lệ. Vui lòng chọn lại hoặc tìm sản phẩm khác. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                sendBotResponse(senderId, adminsAndStaff, botResponse);
+                return;
+            }
+
+            Map<String, Object> selectedProductDetails = products.get(0);
+            String botResponse = "Bạn muốn biết thông tin gì về " + selectedProductDetails.get("name") + "?\n" +
+                    "- Số lượng tồn kho\n" +
+                    "- Dung tích\n" +
+                    "- Giá\n" +
+                    "- Mô tả\n" +
+                    "- Hương đầu, giữa, cuối\n" +
+                    "- Nồng độ\n" +
+                    "- Hình ảnh\n" +
+                    "Vui lòng chọn hoặc ghi rõ yêu cầu nhé! (Nếu muốn SPELLTALK trực tiếp, hãy nhập 'admin')";
+            sendBotResponse(senderId, adminsAndStaff, botResponse);
+            return;
+        }
+
+        // Kiểm tra xem người dùng có đang chọn thông tin chi tiết không
+        boolean isAskingProductDetails = recentMessages.stream()
+                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                .anyMatch(msg -> msg.getContent().contains("Vui lòng chọn hoặc ghi rõ yêu cầu nhé!"));
+
+        if (isAskingProductDetails) {
+            String infoType = chatMessage.getContent().toLowerCase().trim();
+            String mappedInfoType;
+            switch (infoType) {
+                case "số lượng tồn kho":
+                    mappedInfoType = "stock";
+                    break;
+                case "dung tích":
+                    mappedInfoType = "volume";
+                    break;
+                case "giá":
+                    mappedInfoType = "price";
+                    break;
+                case "mô tả":
+                    mappedInfoType = "description";
+                    break;
+                case "hương đầu":
+                    mappedInfoType = "top_notes";
+                    break;
+                case "hương giữa":
+                    mappedInfoType = "middle_notes";
+                    break;
+                case "hương cuối":
+                    mappedInfoType = "base_notes";
+                    break;
+                case "nồng độ":
+                    mappedInfoType = "concentration";
+                    break;
+                case "hình ảnh":
+                    mappedInfoType = "images";
+                    break;
+                default:
+                    String botResponse = "Yêu cầu không hợp lệ. Vui lòng chọn lại từ danh sách:\n" +
+                            "- Số lượng tồn kho\n" +
+                            "- Dung tích\n" +
+                            "- Giá\n" +
+                            "- Mô tả\n" +
+                            "- Hương đầu, giữa, cuối\n" +
+                            "- Nồng độ\n" +
+                            "- Hình ảnh\n" +
+                            "(Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+            }
+
+            ChatMessage productChoiceMessage = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID) && msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"))
+                    .findFirst().orElse(null);
+            if (productChoiceMessage == null) {
+                String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
+                sendBotResponse(senderId, adminsAndStaff, botResponse);
+                return;
+            }
+
+            ChatMessage userProductSelection = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(senderId))
+                    .filter(msg -> recentMessages.indexOf(msg) > recentMessages.indexOf(productChoiceMessage))
+                    .findFirst().orElse(null);
+            if (userProductSelection == null) {
+                String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
+                sendBotResponse(senderId, adminsAndStaff, botResponse);
+                return;
+            }
+
+            String selectedProduct = userProductSelection.getContent().trim();
+            List<Map<String, Object>> products = chatService.searchProductsByName(selectedProduct);
+            if (products.isEmpty()) {
+                String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
+                sendBotResponse(senderId, adminsAndStaff, botResponse);
+                return;
+            }
+
+            Integer productId = (Integer) products.get(0).get("id");
+            Map<String, Object> productDetails = chatService.getProductDetails(productId, mappedInfoType);
+
+            String botResponse = "Thông tin về " + productDetails.get("productName") + ":\n";
+            switch (mappedInfoType) {
+                case "price":
+                    botResponse += "Giá: " + productDetails.get("price") + " VNĐ";
+                    break;
+                case "stock":
+                    botResponse += "Số lượng tồn kho: " + productDetails.get("stock");
+                    break;
+                case "volume":
+                    botResponse += "Dung tích: " + productDetails.get("volume") + " ml";
+                    break;
+                case "description":
+                    botResponse += "Mô tả: " + productDetails.get("description");
+                    break;
+                case "top_notes":
+                    botResponse += "Hương đầu: " + productDetails.get("topNotes");
+                    break;
+                case "middle_notes":
+                    botResponse += "Hương giữa: " + productDetails.get("middleNotes");
+                    break;
+                case "base_notes":
+                    botResponse += "Hương cuối: " + productDetails.get("baseNotes");
+                    break;
+                case "concentration":
+                    botResponse += "Nồng độ: " + productDetails.get("concentration");
+                    break;
+                case "images":
+                    botResponse += "Hình ảnh: " + productDetails.get("images");
+                    break;
+            }
+            botResponse += "\nBạn có muốn biết thêm thông tin khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+            sendBotResponse(senderId, adminsAndStaff, botResponse);
+            return;
+        }
+
+        // Nếu không khớp với các bước trên, gửi tin nhắn đến admin/staff
         for (TaiKhoan admin : adminsAndStaff) {
             Integer adminId = admin.getId();
-            // Lưu tin nhắn vào cơ sở dữ liệu
             ChatMessage savedMessage = chatService.saveMessage(senderId, adminId, chatMessage.getContent());
             if (savedMessage == null) {
                 System.out.println("[ChatController] Lưu tin nhắn thất bại cho admin: " + adminId);
@@ -125,17 +341,34 @@ public class ChatController {
             savedMessage.setSender(sender);
             savedMessage.setReceiver(admin);
 
-            if (savedMessage.getId() == null) {
-                System.err.println("[ChatController] ID của tin nhắn không được gán sau khi lưu!");
+            messagingTemplate.convertAndSend("/topic/admin-messages/" + adminId, savedMessage);
+            messagingTemplate.convertAndSend("/topic/messages/" + senderId, savedMessage);
+        }
+    }
+
+    // Phương thức gửi phản hồi từ bot
+    private void sendBotResponse(Integer userId, List<TaiKhoan> adminsAndStaff, String botResponse) {
+        for (TaiKhoan admin : adminsAndStaff) {
+            Integer adminId = admin.getId();
+            ChatMessage botMessage = chatService.saveMessage(BOT_SENDER_ID, userId, botResponse);
+            if (botMessage == null) {
+                System.out.println("[ChatController] Lưu tin nhắn bot thất bại cho user: " + userId);
+                continue;
             }
 
-            // Gửi tin nhắn đến admin/staff qua WebSocket
-            messagingTemplate.convertAndSend("/topic/admin-messages/" + adminId, savedMessage);
-            System.out.println("[ChatController] Đã gửi tin nhắn đến /topic/admin-messages/" + adminId + ": " + savedMessage.getContent());
+            TaiKhoan botSender = new TaiKhoan();
+            botSender.setId(BOT_SENDER_ID);
+            botSender.setTenDangNhap("Bot");
+            botMessage.setSender(botSender);
 
-            // Gửi tin nhắn lại cho khách hàng để xác nhận
-            messagingTemplate.convertAndSend("/topic/messages/" + senderId, savedMessage);
-            System.out.println("[ChatController] Đã gửi tin nhắn lại cho khách hàng qua /topic/messages/" + senderId + ": " + savedMessage.getContent());
+            TaiKhoan receiver = taiKhoanRepository.findById(userId).orElse(null);
+            botMessage.setReceiver(receiver);
+
+            messagingTemplate.convertAndSend("/topic/messages/" + userId, botMessage);
+            System.out.println("[ChatController] Bot đã gửi tin nhắn đến user qua /topic/messages/" + userId + ": " + botResponse);
+
+            messagingTemplate.convertAndSend("/topic/admin-messages/" + adminId, botMessage);
+            System.out.println("[ChatController] Bot đã gửi tin nhắn đến admin qua /topic/admin-messages/" + adminId + ": " + botResponse);
         }
     }
 
@@ -143,14 +376,14 @@ public class ChatController {
     public List<ChatMessage> getMessages(@PathVariable Integer user1Id, @PathVariable Integer user2Id) {
         return chatService.getMessagesBetweenUsers(user1Id, user2Id);
     }
+
     @PostMapping("/recall/{messageId}")
     public ResponseEntity<Map<String, Object>> recallMessage(
             @PathVariable Long messageId,
-            @RequestParam Integer userId) {  // Đổi từ Long sang Integer để khớp với TaiKhoan.id
+            @RequestParam Integer userId) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Tìm tin nhắn theo ID
             ChatMessage message = chatService.findById(messageId);
             if (message == null) {
                 response.put("success", false);
@@ -158,7 +391,6 @@ public class ChatController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Kiểm tra sender có tồn tại không
             TaiKhoan sender = message.getSender();
             if (sender == null || sender.getId() == null) {
                 response.put("success", false);
@@ -168,14 +400,12 @@ public class ChatController {
 
             log.info("Sender ID: {}, User ID: {}", sender.getId(), userId);
 
-            // Kiểm tra xem người dùng có phải là người gửi tin nhắn không
             if (!sender.getId().equals(userId)) {
                 response.put("success", false);
                 response.put("message", "Bạn không có quyền thu hồi tin nhắn này.");
                 return ResponseEntity.status(403).body(response);
             }
 
-            // Kiểm tra thời gian thu hồi (chỉ cho phép trong vòng 2 phút)
             LocalDateTime messageTime = message.getTimestamp();
             if (messageTime == null) {
                 response.put("success", false);
@@ -190,12 +420,10 @@ public class ChatController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Đánh dấu tin nhắn là đã thu hồi
             message.setRecalled(true);
             message.setContent("[Tin nhắn đã được thu hồi]");
             chatService.save(message);
 
-            // Gửi thông báo qua WebSocket để cập nhật giao diện thời gian thực
             TaiKhoan receiver = message.getReceiver();
             if (receiver != null && receiver.getId() != null) {
                 messagingTemplate.convertAndSend("/topic/messages/" + receiver.getId(), message);
@@ -213,6 +441,7 @@ public class ChatController {
             return ResponseEntity.status(500).body(response);
         }
     }
+
     @GetMapping("/messages/user/{userId}")
     public List<ChatMessage> getMessagesForUser(@PathVariable Integer userId) {
         List<TaiKhoan> adminsAndStaff = taiKhoanRepository.findByVaiTroIn(List.of("ADMIN", "STAFF"));

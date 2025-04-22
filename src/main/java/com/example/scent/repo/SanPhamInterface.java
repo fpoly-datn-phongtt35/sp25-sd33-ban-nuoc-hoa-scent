@@ -37,6 +37,8 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
 //        "where\n" +
 //        "    sp.id = :idSanPham", nativeQuery = true)
 //List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
+    @Query("SELECT s FROM SanPham s WHERE LOWER(s.tenSanPham) LIKE LOWER(CONCAT('%', :name, '%'))")
+    List<SanPham> searchByTenSanPham(@Param("name") String name);
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
