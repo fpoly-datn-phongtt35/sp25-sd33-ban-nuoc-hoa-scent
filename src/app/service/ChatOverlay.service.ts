@@ -16,7 +16,7 @@ export class ChatOverlayService {
       console.log('[ChatOverlayService] Chat đã mở, bỏ qua');
       return;
     }
-
+  
     this.overlayRef = this.overlay.create({
       positionStrategy: this.overlay
         .position()
@@ -26,19 +26,19 @@ export class ChatOverlayService {
       hasBackdrop: false,
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
     });
-
+  
     const chatPortal = new ComponentPortal(ContactComponent);
     const componentRef = this.overlayRef.attach(chatPortal);
     console.log('[ChatOverlayService] Đã mở chat nổi');
-
-    // Đảm bảo component đã được gắn hoàn toàn trước khi gọi initializeChat
+  
+    // Tăng thời gian trì hoãn để đảm bảo DOM được render
     setTimeout(() => {
       if (componentRef.instance) {
-        componentRef.instance.ngOnInit(); // Gọi lại ngOnInit để đảm bảo khởi tạo
+        componentRef.instance.ngOnInit();
         componentRef.instance.initializeChat();
       }
-    }, 0);
-
+    }, 200); // Tăng lên 200ms để đảm bảo DOM sẵn sàng
+  
     componentRef.instance.onClose.subscribe(() => {
       this.closeChat();
     });
