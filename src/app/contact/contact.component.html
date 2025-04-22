@@ -13,8 +13,11 @@
         </div>
         <div *ngIf="!message.isOption" class="message-content">
           <span class="sender-name">{{ message.sender?.tenDangNhap || 'Khách ' + userId }}</span>
-          <span class="message-text">{{ message.content }}</span>
+          <span class="message-text" [innerHTML]="message.content | safeHtml"></span>
           <span class="timestamp">{{ message.timestamp | date:'short' }}</span>
+        </div>
+        <div *ngIf="isAskingDetails(message)" class="admin-option">
+          <button (click)="switchToAdmin()">Nói chuyện với admin</button>
         </div>
       </div>
     </div>

@@ -108,6 +108,18 @@
   overflow-y: auto;
   scroll-behavior: smooth; /* Cuộn mượt mà */
 }
+.message-content {
+  display: flex;
+  flex-direction: column;
+}
+.message-text {
+  line-height: 1.5; /* Chiều cao dòng để dễ đọc */
+}
+.message-line {
+  margin-bottom: 5px; /* Khoảng cách giữa các dòng */
+  line-height: 1.5; /* Chiều cao dòng để dễ đọc */
+}
+
 
 .message {
   display: flex;

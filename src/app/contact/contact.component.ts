@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewChecked, ViewChildren, QueryList, ChangeDetectorRef, ViewChild, ElementRef, PLATFORM_ID, Inject, NgZone, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewChecked, ViewChild, ChangeDetectorRef, ElementRef, PLATFORM_ID, Inject, NgZone, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TokenService } from '../service/token.service';
@@ -8,25 +8,25 @@ import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
+import { Nl2brPipe } from '../service/response/nl2br.pipe';
+import { SafeHtmlPipe } from '../service/response/SafeHtmlPipe';
+
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent,Nl2brPipe,SafeHtmlPipe],
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss'],
 })
 export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   @Output() onClose = new EventEmitter<void>();
- 
+
   isChatOpen: boolean = true;
   messages: any[] = [];
-  private mutationObserver: MutationObserver | null = null;
-  @ViewChild('lastMessage', { static: false }) lastMessageRef!: ElementRef;
   newMessage: string = '';
   private lastSentTime: number = 0;
   private readonly DEBOUNCE_TIME: number = 1000;
-  private isFirstScroll: boolean = true;
   userId: number | null = null;
   errorMessage: string | null = null;
   isLoading: boolean = false;
@@ -37,6 +37,9 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   private lastScrollHeight: number = 0;
   private processedMessages: Set<string> = new Set();
   private shouldScroll: boolean = false;
+  private conversationState: string = 'initial'; // Trạng thái: initial, askingProductName, selectingProduct, askingDetail
+  private foundProducts: any[] = [];
+  private selectedProduct: any = null;
 
   @ViewChild('chatMessages', { static: false }) chatMessagesRef!: ElementRef<HTMLDivElement>;
 
@@ -60,68 +63,53 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       console.warn('[ContactComponent] Đang chạy trên server-side, bỏ qua khởi tạo chat');
       return;
     }
-  
-    console.log('[ContactComponent] Khởi tạo component, isChatOpen:', this.isChatOpen);
+
     const storedUserId = localStorage.getItem('userId');
-    console.log('[ContactComponent] storedUserId từ localStorage:', storedUserId);
-  
     if (storedUserId) {
       this.userId = parseInt(storedUserId, 10);
-      console.log('[ContactComponent] userId sau khi parse:', this.userId);
       if (this.userId >= 1000) {
-        console.log('[ContactComponent] Sử dụng userId từ localStorage:', this.userId);
         this.initializeChat();
         this.initializeTawkTo();
         if (!this.hasAddedInitialMessages) {
           this.addInitialMessages();
           this.hasAddedInitialMessages = true;
-          console.log('goi 1 lan');
         }
-        this.shouldScroll = true; // Đặt cờ để cuộn trong ngAfterViewChecked
+        this.shouldScroll = true;
         return;
       } else {
-        console.warn('[ContactComponent] userId trong localStorage không hợp lệ, xóa và tạo mới:', this.userId);
         localStorage.removeItem('userId');
       }
     }
-  
+
     const userInfo = this.tokenService.getUserInfo();
     this.userId = userInfo?.UserID;
-    console.log('[ContactComponent] userId từ tokenService:', this.userId);
-  
     if (!this.userId) {
-      console.log('[ContactComponent] Không có userId, tạo guest user');
       this.createGuestUser();
     } else {
-      console.log('[ContactComponent] Sử dụng userId từ token:', this.userId);
       localStorage.setItem('userId', this.userId.toString());
       this.initializeChat();
       this.initializeTawkTo();
       this.addInitialMessages();
-      this.shouldScroll = true; // Đặt cờ để cuộn trong ngAfterViewChecked
+      this.hasAddedInitialMessages = true;
+      this.shouldScroll = true;
     }
   }
 
   private normalizeTimestamp(timestamp: string): string {
     const date = new Date(timestamp);
     if (isNaN(date.getTime())) {
-      console.error('[ContactComponent] Timestamp không hợp lệ:', timestamp);
       return new Date().toISOString();
     }
     return date.toISOString();
   }
 
- private generateMessageKey(message: any): string {
-  const senderId = message.sender?.id ?? message.senderId;
-  return `${message.content}-${senderId}-${message.timestamp}`;
-}
+  private generateMessageKey(message: any): string {
+    const senderId = message.sender?.id ?? message.senderId;
+    return `${message.content}-${senderId}-${message.timestamp}`;
+  }
 
   private addInitialMessages(): void {
-    console.log('[ContactComponent] Thêm tin nhắn ban đầu, userId:', this.userId);
-    if (!this.userId) {
-      console.warn('[ContactComponent] userId không hợp lệ, không thể thêm tin nhắn ban đầu');
-      return;
-    }
+    if (!this.userId) return;
 
     const welcomeMessage = `Chào bạn! Cảm ơn bạn đã liên hệ với chúng tôi. Chúng tôi sẽ hỗ trợ bạn ngay lập tức.`;
     const welcomeKey = `welcome-${this.userId}`;
@@ -139,8 +127,6 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
         source: 'system',
         isOption: false,
       });
-    } else {
-      console.warn('[ContactComponent] Tin nhắn chào mừng đã tồn tại, bỏ qua:', welcomeKey);
     }
 
     const options = [
@@ -163,32 +149,21 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
           source: 'system',
           isOption: true,
         });
-      } else {
-        console.warn('[ContactComponent] Tùy chọn đã tồn tại, bỏ qua:', option.key);
       }
     });
 
     this.sortMessages();
-    
     this.cdr.detectChanges();
     this.shouldScroll = true;
-    console.log('[ContactComponent] Messages sau khi thêm tin nhắn ban đầu:', this.messages);
-  
   }
 
   private initializeTawkTo(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua khởi tạo Tawk.to trên server-side');
-      return;
-    }
+    if (!isPlatformBrowser(this.platformId)) return;
 
     const checkTawkInterval = setInterval(() => {
       if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API) {
         clearInterval(checkTawkInterval);
-        console.log('[ContactComponent] Tawk.to API đã sẵn sàng');
         this.setupTawkTo();
-      } else {
-        console.log('[ContactComponent] Đang chờ Tawk.to API tải...');
       }
     }, 500);
 
@@ -201,109 +176,21 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private setupTawkTo(): void {
-    if (!window.Tawk_API) {
-      console.error('[ContactComponent] Tawk_API không tồn tại');
-      return;
-    }
-    
-    // if (typeof window.Tawk_API.hide === 'function') {
-    //   window.Tawk_API.hide();
-    //   console.log('[ContactComponent] Đã ẩn widget Tawk.to bằng hide()');
-    // } else if (typeof window.Tawk_API.toggleVisibility === 'function') {
-    //   window.Tawk_API.toggleVisibility(false);
-    //   console.log('[ContactComponent] Đã ẩn widget Tawk.to bằng toggleVisibility()');
-    // } else {
-    //   console.warn('[ContactComponent] Không thể ẩn widget Tawk.to: Phương thức hide() hoặc toggleVisibility() không tồn tại');
-    // }
-  
-    // if (typeof window.Tawk_API.startChat === 'function') {
-    //   window.Tawk_API.startChat();
-    //   console.log('[ContactComponent] Đã khởi tạo phiên chat Tawk.to');
-    // } else {
-    //   console.warn('[ContactComponent] Phương thức startChat không được hỗ trợ, bỏ qua');
-    // }
-  
+    if (!window.Tawk_API) return;
+
     this.notifyAdminOfNewChat();
-  
+
     if (window.Tawk_API.onChatMessageVisitor) {
       window.Tawk_API.onChatMessageVisitor((message: any) => {
-        console.log('[ContactComponent] Tawk.to: Tin nhắn từ người dùng:', message);
         this.handleTawkToMessage(message);
       });
     }
-  
+
     if (window.Tawk_API.onChatMessageAgent) {
       window.Tawk_API.onChatMessageAgent((message: any) => {
-        console.log('[ContactComponent] Tawk.to: Tin nhắn từ admin:', message);
         this.handleTawkToMessage(message);
       });
     }
-  }
-
-  selectOption(optionContent: string): void {
-    const currentTime = Date.now();
-    if (currentTime - this.lastSentTime < this.DEBOUNCE_TIME) {
-      console.log('[ContactComponent] Bỏ qua nhấn liên tiếp:', optionContent);
-      return;
-    }
-  
-    if (!this.userId) {
-      console.error('[ContactComponent] userId không hợp lệ, không thể gửi tùy chọn');
-      return;
-    }
-  
-    const timestamp = new Date().toISOString();
-    const message = {
-      content: optionContent,
-      senderId: this.userId,
-      receiverId: null,
-      timestamp: timestamp,
-    };
-    const messageKey = this.generateMessageKey(message);
-  
-    if (!this.processedMessages.has(messageKey)) {
-      this.processedMessages.add(messageKey);
-      this.messages.push({
-        id: null,
-        sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
-        receiver: null,
-        content: optionContent,
-        timestamp: timestamp,
-        senderId: this.userId,
-        receiverId: null,
-        source: 'tawk.to',
-        isOption: false,
-      });
-    } else {
-      const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
-      if (existingMessage && new Date(timestamp) > new Date(existingMessage.timestamp)) {
-        existingMessage.timestamp = timestamp;
-      }
-    }
-  
-    this.sortMessages();
-    this.shouldScroll = true;
-    this.cdr.detectChanges();
-  
-    // Bỏ phần gửi qua Tawk.to vì addMessage không tồn tại
-    /*
-    if (window.Tawk_API) {
-      try {
-        window.Tawk_API.addMessage({
-          message: optionContent,
-          sender: `Khách ${this.userId}`,
-        });
-        console.log('[ContactComponent] Đã gửi tùy chọn qua Tawk.to:', optionContent);
-      } catch (error) {
-        console.error('[ContactComponent] Lỗi khi gửi tùy chọn Tawk.to:', error);
-      }
-    }
-    */
-  
-    this.webSocketService.sendChatMessage(this.userId, null, optionContent);
-    console.log('[ContactComponent] Đã gửi tùy chọn qua WebSocket:', optionContent);
-  
-    this.lastSentTime = currentTime;
   }
 
   private notifyAdminOfNewChat(): void {
@@ -311,7 +198,6 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     const notificationMessage = `Người dùng ${this.userId} đã bắt đầu phiên chat qua Tawk.to`;
     this.webSocketService.sendChatMessage(this.userId, null, notificationMessage);
-    console.log('[ContactComponent] Đã thông báo cho admin về phiên chat Tawk.to mới:', notificationMessage);
   }
 
   private handleTawkToMessage(message: any): void {
@@ -333,24 +219,16 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.processedMessages.has(messageKey)) {
       this.processedMessages.add(messageKey);
       this.messages.push(newMessage);
-    } else {
-      const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
-      if (existingMessage && new Date(timestamp) > new Date(existingMessage.timestamp)) {
-        existingMessage.timestamp = timestamp;
-      }
+      this.handleBotLogic(newMessage);
     }
 
     this.sortMessages();
     this.shouldScroll = true;
     this.cdr.detectChanges();
-    console.log('[ContactComponent] Đã xử lý tin nhắn Tawk.to:', newMessage);
   }
 
   private createGuestUser(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua createGuestUser trên server-side');
-      return;
-    }
+    if (!isPlatformBrowser(this.platformId)) return;
 
     this.isLoading = true;
     this.errorMessage = null;
@@ -359,13 +237,11 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         this.userId = response.userId;
         if (this.userId < 1000) {
-          console.error('[ContactComponent] ID khách không hợp lệ:', this.userId);
           this.errorMessage = 'Không thể tạo tài khoản khách. Vui lòng thử lại sau.';
           this.isLoading = false;
           this.cdr.detectChanges();
           return;
         }
-        console.log('[ContactComponent] Đã tạo guest user với ID:', this.userId);
         localStorage.setItem('userId', this.userId.toString());
         this.isLoading = false;
         this.initializeChat();
@@ -377,14 +253,7 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('[ContactComponent] Lỗi khi tạo guest user:', error);
-        let errorMsg = 'Lỗi khi tạo tài khoản khách. Vui lòng thử lại sau.';
-        if (error.status === 0) {
-          errorMsg = 'Không thể kết nối đến server. Vui lòng kiểm tra mạng.';
-        } else if (error.status === 500) {
-          errorMsg = 'Lỗi server nội bộ. Vui lòng liên hệ quản trị viên.';
-        }
-        this.errorMessage = errorMsg;
+        this.errorMessage = 'Lỗi khi tạo tài khoản khách. Vui lòng thử lại sau.';
         this.isLoading = false;
         this.cdr.detectChanges();
       }
@@ -392,24 +261,13 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   initializeChat(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua initializeChat trên server-side');
-      return;
-    }
-
-    if (!this.userId || this.userId < 1000) {
-      console.error('[ContactComponent] ID người dùng không hợp lệ:', this.userId);
+    if (!isPlatformBrowser(this.platformId) || !this.userId || this.userId < 1000) {
       this.errorMessage = 'ID người dùng không hợp lệ. Vui lòng tải lại trang.';
       this.cdr.detectChanges();
       return;
     }
 
-    console.log('[ContactComponent] Khởi tạo chat với userId:', this.userId);
-
-    // Ngắt kết nối WebSocket cũ (nếu có) trước khi kết nối lại
     this.webSocketService.disconnect();
-
-    // Kết nối WebSocket mới
     this.webSocketService.connect(this.userId);
 
     let retryCount = 0;
@@ -419,29 +277,23 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
     const checkConnection = setInterval(() => {
       if (this.webSocketService.isWebSocketConnected()) {
         clearInterval(checkConnection);
-        console.log('[ContactComponent] WebSocket đã kết nối thành công cho userId:', this.userId);
         this.loadMessages();
         this.subscribeToMessages();
         this.setupWebSocketReconnect();
       } else {
         retryCount++;
-        console.warn(`[ContactComponent] WebSocket chưa kết nối, thử lại lần ${retryCount}/${maxRetries}...`);
         this.errorMessage = 'Đang kết nối đến hệ thống chat. Vui lòng đợi...';
         if (retryCount >= maxRetries) {
           clearInterval(checkConnection);
-          console.error('[ContactComponent] Không thể kết nối WebSocket sau nhiều lần thử.');
           this.errorMessage = 'Không thể kết nối đến hệ thống chat. Vui lòng làm mới trang.';
           this.cdr.detectChanges();
         }
       }
-    }, retryInterval * (retryCount + 1)); // Backoff: 2000ms, 4000ms, 6000ms,...
+    }, retryInterval * (retryCount + 1));
   }
 
   private setupWebSocketReconnect(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua setupWebSocketReconnect trên server-side');
-      return;
-    }
+    if (!isPlatformBrowser(this.platformId)) return;
 
     if (this.reconnectSubscription) {
       this.reconnectSubscription.unsubscribe();
@@ -449,7 +301,6 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.reconnectSubscription = interval(5000).subscribe(() => {
       if (!this.webSocketService.isWebSocketConnected()) {
-        console.warn('[ContactComponent] WebSocket đã mất kết nối. Thử kết nối lại...');
         this.errorMessage = 'Mất kết nối chat. Đang thử kết nối lại...';
         this.webSocketService.connect(this.userId!);
         if (!this.chatSubscription || this.chatSubscription.closed) {
@@ -458,54 +309,328 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       } else {
         if (this.errorMessage === 'Mất kết nối chat. Đang thử kết nối lại...') {
           this.errorMessage = null;
-          console.log('[ContactComponent] Đã khôi phục kết nối WebSocket');
         }
       }
     });
   }
 
-  subscribeToMessages(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua subscribeToMessages trên server-side');
+  private searchProductsByName(productName: string): void {
+    this.http.get<any[]>(`http://localhost:8080/api/chat/chat-search?name=${productName}`).subscribe({
+      next: (products) => {
+        this.foundProducts = products;
+        if (products.length === 0) {
+          this.addBotMessage('Rất tiếc, cửa hàng hiện không có sản phẩm này. Bạn có thể trò truyện trực tiếp với của hàng');
+          this.conversationState = 'initial';
+        } else {
+          let botResponse = 'Cửa hàng hiện có các sản phẩm:\n';
+          products.forEach((product: any, index: number) => {
+            botResponse += `${index + 1}. ${product.name}\n`;
+          });
+          botResponse += 'Bạn muốn hỏi về sản phẩm nào ạ? Mời bạn nhập số thứ tự sản phẩm của bạn muốn hỏi';
+          this.addBotMessage(botResponse, false);
+          this.conversationState = 'selectingProduct';
+        }
+        this.shouldScroll = true;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.addBotMessage('Có lỗi xảy ra khi tìm kiếm sản phẩm. Vui lòng thử lại sau.');
+        this.conversationState = 'initial';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private getProductDetails(productId: number, infoType: string): void {
+    this.http.get<any>(`http://localhost:8080/api/chat/${productId}/details?infoType=${infoType}`).subscribe({
+      next: (details) => {
+        let botResponse = `Thông tin về ${details.productName}:\n`;
+        switch (infoType) {
+          case 'volume_price': // Thêm case mới để xử lý cặp dung tích-giá
+            if (details.volumePriceList && details.volumePriceList.length > 0) {
+              botResponse += details.volumePriceList
+                .map((vp: any) => `Dung tích + Giá: ${vp.volume} - ${vp.price} VNĐ`)
+                .join('\n');
+            } else {
+              botResponse += 'Không có thông tin dung tích và giá.';
+            }
+            break;
+          case 'price':
+            botResponse += `Giá: ${details.price} VNĐ`;
+            break;
+          case 'stock':
+            botResponse += `Số lượng tồn kho: ${details.stock}`;
+            break;
+          case 'volume':
+            botResponse += `Dung tích: ${details.volume} ml`;
+            break;
+          case 'description':
+            botResponse += `Mô tả: ${details.description}`;
+            break;
+          case 'top_notes':
+            botResponse += `Hương đầu: ${details.topNotes}`;
+            break;
+          case 'middle_notes':
+            botResponse += `Hương giữa: ${details.middleNotes}`;
+            break;
+          case 'base_notes':
+            botResponse += `Hương cuối: ${details.baseNotes}`;
+            break;
+          case 'concentration':
+            botResponse += `Nồng độ: ${details.concentration}`;
+            break;
+          case 'images':
+            botResponse += `Hình ảnh: ${details.images}`;
+            break;
+          default:
+            botResponse += 'Không có thông tin phù hợp.';
+        }
+        botResponse += '\nBạn có muốn biết thêm thông tin khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập "admin")';
+        this.addBotMessage(botResponse);
+        this.conversationState = 'askingDetail';
+        this.shouldScroll = true;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.addBotMessage('Có lỗi xảy ra khi lấy thông tin sản phẩm. Vui lòng thử lại sau.');
+        this.conversationState = 'initial';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private addBotMessage(content: string, isOption: boolean = false): void {
+    const timestamp = new Date().toISOString();
+    const message = {
+      id: null,
+      sender: { id: 0, hoTen: 'Bot', tenDangNhap: 'Bot' },
+      receiver: { id: this.userId },
+      content: content,
+      timestamp: timestamp,
+      senderId: 0,
+      receiverId: this.userId,
+      source: 'bot',
+      isOption: isOption,
+    };
+    const messageKey = this.generateMessageKey(message);
+    if (!this.processedMessages.has(messageKey)) {
+      this.processedMessages.add(messageKey);
+      this.messages.push(message);
+    }
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+  }
+
+  private handleBotLogic(message: any): void {
+    if (message.senderId !== this.userId) return;
+  
+    const content = message.content.toLowerCase().trim();
+  
+    // Kiểm tra nếu người dùng muốn thoát luồng bot
+    const exitKeywords = ['admin', 'thoát', 'nói chuyện với admin', 'người thật'];
+    if (exitKeywords.some(keyword => content.includes(keyword))) {
+      this.conversationState = 'initial';
+      this.foundProducts = [];
+      this.selectedProduct = null;
+      return; // Backend sẽ xử lý logic thoát bot
+    }
+  
+    if (content === 'giá sản phẩm này bao nhiêu?') {
+      this.addBotMessage('Bạn cần tư vấn về sản phẩm nào ạ? Mời bạn nhập tên sản phẩm ');
+      this.conversationState = 'askingProductName';
       return;
     }
   
-    if (this.chatSubscription) {
-      this.chatSubscription.unsubscribe();
-      console.log('[ContactComponent] Đã hủy subscription cũ');
+    if (this.conversationState === 'askingProductName') {
+      this.searchProductsByName(content);
+      return;
     }
   
+    if (this.conversationState === 'selectingProduct') {
+      const selectedIndex = parseInt(content, 10) - 1;
+      if (selectedIndex >= 0 && selectedIndex < this.foundProducts.length) {
+        this.selectedProduct = this.foundProducts[selectedIndex];
+        const botResponse = `Bạn muốn biết thông tin gì về ${this.selectedProduct.name}?\n` +
+          '- Số lượng tồn kho\n' +
+          '- Dung tích và giá\n' + // Cập nhật để gợi ý "Dung tích và giá"
+          '- Mô tả\n' +
+          '- Hương đầu, giữa, cuối\n' +
+          '- Nồng độ\n' +
+          '- Hình ảnh\n' +
+          'Vui lòng chọn hoặc ghi rõ yêu cầu nhé! (Nếu muốn nói chuyện trực tiếp, hãy nhập "admin")';
+        this.addBotMessage(botResponse);
+        this.conversationState = 'askingDetail';
+      } else {
+        this.addBotMessage('Sản phẩm bạn chọn không hợp lệ. Vui lòng chọn lại hoặc tìm sản phẩm khác. (Nếu muốn nói chuyện trực tiếp, hãy nhập "admin")');
+        this.conversationState = 'askingProductName';
+      }
+      return;
+    }
+  
+    if (this.conversationState === 'askingDetail') {
+      let infoType = '';
+      switch (content.toLowerCase()) {
+        case 'số lượng tồn kho':
+          infoType = 'stock';
+          break;
+        case 'dung tích':
+        case 'giá':
+        case 'dung tích và giá': // Thêm lựa chọn "dung tích và giá"
+          infoType = 'volume_price'; // Gọi API với infoType = "volume_price"
+          break;
+        case 'mô tả':
+          infoType = 'description';
+          break;
+        case 'hương đầu':
+          infoType = 'top_notes';
+          break;
+        case 'hương giữa':
+          infoType = 'middle_notes';
+          break;
+        case 'hương cuối':
+          infoType = 'base_notes';
+          break;
+        case 'nồng độ':
+          infoType = 'concentration';
+          break;
+        case 'hình ảnh':
+          infoType = 'images';
+          break;
+        default:
+          this.addBotMessage('Yêu cầu không hợp lệ. Vui lòng chọn lại từ danh sách:\n' +
+            '- Số lượng tồn kho\n' +
+            '- Dung tích và giá\n' +
+            '- Mô tả\n' +
+            '- Hương đầu, giữa, cuối\n' +
+            '- Nồng độ\n' +
+            '- Hình ảnh\n' +
+            '(Nếu muốn nói chuyện trực tiếp, hãy nhập "admin")');
+          return;
+      }
+      this.getProductDetails(this.selectedProduct.id, infoType);
+    }
+  }
+
+  selectOption(optionContent: string): void {
+    const currentTime = Date.now();
+    if (currentTime - this.lastSentTime < this.DEBOUNCE_TIME) return;
+
+    if (!this.userId) return;
+
+    const timestamp = new Date().toISOString();
+    const message = {
+      content: optionContent,
+      senderId: this.userId,
+      receiverId: null,
+      timestamp: timestamp,
+    };
+    const messageKey = this.generateMessageKey(message);
+
+    if (!this.processedMessages.has(messageKey)) {
+      this.processedMessages.add(messageKey);
+      this.messages.push({
+        id: null,
+        sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
+        receiver: null,
+        content: optionContent,
+        timestamp: timestamp,
+        senderId: this.userId,
+        receiverId: null,
+        source: 'user',
+        isOption: false,
+      });
+    }
+
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+
+    this.webSocketService.sendChatMessage(this.userId, null, optionContent);
+    this.handleBotLogic({ senderId: this.userId, content: optionContent, timestamp });
+    this.lastSentTime = currentTime;
+  }
+
+  // Kiểm tra xem bot có đang hỏi chi tiết sản phẩm không
+  // Kiểm tra xem bot có đang hỏi chi tiết sản phẩm, hỏi tên sản phẩm, hoặc hỏi chọn sản phẩm không
+  isAskingDetails(message: any): boolean {
+    // Kiểm tra nếu tin nhắn không phải từ bot (senderId !== 0) hoặc không phải từ "Bot"
+    if (!message || message.senderId !== 0 || message.sender?.tenDangNhap !== 'Bot') {
+      return false;
+    }
+  
+    // Kiểm tra nội dung tin nhắn và trạng thái hội thoại
+    return (
+      this.conversationState === 'askingProductName' ||
+      this.conversationState === 'selectingProduct' ||
+      this.conversationState === 'askingDetail' ||
+      message.content.includes('Vui lòng chọn hoặc ghi rõ yêu cầu nhé!') ||
+      message.content.includes('Bạn có muốn biết thêm thông tin khác không ạ?') ||
+      message.content.includes('Bạn cần tư vấn về sản phẩm nào ạ? Mời bạn nhập tên sản phẩm') ||
+      message.content.includes('Bạn muốn hỏi về sản phẩm nào ạ?')
+    );
+  }
+
+  // Xử lý khi nhấn nút "Nói chuyện với admin"
+  switchToAdmin(): void {
+    if (!this.userId) return;
+
+    const timestamp = new Date().toISOString();
+    const message = {
+      id: null,
+      sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
+      receiver: null,
+      content: 'admin',
+      timestamp: timestamp,
+      senderId: this.userId,
+      receiverId: null,
+      source: 'user',
+      isOption: false,
+    };
+    const messageKey = this.generateMessageKey(message);
+
+    if (!this.processedMessages.has(messageKey)) {
+      this.processedMessages.add(messageKey);
+      this.messages.push(message);
+    }
+
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+
+    this.webSocketService.sendChatMessage(this.userId, null, 'admin');
+    this.conversationState = 'initial'; // Reset trạng thái
+    this.foundProducts = [];
+    this.selectedProduct = null;
+  }
+
+  subscribeToMessages(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    if (this.chatSubscription) {
+      this.chatSubscription.unsubscribe();
+    }
+
     this.chatSubscription = this.webSocketService.getChatMessages().subscribe({
       next: (message: any) => {
-        console.log('[ContactComponent] Nhận được tin nhắn:', message);
-        if (!message || (!message.sender && !message.senderId)) {
-          console.error('[ContactComponent] Tin nhắn không hợp lệ, thiếu sender:', message);
-          return;
-        }
-  
+        if (!message || (!message.sender && !message.senderId)) return;
+
         if (message.type === 'error') {
-          console.error('[ContactComponent] Lỗi từ WebSocket:', message.message);
           this.errorMessage = message.message;
           this.cdr.detectChanges();
           return;
         }
-  
+
         const senderId = message.sender?.id ?? message.senderId;
         const receiverId = message.receiver?.id ?? message.receiverId;
-  
-        if (!senderId) {
-          console.error('[ContactComponent] Sender không có ID hợp lệ:', { senderId, receiverId });
-          return;
-        }
-  
-        console.log(`[ContactComponent] Kiểm tra tin nhắn: senderId=${senderId}, receiverId=${receiverId}, userId=${this.userId}`);
-  
-        // Chỉ thêm tin nhắn nếu nó đến từ admin/staff (senderId !== this.userId) và gửi đến khách hàng (receiverId === this.userId)
+
         if (senderId !== this.userId && receiverId === this.userId) {
           this.ngZone.run(() => {
+            console.log('Received WebSocket message content:', message.content); // Debug
+          console.log('Contains \\n:', message.content.includes('\n'));
             const normalizedMessage = {
               ...message,
-              sender: message.sender || { id: senderId, tenDangNhap: senderId === this.userId ? `Khách ${this.userId}` : 'Admin' },
+              sender: message.sender || { id: senderId, tenDangNhap: 'Admin' },
               receiver: message.receiver || (receiverId ? { id: receiverId } : null),
               senderId,
               receiverId,
@@ -513,28 +638,20 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
               timestamp: this.normalizeTimestamp(message.timestamp),
               isOption: false,
             };
-  
+
             const messageKey = this.generateMessageKey(normalizedMessage);
             if (!this.processedMessages.has(messageKey)) {
               this.processedMessages.add(messageKey);
               this.messages.push(normalizedMessage);
-            } else {
-              const existingMessage = this.messages.find(msg => this.generateMessageKey(msg) === messageKey);
-              if (existingMessage && new Date(normalizedMessage.timestamp) > new Date(existingMessage.timestamp)) {
-                existingMessage.timestamp = normalizedMessage.timestamp;
-              }
             }
-  
+
             this.sortMessages();
             this.shouldScroll = true;
             this.cdr.detectChanges();
           });
-        } else {
-          console.warn('[ContactComponent] Bỏ qua tin nhắn không phù hợp:', message);
         }
       },
       error: (error) => {
-        console.error('[ContactComponent] Lỗi khi nhận tin nhắn:', error);
         this.errorMessage = 'Lỗi khi nhận tin nhắn. Vui lòng kiểm tra kết nối.';
         this.cdr.detectChanges();
       }
@@ -542,34 +659,17 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   loadMessages(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua loadMessages trên server-side');
-      return;
-    }
-  
-    if (!this.userId) {
-      console.error('[ContactComponent] Không thể tải tin nhắn: userId không hợp lệ');
+    if (!isPlatformBrowser(this.platformId) || !this.userId) {
       this.errorMessage = 'ID người dùng không hợp lệ. Vui lòng tải lại trang.';
       this.cdr.detectChanges();
       return;
     }
-  
+
     this.isLoading = true;
     this.errorMessage = null;
-    console.log('[ContactComponent] Bắt đầu tải tin nhắn cho userId:', this.userId);
-  
+
     this.http.get<any[]>(`http://localhost:8080/api/chat/messages/user/${this.userId}`).subscribe({
       next: (messages) => {
-        console.log('[ContactComponent] Dữ liệu tin nhắn từ API:', messages);
-  
-        if (!messages || messages.length === 0) {
-          console.warn('[ContactComponent] Không có tin nhắn nào từ API');
-          this.isLoading = false;
-          this.shouldScroll = true;
-          this.cdr.detectChanges();
-          return;
-        }
-  
         const processedMessages = messages.map(msg => {
           const senderId = msg.sender?.id ?? msg.senderId;
           const receiverId = msg.receiver?.id ?? msg.receiverId;
@@ -585,130 +685,93 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
             source: 'backend',
           };
         });
-  
-        // Remove duplicates from the new messages before adding them
+
         processedMessages.forEach(msg => {
-          const messageKey = `backend-${msg.id}`; // Use message ID for uniqueness
+          const messageKey = `backend-${msg.id}`;
           if (!this.processedMessages.has(messageKey)) {
             this.processedMessages.add(messageKey);
             this.messages.push(msg);
           }
         });
-  
+
         this.sortMessages();
         this.isLoading = false;
-        console.log('[ContactComponent] Đã cập nhật tin nhắn:', this.messages);
-    
-        this.cdr.detectChanges();
         this.shouldScroll = true;
-        
+        this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('[ContactComponent] Lỗi khi tải tin nhắn:', error);
-        let errorMsg = 'Lỗi khi tải tin nhắn. Vui lòng thử lại sau.';
-        if (error.status === 404) {
-          errorMsg = 'Không tìm thấy tin nhắn cho người dùng này.';
-        } else if (error.status === 0) {
-          errorMsg = 'Không thể kết nối đến server. Vui lòng kiểm tra mạng.';
-        } else if (error.status === 500) {
-          errorMsg = 'Lỗi server nội bộ. Vui lòng liên hệ quản trị viên.';
-        }
-        this.errorMessage = errorMsg;
+        this.errorMessage = 'Lỗi khi tải tin nhắn. Vui lòng thử lại sau.';
         this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
-  }
-
-  private sortMessages(): void {
-    this.messages.sort((a, b) => {
-      const timeA = new Date(a.timestamp).getTime();
-      const timeB = new Date(b.timestamp).getTime();
-      if (timeA !== timeB) {
-        return timeA - timeB;
-      }
-      const senderIdA = a.sender?.id ?? a.senderId;
-      const senderIdB = b.sender?.id ?? b.senderId;
-      if (senderIdA === this.userId && senderIdB !== this.userId) {
-        return -1;
-      }
-      if (senderIdB === this.userId && senderIdA !== this.userId) {
-        return 1;
-      }
-      return 0;
-    });
-    console.log('[ContactComponent] Đã sắp xếp tin nhắn:', this.messages);
-    this.cdr.detectChanges();
   }
 
   sendMessage(): void {
     const currentTime = Date.now();
-    if (currentTime - this.lastSentTime < this.DEBOUNCE_TIME) {
-      console.log('[ContactComponent] Bỏ qua gửi tin nhắn liên tiếp:', this.newMessage);
-      return;
-    }
+    if (currentTime - this.lastSentTime < this.DEBOUNCE_TIME) return;
 
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Không thể gửi tin nhắn: Đang chạy trên server-side');
-      return;
-    }
-
-    if (!this.newMessage || !this.userId || this.userId < 1000) {
+    if (!isPlatformBrowser(this.platformId) || !this.newMessage || !this.userId || this.userId < 1000) {
       this.errorMessage = 'Không thể gửi tin nhắn: Thiếu nội dung hoặc ID người dùng không hợp lệ.';
-      console.error('[ContactComponent] Không thể gửi tin nhắn:', { newMessage: this.newMessage, userId: this.userId });
       this.cdr.detectChanges();
       return;
     }
 
     if (!this.webSocketService.isWebSocketConnected()) {
       this.errorMessage = 'Kết nối WebSocket đang bị gián đoạn. Tin nhắn sẽ được gửi khi kết nối được khôi phục.';
-      console.warn('[ContactComponent] WebSocket chưa kết nối khi gửi tin nhắn');
       return;
     }
 
-    if (this.isSending) {
-      console.warn('[ContactComponent] Đang gửi tin nhắn, vui lòng chờ...');
-      return;
-    }
+    if (this.isSending) return;
 
     this.isSending = true;
-    console.log('[ContactComponent] Gửi tin nhắn từ user', this.userId, ':', this.newMessage);
 
-    try {
-      const timestamp = new Date().toISOString();
-      const message = {
-        id: null,
-        sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
-        receiver: null,
-        content: this.newMessage.trim(),
-        timestamp: timestamp,
-        senderId: this.userId,
-        receiverId: null,
-        isOption: false,
-      };
-      const messageKey = this.generateMessageKey(message);
+    const timestamp = new Date().toISOString();
+    const message = {
+      id: null,
+      sender: { id: this.userId, tenDangNhap: `Khách ${this.userId}` },
+      receiver: null,
+      content: this.newMessage.trim(),
+      timestamp: timestamp,
+      senderId: this.userId,
+      receiverId: null,
+      isOption: false,
+    };
+    const messageKey = this.generateMessageKey(message);
 
-      if (!this.processedMessages.has(messageKey)) {
-        this.processedMessages.add(messageKey);
-        this.messages.push(message);
-      }
-
-      this.sortMessages();
-      this.shouldScroll = true;
-      this.cdr.detectChanges();
-
-      this.webSocketService.sendChatMessage(this.userId, null, this.newMessage);
-      console.log('[ContactComponent] Đã gửi tin nhắn qua WebSocket:', this.newMessage);
-
-      this.newMessage = '';
-      this.isSending = false;
-      this.lastSentTime = currentTime;
-    } catch (error) {
-      console.error('[ContactComponent] Lỗi khi gửi tin nhắn:', error);
-      this.errorMessage = 'Không thể gửi tin nhắn do lỗi kết nối. Vui lòng thử lại.';
-      this.isSending = false;
-      this.cdr.detectChanges();
+    if (!this.processedMessages.has(messageKey)) {
+      this.processedMessages.add(messageKey);
+      this.messages.push(message);
     }
+
+    this.sortMessages();
+    this.shouldScroll = true;
+    this.cdr.detectChanges();
+
+    this.webSocketService.sendChatMessage(this.userId, null, this.newMessage);
+    this.handleBotLogic(message);
+
+    this.newMessage = '';
+    this.isSending = false;
+    this.lastSentTime = currentTime;
+  }
+
+  formatMessageContent(content: string): string {
+    return content.replace(/\n/g, '<br>');
+  }
+
+  private sortMessages(): void {
+    this.messages.sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+      const senderIdA = a.sender?.id ?? a.senderId;
+      const senderIdB = b.sender?.id ?? b.senderId;
+      if (senderIdA === this.userId && senderIdB !== this.userId) return -1;
+      if (senderIdB === this.userId && senderIdA !== this.userId) return 1;
+      return 0;
+    });
+    this.cdr.detectChanges();
   }
 
   ngAfterViewChecked(): void {
@@ -716,50 +779,28 @@ export class ContactComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.ngZone.runOutsideAngular(() => {
         setTimeout(() => {
           const chatMessages = this.chatMessagesRef.nativeElement;
-          if (chatMessages.scrollHeight > chatMessages.clientHeight) { // Đảm bảo có nội dung để cuộn
+          if (chatMessages.scrollHeight > chatMessages.clientHeight) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            console.log('[ContactComponent] Cuộn xuống đáy chat-messages trong ngAfterViewChecked', {
-              scrollHeight: chatMessages.scrollHeight,
-              scrollTop: chatMessages.scrollTop,
-              clientHeight: chatMessages.clientHeight
-            });
-          } else {
-            console.log('[ContactComponent] Không đủ nội dung để cuộn trong ngAfterViewChecked');
           }
           this.shouldScroll = false;
         }, 100);
       });
     }
   }
- 
-  
- 
+
   ngOnDestroy(): void {
-    console.log('[ContactComponent] Hủy component, ngắt kết nối WebSocket và subscription');
-    if (!isPlatformBrowser(this.platformId)) {
-      console.warn('[ContactComponent] Bỏ qua ngOnDestroy trên server-side');
-      return;
-    }
-  
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.webSocketService.disconnect();
-    if (this.chatSubscription) {
-      this.chatSubscription.unsubscribe();
-      console.log('[ContactComponent] Đã hủy chat subscription');
-    }
-    if (this.reconnectSubscription) {
-      this.reconnectSubscription.unsubscribe();
-      console.log('[ContactComponent] Đã hủy reconnect subscription');
-    }
-    if (!this.tokenService.getUserInfo()) {
-      localStorage.removeItem('userId');
-    }
+    if (this.chatSubscription) this.chatSubscription.unsubscribe();
+    if (this.reconnectSubscription) this.reconnectSubscription.unsubscribe();
+    if (!this.tokenService.getUserInfo()) localStorage.removeItem('userId');
     this.processedMessages.clear();
-  
+
     if (typeof window.Tawk_API !== 'undefined' && window.Tawk_API && typeof window.Tawk_API.endChat === 'function') {
       window.Tawk_API.endChat();
-      console.log('[ContactComponent] Đã kết thúc phiên chat Tawk.to');
     }
-  
+
     this.onClose.emit();
   }
 }
