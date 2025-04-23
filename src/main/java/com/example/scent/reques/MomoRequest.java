@@ -7,29 +7,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MomoRequest {
 
-    @NotBlank(message = "orderId không được để trống")
     private String orderId;
 
-    @NotBlank(message = "orderInfo không được để trống")
     private String orderInfo;
 
-    @NotBlank(message = "amount không được để trống")
-    @Pattern(regexp = "^[0-9]+$", message = "amount phải là số")
-    private String amount;
+    private BigDecimal amount;
 
-    @NotBlank(message = "returnUrl không được để trống")
     private String returnUrl;
 
-    @NotBlank(message = "notifyUrl không được để trống")
     private String notifyUrl;
 
-    @NotBlank(message = "requestType không được để trống")
     private String requestType;
 
     // extraData can be optional
@@ -51,11 +46,11 @@ public class MomoRequest {
         this.orderInfo = orderInfo;
     }
 
-    public String getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(String amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 

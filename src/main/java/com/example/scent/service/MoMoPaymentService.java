@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,9 +62,8 @@ public class MoMoPaymentService {
             String extraData = dto.getExtraData() != null ? dto.getExtraData() : "";
 
             // Parse amount to long
-            long amount = Long.parseLong(dto.getAmount());
-
-            // Create raw signature string
+            BigDecimal amountBigDecimal = dto.getAmount();
+            long amount = amountBigDecimal.setScale(0, RoundingMode.CEILING).longValue();            // Create raw signature string
             String rawSignature = String.format(
                     "accessKey=%s&amount=%d&extraData=%s&ipnUrl=%s&orderId=%s&orderInfo=%s&partnerCode=%s&redirectUrl=%s&requestId=%s&requestType=%s",
                     accessKey, amount, extraData, dto.getNotifyUrl(), orderId, dto.getOrderInfo(),
