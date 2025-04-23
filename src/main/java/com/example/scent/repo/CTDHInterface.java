@@ -15,7 +15,7 @@ import java.util.List;
 
 public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
     List<ChiTietDonHang> findByDonHangId(Integer donHangId);
-
+    List<ChiTietDonHang> findBySpctSanPhamIdSanPham(Integer idSanPham);
     @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +

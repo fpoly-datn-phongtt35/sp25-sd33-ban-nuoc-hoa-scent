@@ -37,6 +37,22 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
 //        "where\n" +
 //        "    sp.id = :idSanPham", nativeQuery = true)
 //List<SanPhamDto> getDetail(@Param("idSanPham") Integer idSanPham);
+
+    @Query(value = "SELECT TOP 10 sp.id, sp.ten " +
+            "FROM san_pham sp " +
+            "JOIN spct s ON s.id_san_pham = sp.id " +
+            "JOIN chi_tiet_don_hang ctdh ON ctdh.id_spct = s.id " +
+            "JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
+            "WHERE dh.trang_thai = 4 " +
+            "GROUP BY sp.id, sp.ten " +
+            "ORDER BY SUM(ctdh.so_luong) DESC", nativeQuery = true)
+    List<Object[]> findTop10ByOrderBySoLuongBanDesc();
+
+    // Tìm sản phẩm theo ID thương hiệu
+    List<SanPham> findByThuongHieu_Id(Integer id);
+
+    // Tìm sản phẩm theo ID nhóm hương
+    List<SanPham> findByNhomHuong_Id(Integer idNhomHuong);
     @Query("SELECT s FROM SanPham s WHERE LOWER(s.tenSanPham) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<SanPham> searchByTenSanPham(@Param("name") String name);
     @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +

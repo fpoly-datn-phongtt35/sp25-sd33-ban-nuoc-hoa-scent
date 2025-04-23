@@ -36,12 +36,41 @@ public class ChatController {
     @Autowired
     private TaiKhoanInterface taiKhoanRepository;
 
-    private static final String TRIGGER_PRICE_QUESTION = "giá sản phẩm này bao nhiêu"; // Từ khóa kích hoạt bot
-    private static final Integer BOT_SENDER_ID = 0; // ID của bot (giả sử bot có ID là 0)
+    private static final String TRIGGER_CONSULT_PRODUCT = "tôi cần tư vấn sản phẩm";
+    private static final String TRIGGER_TOP_10 = "top 10 sản phẩm bán chạy";
+    private static final String TRIGGER_BY_BRAND = "tìm sản phẩm theo thương hiệu";
+    private static final String TRIGGER_BY_FRAGRANCE = "tìm sản phẩm theo nhóm hương";
+    private static final Integer BOT_SENDER_ID = 0;
+    private static final List<String> EXIT_KEYWORDS = Arrays.asList("admin", "thoát", "nói chuyện với admin", "người thật");
 
     @GetMapping("/chat-search")
     public List<Map<String, Object>> searchProductsByName(@RequestParam String name) {
         return chatService.searchProductsByName(name);
+    }
+
+    @GetMapping("/top-10-products")
+    public List<Map<String, Object>> getTop10Products() {
+        return chatService.getTop10Products();
+    }
+
+    @GetMapping("/brands")
+    public List<Map<String, Object>> getAllBrands() {
+        return chatService.getAllBrands();
+    }
+
+    @GetMapping("/products-by-brand")
+    public List<Map<String, Object>> getProductsByBrand(@RequestParam Integer brandId) {
+        return chatService.getProductsByBrand(brandId);
+    }
+
+    @GetMapping("/fragrance-groups")
+    public List<Map<String, Object>> getAllFragranceGroups() {
+        return chatService.getAllFragranceGroups();
+    }
+
+    @GetMapping("/products-by-fragrance-group")
+    public List<Map<String, Object>> getProductsByFragranceGroup(@RequestParam Integer groupId) {
+        return chatService.getProductsByFragranceGroup(groupId);
     }
 
     @GetMapping("/{productId}/details")
@@ -130,8 +159,7 @@ public class ChatController {
 
         // Kiểm tra nếu khách hàng muốn thoát luồng bot và nói chuyện trực tiếp với admin
         String userMessage = chatMessage.getContent().toLowerCase().trim();
-        List<String> exitKeywords = Arrays.asList("admin", "thoát", "nói chuyện với admin", "người thật");
-        if (exitKeywords.stream().anyMatch(keyword -> userMessage.contains(keyword))) {
+        if (EXIT_KEYWORDS.stream().anyMatch(keyword -> userMessage.contains(keyword))) {
             String botResponse = "Được rồi, tôi sẽ chuyển bạn đến admin ngay bây giờ. Vui lòng chờ trong giây lát!";
             sendBotResponse(senderId, adminsAndStaff, botResponse);
 
@@ -140,10 +168,6 @@ public class ChatController {
             for (TaiKhoan admin : adminsAndStaff) {
                 Integer adminId = admin.getId();
                 ChatMessage savedMessage = chatService.saveMessage(senderId, adminId, initMessage);
-                if (savedMessage == null) {
-                    System.out.println("[ChatController] Lưu tin nhắn thất bại cho admin: " + adminId);
-                    continue;
-                }
                 savedMessage.setSender(sender);
                 savedMessage.setReceiver(admin);
 
@@ -153,106 +177,239 @@ public class ChatController {
             return; // Thoát luồng bot
         }
 
-        // Kiểm tra nếu tin nhắn khớp với trigger "Giá sản phẩm này bao nhiêu?"
-        if (userMessage.equals(TRIGGER_PRICE_QUESTION)) {
-            String botResponse = "Bạn cần tư vấn về sản phẩm nào ạ?";
-            sendBotResponse(senderId, adminsAndStaff, botResponse);
-            return;
-        }
+        // Kiểm tra trạng thái trò chuyện với admin
+        List<Integer> adminStaffIds = adminsAndStaff.stream().map(TaiKhoan::getId).collect(Collectors.toList());
+        boolean isChattingWithAdmin = chatService.getMessagesForUser(senderId, adminStaffIds).stream()
+                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(senderId))
+                .anyMatch(msg -> EXIT_KEYWORDS.stream().anyMatch(keyword -> msg.getContent().toLowerCase().trim().contains(keyword)));
 
-        // Kiểm tra xem người dùng có đang trong quá trình hỏi về sản phẩm không
-        List<ChatMessage> recentMessages = chatService.getMessagesForUser(senderId, adminsAndStaff.stream().map(TaiKhoan::getId).collect(Collectors.toList()));
-        boolean isAskingProductName = recentMessages.stream()
-                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
-                .anyMatch(msg -> msg.getContent().equals("Bạn cần tư vấn về sản phẩm nào ạ?"));
-
-        if (isAskingProductName) {
-            String productName = chatMessage.getContent().trim();
-            List<Map<String, Object>> products = chatService.searchProductsByName(productName);
-
-            if (products.isEmpty()) {
-                String botResponse = "Rất tiếc, cửa hàng hiện không có sản phẩm này. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+        // Nếu chưa trò chuyện với admin, xử lý luồng bot
+        if (!isChattingWithAdmin) {
+            // Kiểm tra nếu tin nhắn khớp với trigger "tôi cần tư vấn sản phẩm"
+            if (userMessage.equals(TRIGGER_CONSULT_PRODUCT)) {
+                String botResponse = "Bạn cần tư vấn về sản phẩm nào ạ? Mời bạn nhập tên sản phẩm.";
                 sendBotResponse(senderId, adminsAndStaff, botResponse);
                 return;
             }
 
-            StringBuilder botResponse = new StringBuilder("Cửa hàng hiện có các sản phẩm:\n");
-            for (int i = 0; i < products.size(); i++) {
-                Map<String, Object> product = products.get(i);
-                botResponse.append(i + 1).append(". ").append(product.get("name")).append("\n");
-            }
-            botResponse.append("Bạn muốn hỏi về sản phẩm nào ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
-            sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
-            return;
-        }
+            // Kiểm tra nếu tin nhắn khớp với trigger "top 10 sản phẩm bán chạy"
+            if (userMessage.equals(TRIGGER_TOP_10)) {
+                List<Map<String, Object>> products = chatService.getTop10Products();
+                if (products.isEmpty()) {
+                    String botResponse = "Hiện tại không có sản phẩm bán chạy nào. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
 
-        // Kiểm tra xem người dùng có đang chọn sản phẩm từ danh sách không
-        boolean isAskingProductChoice = recentMessages.stream()
-                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
-                .anyMatch(msg -> msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"));
-
-        if (isAskingProductChoice) {
-            String selectedProduct = chatMessage.getContent().trim();
-            List<Map<String, Object>> products = chatService.searchProductsByName(selectedProduct);
-
-            if (products.isEmpty()) {
-                String botResponse = "Sản phẩm bạn chọn không hợp lệ. Vui lòng chọn lại hoặc tìm sản phẩm khác. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
-                sendBotResponse(senderId, adminsAndStaff, botResponse);
+                StringBuilder botResponse = new StringBuilder("Danh sách 10 sản phẩm bán chạy nhất:\n");
+                for (int i = 0; i < products.size(); i++) {
+                    Map<String, Object> product = products.get(i);
+                    botResponse.append(i + 1).append(". ").append(product.get("name")).append("\n");
+                }
+                botResponse.append("Bạn muốn hỏi về sản phẩm nào ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+                sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
                 return;
             }
 
-            Map<String, Object> selectedProductDetails = products.get(0);
-            String botResponse = "Bạn muốn biết thông tin gì về " + selectedProductDetails.get("name") + "?\n" +
-                    "- Số lượng tồn kho\n" +
-                    "- Dung tích\n" +
-                    "- Giá\n" +
-                    "- Mô tả\n" +
-                    "- Hương đầu, giữa, cuối\n" +
-                    "- Nồng độ\n" +
-                    "- Hình ảnh\n" +
-                    "Vui lòng chọn hoặc ghi rõ yêu cầu nhé! (Nếu muốn SPELLTALK trực tiếp, hãy nhập 'admin')";
-            sendBotResponse(senderId, adminsAndStaff, botResponse);
-            return;
-        }
+            // Kiểm tra nếu tin nhắn khớp với trigger "tìm sản phẩm theo thương hiệu"
+            if (userMessage.equals(TRIGGER_BY_BRAND)) {
+                List<Map<String, Object>> brands = chatService.getAllBrands();
+                if (brands.isEmpty()) {
+                    String botResponse = "Hiện tại không có thương hiệu nào. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
 
-        // Kiểm tra xem người dùng có đang chọn thông tin chi tiết không
-        boolean isAskingProductDetails = recentMessages.stream()
-                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
-                .anyMatch(msg -> msg.getContent().contains("Vui lòng chọn hoặc ghi rõ yêu cầu nhé!"));
+                StringBuilder botResponse = new StringBuilder("Danh sách thương hiệu:\n");
+                for (int i = 0; i < brands.size(); i++) {
+                    Map<String, Object> brand = brands.get(i);
+                    botResponse.append(i + 1).append(". ").append(brand.get("name")).append("\n");
+                }
+                botResponse.append("Bạn muốn xem sản phẩm của thương hiệu nào? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+                sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
+                return;
+            }
 
-        if (isAskingProductDetails) {
-            String infoType = chatMessage.getContent().toLowerCase().trim();
-            String mappedInfoType;
-            switch (infoType) {
-                case "số lượng tồn kho":
-                    mappedInfoType = "stock";
-                    break;
-                case "dung tích":
-                    mappedInfoType = "volume";
-                    break;
-                case "giá":
-                    mappedInfoType = "price";
-                    break;
-                case "mô tả":
-                    mappedInfoType = "description";
-                    break;
-                case "hương đầu":
-                    mappedInfoType = "top_notes";
-                    break;
-                case "hương giữa":
-                    mappedInfoType = "middle_notes";
-                    break;
-                case "hương cuối":
-                    mappedInfoType = "base_notes";
-                    break;
-                case "nồng độ":
-                    mappedInfoType = "concentration";
-                    break;
-                case "hình ảnh":
-                    mappedInfoType = "images";
-                    break;
-                default:
-                    String botResponse = "Yêu cầu không hợp lệ. Vui lòng chọn lại từ danh sách:\n" +
+            // Kiểm tra nếu tin nhắn khớp với trigger "tìm sản phẩm theo nhóm hương"
+            if (userMessage.equals(TRIGGER_BY_FRAGRANCE)) {
+                List<Map<String, Object>> groups = chatService.getAllFragranceGroups();
+                if (groups.isEmpty()) {
+                    String botResponse = "Hiện tại không có nhóm hương nào. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+
+                StringBuilder botResponse = new StringBuilder("Danh sách nhóm hương:\n");
+                for (int i = 0; i < groups.size(); i++) {
+                    Map<String, Object> group = groups.get(i);
+                    botResponse.append(i + 1).append(". ").append(group.get("name")).append("\n");
+                }
+                botResponse.append("Bạn muốn xem sản phẩm thuộc nhóm hương nào? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+                sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
+                return;
+            }
+
+            // Kiểm tra xem người dùng có đang trong quá trình hỏi về sản phẩm không
+            List<ChatMessage> recentMessages = chatService.getMessagesForUser(senderId, adminStaffIds);
+            boolean isAskingProductName = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                    .anyMatch(msg -> msg.getContent().equals("Bạn cần tư vấn về sản phẩm nào ạ? Mời bạn nhập tên sản phẩm."));
+
+            if (isAskingProductName) {
+                String productName = chatMessage.getContent().trim();
+                List<Map<String, Object>> products = chatService.searchProductsByName(productName);
+
+                if (products.isEmpty()) {
+                    String botResponse = "Rất tiếc, cửa hàng hiện không có sản phẩm này. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+
+                StringBuilder botResponse = new StringBuilder("Cửa hàng hiện có các sản phẩm:\n");
+                for (int i = 0; i < products.size(); i++) {
+                    Map<String, Object> product = products.get(i);
+                    botResponse.append(i + 1).append(". ").append(product.get("name")).append("\n");
+                }
+                botResponse.append("Bạn muốn hỏi về sản phẩm nào ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+                sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
+                return;
+            }
+
+            // Kiểm tra xem người dùng có đang chọn thương hiệu không
+            boolean isSelectingBrand = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                    .anyMatch(msg -> msg.getContent().contains("Bạn muốn xem sản phẩm của thương hiệu nào?"));
+
+            if (isSelectingBrand) {
+                try {
+                    int selectedIndex = Integer.parseInt(chatMessage.getContent().trim()) - 1;
+                    List<Map<String, Object>> brands = chatService.getAllBrands();
+                    if (selectedIndex < 0 || selectedIndex >= brands.size()) {
+                        String botResponse = "Thương hiệu bạn chọn không hợp lệ. Vui lòng chọn lại. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                    }
+
+                    Integer brandId = (Integer) brands.get(selectedIndex).get("id");
+                    List<Map<String, Object>> products = chatService.getProductsByBrand(brandId);
+
+                    if (products.isEmpty()) {
+                        String botResponse = "Thương hiệu này hiện không có sản phẩm nào. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                    }
+
+                    StringBuilder botResponse = new StringBuilder("Danh sách sản phẩm của thương hiệu " + brands.get(selectedIndex).get("name") + ":\n");
+                    for (int i = 0; i < products.size(); i++) {
+                        Map<String, Object> product = products.get(i);
+                        botResponse.append(i + 1).append(". ").append(product.get("name")).append("\n");
+                    }
+                    botResponse.append("Bạn muốn hỏi về sản phẩm nào ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+                    sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
+                    return;
+                } catch (NumberFormatException e) {
+                    String botResponse = "Vui lòng nhập số thứ tự thương hiệu hợp lệ. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+            }
+
+            // Kiểm tra xem người dùng có đang chọn nhóm hương không
+            boolean isSelectingFragranceGroup = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                    .anyMatch(msg -> msg.getContent().contains("Bạn muốn xem sản phẩm thuộc nhóm hương nào?"));
+
+            if (isSelectingFragranceGroup) {
+                try {
+                    int selectedIndex = Integer.parseInt(chatMessage.getContent().trim()) - 1;
+                    List<Map<String, Object>> groups = chatService.getAllFragranceGroups();
+                    if (selectedIndex < 0 || selectedIndex >= groups.size()) {
+                        String botResponse = "Nhóm hương bạn chọn không hợp lệ. Vui lòng chọn lại. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                    }
+
+                    Integer groupId = (Integer) groups.get(selectedIndex).get("id");
+                    List<Map<String, Object>> products = chatService.getProductsByFragranceGroup(groupId);
+
+                    if (products.isEmpty()) {
+                        String botResponse = "Nhóm hương này hiện không có sản phẩm nào. Bạn có muốn tìm sản phẩm khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                    }
+
+                    StringBuilder botResponse = new StringBuilder("Danh sách sản phẩm thuộc nhóm hương " + groups.get(selectedIndex).get("name") + ":\n");
+                    for (int i = 0; i < products.size(); i++) {
+                        Map<String, Object> product = products.get(i);
+                        botResponse.append(i + 1).append(". ").append(product.get("name")).append("\n");
+                    }
+                    botResponse.append("Bạn muốn hỏi về sản phẩm nào ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')");
+                    sendBotResponse(senderId, adminsAndStaff, botResponse.toString());
+                    return;
+                } catch (NumberFormatException e) {
+                    String botResponse = "Vui lòng nhập số thứ tự nhóm hương hợp lệ. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+            }
+
+            // Kiểm tra xem người dùng có đang chọn sản phẩm từ danh sách không
+            boolean isAskingProductChoice = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                    .anyMatch(msg -> msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"));
+
+            if (isAskingProductChoice) {
+                try {
+                    int selectedIndex = Integer.parseInt(chatMessage.getContent().trim()) - 1;
+                    ChatMessage lastBotMessage = recentMessages.stream()
+                            .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID) && msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"))
+                            .reduce((first, second) -> second)
+                            .orElse(null);
+
+                    if (lastBotMessage == null) {
+                        String botResponse = "Không tìm thấy danh sách sản phẩm. Vui lòng bắt đầu lại.";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                    }
+
+                    String lastBotContent = lastBotMessage.getContent();
+                    List<Map<String, Object>> products;
+                    if (lastBotContent.contains("Danh sách 10 sản phẩm bán chạy nhất")) {
+                        products = chatService.getTop10Products();
+                    } else if (lastBotContent.contains("Danh sách sản phẩm của thương hiệu")) {
+                        String brandName = lastBotContent.split("Danh sách sản phẩm của thương hiệu ")[1].split(":")[0];
+                        Integer brandId = chatService.getAllBrands().stream()
+                                .filter(b -> b.get("name").equals(brandName))
+                                .map(b -> (Integer) b.get("id"))
+                                .findFirst()
+                                .orElse(null);
+                        products = brandId != null ? chatService.getProductsByBrand(brandId) : List.of();
+                    } else if (lastBotContent.contains("Danh sách sản phẩm thuộc nhóm hương")) {
+                        String groupName = lastBotContent.split("Danh sách sản phẩm thuộc nhóm hương ")[1].split(":")[0];
+                        Integer groupId = chatService.getAllFragranceGroups().stream()
+                                .filter(g -> g.get("name").equals(groupName))
+                                .map(g -> (Integer) g.get("id"))
+                                .findFirst()
+                                .orElse(null);
+                        products = groupId != null ? chatService.getProductsByFragranceGroup(groupId) : List.of();
+                    } else {
+                        String productName = recentMessages.stream()
+                                .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(senderId))
+                                .filter(msg -> recentMessages.indexOf(msg) > recentMessages.indexOf(lastBotMessage))
+                                .findFirst()
+                                .map(ChatMessage::getContent)
+                                .orElse("");
+                        products = chatService.searchProductsByName(productName);
+                    }
+
+                    if (selectedIndex < 0 || selectedIndex >= products.size()) {
+                        String botResponse = "Sản phẩm bạn chọn không hợp lệ. Vui lòng chọn lại hoặc tìm sản phẩm khác. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                    }
+
+                    Map<String, Object> selectedProductDetails = products.get(selectedIndex);
+                    String botResponse = "Bạn muốn biết thông tin gì về " + selectedProductDetails.get("name") + "?\n" +
                             "- Số lượng tồn kho\n" +
                             "- Dung tích\n" +
                             "- Giá\n" +
@@ -260,84 +417,176 @@ public class ChatController {
                             "- Hương đầu, giữa, cuối\n" +
                             "- Nồng độ\n" +
                             "- Hình ảnh\n" +
-                            "(Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                            "Vui lòng chọn hoặc ghi rõ yêu cầu nhé! (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
                     sendBotResponse(senderId, adminsAndStaff, botResponse);
                     return;
+                } catch (NumberFormatException e) {
+                    String botResponse = "Vui lòng nhập số thứ tự sản phẩm hợp lệ. (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
             }
 
-            ChatMessage productChoiceMessage = recentMessages.stream()
-                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID) && msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"))
-                    .findFirst().orElse(null);
-            if (productChoiceMessage == null) {
-                String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
+            // Kiểm tra xem người dùng có đang chọn thông tin chi tiết không
+            boolean isAskingProductDetails = recentMessages.stream()
+                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID))
+                    .anyMatch(msg -> msg.getContent().contains("Vui lòng chọn hoặc ghi rõ yêu cầu nhé!"));
+
+            if (isAskingProductDetails) {
+                String infoType = chatMessage.getContent().toLowerCase().trim();
+                String mappedInfoType;
+                switch (infoType) {
+                    case "số lượng tồn kho":
+                        mappedInfoType = "stock";
+                        break;
+                    case "dung tích":
+                        mappedInfoType = "volume";
+                        break;
+                    case "giá":
+                        mappedInfoType = "price";
+                        break;
+                    case "mô tả":
+                        mappedInfoType = "description";
+                        break;
+                    case "hương đầu":
+                        mappedInfoType = "top_notes";
+                        break;
+                    case "hương giữa":
+                        mappedInfoType = "middle_notes";
+                        break;
+                    case "hương cuối":
+                        mappedInfoType = "base_notes";
+                        break;
+                    case "nồng độ":
+                        mappedInfoType = "concentration";
+                        break;
+                    case "hình ảnh":
+                        mappedInfoType = "images";
+                        break;
+                    default:
+                        String botResponse = "Yêu cầu không hợp lệ. Vui lòng chọn lại từ danh sách:\n" +
+                                "- Số lượng tồn kho\n" +
+                                "- Dung tích\n" +
+                                "- Giá\n" +
+                                "- Mô tả\n" +
+                                "- Hương đầu, giữa, cuối\n" +
+                                "- Nồng độ\n" +
+                                "- Hình ảnh\n" +
+                                "(Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
+                        sendBotResponse(senderId, adminsAndStaff, botResponse);
+                        return;
+                }
+
+                ChatMessage productChoiceMessage = recentMessages.stream()
+                        .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(BOT_SENDER_ID) && msg.getContent().contains("Bạn muốn hỏi về sản phẩm nào ạ?"))
+                        .reduce((first, second) -> second)
+                        .orElse(null);
+                if (productChoiceMessage == null) {
+                    String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+
+                ChatMessage userProductSelection = recentMessages.stream()
+                        .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(senderId))
+                        .filter(msg -> recentMessages.indexOf(msg) > recentMessages.indexOf(productChoiceMessage))
+                        .findFirst()
+                        .orElse(null);
+                if (userProductSelection == null) {
+                    String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+
+                String selectedProductIndex = userProductSelection.getContent().trim();
+                List<Map<String, Object>> products;
+                String lastBotContent = productChoiceMessage.getContent();
+                if (lastBotContent.contains("Danh sách 10 sản phẩm bán chạy nhất")) {
+                    products = chatService.getTop10Products();
+                } else if (lastBotContent.contains("Danh sách sản phẩm của thương hiệu")) {
+                    String brandName = lastBotContent.split("Danh sách sản phẩm của thương hiệu ")[1].split(":")[0];
+                    Integer brandId = chatService.getAllBrands().stream()
+                            .filter(b -> b.get("name").equals(brandName))
+                            .map(b -> (Integer) b.get("id"))
+                            .findFirst()
+                            .orElse(null);
+                    products = brandId != null ? chatService.getProductsByBrand(brandId) : List.of();
+                } else if (lastBotContent.contains("Danh sách sản phẩm thuộc nhóm hương")) {
+                    String groupName = lastBotContent.split("Danh sách sản phẩm thuộc nhóm hương ")[1].split(":")[0];
+                    Integer groupId = chatService.getAllFragranceGroups().stream()
+                            .filter(g -> g.get("name").equals(groupName))
+                            .map(g -> (Integer) g.get("id"))
+                            .findFirst()
+                            .orElse(null);
+                    products = groupId != null ? chatService.getProductsByFragranceGroup(groupId) : List.of();
+                } else {
+                    String productName = recentMessages.stream()
+                            .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(senderId))
+                            .filter(msg -> recentMessages.indexOf(msg) < recentMessages.indexOf(productChoiceMessage))
+                            .reduce((first, second) -> second)
+                            .map(ChatMessage::getContent)
+                            .orElse("");
+                    products = chatService.searchProductsByName(productName);
+                }
+
+                int selectedIndex;
+                try {
+                    selectedIndex = Integer.parseInt(selectedProductIndex) - 1;
+                } catch (NumberFormatException e) {
+                    String botResponse = "Số thứ tự sản phẩm không hợp lệ. Vui lòng bắt đầu lại.";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+
+                if (selectedIndex < 0 || selectedIndex >= products.size()) {
+                    String botResponse = "Sản phẩm bạn chọn không hợp lệ. Vui lòng bắt đầu lại.";
+                    sendBotResponse(senderId, adminsAndStaff, botResponse);
+                    return;
+                }
+
+                Integer productId = (Integer) products.get(selectedIndex).get("id");
+                Map<String, Object> productDetails = chatService.getProductDetails(productId, mappedInfoType);
+
+                String botResponse = "Thông tin về " + productDetails.get("productName") + ":\n";
+                switch (mappedInfoType) {
+                    case "price":
+                        botResponse += "Giá: " + productDetails.get("price") + " VNĐ";
+                        break;
+                    case "stock":
+                        botResponse += "Số lượng tồn kho: " + productDetails.get("stock");
+                        break;
+                    case "volume":
+                        botResponse += "Dung tích: " + productDetails.get("volume") + " ml";
+                        break;
+                    case "description":
+                        botResponse += "Mô tả: " + productDetails.get("description");
+                        break;
+                    case "top_notes":
+                        botResponse += "Hương đầu: " + productDetails.get("topNotes");
+                        break;
+                    case "middle_notes":
+                        botResponse += "Hương giữa: " + productDetails.get("middleNotes");
+                        break;
+                    case "base_notes":
+                        botResponse += "Hương cuối: " + productDetails.get("baseNotes");
+                        break;
+                    case "concentration":
+                        botResponse += "Nồng độ: " + productDetails.get("concentration");
+                        break;
+                    case "images":
+                        botResponse += "Hình ảnh: " + productDetails.get("images");
+                        break;
+                }
+                botResponse += "\nBạn có muốn biết thêm thông tin khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
                 sendBotResponse(senderId, adminsAndStaff, botResponse);
                 return;
             }
-
-            ChatMessage userProductSelection = recentMessages.stream()
-                    .filter(msg -> msg.getSender() != null && msg.getSender().getId().equals(senderId))
-                    .filter(msg -> recentMessages.indexOf(msg) > recentMessages.indexOf(productChoiceMessage))
-                    .findFirst().orElse(null);
-            if (userProductSelection == null) {
-                String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
-                sendBotResponse(senderId, adminsAndStaff, botResponse);
-                return;
-            }
-
-            String selectedProduct = userProductSelection.getContent().trim();
-            List<Map<String, Object>> products = chatService.searchProductsByName(selectedProduct);
-            if (products.isEmpty()) {
-                String botResponse = "Không tìm thấy sản phẩm bạn đã chọn. Vui lòng bắt đầu lại.";
-                sendBotResponse(senderId, adminsAndStaff, botResponse);
-                return;
-            }
-
-            Integer productId = (Integer) products.get(0).get("id");
-            Map<String, Object> productDetails = chatService.getProductDetails(productId, mappedInfoType);
-
-            String botResponse = "Thông tin về " + productDetails.get("productName") + ":\n";
-            switch (mappedInfoType) {
-                case "price":
-                    botResponse += "Giá: " + productDetails.get("price") + " VNĐ";
-                    break;
-                case "stock":
-                    botResponse += "Số lượng tồn kho: " + productDetails.get("stock");
-                    break;
-                case "volume":
-                    botResponse += "Dung tích: " + productDetails.get("volume") + " ml";
-                    break;
-                case "description":
-                    botResponse += "Mô tả: " + productDetails.get("description");
-                    break;
-                case "top_notes":
-                    botResponse += "Hương đầu: " + productDetails.get("topNotes");
-                    break;
-                case "middle_notes":
-                    botResponse += "Hương giữa: " + productDetails.get("middleNotes");
-                    break;
-                case "base_notes":
-                    botResponse += "Hương cuối: " + productDetails.get("baseNotes");
-                    break;
-                case "concentration":
-                    botResponse += "Nồng độ: " + productDetails.get("concentration");
-                    break;
-                case "images":
-                    botResponse += "Hình ảnh: " + productDetails.get("images");
-                    break;
-            }
-            botResponse += "\nBạn có muốn biết thêm thông tin khác không ạ? (Nếu muốn nói chuyện trực tiếp, hãy nhập 'admin')";
-            sendBotResponse(senderId, adminsAndStaff, botResponse);
-            return;
         }
 
-        // Nếu không khớp với các bước trên, gửi tin nhắn đến admin/staff
+        // Nếu đang trò chuyện với admin, gửi tin nhắn đến admin/staff
         for (TaiKhoan admin : adminsAndStaff) {
             Integer adminId = admin.getId();
             ChatMessage savedMessage = chatService.saveMessage(senderId, adminId, chatMessage.getContent());
-            if (savedMessage == null) {
-                System.out.println("[ChatController] Lưu tin nhắn thất bại cho admin: " + adminId);
-                continue;
-            }
             savedMessage.setSender(sender);
             savedMessage.setReceiver(admin);
 
@@ -351,10 +600,6 @@ public class ChatController {
         for (TaiKhoan admin : adminsAndStaff) {
             Integer adminId = admin.getId();
             ChatMessage botMessage = chatService.saveMessage(BOT_SENDER_ID, userId, botResponse);
-            if (botMessage == null) {
-                System.out.println("[ChatController] Lưu tin nhắn bot thất bại cho user: " + userId);
-                continue;
-            }
 
             TaiKhoan botSender = new TaiKhoan();
             botSender.setId(BOT_SENDER_ID);
