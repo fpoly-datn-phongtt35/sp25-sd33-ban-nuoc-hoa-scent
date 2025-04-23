@@ -3,7 +3,7 @@
   bottom: 80px;
   right: 20px;
   width: 350px;
-  height: 450px;
+  height: 550px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -174,4 +174,40 @@
   color: #999;
   font-style: italic;
   margin-bottom: 10px;
+}
+/* Container cho nút "Nói chuyện với admin" */
+.admin-option {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-start; /* Đặt nút ở phía bên trái */
+}
+
+/* Style cho nút "Nói chuyện với admin" */
+.admin-option button {
+  background-color: #007bff; /* Màu nền xanh dương */
+  color: #ffffff; /* Màu chữ trắng */
+  border: none; /* Bỏ viền mặc định */
+  border-radius: 5px; /* Bo góc nút */
+  padding: 8px 16px; /* Tăng padding để nút lớn hơn */
+  font-size: 14px; /* Kích thước chữ */
+  font-weight: 500; /* Độ đậm của chữ */
+  cursor: pointer; /* Con trỏ chuột khi hover */
+  transition: background-color 0.3s ease, transform 0.1s ease; /* Hiệu ứng mượt mà khi hover */
+}
+
+/* Hiệu ứng hover cho nút */
+.admin-option button:hover {
+  background-color: #0056b3; /* Màu nền tối hơn khi hover */
+  transform: translateY(-1px); /* Hiệu ứng nhấc nút lên một chút */
+}
+
+/* Hiệu ứng active (khi nhấn nút) */
+.admin-option button:active {
+  background-color: #004085; /* Màu nền tối hơn nữa khi nhấn */
+  transform: translateY(0); /* Trở lại vị trí ban đầu khi nhấn */
+}
+
+/* Đảm bảo nút không bị quá sát với tin nhắn phía trên */
+.message + .admin-option {
+  margin-top: 10px;
 }

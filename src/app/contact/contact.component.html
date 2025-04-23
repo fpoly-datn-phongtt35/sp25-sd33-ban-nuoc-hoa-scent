@@ -8,7 +8,7 @@
     <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
     <div #chatMessages class="chat-messages">
       <div *ngFor="let message of messages; let isLast = last" [ngClass]="{'message': true, 'sent': message.senderId === userId, 'received': message.senderId !== userId, 'option': message.isOption, 'last-message': isLast}">
-        <div *ngIf="message.isOption" class="option" (click)="selectOption(message.content)">
+        <div *ngIf="message.isOption && !isChattingWithAdmin" class="option" (click)="selectOption(message.content)">
           {{ message.content }}
         </div>
         <div *ngIf="!message.isOption" class="message-content">
