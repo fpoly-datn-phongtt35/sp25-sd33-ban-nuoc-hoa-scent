@@ -421,6 +421,16 @@ export class OrderComponent implements OnInit, OnDestroy {
   calculateTotals() {
     this.totalProductPrice = this.selectedProducts.reduce((total, item) => total + (item.quantity || 0) * (item.product.donGia || 0), 0);
     this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
+    if (this.finalAmount < 0) {
+      this.finalAmount = 0;
+      console.error('finalAmount đã được điều chỉnh vì âm:', this.finalAmount);
+    }
+    console.log('Tính toán tổng:', {
+      totalProductPrice: this.totalProductPrice,
+      discount: this.discount,
+      shippingFee: this.shippingFee,
+      finalAmount: this.finalAmount
+    });
     this.cdr.markForCheck();
   }
 
@@ -672,27 +682,37 @@ export class OrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const extraDataObj = { amount: this.finalAmount, orderInfo: `Thanh toán đơn hàng ${orderRes.id}`,
-       orderId: 'ORDERTOSCENT_' + orderRes.id };
+    const extraDataObj = {
+      amount: Math.round(this.finalAmount), // Làm tròn để nhất quán
+      orderInfo: `Thanh toán đơn hàng ${orderRes.id}`,
+      orderId: 'ORDERTOSCENT_' + orderRes.id
+    };
     const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
-    console.log('momoRequest:',extraDataObj)
     const momoRequest = {
       orderId: extraDataObj.orderId,
       orderInfo: extraDataObj.orderInfo,
-      amount: this.finalAmount.toString(),
+      amount: this.finalAmount.toFixed(2).replace(',', '.'), // Đảm bảo định dạng số thập phân với dấu chấm
       returnUrl: `http://localhost:4200/order-success/${orderRes.id}?extraData=${extraData}`,
       notifyUrl: 'http://localhost:8080/api/momo/callback',
       requestType: 'captureWallet'
     };
+    if (isNaN(this.finalAmount) || this.finalAmount <= 0) {
+      Swal.fire('Lỗi', 'Tổng số tiền không hợp lệ cho thanh toán MoMo!', 'error');
+      return;
+    }
+    console.log('Yêu cầu MoMo:', momoRequest);
 
     const sub = this.momoPaymentService.createPayment(momoRequest).subscribe({
       next: (res: any) => {
+        console.log('Phản hồi MoMo:', res);
         if (res.payUrl) window.location.href = res.payUrl;
-        else Swal.fire('Lỗi', 'Không nhận được payUrl từ MoMo.', 'error');
+        else {
+          console.error('Không nhận được payUrl từ MoMo:', res);
+          Swal.fire('Lỗi', 'Không nhận được URL thanh toán từ MoMo. Phản hồi: ' + JSON.stringify(res), 'error');
+        }
       },
       error: (err) => {
-        console.error('MoMo error:', err);
-
+        console.error('Lỗi gọi API MoMo:', err);
         Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
       },
     });

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 import { HttpClient,HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable,throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { TokenService } from './token.service';
 export interface ThuongHieu {
   id?: number; // Optional for creating new brands
@@ -42,8 +42,8 @@ export class ThuongHieuService {
     addThuongHieu(thuonghieu: any): Observable<any> {
       return this.http.post<any>(`${this.apiUrl}/add`, thuonghieu);
     }
-    
-    
+
+
     getThuongHieu1(page: number, size: number = 12): Observable<any> {
       let params = `?page=${page}&size=${size}`;
       return this.http.get(`${this.apiUrl}${params}`).pipe(
@@ -65,10 +65,10 @@ export class ThuongHieuService {
       }
       return throwError(() => new Error(errorMessage));
     }
-    
-  
-    
-  
+
+
+
+
     addThuongHieu1(thuongHieu: Omit<ThuongHieu, 'id'>): Observable<ThuongHieu> {
       return this.http.post<ThuongHieu>(this.apiUrl, thuongHieu).pipe(
         catchError((error) => {
@@ -77,7 +77,7 @@ export class ThuongHieuService {
         })
       );
     }
-  
+
     updateThuongHieu(id: number, thuongHieu1: ThuongHieu1): Observable<ThuongHieu1> {
       return this.http.put<ThuongHieu1>(`${this.apiUrl}/${id}`, thuongHieu1).pipe(
         catchError((error) => {
@@ -86,12 +86,32 @@ export class ThuongHieuService {
         })
       );
     }
-  
+
     deleteThuongHieu(id: number): Observable<void> {
       return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
         catchError((error) => {
           console.error(`Lỗi khi xóa thương hiệu với ID ${id}:`, error);
           return throwError(() => new Error(`Failed to delete brand with ID ${id}`));
+        })
+      );
+    }
+    deactivateSanPhamByThuongHieuId(thuongHieuId: number): Observable<string> {
+      return this.http.put<{ message: string }>(`${this.apiUrl}/deactivate/thuong-hieu/${thuongHieuId}`, null).pipe(
+        map((response) => response.message), // Lấy message từ JSON
+        catchError((error) => {
+          console.error('Error deactivating san pham:', error);
+          const errorMessage = error.error?.error || 'Không thể ngừng bán sản phẩm.';
+          return throwError(() => new Error(errorMessage));
+        })
+      );
+    }
+    restoreSanPhamByThuongHieuId(thuongHieuId: number): Observable<string> {
+      return this.http.put<{ message: string }>(`${this.apiUrl}/restore/thuong-hieu/${thuongHieuId}`, null).pipe(
+        map((response) => response.message),
+        catchError((error) => {
+          console.error('Error restoring san pham:', error);
+          const errorMessage = error.error?.error || 'Không thể khôi phục sản phẩm.';
+          return throwError(() => new Error(errorMessage));
         })
       );
     }

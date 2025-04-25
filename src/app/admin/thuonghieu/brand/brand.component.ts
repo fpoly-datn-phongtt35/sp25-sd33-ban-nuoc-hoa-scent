@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AddBrandComponent } from '../add-brand/add-brand.component';
 import { UpdateBrandComponent } from '../update-brand/update-brand.component';
 import { ThuongHieuService } from '../../../service/thuonghieu.service';
+import { ToastrService } from 'ngx-toastr';
 
 export interface ThuongHieu {
   id?: number;
@@ -10,6 +11,8 @@ export interface ThuongHieu {
   quocGia: string;
   moTa: string;
   hasProduct?: boolean;
+  soLuongSanPham?: number;
+  canRestore?: boolean;
   isNew?: boolean;
 }
 
@@ -27,15 +30,24 @@ export class BrandComponent implements OnInit {
   showAddModal = false;
   showUpdateModal = false;
   showDeleteModal = false;
+  showDeactivateModal = false;
+  showRestoreModal = false;
   selectedThuongHieu: ThuongHieu | null = null;
   brandToDelete: number | null = null;
+  brandToDeactivate: number | null = null;
+  brandToRestore: number | null = null;
+  isDeactivating = false;
+  isRestoring = false;
 
   page: number = 0;
   size: number = 10;
   totalPages: number = 1;
   totalElements: number = 0;
 
-  constructor(private thuongHieuService: ThuongHieuService) {}
+  constructor(
+    private thuongHieuService: ThuongHieuService,
+    private toastr: ToastrService
+  ) {}
 
   ngOnInit(): void {
     this.loadThuongHieus();
@@ -48,9 +60,7 @@ export class BrandComponent implements OnInit {
       next: (res) => {
         this.thuongHieus = res.content.map((thuongHieu: ThuongHieu) => ({
           ...thuongHieu,
-
           isNew: false
-
         }));
         this.totalPages = res.page?.totalPages || 1;
         this.totalElements = res.totalElements || 0;
@@ -77,22 +87,6 @@ export class BrandComponent implements OnInit {
     this.thuongHieus.unshift(newThuongHieu);
     this.closeAddModal();
     this.loadThuongHieus();
-  }
-
-  undoAddThuongHieu(thuongHieu: ThuongHieu): void {
-    if (thuongHieu.id !== undefined) {
-      this.thuongHieuService.deleteThuongHieu(thuongHieu.id).subscribe({
-        next: () => {
-          thuongHieu.isNew = false;
-          this.loadThuongHieus();
-          console.log(`Undid adding ThuongHieu with ID: ${thuongHieu.id}`);
-        },
-        error: (err) => {
-          console.error('Error undoing ThuongHieu addition:', err);
-          this.errorMessage = 'Không thể hoàn tác thêm thương hiệu.';
-        }
-      });
-    }
   }
 
   openUpdateModal(thuongHieu: ThuongHieu): void {
@@ -122,10 +116,73 @@ export class BrandComponent implements OnInit {
         next: () => {
           this.closeDeleteModal();
           this.loadThuongHieus();
+          this.toastr.success('Xóa thương hiệu thành công!', 'Thành công');
         },
         error: (error) => {
           this.errorMessage = error.message;
           this.closeDeleteModal();
+          this.toastr.error(this.errorMessage, 'Lỗi');
+        }
+      });
+    }
+  }
+
+  deactivateSanPham(thuongHieuId: number): void {
+    this.brandToDeactivate = thuongHieuId;
+    this.showDeactivateModal = true;
+  }
+
+  closeDeactivateModal(): void {
+    this.brandToDeactivate = null;
+    this.showDeactivateModal = false;
+  }
+
+  confirmDeactivate(): void {
+    if (this.brandToDeactivate !== null) {
+      this.isDeactivating = true;
+      this.thuongHieuService.deactivateSanPhamByThuongHieuId(this.brandToDeactivate).subscribe({
+        next: (message: string) => {
+          this.loadThuongHieus();
+          this.closeDeactivateModal();
+          this.toastr.success(message, 'Thành công');
+          this.isDeactivating = false;
+        },
+        error: (error) => {
+          this.errorMessage = error.message || 'Lỗi khi ngừng bán sản phẩm.';
+          this.closeDeactivateModal();
+          this.toastr.error(this.errorMessage, 'Lỗi');
+          this.isDeactivating = false;
+        }
+      });
+    }
+  }
+
+  restoreSanPham(thuongHieuId: number): void {
+    this.brandToRestore = thuongHieuId;
+    this.errorMessage = '';
+    this.showRestoreModal = true;
+  }
+
+  closeRestoreModal(): void {
+    this.brandToRestore = null;
+    this.showRestoreModal = false;
+  }
+
+  confirmRestore(): void {
+    if (this.brandToRestore !== null) {
+      this.isRestoring = true;
+      this.thuongHieuService.restoreSanPhamByThuongHieuId(this.brandToRestore).subscribe({
+        next: (message: string) => {
+          this.loadThuongHieus();
+          this.closeRestoreModal();
+          this.toastr.success(message, 'Thành công');
+          this.isRestoring = false;
+        },
+        error: (error) => {
+          this.errorMessage = error.message || 'Lỗi khi khôi phục sản phẩm.';
+          this.closeRestoreModal();
+          this.toastr.error(this.errorMessage, 'Lỗi');
+          this.isRestoring = false;
         }
       });
     }

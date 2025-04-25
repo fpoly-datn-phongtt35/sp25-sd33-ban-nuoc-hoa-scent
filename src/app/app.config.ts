@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http'; // Thêm import withFetch
 import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
-
+import { ToastrModule } from 'ngx-toastr';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(withFetch()), // Cấu hình HttpClient với Fetch API

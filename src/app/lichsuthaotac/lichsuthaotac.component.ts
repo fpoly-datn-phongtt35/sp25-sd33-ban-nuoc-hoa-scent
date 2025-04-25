@@ -28,7 +28,7 @@ export class LichsuthaotacComponent implements OnInit{
   lichSuThaoTacs: LichSuThaoTac[] = [];
   filteredLichSuThaoTacs: LichSuThaoTac[] = []; // Danh sách sau khi lọc
   searchTerm: string = ''; // Từ khóa tìm kiếm
-  
+
 
   constructor(private lichSuThaoTacService: LichSuThaoTacService) {}
 
@@ -47,14 +47,12 @@ export class LichsuthaotacComponent implements OnInit{
       }
     );
   }
-
   // Hàm tìm kiếm
   search(): void {
     if (!this.searchTerm) {
       this.filteredLichSuThaoTacs = this.lichSuThaoTacs; // Nếu không có từ khóa, hiển thị toàn bộ
       return;
     }
-
     const searchTermLower = this.searchTerm.toLowerCase();
     this.filteredLichSuThaoTacs = this.lichSuThaoTacs.filter(item =>
       item.maDonHang.toString().includes(this.searchTerm) ||
