@@ -6,16 +6,20 @@ import lombok.Data;
 public class ThuongHieuWithStatusDTO {
     private Integer id;
     private String tenThuongHieu;
-    private String quocGia; // Thêm quốc gia
+    private String quocGia;
     private String moTa;
     private boolean hasProduct;
-
-    public ThuongHieuWithStatusDTO(Integer id, String tenThuongHieu, String quocGia, String moTa, boolean hasProduct) {
+    private Long soLuongSanPham; // Thêm trường số lượng sản phẩm
+    private boolean canRestore; // Thêm trường canRestore
+    public ThuongHieuWithStatusDTO(Integer id, String tenThuongHieu, String quocGia, String moTa,
+                                   boolean hasProduct, Long soLuongSanPham, boolean canRestore) {
         this.id = id;
         this.tenThuongHieu = tenThuongHieu;
         this.quocGia = quocGia;
         this.moTa = moTa;
         this.hasProduct = hasProduct;
+        this.soLuongSanPham = soLuongSanPham != null ? soLuongSanPham : 0L;
+        this.canRestore = canRestore;
     }
 
     public ThuongHieuWithStatusDTO() {
@@ -59,5 +63,13 @@ public class ThuongHieuWithStatusDTO {
 
     public void setHasProduct(boolean hasProduct) {
         this.hasProduct = hasProduct;
+    }
+
+    public Long getSoLuongSanPham() {
+        return soLuongSanPham;
+    }
+
+    public void setSoLuongSanPham(Long soLuongSanPham) {
+        this.soLuongSanPham = soLuongSanPham != null ? soLuongSanPham : 0L; // Nếu null, gán 0
     }
 }

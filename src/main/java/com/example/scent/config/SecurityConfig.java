@@ -53,7 +53,8 @@ public class SecurityConfig {
                                 "rest/tai-khoan/get-user-accounts",
                                 "rest/phong-cach","rest/phong-cach/**",
                                 "rest/mui-huong","rest/mui-huong/**",
-                                "rest/not-huong","rest/not-huong/**")
+                                "rest/not-huong","rest/not-huong/**",
+                                "rest/thuong-hieu/deactivate/thuong-hieu/**","rest/thuong-hieu/restore/thuong-hieu/**")
                         .permitAll()
                         .requestMatchers("/rest/nhom-huong/paged/**","/rest/thuong-hieu/**","/rest/thuong-hieu/getAll").permitAll()
                         .requestMatchers("/rest/thuong-hieu", "/rest/thuong-hieu/**","/rest/thuong-hieu/**","/rest/thuong-hieu/**")

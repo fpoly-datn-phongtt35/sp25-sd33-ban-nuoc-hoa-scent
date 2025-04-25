@@ -7,9 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -478,6 +480,15 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "LEFT JOIN FETCH sp.huongCuoi hc " +
             "WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<SanPham> findByTenContainingIgnoreCase(@Param("keyword") String keyword, Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE SanPham sp SET sp.trangThai = 0 WHERE sp.thuongHieu.id = :thuongHieuId")
+    void updateTrangThaiToInactiveByThuongHieuId(Integer thuongHieuId);
+    @Modifying
+    @Transactional
+    @Query("UPDATE SanPham sp SET sp.trangThai = 1 WHERE sp.thuongHieu.id = :thuongHieuId")
+    void updateTrangThaiToActiveByThuongHieuId(Integer thuongHieuId);
 }
 
 

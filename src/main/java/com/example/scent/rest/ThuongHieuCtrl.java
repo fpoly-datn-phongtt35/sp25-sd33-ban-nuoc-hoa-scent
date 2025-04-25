@@ -11,7 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin("*")
 @RestController
@@ -61,6 +63,41 @@ public class ThuongHieuCtrl {
     public ResponseEntity<Void> deleteThuongHieu(@PathVariable Integer id) {
         thuongHieuService.deleteThuongHieu(id);
         return ResponseEntity.noContent().build();
+    }
+    // API cập nhật trạng thái sản phẩm thành 0 theo id thương hiệu
+    @PutMapping("/deactivate/thuong-hieu/{id}")
+    public ResponseEntity<Map<String, String>> deactivateSanPhamByThuongHieuId(@PathVariable("id") Integer thuongHieuId) {
+        try {
+            thuongHieuService.deactivateSanPhamByThuongHieuId(thuongHieuId);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Cập nhật trạng thái sản phẩm thành công cho thương hiệu ID: " + thuongHieuId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Lỗi server: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+    @PutMapping("/restore/thuong-hieu/{id}")
+    public ResponseEntity<Map<String, String>> RestoreSanPhamByThuongHieuId(@PathVariable("id") Integer thuongHieuId) {
+        try {
+            thuongHieuService.restoreSanPhamByThuongHieuId(thuongHieuId);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Cập nhật trạng thái sản phẩm thành công cho thương hiệu ID: " + thuongHieuId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Lỗi server: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
 }
 

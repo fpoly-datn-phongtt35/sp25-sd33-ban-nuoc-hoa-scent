@@ -4,6 +4,7 @@ package com.example.scent.service;
 import com.example.scent.dto.ThuongHieuWithStatusDTO;
 import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.ThuongHieu;
+import com.example.scent.repo.SanPhamInterface;
 import com.example.scent.repo.ThuongHieuInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
 public class ThuongHieuSv {
     @Autowired
     ThuongHieuInterface thuongHieuRepository;
+    @Autowired
+    SanPhamInterface sanPhamRepository;
     public Page<ThuongHieu> getAllThuongHieu(Pageable pageable) {
         return thuongHieuRepository.findAll(pageable);
     }
@@ -30,12 +33,19 @@ public class ThuongHieuSv {
         Page<ThuongHieu> thuongHieuPage = thuongHieuRepository.findAll(pageable);
         List<ThuongHieuWithStatusDTO> dtos = thuongHieuPage.getContent().stream().map(thuongHieu -> {
             boolean hasProduct = thuongHieuRepository.existsSanPhamByThuongHieuId(thuongHieu.getId());
+            Long soLuongSanPham = thuongHieuRepository.countSanPhamByThuongHieuId(thuongHieu.getId());
+            boolean allInactive = thuongHieuRepository.areAllSanPhamInactiveByThuongHieuId(thuongHieu.getId());
+            boolean canRestore = thuongHieuRepository.existsSanPhamInactiveByThuongHieuId(thuongHieu.getId());
+
+
             return new ThuongHieuWithStatusDTO(
                     thuongHieu.getId(),
                     thuongHieu.getTenThuongHieu(),
-                    thuongHieu.getQuocGia(), // Ánh xạ quốc gia
+                    thuongHieu.getQuocGia(),
                     thuongHieu.getMoTa(),
-                    hasProduct
+                    hasProduct,
+                    soLuongSanPham,
+                    canRestore
             );
         }).collect(Collectors.toList());
         return new PageImpl<>(dtos, pageable, thuongHieuPage.getTotalElements());
@@ -84,5 +94,20 @@ public class ThuongHieuSv {
             throw new IllegalArgumentException("Không tìm thấy thương hiệu với ID: " + id);
         }
         thuongHieuRepository.deleteById(id);
+    }
+    // Ngừng bán sp theo thương hiệu
+    // Chuyển trạng thái sản phẩm thành 0 theo một thương hiệu
+    public void deactivateSanPhamByThuongHieuId(Integer thuongHieuId) {
+        if (thuongHieuId == null) {
+            throw new IllegalArgumentException("ID thương hiệu không được null");
+        }
+        sanPhamRepository.updateTrangThaiToInactiveByThuongHieuId(thuongHieuId);
+    }
+    // Chuyển trạng thái sản phẩm thành 1 theo một thương hiệu
+    public void restoreSanPhamByThuongHieuId(Integer thuongHieuId) {
+        if (thuongHieuId == null) {
+            throw new IllegalArgumentException("ID thương hiệu không được null");
+        }
+        sanPhamRepository.updateTrangThaiToActiveByThuongHieuId(thuongHieuId);
     }
 }
