@@ -11,7 +11,7 @@ import { NhomHuongService } from '../../../service/nhomhuong.service';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgSelectModule, NgSelectComponent } from '@ng-select/ng-select';
 import { ToastrService } from 'ngx-toastr';
-import { NongDoService } from '../../../service/NongDo.Service';
+import { NongDoService } from '../../../service/nongdo.service';
 
 interface ThuongHieu {
   id: number;

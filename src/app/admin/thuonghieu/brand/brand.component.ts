@@ -70,6 +70,7 @@ export class BrandComponent implements OnInit {
       error: (error) => {
         this.errorMessage = error.message;
         this.isLoading = false;
+        this.toastr.error(this.errorMessage, 'Lỗi');
       }
     });
   }
@@ -83,10 +84,11 @@ export class BrandComponent implements OnInit {
   }
 
   handleBrandAdded(newThuongHieu: ThuongHieu): void {
-    newThuongHieu.isNew = true;
-    this.thuongHieus.unshift(newThuongHieu);
+    console.log('Đã thêm thương hiệu:', newThuongHieu); // Debug
+    this.page = 0; // Quay về trang đầu để hiển thị thương hiệu mới
     this.closeAddModal();
     this.loadThuongHieus();
+    this.toastr.success('Thêm thương hiệu thành công!', 'Thành công');
   }
 
   openUpdateModal(thuongHieu: ThuongHieu): void {
