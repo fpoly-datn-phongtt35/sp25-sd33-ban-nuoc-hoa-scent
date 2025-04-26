@@ -8,9 +8,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MuiHuongInterface extends JpaRepository<MuiHuong, Integer> {
-    @Query(value = "SELECT CASE WHEN COUNT(spmh) > 0 THEN 1 ELSE 0 END " +
-            "FROM san_pham_mui_huong spmh " +
-            "INNER JOIN mui_huong_nhom_huong mhnh ON spmh.id_mui_huong = mhnh.id_mui_huong " +
-            "WHERE spmh.id_mui_huong = :muiHuongId", nativeQuery = true)
+    @Query(value = "SELECT CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS BIT) " +
+            "FROM ( " +
+            "  SELECT id_mui_huong FROM san_pham_mui_huong WHERE id_mui_huong = :muiHuongId " +
+            "  UNION " +
+            "  SELECT id_mui_huong FROM mui_huong_nhom_huong WHERE id_mui_huong = :muiHuongId " +
+            "  /* Thêm các bảng khác nếu cần */ " +
+            ") AS linked_tables", nativeQuery = true)
     boolean existsSanPhamByMuiHuongId(@Param("muiHuongId") Integer muiHuongId);
 }
