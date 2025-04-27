@@ -2,21 +2,32 @@
   <div class="modal-content">
     <h2>Thông Tin Tài Khoản</h2>
 
-    <form (ngSubmit)="updateAccount()">
-      <div class="field">
+    <form [formGroup]="updateForm" (ngSubmit)="updateAccount()">
+      <div class="field form-group">
         <label>Email:</label>
-        <input type="email" [(ngModel)]="userInfo.email" name="email" />
+        <input type="email" formControlName="email" name="email" />
+        <div *ngIf="updateForm.get('email')?.touched && updateForm.get('email')?.errors" class="error">
+          <span *ngIf="updateForm.get('email')?.errors?.['required'] || updateForm.get('email')?.errors?.['email']">
+            Email không hợp lệ.
+          </span>
+          <span *ngIf="updateForm.get('email')?.errors?.['duplicateEmail']">
+            Email đã tồn tại trong hệ thống.
+          </span>
+        </div>
       </div>
-      <div class="field">
+      <div class="field form-group">
         <label>Họ và tên:</label>
-        <input type="text" [(ngModel)]="userInfo.hoTen" name="hoTen" />
+        <input type="text" formControlName="hoTen" name="hoTen" />
+        <div *ngIf="updateForm.get('hoTen')?.touched && updateForm.get('hoTen')?.errors?.['required']" class="error">
+          Vui lòng nhập họ và tên.
+        </div>
       </div>
-      <div class="field">
+      <div class="field form-group">
         <label>SĐT:</label>
-        <input type="text" [(ngModel)]="userInfo.sdt" name="sdt" />
+        <input type="text" formControlName="sdt" name="sdt" />
       </div>
       <div class="actions">
-        <button type="submit">Lưu</button>
+        <button type="submit" [disabled]="updateForm.invalid">Lưu</button>
         <button type="button" (click)="closeModal()">Hủy</button>
       </div>
     </form>
