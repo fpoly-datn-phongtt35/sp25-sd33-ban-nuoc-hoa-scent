@@ -58,7 +58,13 @@ public class DonHangSv {
     LichSuThaoTacInterface lichSuThaoTacInterface;
     @Autowired
     SuDungPhieuGiamGiaInterface suDungPhieuGiamGiaInterface;
-
+    @Autowired
+    YeuCauTraHangInterface yuCauTraHangInterface;
+    public List<Integer> getRequestedSpctIds() {
+        return yuCauTraHangInterface.findAll().stream()
+                .map(yeuCau -> yeuCau.getSpct().getIdSpct()) // Lấy id từ Spct
+                .collect(Collectors.toList());
+    }
     public List<SanPhamThongKeDto> getProductStatistics(Integer year, Integer month) {
 
         int status = 1; // 1 : Đã nhận
@@ -610,7 +616,7 @@ public class DonHangSv {
             donHangDTO.setMaQuan(donHang.getMaQuan());
             donHangDTO.setMaPhuong(donHang.getMaPhuong());
             donHangDTO.setPhieuGiamGia(donHang.getPhieuGiamGia() != null ? donHang.getPhieuGiamGia().getMaGiamGia() : null);
-
+donHangDTO.setLuongBan(donHang.getLuongBan());
             // Lấy danh sách chi tiết đơn hàng từ DonHang
             List<ChiTietDonHang> chiTietList = donHang.getChiTietDonHangs();
             List<OrderItemDTOID> chiTietDTOList = new ArrayList<>();
@@ -865,16 +871,16 @@ public class DonHangSv {
             return donHang; // Không cần cập nhật
         }
 
-        // Nếu trạng thái mới là "Đã xác nhận" (trangThaiMoi = 2), cập nhật tồn kho
-        if (trangThaiMoi == 2) {
-            System.out.println("⚠️ Đang cập nhật tồn kho...");
-            List<ChiTietDonHang> chiTietDonHangs = donHang.getChiTietDonHangs();
-            System.out.println("🔍 Số lượng chi tiết đơn hàng: " + (chiTietDonHangs != null ? chiTietDonHangs.size() : "null"));
-            if (chiTietDonHangs == null || chiTietDonHangs.isEmpty()) {
-                System.out.println("❌ Đơn hàng không có chi tiết đơn hàng!");
-                throw new RuntimeException("Đơn hàng không có chi tiết đơn hàng!");
-            }
+        // Lấy danh sách chi tiết đơn hàng
+        List<ChiTietDonHang> chiTietDonHangs = donHang.getChiTietDonHangs();
+        if (chiTietDonHangs == null || chiTietDonHangs.isEmpty()) {
+            System.out.println("❌ Đơn hàng không có chi tiết đơn hàng!");
+            throw new RuntimeException("Đơn hàng không có chi tiết đơn hàng!");
+        }
 
+        // Nếu trạng thái mới là "Đã xác nhận" (trangThaiMoi = 2), cập nhật tồn kho (trừ số lượng)
+        if (trangThaiMoi == 2) {
+            System.out.println("⚠️ Đang cập nhật tồn kho (trừ số lượng)...");
             for (ChiTietDonHang chiTiet : chiTietDonHangs) {
                 Spct spct = chiTiet.getSpct();
                 if (spct == null) {
@@ -891,6 +897,41 @@ public class DonHangSv {
                     System.out.println("❌ Không đủ tồn kho, rollback transaction!");
                     throw new RuntimeException("Không đủ tồn kho cho sản phẩm ID: " + spct.getIdSpct());
                 }
+
+                spct.setSoLuongTonKho(soLuongMoi);
+                try {
+                    spc.save(spct);
+                    System.out.println("✅ Lưu Spct thành công: " + spct.getIdSpct());
+                } catch (Exception e) {
+                    System.out.println("❌ Lỗi khi lưu Spct: " + e.getMessage());
+                    throw new RuntimeException("Lỗi khi lưu Spct: " + e.getMessage(), e);
+                }
+
+                // Gửi thông báo WebSocket qua /topic/inventory
+                try {
+                    messagingTemplate.convertAndSend("/topic/inventory",
+                            new InventoryUpdateMessage(spct.getIdSpct(), soLuongMoi));
+                    System.out.println("📡 Gửi thông báo WebSocket: productId=" + spct.getIdSpct() + ", newStock=" + soLuongMoi);
+                } catch (Exception e) {
+                    System.out.println("❌ Lỗi khi gửi thông báo WebSocket: " + e.getMessage());
+                }
+            }
+        }
+
+        // Nếu trạng thái mới là "Đã hủy" (trangThaiMoi = 5), cộng lại số lượng vào tồn kho
+        if (trangThaiMoi == 5) {
+            System.out.println("⚠️ Đang cập nhật tồn kho (cộng lại số lượng do hủy đơn)...");
+            for (ChiTietDonHang chiTiet : chiTietDonHangs) {
+                Spct spct = chiTiet.getSpct();
+                if (spct == null) {
+                    System.out.println("❌ Sản phẩm chi tiết (Spct) không tồn tại trong chi tiết đơn hàng!");
+                    throw new RuntimeException("Sản phẩm chi tiết (Spct) không tồn tại trong chi tiết đơn hàng!");
+                }
+                int soLuongTonKhoCu = spct.getSoLuongTonKho();
+                int soLuongCong = chiTiet.getSoLuong();
+                int soLuongMoi = soLuongTonKhoCu + soLuongCong;
+
+                System.out.println("🛒 Sản phẩm: " + spct.getIdSpct() + " | Tồn kho trước: " + soLuongTonKhoCu + " | Cộng: " + soLuongCong + " | Tồn kho sau: " + soLuongMoi);
 
                 spct.setSoLuongTonKho(soLuongMoi);
                 try {

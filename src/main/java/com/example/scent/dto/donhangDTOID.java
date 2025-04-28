@@ -35,6 +35,24 @@ private BigDecimal soTienGiam;
     private Integer maTinh;  // Mã tỉnh
     private Integer maQuan;  // Mã quận
     private String maPhuong;  // Mã phường xã
+private Integer luongBan;
+    private LocalDateTime ngayYeuCau;
+
+    public LocalDateTime getNgayYeuCau() {
+        return ngayYeuCau;
+    }
+
+    public void setNgayYeuCau(LocalDateTime ngayYeuCau) {
+        this.ngayYeuCau = ngayYeuCau;
+    }
+
+    public Integer getLuongBan() {
+        return luongBan;
+    }
+
+    public void setLuongBan(Integer luongBan) {
+        this.luongBan = luongBan;
+    }
 
     public Integer getMaTinh() {
         return maTinh;

@@ -10,10 +10,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 
 public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
+    @Query("SELECT c FROM ChiTietDonHang c WHERE c.id = :idDonHang AND c.spct.idSpct = :idSpct")
+    Optional<ChiTietDonHang> findByIdDonHangAndIdSpct(@Param("idDonHang") Integer idDonHang, @Param("idSpct") Integer idSpct);
     List<ChiTietDonHang> findByDonHangId(Integer donHangId);
     List<ChiTietDonHang> findBySpctSanPhamIdSanPham(Integer idSanPham);
     @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +

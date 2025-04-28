@@ -24,9 +24,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*")
 @RestController
@@ -465,5 +466,60 @@ public class DonHangCtrl {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(null);
         }
+    }
+    @GetMapping(value = "/user/{idTaiKhoan}/completed-orders", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<donhangDTOID>> getCompletedDonHangsByTaiKhoan(@PathVariable Integer idTaiKhoan) {
+        // Lấy tất cả đơn hàng của tài khoản
+        List<donhangDTOID> donHangs = dhs.getDonHangsByTaiKhoan(idTaiKhoan);
+
+        // Lấy danh sách id_spct đã yêu cầu trả hàng từ bảng yeu_cau_tra_hang
+        Set<Integer> requestedSpctIds = new HashSet<>(dhs.getRequestedSpctIds()); // Chuyển thành Set để tối ưu hiệu suất
+
+        // Lấy thời gian hiện tại
+        LocalDateTime now = LocalDateTime.now();
+
+        // Lọc và xử lý từng đơn hàng
+        List<donhangDTOID> completedDonHangs = donHangs.stream()
+                .filter(donHang -> {
+                    // Kiểm tra trạng thái hoàn thành
+                    if (donHang.getTrangThai() != 4) {
+                        return false;
+                    }
+
+                    // Kiểm tra chiTietDonHangs có tồn tại không
+                    if (donHang.getChiTietDonHangs() == null || donHang.getChiTietDonHangs().isEmpty()) {
+                        return false;
+                    }
+
+                    // Lọc các OrderItemDTOID chưa bị yêu cầu trả hàng
+                    List<OrderItemDTOID> filteredChiTietDonHangs = donHang.getChiTietDonHangs().stream()
+                            .filter(item -> !requestedSpctIds.contains(item.getSpctId())) // Chỉ giữ các item chưa yêu cầu trả hàng
+                            .collect(Collectors.toList());
+
+                    // Nếu không còn item nào sau khi lọc, bỏ qua đơn hàng
+                    if (filteredChiTietDonHangs.isEmpty()) {
+                        return false;
+                    }
+
+                    // Cập nhật lại chiTietDonHangs của đơn hàng
+                    donHang.setChiTietDonHangs(filteredChiTietDonHangs);
+
+                    // Kiểm tra thời gian
+                    LocalDateTime ngayTao = donHang.getNgayTao();
+                    long daysBetween = ChronoUnit.DAYS.between(ngayTao, now);
+
+                    if (donHang.getLuongBan() == 0) { // Đơn hàng offline
+                        return daysBetween <= 2 && daysBetween >= 0; // Trong vòng 2 ngày
+                    } else if (donHang.getLuongBan() == 1) { // Đơn hàng online
+                        return daysBetween <= 7 && daysBetween >= 0; // Trong vòng 7 ngày
+                    }
+                    return false; // Nếu luongBan không hợp lệ, bỏ qua
+                })
+                .collect(Collectors.toList());
+
+        if (completedDonHangs.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(completedDonHangs);
     }
 }

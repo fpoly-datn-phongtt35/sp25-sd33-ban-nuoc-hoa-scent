@@ -1,8 +1,12 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.spctDTO2;
 import com.example.scent.entity.ChiTietDonHang;
 
 import com.example.scent.service.CTDHSv;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +29,16 @@ public class CTDHCtrl {
     public CTDHCtrl(CTDHSv ctdhs) {
         this.ctdhs = ctdhs;
     }
+    @GetMapping(value = "/don-hang/{idDonHang}/spct", produces = MediaType.APPLICATION_JSON_VALUE)
 
+    public ResponseEntity<List<spctDTO2>> getSpctByDonHang(@PathVariable Integer idDonHang) {
+        List<spctDTO2> spctDetails = ctdhs.getSpctDetailsByDonHang(idDonHang);
+
+        if (spctDetails.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(spctDetails);
+    }
     @GetMapping("/getAll")
     public List<ChiTietDonHang> getAll() {
         return ctdhs.getAll();

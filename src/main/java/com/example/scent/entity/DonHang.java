@@ -1,5 +1,6 @@
 package com.example.scent.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -40,7 +41,9 @@ public class DonHang {
     private String ghiChu;
 
 
-
+    @JsonIgnore
+    @OneToMany(mappedBy = "donHang",cascade = CascadeType.ALL)
+    private List<YeuCauTraHang> ycth;
     @Column(name = "tong_tien", precision = 19, scale = 4)
     private BigDecimal tongTien;
     @Transient
