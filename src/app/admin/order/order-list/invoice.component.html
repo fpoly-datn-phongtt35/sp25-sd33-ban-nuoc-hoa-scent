@@ -23,7 +23,7 @@
 
     <!-- Common filters for both tabs, but restricted to Offline's allowed statuses -->
     <button class="btn btn-outline-secondary" *ngIf="selectedTab === 'online'"[ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
-    <button class="btn btn-outline-danger" *ngIf="selectedTab === 'online'"[ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Hủy</button>
+    <button class="btn btn-outline-danger" *ngIf="selectedTab === 'online'"[ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Giao hàng thất bại</button>
   </div>
 
   <!-- 📋 Bảng đơn hàng -->
@@ -71,7 +71,7 @@
 
             <!-- 5. Hủy -->
             <div *ngSwitchCase="5" class="badge-status status-danger disabled" title="Đơn hàng đã bị hủy">
-              ❌ Hủy
+              ❌ Giao hàng thất bại
             </div>
 
             <!-- 6. Đã thanh toán (CK) -->

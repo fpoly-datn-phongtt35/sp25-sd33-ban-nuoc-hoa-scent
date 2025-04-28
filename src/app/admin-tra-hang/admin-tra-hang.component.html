@@ -1,0 +1,130 @@
+<div class="container mx-auto p-4">
+  <h2 class="text-2xl font-bold mb-4">Quản Lý Yêu Cầu Trả Hàng</h2>
+
+  <!-- Bộ lọc tình trạng hàng -->
+  <div class="mb-4">
+    <label for="tinhTrangHangFilter" class="mr-2">Lọc theo tình trạng hàng:</label>
+    <select id="tinhTrangHangFilter" [(ngModel)]="tinhTrangHangFilter" (change)="loadYeuCauTraHang()">
+      <option value="">Tất cả</option>
+      <option value="NguyenVen">Nguyên Vẹn</option>
+      <option value="HuHong">Hỏng</option>
+    </select>
+  </div>
+
+  <!-- Thông báo -->
+  <div *ngIf="errorMessage" class="text-red-500 mb-4">{{ errorMessage }}</div>
+
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="text-center p-4">
+    <span>Đang tải...</span>
+  </div>
+
+  <!-- Bảng danh sách yêu cầu trả hàng -->
+  <table *ngIf="!isLoading && yeuCauList.length > 0" class="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden">
+    <thead>
+      <tr class="bg-gray-100 text-gray-700 text-sm">
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">ID</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Mã Đơn Hàng</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Sản Phẩm (ID SPCT)</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Số Lượng</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Lý Do Trả</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Tình Trạng Hàng</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Hình Thức Trả</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Hình Ảnh</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Video</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Trạng Thái</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Hành Động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let yeuCau of yeuCauList" class="hover:bg-gray-50 text-sm">
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.id }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.donHang?.id || 'N/A' }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.spct?.idSpct || 'N/A' }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.soLuong }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.lyDoTraHang }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.tinhTrangHang }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.hinhThucTraHang }}</td>
+        <td class="border-b border-gray-200 p-3">
+          <div *ngIf="yeuCau.hinhAnhUrls && yeuCau.hinhAnhUrls.length > 0; else noImage">
+            <img *ngFor="let url of yeuCau.hinhAnhUrls" [src]="url" alt="Hình ảnh sản phẩm"
+                 class="w-16 h-16 object-cover inline-block mr-2 mb-2 rounded-md cursor-pointer" (error)="onImageError($event)" (click)="openImageModal(url)" />
+          </div>
+          <ng-template #noImage>
+            <span class="text-gray-500">Không có</span>
+          </ng-template>
+        </td>
+        <!-- Cột Video trong bảng -->
+        <td class="border-b border-gray-200 p-3">
+          <div *ngIf="yeuCau.urlVideo && yeuCau.urlVideo.length > 0; else noVideo">
+            <div (dblclick)="openVideoModal(yeuCau.urlVideo)" class="video-wrapper">
+              <video [src]="yeuCau.urlVideo" (error)="onVideoError($event)" class="w-32 h-20 object-cover rounded-md cursor-pointer" controls></video>
+            </div>
+          </div>
+          <ng-template #noVideo>
+            <span class="text-gray-500">Không có</span>
+          </ng-template>
+        </td>
+        <td class="border-b border-gray-200 p-3">{{ getTrangThaiText(yeuCau.trangThai) }}</td>
+        <td class="border-b border-gray-200 p-3">
+          <div class="flex gap-2">
+            <button *ngIf="yeuCau.trangThai === 0" (click)="approveYeuCau(yeuCau.id)"
+                    class="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition">
+              Duyệt
+            </button>
+            <button *ngIf="yeuCau.trangThai === 0" (click)="openRejectModal(yeuCau.id)"
+                    class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition">
+              Từ Chối
+            </button>
+            <button *ngIf="yeuCau.trangThai === 1" (click)="completeYeuCau(yeuCau.id)"
+                    class="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition">
+              Hoàn Thành
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Thông báo khi không có dữ liệu -->
+  <div *ngIf="!isLoading && yeuCauList.length === 0 && !errorMessage" class="text-center p-4">
+    <span>Không có yêu cầu trả hàng nào.</span>
+  </div>
+
+  <!-- Modal phóng to video -->
+  <div *ngIf="selectedVideoUrl" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-4 rounded-lg shadow-lg max-w-4xl w-full">
+      <video [src]="selectedVideoUrl" controls autoplay class="w-full max-h-[80vh] object-contain rounded" (error)="onVideoError($event)"></video>
+      <button (click)="closeVideoModal()" class="mt-4 bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400 w-full">
+        Đóng
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal nhập lý do từ chối -->
+  <div *ngIf="showRejectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+      <h3 class="text-lg font-bold mb-4">Từ Chối Yêu Cầu</h3>
+      <label for="lyDoTuChoi" class="block mb-2">Lý do từ chối:</label>
+      <textarea id="lyDoTuChoi" [(ngModel)]="lyDoTuChoi" class="w-full p-2 border rounded mb-4" rows="4"></textarea>
+      <div class="flex gap-2">
+        <button (click)="rejectYeuCau()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+          Xác Nhận
+        </button>
+        <button (click)="closeRejectModal()" class="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400">
+          Hủy
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal phóng to hình ảnh -->
+  <div *ngIf="selectedImageUrl" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-4 rounded-lg shadow-lg max-w-3xl">
+      <img [src]="selectedImageUrl" alt="Hình ảnh sản phẩm phóng to" class="max-w-full max-h-[80vh] object-contain rounded" />
+      <button (click)="closeImageModal()" class="mt-4 bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400">
+        Đóng
+      </button>
+    </div>
+  </div>
+</div>

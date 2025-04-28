@@ -1,0 +1,142 @@
+<!-- tra-hang-nha-san-xuat.component.html -->
+<div class="container">
+    <!-- Tiêu đề -->
+    <h2>Trả Hàng Nhà Sản Xuất</h2>
+  
+    <!-- Danh sách sản phẩm lỗi -->
+    <div class="section">
+      <h3>Danh Sách Sản Phẩm Lỗi</h3>
+      
+      <!-- Dropdown lọc theo thương hiệu -->
+      <div class="filter-group">
+        <label for="filterBrandSelect">Lọc theo thương hiệu:</label>
+        <select id="filterBrandSelect" [(ngModel)]="filterBrand" (ngModelChange)="onFilterBrandChange()">
+          <option value="">Tất cả</option>
+          <option *ngFor="let brand of allBrands" [value]="brand">{{ brand }}</option>
+        </select>
+      </div>
+  
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tên Sản Phẩm</th>
+            <th>Số Lượng</th>
+            <th>Tình Trạng Hàng</th>
+            <th>Lý Do Trả Hàng</th>
+            <th>Thương Hiệu</th>
+            <th>Hành Động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of defectiveProducts">
+            <td>{{ product.tenSanPham }}</td>
+            <td>{{ product.soLuong }}</td>
+            <td>{{ product.tinhTrangHang }}</td>
+            <td>{{ product.lyDoTraHang }}</td>
+            <td>{{ product.tenThuongHieu }}</td>
+            <td>
+              <input type="checkbox" [(ngModel)]="product.selected" (change)="addToCart(product)" />
+            </td>
+          </tr>
+          <tr *ngIf="defectiveProducts.length === 0 && !isLoading">
+            <td colspan="6" class="text-center">Không có sản phẩm lỗi nào.</td>
+          </tr>
+        </tbody>
+      </table>
+  
+      <!-- Phân trang -->
+      <nav aria-label="Page navigation" *ngIf="defectiveProducts.length > 0 && !isLoading" class="pagination-container">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="page === 0">
+            <button class="page-link page-nav" (click)="goToPage(0)">
+              <i class="bi bi-chevron-double-left"></i>
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="page === 0">
+            <button class="page-link page-nav" (click)="prevPage()">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+          </li>
+          <li class="page-item" *ngIf="page > 2">
+            <button class="page-link" (click)="goToPage(0)">1</button>
+          </li>
+          <li class="page-item disabled" *ngIf="page > 3">
+            <span class="page-link dots">...</span>
+          </li>
+          <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p === page">
+            <button class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+          </li>
+          <li class="page-item disabled" *ngIf="page < totalPages - 4">
+            <span class="page-link dots">...</span>
+          </li>
+          <li class="page-item" *ngIf="page < totalPages - 3">
+            <button class="page-link" (click)="goToPage(totalPages - 1)">{{ totalPages }}</button>
+          </li>
+          <li class="page-item" [class.disabled]="page >= totalPages - 1">
+            <button class="page-link page-nav" (click)="nextPage()">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="page >= totalPages - 1">
+            <button class="page-link page-nav" (click)="goToPage(totalPages - 1)">
+              <i class="bi bi-chevron-double-right"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  
+    <!-- Giỏ hàng -->
+    <div class="section">
+      <h3>Giỏ Hàng</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tên Sản Phẩm</th>
+            <th>Số Lượng</th>
+            <th>Thương Hiệu</th>
+            <th>Hành Động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of cart">
+            <td>{{ item.tenSanPham }}</td>
+            <td>
+              <input type="number" [(ngModel)]="item.cartQuantity" (change)="updateCartQuantity(item, item.cartQuantity)" min="1" />
+            </td>
+            <td>{{ item.tenThuongHieu }}</td>
+            <td>
+              <button class="btn btn-danger" (click)="removeFromCart(item)">Xóa</button>
+            </td>
+          </tr>
+          <tr *ngIf="cart.length === 0">
+            <td colspan="4" class="text-center">Giỏ hàng trống.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  
+    <!-- Form chọn thương hiệu và gửi -->
+    <!-- Form chọn thương hiệu và gửi -->
+<div class="section form-section">
+    <div class="form-group">
+      <label for="brandSelect">Chọn thương hiệu:</label>
+      <select id="brandSelect" [(ngModel)]="selectedBrand">
+        <option value="" disabled>Chọn thương hiệu</option>
+        <option *ngFor="let brand of getBrandsInCart()" [value]="brand">{{ brand }}</option>
+      </select>
+    </div>
+  
+    <div class="form-group">
+      <label for="ghiChu">Ghi chú:</label>
+      <textarea id="ghiChu" [(ngModel)]="sendForm.ghiChu"></textarea>
+    </div>
+  
+    <div class="button-group">
+      <button class="btn btn-success" (click)="sendToManufacturer()" [disabled]="isLoading">
+        {{ isLoading ? 'Đang gửi...' : 'Gửi' }}
+      </button>
+      <button class="btn btn-danger" (click)="resetCart()">Xóa Giỏ Hàng</button>
+    </div>
+  </div>
+  </div>

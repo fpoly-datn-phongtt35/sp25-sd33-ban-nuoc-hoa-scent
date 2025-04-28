@@ -9,6 +9,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ChangePasswordModalComponent } from '../change-password/change-password.component';
 import { ShoppingCartComponent } from '../shopping-cart/shopping-cart.component';
 import { CartService } from '../service/cart.Service';
+import { TraHangComponent } from '../tra-hang/tra-hang.component';
 
 @Component({
   selector: 'app-header',
@@ -90,4 +91,5 @@ export class HeaderComponent {
       keyboard: false,
     });
   }
+ 
 }

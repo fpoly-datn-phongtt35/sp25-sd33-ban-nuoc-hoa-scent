@@ -1,0 +1,110 @@
+<div class="container">
+  <h1>Theo dõi yêu cầu trả hàng</h1>
+
+  <!-- Trạng thái tải và lỗi -->
+  <div *ngIf="loading" class="loading-spinner">
+    <mat-spinner></mat-spinner>
+  </div>
+  <p *ngIf="error" class="error-message">{{ error }}</p>
+
+  <!-- Layout chính -->
+  <div class="main-grid">
+    <!-- Danh sách yêu cầu trả hàng -->
+    <div class="request-list">
+      <h2 class="section-title">Danh sách yêu cầu trả hàng</h2>
+      <div *ngIf="yeuCauList.length === 0" class="empty-message">
+        Bạn chưa có yêu cầu trả hàng nào.
+      </div>
+      <div class="request-list-scroll">
+        <mat-card *ngFor="let yeuCau of yeuCauList" class="yeu-cau-card" [class.selected]="yeuCau.id === selectedYeuCau" (click)="loadLichSu(yeuCau.id)">
+          <div class="card-header">
+            <p class="card-title">ID: {{ yeuCau.id }}</p>
+            <span class="badge" [ngClass]="{
+              'pending': yeuCau.trangThai === 0,
+              'approved': yeuCau.trangThai === 1,
+              'rejected': yeuCau.trangThai === 2,
+              'done': yeuCau.trangThai === 3
+            }">
+              {{ yeuCau.trangThai === 0 ? 'Chờ xác nhận' : 
+                 yeuCau.trangThai === 1 ? 'Đã duyệt' : 
+                 yeuCau.trangThai === 2 ? 'Từ chối' : 
+                 yeuCau.trangThai === 3 ? 'Hoàn thành' : 'Không xác định' }}
+            </span>
+          </div>
+          <div class="card-content">
+            <p><strong>Đơn hàng:</strong> {{ yeuCau.donHang?.id || 'N/A' }}</p>
+            <p><strong>Sản phẩm:</strong> {{ yeuCau.spct?.id || 'N/A' }}</p>
+            <p><strong>Số lượng:</strong> {{ yeuCau.soLuong }}</p>
+            <p><strong>Tình trạng:</strong> {{ yeuCau.tinhTrangHang }}</p>
+            <p><strong>Lý do:</strong> {{ yeuCau.lyDoTraHang }}</p>
+            <p><strong>Hình thức:</strong> {{ yeuCau.hinhThucTraHang }}</p>
+            <p><strong>Ghi chú:</strong> {{ yeuCau.ghiChu || 'Không có' }}</p>
+          </div>
+
+          <!-- Hiển thị ảnh -->
+          <div *ngIf="yeuCau.hinhAnhUrls && yeuCau.hinhAnhUrls.length > 0" class="media-preview">
+            <p class="media-label">Ảnh minh chứng:</p>
+            <div class="media-preview-images">
+              <img *ngFor="let url of yeuCau.hinhAnhUrls" [src]="url" alt="Ảnh minh chứng">
+            </div>
+          </div>
+          <div *ngIf="!yeuCau.hinhAnhUrls || yeuCau.hinhAnhUrls.length === 0" class="media-empty">
+            <p><strong>Ảnh minh chứng:</strong> Không có</p>
+          </div>
+
+          <!-- Hiển thị video -->
+          <div *ngIf="yeuCau.urlVideo" class="media-preview">
+            <p class="media-label">Video minh chứng:</p>
+            <video [src]="yeuCau.urlVideo" controls></video>
+          </div>
+          <div *ngIf="!yeuCau.urlVideo" class="media-empty">
+            <p><strong>Video minh chứng:</strong> Không có</p>
+          </div>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Lịch sử trả hàng -->
+    <div *ngIf="selectedYeuCau" class="history-panel">
+      <div class="history-panel-inner">
+        <div class="history-header">
+          <h2 class="section-title">Lịch sử (ID: {{ selectedYeuCau }})</h2>
+          <button (click)="selectedYeuCau = null; showHistory = false" class="close-button">
+            <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            Đóng
+          </button>
+        </div>
+        <div *ngIf="lichSuList.length === 0" class="empty-message">
+          Chưa có lịch sử cho yêu cầu này.
+        </div>
+        <div class="history-list-scroll">
+          <mat-card *ngFor="let lichSu of lichSuList" class="history-card">
+            <p><strong>Thời gian:</strong> {{ lichSu.thoiGianThaoTac | date:'medium' }}</p>
+            <p><strong>Thao tác:</strong> 
+              {{ lichSu.thaoTac === 0 ? 'Chờ xác nhận' : 
+                 lichSu.thaoTac === 1 ? 'Xác nhận' : 
+                 lichSu.thaoTac === 2 ? 'Từ chối' : 
+                 lichSu.thaoTac === 3 ? 'Hoàn thành' : 'Không xác định' }}
+            </p>
+            <p><strong>Trạng thái cũ:</strong> 
+              {{ lichSu.trangThaiCu === null ? 'Không có' : 
+                 lichSu.trangThaiCu === 0 ? 'Chờ xác nhận' : 
+                 lichSu.trangThaiCu === 1 ? 'Đã duyệt' : 
+                 lichSu.trangThaiCu === 2 ? 'Từ chối' : 
+                 lichSu.trangThaiCu === 3 ? 'Hoàn thành' : 'Không xác định' }}
+            </p>
+            <p><strong>Trạng thái mới:</strong> 
+              {{ lichSu.trangThaiMoi === 0 ? 'Chờ xác nhận' : 
+                 lichSu.trangThaiMoi === 1 ? 'Đã duyệt' : 
+                 lichSu.trangThaiMoi === 2 ? 'Từ chối' : 
+                 lichSu.trangThaiMoi === 3 ? 'Hoàn thành' : 'Không xác định' }}
+            </p>
+            <p><strong>Người thực hiện:</strong> {{ lichSu.taiKhoan?.tenDangNhap || 'N/A' }} (ID: {{ lichSu.taiKhoan?.id || 'N/A' }})</p>
+            <p><strong>Lý do từ chối:</strong> {{ lichSu.lyDoTuChoi || 'Không có' }}</p>
+            <p><strong>Ghi chú:</strong> {{ lichSu.ghiChu || 'Không có' }}</p>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

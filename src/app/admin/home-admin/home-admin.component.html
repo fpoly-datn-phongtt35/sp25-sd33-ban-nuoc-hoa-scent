@@ -75,9 +75,19 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'admintrahang'}" (click)="showComponent('admintrahang')">
+          <i class="bi bi-people"></i> Trả hàng
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link" [ngClass]="{'active': selectedComponent === 'chat'}" (click)="showComponent('chat')">
           <i class="bi bi-chat-dots"></i> Tin nhắn
           <span *ngIf="totalUnreadMessages > 0" class="badge">{{ totalUnreadMessages }}</span>
+        </a>
+      </li>
+      <li class="nav-item" >
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'trahangnsx'}" (click)="showComponent('trahangnsx')">
+          <i class="bi bi-person"></i>Trả hàng nhà sản xuất
         </a>
       </li>
     </nav>
@@ -99,7 +109,10 @@
       <app-phong-cach *ngSwitchCase="'style'"></app-phong-cach>
       <app-mui-huong *ngSwitchCase="'fragrance'"></app-mui-huong>
       <app-not-huong *ngSwitchCase="'note'"></app-not-huong>
+      <app-admin-tra-hang *ngSwitchCase="'admintrahang'"></app-admin-tra-hang>
+      <app-tra-hang-nha-san-xuat *ngSwitchCase="'trahangnsx'"></app-tra-hang-nha-san-xuat>
       <div *ngSwitchCase="'chat'" class="chat-container">
+        
         <h2>Tin nhắn</h2>
         <div class="chat-content">
           <div class="chat-users">

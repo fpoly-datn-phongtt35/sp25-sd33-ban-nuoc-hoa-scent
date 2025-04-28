@@ -25,6 +25,8 @@ import { FragranceListComponent } from '../fragrance/fragrance-list/fragrance-li
 import { PhongCachComponent } from "../phongcach/phong-cach/phong-cach.component";
 import { MuiHuongComponent } from "../muihuong/mui-huong/mui-huong.component";
 import { NotHuongComponent } from "../nothuong/not-huong/not-huong.component";
+import { AdminTraHangComponent } from '../../admin-tra-hang/admin-tra-hang.component';
+import { TraHangNhaSanXuatComponent } from '../../tra-hang-nha-san-xuat/tra-hang-nha-san-xuat.component';
 
 @Component({
   selector: 'app-home-admin',
@@ -45,7 +47,8 @@ import { NotHuongComponent } from "../nothuong/not-huong/not-huong.component";
     BrandComponent,
     PhongCachComponent,
     MuiHuongComponent,
-    NotHuongComponent
+    NotHuongComponent,
+    AdminTraHangComponent,TraHangNhaSanXuatComponent
   ],
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'],

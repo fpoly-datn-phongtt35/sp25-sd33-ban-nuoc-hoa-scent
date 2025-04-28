@@ -14,6 +14,8 @@ import { ProductAdminComponent } from './admin/product/product-list/product-admi
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { AccountInfoComponent } from './account-info/account-info.component';
 import { ContactComponent } from './contact/contact.component';
+import { TraHangComponent } from './tra-hang/tra-hang.component';
+import { TraHangUserComponent } from './tra-hang-user/tra-hang-user.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -23,6 +25,8 @@ export const routes: Routes = [
   { path: 'app-order-id', component: OrderDetailUserIDComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'contact', component: ContactComponent },
+  { path: 'app-tra-hang', component: TraHangComponent },
+  { path: 'app-tra-hang-user', component: TraHangUserComponent },
   { path: 'product_detail', component: ProductDetailComponent },
   { path: 'admin', component: HomeAdminComponent, canActivate: [AdminGuard] },
   { path: 'order-success/:orderId', component: OrderSuccessComponent },

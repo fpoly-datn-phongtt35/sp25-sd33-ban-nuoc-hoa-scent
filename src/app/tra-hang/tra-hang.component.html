@@ -1,0 +1,132 @@
+<app-header></app-header>
+<div class="container">
+  <h2>Tạo Yêu Cầu Trả Hàng</h2>
+
+  <form [formGroup]="traHangForm" (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+    <!-- Dropdown Đơn Hàng -->
+    <div>
+      <label for="idDonHang">Chọn Đơn Hàng</label>
+      <select id="idDonHang" formControlName="idDonHang" (change)="onDonHangChange()"
+              [class.border-red-500]="traHangForm.get('idDonHang')?.invalid && traHangForm.get('idDonHang')?.touched">
+        <option value="" disabled>Chọn đơn hàng</option>
+        <option *ngFor="let donHang of donHangs" [value]="donHang.maDonHang">
+          Mã đơn hàng: {{ donHang.maDonHang }} - Tổng tiền: {{ donHang.tongTien ? (donHang.tongTien | number) : 'N/A' }} VNĐ
+        </option>
+      </select>
+      <div *ngIf="traHangForm.get('idDonHang')?.invalid && traHangForm.get('idDonHang')?.touched"
+           class="text-red-500">Vui lòng chọn đơn hàng</div>
+    </div>
+
+    <!-- Dropdown Sản Phẩm Chi Tiết -->
+    <div>
+      <label for="idSpct">Chọn Sản Phẩm</label>
+      <select id="idSpct" formControlName="idSpct"
+              [class.border-red-500]="traHangForm.get('idSpct')?.invalid && traHangForm.get('idSpct')?.touched">
+        <option value="" disabled>Chọn sản phẩm</option>
+        <option *ngFor="let spct of spctList" [value]="spct.idSpct">
+          {{ spct.tenSanPham ? spct.tenSanPham : 'Không có tên' }} (ID: {{ spct.idSpct ? spct.idSpct : 'N/A' }}) - Giá: {{ spct.donGia ? (spct.donGia | number) : 'N/A' }} VNĐ
+        </option>
+      </select>
+      <div *ngIf="traHangForm.get('idSpct')?.invalid && traHangForm.get('idSpct')?.touched"
+           class="text-red-500">Vui lòng chọn sản phẩm</div>
+    </div>
+
+    <!-- Số Lượng -->
+    <div>
+      <label for="soLuong">Số Lượng</label>
+      <input type="number" id="soLuong" formControlName="soLuong"
+             [class.border-red-500]="traHangForm.get('soLuong')?.invalid && traHangForm.get('soLuong')?.touched">
+      <div *ngIf="traHangForm.get('soLuong')?.invalid && traHangForm.get('soLuong')?.touched"
+           class="text-red-500">Số lượng phải lớn hơn 0</div>
+    </div>
+
+    <!-- Lý Do Trả Hàng -->
+    <div>
+      <label for="lyDoTraHang">Lý Do Trả Hàng</label>
+      <input type="text" id="lyDoTraHang" formControlName="lyDoTraHang"
+             [class.border-red-500]="traHangForm.get('lyDoTraHang')?.invalid && traHangForm.get('lyDoTraHang')?.touched">
+      <div *ngIf="traHangForm.get('lyDoTraHang')?.invalid && traHangForm.get('lyDoTraHang')?.touched"
+           class="text-red-500">Lý do trả hàng là bắt buộc</div>
+    </div>
+
+    <!-- Tình Trạng Hàng -->
+    <div>
+      <label for="tinhTrangHang">Tình Trạng Hàng</label>
+      <select id="tinhTrangHang" formControlName="tinhTrangHang"
+              (change)="onTinhTrangHangChange()"
+              [class.border-red-500]="traHangForm.get('tinhTrangHang')?.invalid && traHangForm.get('tinhTrangHang')?.touched">
+        <option value="" disabled>Chọn tình trạng</option>
+        <option value="NguyenVen">Nguyên Vẹn</option>
+        <option value="HuHong">Hỏng</option>
+      </select>
+      <div *ngIf="traHangForm.get('tinhTrangHang')?.invalid && traHangForm.get('tinhTrangHang')?.touched"
+           class="text-red-500">Tình trạng hàng là bắt buộc</div>
+    </div>
+
+    <!-- Tải Lên Hình Ảnh (Hiển thị khi Hỏng) -->
+    <div *ngIf="traHangForm.get('tinhTrangHang')?.value === 'HuHong'">
+      <label for="hinhAnh">Hình Ảnh Sản Phẩm Hỏng (Bắt Buộc)</label>
+      <input type="file" id="hinhAnh" multiple accept="image/jpeg,image/png"
+             (change)="onHinhAnhChange($event)"
+             [class.border-red-500]="hinhAnhError && traHangForm.get('tinhTrangHang')?.touched">
+      <div *ngIf="hinhAnhError && traHangForm.get('tinhTrangHang')?.touched"
+           class="text-red-500">Vui lòng tải lên ít nhất một hình ảnh sản phẩm hỏng</div>
+      <div *ngIf="hinhAnhFiles.length > 0" class="mt-2">
+        <p>Đã chọn {{ hinhAnhFiles.length }} hình ảnh</p>
+      </div>
+    </div>
+
+    <!-- Tải Lên Video (Hiển thị khi Hỏng) -->
+    <div *ngIf="traHangForm.get('tinhTrangHang')?.value === 'HuHong'">
+      <label for="video">Video Sản Phẩm Hỏng (Bắt Buộc)</label>
+      <input type="file" id="video" accept="video/mp4"
+             (change)="onVideoChange($event)"
+             [class.border-red-500]="videoError && traHangForm.get('tinhTrangHang')?.touched">
+      <div *ngIf="videoError && traHangForm.get('tinhTrangHang')?.touched"
+           class="text-red-500">Vui lòng tải lên một video sản phẩm hỏng</div>
+      <div *ngIf="videoFile" class="mt-2">
+        <p>Đã chọn video: {{ videoFile.name }}</p>
+      </div>
+    </div>
+
+    <!-- Hình Thức Trả Hàng -->
+    <div>
+      <label for="hinhThucTraHang">Hình Thức Trả Hàng</label>
+      <select id="hinhThucTraHang" formControlName="hinhThucTraHang"
+              [class.border-red-500]="traHangForm.get('hinhThucTraHang')?.invalid && traHangForm.get('hinhThucTraHang')?.touched">
+        <option value="" disabled>Chọn hình thức</option>
+        <option value="TaiCuaHang">Tại Cửa Hàng</option>
+        <option value="QuaVanChuyen">Qua Vận Chuyển</option>
+      </select>
+      <div *ngIf="traHangForm.get('hinhThucTraHang')?.invalid && traHangForm.get('hinhThucTraHang')?.touched"
+           class="text-red-500">Hình thức trả hàng là bắt buộc</div>
+    </div>
+
+    <!-- Ghi Chú -->
+    <div>
+      <label for="ghiChu">Ghi Chú (Tùy Chọn)</label>
+      <textarea id="ghiChu" formControlName="ghiChu"></textarea>
+    </div>
+
+    <!-- Thông Báo -->
+    <div *ngIf="successMessage" class="text-green-500">{{ successMessage }}</div>
+    <div *ngIf="urlVideo" class="text-blue-500 mt-2">
+      Video đã được tải lên: <a [href]="urlVideo" target="_blank">{{ urlVideo }}</a>
+    </div>
+    <div *ngIf="hinhAnhUrls?.length" class="text-blue-500 mt-2">
+      Hình ảnh đã được tải lên:
+      <ul>
+        <li *ngFor="let url of hinhAnhUrls">
+          <a [href]="url" target="_blank">{{ url }}</a>
+        </li>
+      </ul>
+    </div>
+    <div *ngIf="errorMessage" class="text-red-500">{{ errorMessage }}</div>
+
+    <!-- Nút Submit -->
+    <button type="submit" [disabled]="traHangForm.invalid || (traHangForm.get('tinhTrangHang')?.value === 'HuHong' && (hinhAnhFiles.length === 0 || !videoFile))">
+      Gửi Yêu Cầu Trả Hàng
+    </button>
+  </form>
+</div>
+<app-footer></app-footer>

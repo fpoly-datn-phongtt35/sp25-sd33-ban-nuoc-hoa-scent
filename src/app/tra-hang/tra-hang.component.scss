@@ -1,0 +1,101 @@
+.container {
+    max-width: 600px; /* Giới hạn chiều rộng tối đa */
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #f9fafb; /* Màu nền nhẹ */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Thêm bóng nhẹ */
+  }
+  
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937; /* Màu chữ đậm hơn */
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Khoảng cách giữa các trường */
+  }
+  
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151; /* Màu chữ nhãn đậm hơn */
+  }
+  
+  select,
+  input[type="number"],
+  input[type="text"],
+  textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db; /* Border màu xám nhạt */
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #1f2937;
+    background-color: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  select:focus,
+  input[type="number"]:focus,
+  input[type="text"]:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #3b82f6; /* Màu viền khi focus */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); /* Hiệu ứng focus */
+  }
+  
+  select:hover,
+  input[type="number"]:hover,
+  input[type="text"]:hover,
+  textarea:hover {
+    border-color: #9ca3af; /* Màu viền khi hover */
+  }
+  
+  .border-red-500 {
+    border-color: #ef4444 !important; /* Viền đỏ khi có lỗi */
+  }
+  
+  .text-red-500 {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  .text-green-500 {
+    color: #10b981;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-top: 1rem;
+  }
+  
+  textarea {
+    min-height: 80px; /* Chiều cao tối thiểu cho textarea */
+    resize: vertical; /* Chỉ cho phép resize theo chiều dọc */
+  }
+  
+  button[type="submit"] {
+    padding: 0.75rem;
+    background-color: #3b82f6; /* Màu xanh chủ đạo */
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  button[type="submit"]:hover:not(:disabled) {
+    background-color: #2563eb; /* Màu xanh đậm hơn khi hover */
+    transform: translateY(-1px); /* Hiệu ứng nâng nhẹ */
+  }
+  
+  button[type="submit"]:disabled {
+    background-color: #9ca3af; /* Màu xám khi bị disable */
+    cursor: not-allowed;
+  }
