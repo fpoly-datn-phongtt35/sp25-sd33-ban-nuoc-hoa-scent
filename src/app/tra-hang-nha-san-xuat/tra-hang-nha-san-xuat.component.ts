@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface DefectiveProduct {
   idYeuCau: number;
@@ -13,6 +15,9 @@ interface DefectiveProduct {
   lyDoTraHang: string;
   tenThuongHieu: string;
   idThuongHieu: number;
+  imageUrl?: string;
+  donGia?: number;
+  dungTich?: number;
   selected?: boolean;
 }
 
@@ -67,7 +72,10 @@ export class TraHangNhaSanXuatComponent implements OnInit {
   totalPages: number = 1;
   totalElements: number = 0;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadAllBrands();
@@ -104,14 +112,17 @@ export class TraHangNhaSanXuatComponent implements OnInit {
 
     this.http.get<Page<DefectiveProduct>>(`http://localhost:8080/api/tra-hang/defective-products`, { params }).subscribe({
       next: (data) => {
-        this.defectiveProducts = data.content.map(product => ({ ...product, selected: false }));
+        this.defectiveProducts = data.content.map(product => ({
+          ...product,
+          selected: this.cart.some(item => item.idSpct === product.idSpct && item.idYeuCau === product.idYeuCau)
+        }));
         this.page = data.number ?? 0;
         this.size = data.size ?? 16;
         this.totalPages = data.totalPages ?? 1;
         this.totalElements = data.totalElements ?? 0;
         this.isLoading = false;
 
-        console.log('Defective Products after load:', this.defectiveProducts);
+        console.log('Defective Products after load:', data);
       },
       error: (err) => {
         this.isLoading = false;
@@ -128,11 +139,10 @@ export class TraHangNhaSanXuatComponent implements OnInit {
 
   onFilterBrandChange(): void {
     this.page = 0;
-    // Tự động đặt selectedBrand theo filterBrand
     this.selectedBrand = this.filterBrand || null;
-    // Lọc lại giỏ hàng để chỉ giữ sản phẩm của thương hiệu đã lọc
     if (this.filterBrand) {
       this.cart = this.cart.filter(item => item.tenThuongHieu === this.filterBrand);
+      this.updateSelectedBrand();
     }
     this.loadDefectiveProducts();
   }
@@ -174,8 +184,25 @@ export class TraHangNhaSanXuatComponent implements OnInit {
     return range;
   }
 
+  private updateSelectedBrand(): void {
+    if (this.cart.length > 0) {
+      this.selectedBrand = this.cart[0].tenThuongHieu;
+    } else {
+      this.selectedBrand = this.filterBrand || null;
+    }
+  }
+
+  onCheckboxChange(product: DefectiveProduct): void {
+    if (product.selected) {
+      this.addToCart(product);
+    } else {
+      this.cart = this.cart.filter(item => item.idSpct !== product.idSpct || item.idYeuCau !== product.idYeuCau);
+      this.updateSelectedBrand();
+      this.cdr.detectChanges();
+    }
+  }
+
   addToCart(product: DefectiveProduct): void {
-    // Nếu đang lọc theo thương hiệu, chỉ cho phép thêm sản phẩm của thương hiệu đó
     if (this.filterBrand && product.tenThuongHieu !== this.filterBrand) {
       this.errorMessage = `Chỉ được thêm sản phẩm của thương hiệu ${this.filterBrand} khi đang lọc.`;
       Swal.fire({
@@ -185,12 +212,13 @@ export class TraHangNhaSanXuatComponent implements OnInit {
         confirmButtonText: 'Đóng'
       });
       product.selected = false;
+      this.cdr.detectChanges();
       return;
     }
 
-    // Kiểm tra xem giỏ hàng đã có sản phẩm của thương hiệu khác chưa
     if (this.cart.length > 0) {
       const firstBrandInCart = this.cart[0].tenThuongHieu;
+      product.selected = false;
       if (product.tenThuongHieu !== firstBrandInCart) {
         this.errorMessage = `Giỏ hàng chỉ được chứa sản phẩm của một thương hiệu. Hiện tại giỏ hàng đang chứa sản phẩm của thương hiệu ${firstBrandInCart}.`;
         Swal.fire({
@@ -199,7 +227,7 @@ export class TraHangNhaSanXuatComponent implements OnInit {
           text: this.errorMessage,
           confirmButtonText: 'Đóng'
         });
-        product.selected = false;
+        this.cdr.detectChanges();
         return;
       }
     }
@@ -216,15 +244,37 @@ export class TraHangNhaSanXuatComponent implements OnInit {
           text: this.errorMessage,
           confirmButtonText: 'Đóng'
         });
+        product.selected = false;
+        this.cdr.detectChanges();
+        return;
       }
     } else {
       this.cart.push({ ...product, cartQuantity: 1 });
     }
-    product.selected = false;
+
+    const defectiveProduct = this.defectiveProducts.find(
+      p => p.idSpct === product.idSpct && p.idYeuCau === product.idYeuCau
+    );
+    if (defectiveProduct) {
+      defectiveProduct.selected = true;
+    }
+
+    this.updateSelectedBrand();
+    this.cdr.detectChanges();
   }
 
   removeFromCart(item: CartItem): void {
     this.cart = this.cart.filter(cartItem => cartItem.idSpct !== item.idSpct || cartItem.idYeuCau !== item.idYeuCau);
+
+    const defectiveProduct = this.defectiveProducts.find(
+      p => p.idSpct === item.idSpct && p.idYeuCau === item.idYeuCau
+    );
+    if (defectiveProduct) {
+      defectiveProduct.selected = false;
+    }
+
+    this.updateSelectedBrand();
+    this.cdr.detectChanges();
   }
 
   updateCartQuantity(item: CartItem, quantity: number): void {
@@ -242,14 +292,100 @@ export class TraHangNhaSanXuatComponent implements OnInit {
         confirmButtonText: 'Đóng'
       });
     }
+    this.cdr.detectChanges();
   }
 
   getBrandsInCart(): string[] {
-    // Nếu đang lọc theo thương hiệu, chỉ hiển thị thương hiệu đó trong dropdown "Chọn thương hiệu"
     if (this.filterBrand) {
       return [this.filterBrand];
     }
     return [...new Set(this.cart.map(item => item.tenThuongHieu))];
+  }
+
+  private generatePDF(): void {
+    if (!this.selectedBrand || this.cart.length === 0) {
+      console.warn('Không thể tạo PDF: Chưa chọn thương hiệu hoặc giỏ hàng trống.');
+      return;
+    }
+
+    const itemsToPrint = this.cart.filter(item => item.tenThuongHieu === this.selectedBrand);
+    if (itemsToPrint.length === 0) {
+      console.warn(`Không có sản phẩm nào của thương hiệu ${this.selectedBrand} trong giỏ hàng.`);
+      return;
+    }
+
+    // Format ngày giờ gửi
+    const sendDateTime = new Date().toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    // Tạo nội dung HTML tạm thời để render vào PDF
+    const printContent = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="text-align: center;">Danh Sách Sản Phẩm Hỏng</h2>
+        <h4>Thương hiệu: ${this.selectedBrand}</h4>
+        <p>Ngày giờ gửi: ${sendDateTime}</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <thead>
+            <tr style="background-color: #f2f2f2;">
+              <th style="border: 1px solid #ddd; padding: 8px;">Tên Sản Phẩm</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Số Lượng</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Dung Tích</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Tình Trạng Hàng</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Lý Do Trả Hàng</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsToPrint
+              .map(
+                item => `
+                  <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.tenSanPham}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.cartQuantity}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.dungTich}ml</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.tinhTrangHang}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.lyDoTraHang}</td>
+                  </tr>
+                `
+              )
+              .join('')}
+          </tbody>
+        </table>
+        <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+          <div>
+            <p>Người Nhận</p>
+            <p>__________________________</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Tạo một div tạm để render nội dung
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = printContent;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.top = '-9999px';
+    document.body.appendChild(tempDiv);
+
+    // Sử dụng html2canvas để chụp nội dung
+    html2canvas(tempDiv, { scale: 2 }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`DanhSachSanPhamHong_${this.selectedBrand}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+      // Xóa div tạm
+      document.body.removeChild(tempDiv);
+    });
   }
 
   sendToManufacturer(): void {
@@ -309,6 +445,11 @@ export class TraHangNhaSanXuatComponent implements OnInit {
           text: this.successMessage,
           confirmButtonText: 'Đóng'
         });
+
+        // Tạo và tải PDF tự động sau khi gửi thành công
+        this.generatePDF();
+
+        // Reset giỏ hàng và trạng thái
         this.cart = this.cart.filter(item => item.tenThuongHieu !== this.selectedBrand);
         this.selectedBrand = null;
         this.sendForm.ghiChu = '';
@@ -334,5 +475,6 @@ export class TraHangNhaSanXuatComponent implements OnInit {
     this.selectedBrand = null;
     this.sendForm.ghiChu = '';
     this.defectiveProducts.forEach(product => (product.selected = false));
+    this.cdr.detectChanges();
   }
 }
