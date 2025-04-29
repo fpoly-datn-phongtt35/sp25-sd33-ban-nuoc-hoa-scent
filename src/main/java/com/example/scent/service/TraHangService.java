@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +67,9 @@ public class TraHangService {
             dto.setTenThuongHieu((String) result[5]);
             dto.setIdThuongHieu((Integer) result[6]);
             dto.setLyDoTraHang((String) result[7]);
+            dto.setImageUrl((String) result[8]); // Map the image URL
+            dto.setDungTich((Integer) result[9]);
+            dto.setDonGia((BigDecimal) result[10]);
             defectiveProducts.add(dto);
         }
 

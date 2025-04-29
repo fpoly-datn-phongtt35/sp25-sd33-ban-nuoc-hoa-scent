@@ -2,6 +2,8 @@ package com.example.scent.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class DefectiveProductDTO {
     private Integer idYeuCau;
@@ -12,7 +14,34 @@ public class DefectiveProductDTO {
     private Integer soLuong;
     private String tinhTrangHang;
     private String lyDoTraHang;
+    private String imageUrl; // New field for image URL
+    private Integer dungTich;
+    private BigDecimal donGia;
 
+    public BigDecimal getDonGia() {
+        return donGia;
+    }
+
+    public void setDonGia(BigDecimal donGia) {
+        this.donGia = donGia;
+    }
+
+    public Integer getDungTich() {
+        return dungTich;
+    }
+
+    public void setDungTich(Integer dungTich) {
+        this.dungTich = dungTich;
+    }
+
+    // Getters and setters
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
     public DefectiveProductDTO() {
     }
 
