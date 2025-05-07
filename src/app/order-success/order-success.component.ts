@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MomoPaymentService } from '../service/momoPayment.service';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from "../header/header.component";
 import { TokenService } from '../service/token.service';
+import { DonhangService } from '../service/donhang.service';
 
 @Component({
   selector: 'app-order-success',
@@ -13,24 +14,53 @@ import { TokenService } from '../service/token.service';
   styleUrls: ['./order-success.component.scss'],
 })
 export class OrderSuccessComponent implements OnInit {
-  orderId: string | null = null; // dùng cho hiển thị
-  momoOrderId: string | null = null; // dùng để check trạng thái thanh toán
+  orderId: string | null = null;
+  momoOrderId: string | null = null;
   paymentStatus: 'checking' | 'success' | 'fail' | 'cod-success' = 'checking';
   amount: number = 0;
   orderInfo: string = '';
   extraOrderData: any;
+  ngayTao: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private momoService: MomoPaymentService,
-    private tokenService:TokenService
+    private tokenService: TokenService,
+    private donhangService: DonhangService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.orderId = this.route.snapshot.paramMap.get('orderId');
+    console.log('Order ID từ URL:', this.orderId);
     const queryParams = this.route.snapshot.queryParamMap;
     const extraDataEncoded = queryParams.get('extraData');
+
+    // Lấy ngayTao trước khi xử lý paymentStatus
+    if (this.orderId) {
+      this.donhangService.getOrderDetails(parseInt(this.orderId)).subscribe({
+        next: (order: any) => {
+          console.log('Toàn bộ dữ liệu order từ API:', order);
+          if (Array.isArray(order) && order.length > 0) {
+            this.ngayTao = order[0].ngayTao || null;
+          } else {
+            this.ngayTao = order.ngayTao || null;
+          }
+          if (!this.ngayTao) {
+            console.warn('⚠️ ngayTao không tồn tại trong dữ liệu order:', order);
+          } else {
+            console.log('Ngày tạo sau khi gán:', this.ngayTao);
+          }
+          this.cdr.detectChanges(); // Cập nhật giao diện ngay khi có ngayTao
+        },
+        error: (err) => {
+          console.error('❌ Lỗi khi lấy thông tin đơn hàng:', err);
+          this.ngayTao = null;
+          this.cdr.detectChanges();
+        }
+      });
+    }
 
     if (extraDataEncoded) {
       try {
@@ -38,11 +68,12 @@ export class OrderSuccessComponent implements OnInit {
           decodeURIComponent(escape(atob(str)));
         const decoded = base64ToUtf8(extraDataEncoded);
         this.extraOrderData = JSON.parse(decoded);
-        this.amount = this.extraOrderData.amount;
-        this.orderInfo = this.extraOrderData.orderInfo;
+        this.amount = this.extraOrderData.amount || 0;
+        this.orderInfo = this.extraOrderData.orderInfo || '';
+        console.log('Extra data decoded:', this.extraOrderData);
 
-        // ✅ momoOrderId có thể là ORDER_1000 hoặc ORDER_1000_abcd12
         this.momoOrderId = this.extraOrderData.orderId || `ORDER_${this.orderId}`;
+        console.log('Momo Order ID:', this.momoOrderId);
 
         this.momoService.checkStatus(this.momoOrderId!).subscribe({
           next: (res: any) => {
@@ -52,54 +83,57 @@ export class OrderSuccessComponent implements OnInit {
             } else {
               this.paymentStatus = 'fail';
             }
+            this.cdr.detectChanges(); // Cập nhật giao diện sau khi thay đổi paymentStatus
           },
-          error: () => (this.paymentStatus = 'fail'),
+          error: () => {
+            this.paymentStatus = 'fail';
+            this.cdr.detectChanges();
+          }
         });
       } catch (err) {
         console.error('❌ Lỗi giải mã extraData:', err);
         this.paymentStatus = 'fail';
+        this.cdr.detectChanges();
       }
     } else {
-      // ✅ Nếu không có extraData thì là COD → coi như thành công (chờ xác nhận)
       this.paymentStatus = 'cod-success';
+      this.cdr.detectChanges();
     }
   }
 
   updateOrderStatusToPaid() {
     if (!this.orderId) {
-        console.error('❌ orderId không tồn tại');
-        return;
+      console.error('❌ orderId không tồn tại');
+      return;
     }
 
-    // Giả sử bạn đã có userID và tenDangNhap từ trạng thái người dùng (ví dụ: từ localStorage hoặc context)
-    const userInfo=this.tokenService.getUserInfo();
-    const userID = userInfo.UserID; // Thay bằng giá trị thực tế
-    const tenDangNhap =userInfo.sub; // Thay bằng giá trị thực tế
-    console.log('tendangnhap:',tenDangNhap+'\n'+'userId:',userID)
-    // Tạo URL với các query parameters
+    const userInfo = this.tokenService.getUserInfo();
+    const userID = userInfo.UserID;
+    const tenDangNhap = userInfo.sub;
+    console.log('tendangnhap:', tenDangNhap + '\n' + 'userId:', userID);
     const apiUrl = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${this.orderId}?trangThai=6&userID=${userID}&tenDangNhap=${tenDangNhap}`;
 
     fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
     .then((res) => {
-        if (res.ok) {
-            return res.json().then((data) => {
-                console.log('✅ Đã cập nhật trạng thái đơn hàng thành "Đã thanh toán"', data);
-            });
-        } else {
-            return res.text().then((errorMessage) => {
-                console.error('❌ Cập nhật trạng thái thất bại:', errorMessage);
-            });
-        }
+      if (res.ok) {
+        return res.json().then((data) => {
+          console.log('✅ Đã cập nhật trạng thái đơn hàng thành "Đã thanh toán"', data);
+        });
+      } else {
+        return res.text().then((errorMessage) => {
+          console.error('❌ Cập nhật trạng thái thất bại:', errorMessage);
+        });
+      }
     })
     .catch((err) => {
-        console.error('❌ Lỗi khi gọi API cập nhật trạng thái:', err);
+      console.error('❌ Lỗi khi gọi API cập nhật trạng thái:', err);
     });
-}
+  }
 
   goToHomePage() {
     this.router.navigate(['/']);
@@ -107,7 +141,7 @@ export class OrderSuccessComponent implements OnInit {
 
   viewOrderDetails() {
     if (this.orderId) {
-      this.router.navigate(['/order-details', this.orderId]);
+      this.router.navigate(['/app-order-id', this.orderId]);
     } else {
       console.error('❌ No Order ID provided.');
     }

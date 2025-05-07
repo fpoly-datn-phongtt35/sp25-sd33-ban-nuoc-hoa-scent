@@ -23,6 +23,7 @@ export const routes: Routes = [
   { path: 'app-order', component: OrderComponent },
   { path: 'product/detail/:id', component: ProductDetailComponent },
   { path: 'app-order-id', component: OrderDetailUserIDComponent },
+  { path: 'app-order-id/:orderId', component: OrderDetailUserIDComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'app-tra-hang', component: TraHangComponent },

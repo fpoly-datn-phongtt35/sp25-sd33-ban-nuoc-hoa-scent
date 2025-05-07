@@ -1,35 +1,26 @@
 <header class="header">
   <div class="logo">
-    <h1><img src="logo.webp" alt="Logo"></h1>
+    <img src="logo.webp" alt="Logo">
   </div>
   <nav class="navbar">
-     <a routerLink="/">Trang Chủ</a>
-    
-    <a routerLink="/contact"></a>
+    <a routerLink="/">Trang Chủ</a>
   </nav>
-
-  <div class="header-icons">
-    <!-- Icon giỏ hàng -->
+  <div class="header-actions">
     <a class="icon-link" (click)="toggleShoppingCart()">
       <i class="bi bi-cart"></i>
     </a>
-
-    <ng-container>
-      <ng-container *ngIf="isLoggedIn; else notLoggedIn">
-        <div class="user-dropdown" (mouseenter)="showDropdown()" (mouseleave)="hideDropdown()">
-          <span class="username">Xin chào, {{ username }}</span>
-          <div class="dropdown-menu" *ngIf="isDropdownOpen">
-            <a class="dropdown-item" routerLink="/app-order-id">Đơn Hàng</a>
-            <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi Mật Khẩu</a>
-            <a class="dropdown-item" routerLink="/account-info">Cập nhật thông tin</a> <!-- Thêm liên kết -->
-            <a class="dropdown-item" (click)="logout()">Đăng Xuất</a>
-            
-            <a class="dropdown-item" routerLink="/app-tra-hang-user">Trạng thái Trả hàng</a>
-          </div>
+    <ng-container *ngIf="isLoggedIn; else notLoggedIn">
+      <div class="user-dropdown" (mouseenter)="showDropdown()" (mouseleave)="hideDropdown()">
+        <span class="username">Xin chào, {{ username }}</span>
+        <div class="dropdown-menu" *ngIf="isDropdownOpen">
+          <a class="dropdown-item" routerLink="/app-order-id">Đơn Hàng</a>
+          <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi Mật Khẩu</a>
+          <a class="dropdown-item" routerLink="/account-info">Cập nhật thông tin</a>
+          <a class="dropdown-item" (click)="logout()">Đăng Xuất</a>
+          <a class="dropdown-item" routerLink="/app-tra-hang-user">Trạng thái Trả hàng</a>
         </div>
-      </ng-container>
+      </div>
     </ng-container>
-
     <ng-template #notLoggedIn>
       <button class="login-btn" (click)="goToLogin()">Đăng Nhập</button>
     </ng-template>

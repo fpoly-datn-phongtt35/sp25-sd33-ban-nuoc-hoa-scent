@@ -8,17 +8,18 @@ import { DonhangService } from '../service/donhang.service';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
-
 import { WebSocketService } from '../service/WebSocketService';
 import { TraHangService } from '../service/TraHangService';
 import { MatDialog } from '@angular/material/dialog';
 import { TraHangComponent } from '../tra-hang/tra-hang.component';
 import { DanhGiaService } from '../service/DanhGiaService';
 import { MatDialogModule } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
+
 @Component({
   selector: 'app-order-detail-user-id',
   standalone: true,
-  imports: [CommonModule, HeaderComponent, FooterComponent, FormsModule,MatDialogModule],
+  imports: [CommonModule, HeaderComponent, FooterComponent, FormsModule, MatDialogModule],
   templateUrl: './order-detail-user-id.component.html',
   styleUrls: ['./order-detail-user-id.component.scss'],
 })
@@ -52,7 +53,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     private cdRef: ChangeDetectorRef,
     private webSocketService: WebSocketService,
     private traHangService: TraHangService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.userId = this.tokenService.getUserId();
   }
@@ -80,6 +83,27 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       error: (error) => console.error('WebSocket subscription error:', error),
       complete: () => console.log('WebSocket subscription completed'),
     });
+
+    // Kiểm tra orderId từ route
+    const orderId = this.route.snapshot.paramMap.get('orderId');
+    if (orderId) {
+      this.loadOrders().then(() => {
+        const selected = this.orders.find(order => order.maDonHang === parseInt(orderId));
+        if (selected) {
+          this.selectedOrder = selected;
+          this.loadUserReviews();
+          this.cdRef.detectChanges();
+        } else {
+          console.warn(`Không tìm thấy đơn hàng với mã ${orderId}`);
+          Swal.fire({
+            title: 'Lỗi',
+            text: `Không tìm thấy đơn hàng với mã ${orderId}.`,
+            icon: 'warning',
+            confirmButtonText: 'OK',
+          });
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -116,33 +140,30 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadOrders(): void {
-    this.userService.getOrders(this.userId).subscribe({
-      next: (data) => {
-        this.orders = data.map((order: { trangThai: number }) => ({
-          ...order,
-          statusLabel: this.getStatusLabel(order.trangThai),
-        }));
-        this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
-        this.filteredOrders = [...this.orders];
-        console.log('Dữ liệu đơn hàng (sắp xếp theo maDonHang giảm dần):', this.orders);
-        if (this.selectedOrder) {
-          const updatedOrder = this.orders.find((order) => order.maDonHang === this.selectedOrder.maDonHang);
-          if (updatedOrder) {
-            this.selectedOrder = { ...updatedOrder };
-            this.loadUserReviews();
-          }
-        }
-      },
-      error: (error) => {
-        console.error('Lỗi khi lấy đơn hàng:', error);
-        Swal.fire({
-          title: 'Lỗi',
-          text: 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.',
-          icon: 'error',
-          confirmButtonText: 'OK',
-        });
-      },
+  loadOrders(): Promise<void> {
+    return new Promise((resolve) => {
+      this.userService.getOrders(this.userId).subscribe({
+        next: (data) => {
+          this.orders = data.map((order: { trangThai: number }) => ({
+            ...order,
+            statusLabel: this.getStatusLabel(order.trangThai),
+          }));
+          this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
+          this.filteredOrders = [...this.orders];
+          console.log('Dữ liệu đơn hàng:', this.orders);
+          resolve();
+        },
+        error: (error) => {
+          console.error('Lỗi khi lấy đơn hàng:', error);
+          Swal.fire({
+            title: 'Lỗi',
+            text: 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+          resolve();
+        },
+      });
     });
   }
 
@@ -274,12 +295,13 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   toggleOrderDetail(order: any): void {
     if (this.selectedOrder === order) {
       this.selectedOrder = null;
-      this.danhGias = {};
+      this.router.navigate(['/app-order-id']); // Quay lại danh sách khi đóng chi tiết
     } else {
       this.selectedOrder = order;
-      this.danhGias = {};
       this.loadUserReviews();
+      this.router.navigate(['/app-order-id', order.maDonHang]); // Điều hướng đến chi tiết với orderId
     }
+    this.cdRef.detectChanges();
   }
 
   loadUserReviews(): void {
@@ -325,6 +347,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   goBack(): void {
     this.selectedOrder = null;
     this.danhGias = {};
+    this.router.navigate(['/app-order-id']); // Quay lại danh sách
   }
 
   cancelOrder(orderId: number): void {
@@ -374,7 +397,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? 0;
     this.selectedStatus = statusCode;
-  
+
     if (statusCode === 0) {
       this.filteredOrders = [...this.orders];
     } else {
@@ -386,109 +409,109 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   submitDanhGia(productId: number): void {
     const danhGia = this.danhGias[productId];
     if (danhGia.rating < 1 || danhGia.rating > 5) {
-        Swal.fire({
-            title: 'Lỗi',
-            text: 'Vui lòng chọn đánh giá từ 1 đến 5 sao!',
-            icon: 'error',
-            confirmButtonText: 'OK',
-        });
-        return;
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng chọn đánh giá từ 1 đến 5 sao!',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return;
     }
 
     if (!danhGia.comment.trim()) {
-        Swal.fire({
-            title: 'Lỗi',
-            text: 'Vui lòng nhập bình luận!',
-            icon: 'error',
-            confirmButtonText: 'OK',
-        });
-        return;
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng nhập bình luận!',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return;
     }
 
     if (danhGia.id) {
-        this.danhGiaService.getUserDanhGia(productId, this.userId, this.selectedOrder.maDonHang).subscribe({
-            next: (existingDanhGia: any) => {
-                if (existingDanhGia && existingDanhGia.id === danhGia.id) {
-                    const danhGiaDTO = {
-                        id: danhGia.id,
-                        idSanPham: productId,
-                        idTaiKhoan: this.userId,
-                        idDonHang: existingDanhGia.idDonHang,
-                        rating: danhGia.rating,
-                        comment: danhGia.comment,
-                    };
+      this.danhGiaService.getUserDanhGia(productId, this.userId, this.selectedOrder.maDonHang).subscribe({
+        next: (existingDanhGia: any) => {
+          if (existingDanhGia && existingDanhGia.id === danhGia.id) {
+            const danhGiaDTO = {
+              id: danhGia.id,
+              idSanPham: productId,
+              idTaiKhoan: this.userId,
+              idDonHang: existingDanhGia.idDonHang,
+              rating: danhGia.rating,
+              comment: danhGia.comment,
+            };
 
-                    this.danhGiaService.updateDanhGia(danhGia.id, danhGiaDTO).subscribe({
-                        next: (res) => {
-                            Swal.fire({
-                                title: 'Thành công!',
-                                text: 'Đánh giá của bạn đã được cập nhật.',
-                                icon: 'success',
-                                timer: 1500,
-                                showConfirmButton: false,
-                            });
-                            this.loadUserReviews();
-                        },
-                        error: (err) => {
-                            const errorMessage = err.error?.message || 'Có lỗi xảy ra khi cập nhật đánh giá.';
-                            Swal.fire({
-                                title: 'Lỗi',
-                                text: errorMessage,
-                                icon: 'error',
-                                confirmButtonText: 'OK',
-                            });
-                        },
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Lỗi',
-                        text: 'Đánh giá không tồn tại hoặc không khớp. Vui lòng thử lại.',
-                        icon: 'error',
-                        confirmButtonText: 'OK',
-                    });
-                    this.loadUserReviews();
-                }
-            },
-            error: (err) => {
+            this.danhGiaService.updateDanhGia(danhGia.id, danhGiaDTO).subscribe({
+              next: (res) => {
                 Swal.fire({
-                    title: 'Lỗi',
-                    text: 'Không thể kiểm tra đánh giá. Vui lòng thử lại.',
-                    icon: 'error',
-                    confirmButtonText: 'OK',
+                  title: 'Thành công!',
+                  text: 'Đánh giá của bạn đã được cập nhật.',
+                  icon: 'success',
+                  timer: 1500,
+                  showConfirmButton: false,
                 });
                 this.loadUserReviews();
-            },
-        });
+              },
+              error: (err) => {
+                const errorMessage = err.error?.message || 'Có lỗi xảy ra khi cập nhật đánh giá.';
+                Swal.fire({
+                  title: 'Lỗi',
+                  text: errorMessage,
+                  icon: 'error',
+                  confirmButtonText: 'OK',
+                });
+              },
+            });
+          } else {
+            Swal.fire({
+              title: 'Lỗi',
+              text: 'Đánh giá không tồn tại hoặc không khớp. Vui lòng thử lại.',
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
+            this.loadUserReviews();
+          }
+        },
+        error: (err) => {
+          Swal.fire({
+            title: 'Lỗi',
+            text: 'Không thể kiểm tra đánh giá. Vui lòng thử lại.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+          this.loadUserReviews();
+        },
+      });
     } else {
-        const danhGiaDTO = {
-            idSanPham: productId,
-            idTaiKhoan: this.userId,
-            idDonHang: this.selectedOrder.maDonHang,
-            rating: danhGia.rating,
-            comment: danhGia.comment,
-        };
+      const danhGiaDTO = {
+        idSanPham: productId,
+        idTaiKhoan: this.userId,
+        idDonHang: this.selectedOrder.maDonHang,
+        rating: danhGia.rating,
+        comment: danhGia.comment,
+      };
 
-        this.danhGiaService.addDanhGia(danhGiaDTO).subscribe({
-            next: (res) => {
-                Swal.fire({
-                    title: 'Thành công!',
-                    text: 'Đánh giá của bạn đã được gửi.',
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false,
-                });
-                this.loadUserReviews();
-            },
-            error: (err) => {
-                const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gửi đánh giá.';
-                Swal.fire({
-                    title: 'Lỗi',
-                    text: errorMessage,
-                    icon: 'error',
-                    confirmButtonText: 'OK',
-                });
-            },
-        });
+      this.danhGiaService.addDanhGia(danhGiaDTO).subscribe({
+        next: (res) => {
+          Swal.fire({
+            title: 'Thành công!',
+            text: 'Đánh giá của bạn đã được gửi.',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          this.loadUserReviews();
+        },
+        error: (err) => {
+          const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gửi đánh giá.';
+          Swal.fire({
+            title: 'Lỗi',
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+        },
+      });
     }
   }
 
@@ -548,7 +571,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
-          this.loadOrders(); // Cập nhật danh sách đơn hàng nếu có thay đổi
+          this.loadOrders();
         }
       });
     } else {

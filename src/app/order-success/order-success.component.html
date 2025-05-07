@@ -7,7 +7,8 @@
 <div class="order-success-container" *ngIf="paymentStatus === 'success'">
   <h1>✅ Đặt Hàng Thành Công!</h1>
   <p>Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đang được xử lý và sẽ được giao sớm.</p>
-  <p><strong>Mã đơn hàng:</strong> {{ orderId }}</p>
+  <p *ngIf="ngayTao">Ngày tạo: {{ ngayTao | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+  <p><strong>Mã đơn hàng:</strong>  {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
   <div class="buttons">
     <button class="btn btn-primary" (click)="goToHomePage()">Trang Chủ</button>
     <button class="btn btn-secondary" (click)="viewOrderDetails()">Xem Chi Tiết Đơn Hàng</button>
@@ -17,16 +18,19 @@
 <div class="order-success-container" *ngIf="paymentStatus === 'fail'">
   <h1>❌ Thanh toán không thành công!</h1>
   <p>Giao dịch chưa hoàn tất hoặc gặp lỗi. Vui lòng thử lại.</p>
-  <p><strong>Mã đơn hàng:</strong> {{ orderId }}</p>
+  <p *ngIf="ngayTao">Ngày tạo: {{ ngayTao | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+  <p><strong>Mã đơn hàng:</strong>  {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
   <div class="buttons">
     <button class="btn btn-warning" (click)="retryPayment()">🔁 Thanh Toán Lại</button>
     <button class="btn btn-secondary" (click)="goToHomePage()">Trang Chủ</button>
   </div>
 </div>
+
 <div class="order-success-container" *ngIf="paymentStatus === 'cod-success'">
   <h1>✅ Đặt hàng thành công!</h1>
   <p>Đơn hàng của bạn đã được ghi nhận và đang chờ xác nhận từ hệ thống.</p>
-  <p><strong>Mã đơn hàng:</strong> {{ orderId }}</p>
+  <p *ngIf="ngayTao">Ngày tạo: {{ ngayTao | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+  <p><strong>Mã đơn hàng:</strong>  {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
   <div class="buttons">
     <button class="btn btn-primary" (click)="goToHomePage()">Trang Chủ</button>
     <button class="btn btn-secondary" (click)="viewOrderDetails()">Xem Chi Tiết Đơn Hàng</button>
