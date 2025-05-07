@@ -233,7 +233,9 @@ public class TraHangService {
         }
     }
 
-    public YeuCauTraHang createYeuCauTraHang(YeuCauTraHang yeuCau, Integer idTaiKhoan, List<MultipartFile> hinhAnhFiles, MultipartFile videoFile) {
+    public List<YeuCauTraHang> createYeuCauTraHang(List<YeuCauTraHang> yeuCauList, Integer idTaiKhoan,
+                                                   List<MultipartFile> hinhAnhFiles, List<MultipartFile> videoFiles) {
+        // Validate idTaiKhoan
         if (idTaiKhoan == null) {
             throw new CustomException(
                     "Vui lòng đăng nhập để tạo yêu cầu trả hàng.",
@@ -241,13 +243,17 @@ public class TraHangService {
                     "INVALID_TAI_KHOAN_ID"
             );
         }
-        if (yeuCau.getDonHang() == null || yeuCau.getDonHang().getId() == null) {
+
+        // Validate yeuCauList
+        if (yeuCauList == null || yeuCauList.isEmpty()) {
             throw new CustomException(
-                    "Vui lòng chọn đơn hàng hợp lệ để trả hàng.",
+                    "Danh sách yêu cầu trả hàng không được để trống.",
                     HttpStatus.BAD_REQUEST,
-                    "INVALID_DON_HANG"
+                    "INVALID_YEU_CAU_LIST"
             );
         }
+
+        // Validate taiKhoan
         Optional<TaiKhoan> taiKhoanOpt = taiKhoanRepo.findById(idTaiKhoan);
         if (taiKhoanOpt.isEmpty() || !taiKhoanOpt.get().getVaiTro().equals("USER")) {
             throw new CustomException(
@@ -257,7 +263,29 @@ public class TraHangService {
             );
         }
 
-        Optional<DonHang> donHangOpt = donHangRepo.findById(yeuCau.getDonHang().getId());
+        // Validate donHang consistency
+        Integer donHangId = null;
+        for (YeuCauTraHang yeuCau : yeuCauList) {
+            if (yeuCau.getDonHang() == null || yeuCau.getDonHang().getId() == null) {
+                throw new CustomException(
+                        "Vui lòng chọn đơn hàng hợp lệ để trả hàng.",
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_DON_HANG"
+                );
+            }
+            if (donHangId == null) {
+                donHangId = yeuCau.getDonHang().getId();
+            } else if (!donHangId.equals(yeuCau.getDonHang().getId())) {
+                throw new CustomException(
+                        "Tất cả yêu cầu phải thuộc cùng một đơn hàng.",
+                        HttpStatus.BAD_REQUEST,
+                        "INCONSISTENT_DON_HANG"
+                );
+            }
+        }
+
+        // Validate donHang existence
+        Optional<DonHang> donHangOpt = donHangRepo.findById(donHangId);
         if (donHangOpt.isEmpty()) {
             throw new CustomException(
                     "Đơn hàng không tồn tại. Vui lòng kiểm tra lại.",
@@ -266,101 +294,101 @@ public class TraHangService {
             );
         }
 
-        validateSoLuongTraHang(yeuCau, idTaiKhoan);
-
-        DonHang donHang = donHangOpt.get();
-        if (!isEligibleForReturn(donHang, yeuCau)) {
+        // Validate files
+        if (hinhAnhFiles == null || hinhAnhFiles.isEmpty()) {
             throw new CustomException(
-                    "Yêu cầu trả hàng đã vượt quá thời gian cho phép. Vui lòng liên hệ hỗ trợ.",
+                    "Vui lòng cung cấp ít nhất một hình ảnh minh chứng.",
                     HttpStatus.BAD_REQUEST,
-                    "RETURN_TIME_EXCEEDED"
+                    "MISSING_HINH_ANH"
+            );
+        }
+        if (hinhAnhFiles.size() > 2 * yeuCauList.size()) {
+            throw new CustomException(
+                    "Chỉ được phép tải lên tối đa 2 hình ảnh minh chứng cho mỗi yêu cầu.",
+                    HttpStatus.BAD_REQUEST,
+                    "TOO_MANY_HINH_ANH"
+            );
+        }
+        if (videoFiles == null || videoFiles.isEmpty() || videoFiles.size() < yeuCauList.size()) {
+            throw new CustomException(
+                    "Vui lòng cung cấp một video minh chứng cho mỗi yêu cầu.",
+                    HttpStatus.BAD_REQUEST,
+                    "MISSING_VIDEO"
             );
         }
 
-        if (yeuCau.getTinhTrangHang().equals("HuHong")) {
-            if (hinhAnhFiles == null || hinhAnhFiles.isEmpty()) {
+        // Validate image files
+        for (MultipartFile file : hinhAnhFiles) {
+            String contentType = file.getContentType();
+            if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
                 throw new CustomException(
-                        "Vui lòng cung cấp ít nhất một hình ảnh minh chứng cho sản phẩm hỏng.",
+                        "Hình ảnh phải có định dạng JPEG hoặc PNG.",
                         HttpStatus.BAD_REQUEST,
-                        "MISSING_HINH_ANH"
+                        "INVALID_IMAGE_FORMAT"
                 );
             }
-            if (hinhAnhFiles.size() > 2) {
+            if (file.getSize() > 5 * 1024 * 1024) {
                 throw new CustomException(
-                        "Chỉ được phép tải lên tối đa 2 hình ảnh minh chứng.",
+                        "Kích thước hình ảnh không được vượt quá 5MB.",
                         HttpStatus.BAD_REQUEST,
-                        "TOO_MANY_HINH_ANH"
+                        "IMAGE_SIZE_EXCEEDED"
                 );
             }
-            if (videoFile == null || videoFile.isEmpty()) {
-                throw new CustomException(
-                        "Vui lòng cung cấp một video minh chứng cho sản phẩm hỏng.",
-                        HttpStatus.BAD_REQUEST,
-                        "MISSING_VIDEO"
-                );
-            }
+        }
 
-            for (MultipartFile file : hinhAnhFiles) {
-                String contentType = file.getContentType();
-                if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
-                    throw new CustomException(
-                            "Hình ảnh phải có định dạng JPEG hoặc PNG.",
-                            HttpStatus.BAD_REQUEST,
-                            "INVALID_IMAGE_FORMAT"
-                    );
-                }
-                if (file.getSize() > 5 * 1024 * 1024) { // 5MB
-                    throw new CustomException(
-                            "Kích thước hình ảnh không được vượt quá 5MB.",
-                            HttpStatus.BAD_REQUEST,
-                            "IMAGE_SIZE_EXCEEDED"
-                    );
-                }
-            }
-
-            String videoContentType = videoFile.getContentType();
-            if (!"video/mp4".equals(videoContentType)) {
+        // Validate video files
+        for (MultipartFile videoFile : videoFiles) {
+            String contentType = videoFile.getContentType();
+            if (!"video/mp4".equals(contentType)) {
                 throw new CustomException(
                         "Video phải có định dạng MP4.",
                         HttpStatus.BAD_REQUEST,
                         "INVALID_VIDEO_FORMAT"
                 );
             }
-            if (videoFile.getSize() > 50 * 1024 * 1024) { // 50MB
+            if (videoFile.getSize() > 50 * 1024 * 1024) {
                 throw new CustomException(
                         "Kích thước video không được vượt quá 50MB.",
                         HttpStatus.BAD_REQUEST,
                         "VIDEO_SIZE_EXCEEDED"
                 );
             }
-        } else if (yeuCau.getTinhTrangHang().equals("NguyenVen")) {
-            if (hinhAnhFiles != null && hinhAnhFiles.size() > 2) {
-                throw new CustomException(
-                        "Chỉ được phép tải lên tối đa 2 hình ảnh minh chứng.",
-                        HttpStatus.BAD_REQUEST,
-                        "TOO_MANY_HINH_ANH"
-                );
-            }
-            if (videoFile != null && !videoFile.isEmpty()) {
-                throw new CustomException(
-                        "Không cần cung cấp video cho sản phẩm nguyên vẹn.",
-                        HttpStatus.BAD_REQUEST,
-                        "UNNECESSARY_VIDEO"
-                );
-            }
-        } else {
-            throw new CustomException(
-                    "Tình trạng hàng không hợp lệ. Vui lòng chọn 'Nguyên vẹn' hoặc 'Hỏng'.",
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_TINH_TRANG_HANG"
-            );
         }
 
-        List<String> hinhAnhUrls = new ArrayList<>();
-        if (hinhAnhFiles != null && !hinhAnhFiles.isEmpty()) {
-            for (MultipartFile file : hinhAnhFiles) {
+        List<YeuCauTraHang> savedYeuCauList = new ArrayList<>();
+        for (int i = 0; i < yeuCauList.size(); i++) {
+            YeuCauTraHang yeuCau = yeuCauList.get(i);
+
+            // Validate soLuong
+            validateSoLuongTraHang(yeuCau, idTaiKhoan);
+
+            // Validate return eligibility
+            DonHang donHang = donHangOpt.get();
+            yeuCau.setNgayYeuCau(LocalDateTime.now());
+            if (!isEligibleForReturn(donHang, yeuCau)) {
+                throw new CustomException(
+                        "Yêu cầu trả hàng đã vượt quá thời gian cho phép.",
+                        HttpStatus.BAD_REQUEST,
+                        "RETURN_TIME_EXCEEDED"
+                );
+            }
+
+            // Validate tinhTrangHang
+            if (!yeuCau.getTinhTrangHang().equals("HuHong") && !yeuCau.getTinhTrangHang().equals("NguyenVen")) {
+                throw new CustomException(
+                        "Tình trạng hàng không hợp lệ. Vui lòng chọn 'Nguyên vẹn' hoặc 'Hỏng'.",
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_TINH_TRANG_HANG"
+                );
+            }
+
+            // Upload images (split evenly among requests)
+            List<String> hinhAnhUrls = new ArrayList<>();
+            int startIdx = i * 2;
+            int endIdx = Math.min(startIdx + 2, hinhAnhFiles.size());
+            for (int j = startIdx; j < endIdx; j++) {
                 try {
-                    String imageUrl = storageService.uploadImageToStorage(file);
+                    String imageUrl = storageService.uploadImageToStorage(hinhAnhFiles.get(j));
                     hinhAnhUrls.add(imageUrl);
                 } catch (IOException e) {
                     throw new CustomException(
@@ -370,17 +398,17 @@ public class TraHangService {
                     );
                 }
             }
-        }
-        yeuCau.setHinhAnhUrls(hinhAnhUrls);
+            yeuCau.setHinhAnhUrls(hinhAnhUrls);
 
-        String videoUrl = null;
-        File videoTempFile = null;
-        if (videoFile != null && !videoFile.isEmpty()) {
-            try {
-                videoTempFile = File.createTempFile("video", ".mp4");
-                videoFile.transferTo(videoTempFile);
+            // Upload video
+            MultipartFile videoFile = videoFiles.get(i);
+            String videoUrl = null;
+            File videoTempFile = null;
+            if (videoFile != null && !videoFile.isEmpty()) {
+                try {
+                    videoTempFile = File.createTempFile("video", ".mp4");
+                    videoFile.transferTo(videoTempFile);
 
-                if (yeuCau.getTinhTrangHang().equals("HuHong")) {
                     double duration = getVideoDuration(videoTempFile);
                     if (duration < 5 || duration > 15) {
                         throw new CustomException(
@@ -389,40 +417,42 @@ public class TraHangService {
                                 "INVALID_VIDEO_DURATION"
                         );
                     }
-                }
 
-                videoUrl = storageService.uploadVideoToStorageFromFile(videoTempFile, videoFile.getOriginalFilename());
-                yeuCau.setUrlVideo(videoUrl);
-            } catch (Exception e) {
-                throw new CustomException(
-                        "Lỗi khi xử lý video. Vui lòng thử lại.",
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "VIDEO_UPLOAD_FAILED"
-                );
-            } finally {
-                if (videoTempFile != null && videoTempFile.exists()) {
-                    videoTempFile.delete();
+                    videoUrl = storageService.uploadVideoToStorageFromFile(videoTempFile, videoFile.getOriginalFilename());
+                    yeuCau.setUrlVideo(videoUrl);
+                } catch (Exception e) {
+                    throw new CustomException(
+                            "Lỗi khi xử lý video. Vui lòng thử lại.",
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            "VIDEO_UPLOAD_FAILED"
+                    );
+                } finally {
+                    if (videoTempFile != null && videoTempFile.exists()) {
+                        videoTempFile.delete();
+                    }
                 }
             }
+
+            // Save yeuCau
+            yeuCau.setTaiKhoan(taiKhoanOpt.get());
+            yeuCau.setTrangThai(0); // Chờ xác nhận
+            YeuCauTraHang savedYeuCau = yeuCauTraHangRepo.save(yeuCau);
+
+            // Save lichSu
+            LichSuTraHang lichSu = new LichSuTraHang();
+            lichSu.setYeuCauTraHang(savedYeuCau);
+            lichSu.setThaoTac(0);
+            lichSu.setThoiGianThaoTac(LocalDateTime.now());
+            lichSu.setTaiKhoan(taiKhoanOpt.get());
+            lichSu.setTrangThaiCu(null);
+            lichSu.setTrangThaiMoi(0);
+            lichSuTraHangRepo.save(lichSu);
+
+            savedYeuCauList.add(savedYeuCau);
         }
 
-        yeuCau.setNgayYeuCau(LocalDateTime.now());
-        yeuCau.setTaiKhoan(taiKhoanOpt.get());
-        yeuCau.setTrangThai(0); // Chờ xác nhận
-        YeuCauTraHang savedYeuCau = yeuCauTraHangRepo.save(yeuCau);
-
-        LichSuTraHang lichSu = new LichSuTraHang();
-        lichSu.setYeuCauTraHang(savedYeuCau);
-        lichSu.setThaoTac(0); // Chờ xác nhận
-        lichSu.setThoiGianThaoTac(LocalDateTime.now());
-        lichSu.setTaiKhoan(taiKhoanOpt.get());
-        lichSu.setTrangThaiCu(null); // Trạng thái cũ: null
-        lichSu.setTrangThaiMoi(0); // Trạng thái mới: Chờ xác nhận
-        lichSuTraHangRepo.save(lichSu);
-
-        return savedYeuCau;
+        return savedYeuCauList;
     }
-
     public YeuCauTraHang approveYeuCauTraHang(Integer id, Integer idTaiKhoanDuyet) {
         Optional<TaiKhoan> taiKhoanOpt = taiKhoanRepo.findById(idTaiKhoanDuyet);
         if (taiKhoanOpt.isEmpty() || (!taiKhoanOpt.get().getVaiTro().equals("STAFF") && !taiKhoanOpt.get().getVaiTro().equals("ADMIN"))) {
@@ -644,7 +674,7 @@ public class TraHangService {
         return yeuCau;
     }
 
-    public List<YeuCauTraHang> getYeuCauByTinhTrangHang(String tinhTrangHang) {
+    public Page<YeuCauTraHang> getYeuCauByTinhTrangHang(String tinhTrangHang, Pageable pageable) {
         if (!tinhTrangHang.equals("NguyenVen") && !tinhTrangHang.equals("HuHong")) {
             throw new CustomException(
                     "Tình trạng hàng không hợp lệ. Vui lòng chọn 'Nguyên vẹn' hoặc 'Hỏng'.",
@@ -652,6 +682,6 @@ public class TraHangService {
                     "INVALID_TINH_TRANG_HANG"
             );
         }
-        return yeuCauTraHangRepo.findByTinhTrangHang(tinhTrangHang);
+        return yeuCauTraHangRepo.findByTinhTrangHang(tinhTrangHang, pageable);
     }
 }

@@ -30,10 +30,8 @@ public class CTDHCtrl {
         this.ctdhs = ctdhs;
     }
     @GetMapping(value = "/don-hang/{idDonHang}/spct", produces = MediaType.APPLICATION_JSON_VALUE)
-
     public ResponseEntity<List<spctDTO2>> getSpctByDonHang(@PathVariable Integer idDonHang) {
         List<spctDTO2> spctDetails = ctdhs.getSpctDetailsByDonHang(idDonHang);
-
         if (spctDetails.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }

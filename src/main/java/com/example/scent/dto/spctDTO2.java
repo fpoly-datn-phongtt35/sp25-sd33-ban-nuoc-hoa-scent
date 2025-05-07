@@ -8,8 +8,34 @@ public class spctDTO2 {
     private BigDecimal donGia;
     private String tenSanPham;
 private Integer IdSanPham;
+    private Integer maxQuantity;
     // Constructor
+   private Integer trangThai;
+    private boolean hasReturnRequest;
 
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public boolean isHasReturnRequest() {
+        return hasReturnRequest;
+    }
+
+    public void setHasReturnRequest(boolean hasReturnRequest) {
+        this.hasReturnRequest = hasReturnRequest;
+    }
+
+    public Integer getMaxQuantity() {
+        return maxQuantity;
+    }
+
+    public void setMaxQuantity(Integer maxQuantity) {
+        this.maxQuantity = maxQuantity;
+    }
 
     public Integer getIdSanPham() {
         return IdSanPham;
@@ -19,12 +45,15 @@ private Integer IdSanPham;
         IdSanPham = idSanPham;
     }
 
-    public spctDTO2(Integer idSpct, Integer dungTich, BigDecimal donGia, String tenSanPham, Integer idSanPham) {
+    public spctDTO2(Integer idSpct, Integer dungTich, BigDecimal donGia, String tenSanPham, Integer idSanPham, Integer maxQuantity, Integer trangThai, boolean hasReturnRequest) {
         this.idSpct = idSpct;
         this.dungTich = dungTich;
         this.donGia = donGia;
         this.tenSanPham = tenSanPham;
         IdSanPham = idSanPham;
+        this.maxQuantity = maxQuantity;
+        this.trangThai = trangThai;
+        this.hasReturnRequest = hasReturnRequest;
     }
 
     // Getters và Setters

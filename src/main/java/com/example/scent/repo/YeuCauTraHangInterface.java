@@ -14,10 +14,9 @@ import java.util.Optional;
 
 public interface YeuCauTraHangInterface extends JpaRepository<YeuCauTraHang, Integer> {
     List<YeuCauTraHang> findByTinhTrangHangAndTaiKhoanDuyetId(String tinhTrangHang, Integer taiKhoanDuyetId);
-
+    List<YeuCauTraHang> findByDonHangId(Integer idDonHang);
     //    Integer sumSoLuongByDonHangId(Integer donHangId);
-    List<YeuCauTraHang> findByTinhTrangHang(String tinhTrangHang);
-
+    Page<YeuCauTraHang> findByTinhTrangHang(String tinhTrangHang, Pageable pageable);
     List<YeuCauTraHang> findByTaiKhoanId(Integer idTaiKhoan);
 
     @Query("SELECT y.id as idYeuCau, y.spct.idSpct, SUM(y.soLuong) as soLuong, y.tinhTrangHang, spct.sanPham.tenSanPham, th.tenThuongHieu, th.id as idThuongHieu, y.lyDoTraHang, " +

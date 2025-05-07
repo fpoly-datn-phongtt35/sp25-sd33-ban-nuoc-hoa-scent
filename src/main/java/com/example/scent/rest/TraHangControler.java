@@ -5,12 +5,16 @@ package com.example.scent.rest;
 import com.example.scent.dto.DefectiveProductDTO;
 import com.example.scent.entity.LichSuTraHang;
 import com.example.scent.entity.YeuCauTraHang;
+import com.example.scent.repo.YeuCauTraHangInterface;
+import com.example.scent.reques.CustomException;
 import com.example.scent.reques.SendToManufacturerRequest;
 import com.example.scent.reques.YeuCauTraHangRequest;
 import com.example.scent.service.TraHangService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -29,70 +33,50 @@ public class TraHangControler {
 
     @Autowired
     private TraHangService traHangService;
+    @Autowired
+    private YeuCauTraHangInterface yeuCauTraHangInterface;
     private final ObjectMapper objectMapper;
     // Tạo yêu cầu trả hàng
     public TraHangControler(TraHangService traHangService, ObjectMapper objectMapper) {
         this.traHangService = traHangService;
         this.objectMapper = objectMapper;
     }
-
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<YeuCauTraHang> createYeuCauTraHang(
-            @RequestPart("yeuCauRequest") String yeuCauRequestJson,
-            @RequestPart(value = "hinhAnh", required = false) List<MultipartFile> hinhAnhFiles,
-            @RequestPart(value = "video", required = false) MultipartFile videoFile) throws Exception {
-
-        // Chuyển chuỗi JSON thành YeuCauTraHangRequest
-        YeuCauTraHangRequest yeuCauRequest = objectMapper.readValue(yeuCauRequestJson, YeuCauTraHangRequest.class);
-
-        // Kiểm tra null cho yeuCauRequest
-        if (yeuCauRequest == null) {
-            throw new IllegalArgumentException("Yêu cầu trả hàng không được để trống");
-        }
-
-        // Kiểm tra idTaiKhoan
-        Integer idTaiKhoan = yeuCauRequest.getIdTaiKhoan();
-        if (idTaiKhoan == null) {
-            throw new IllegalArgumentException("ID tài khoản không được để trống");
-        }
-
-        // Kiểm tra đơn hàng
-        if (yeuCauRequest.getDonHang() == null || yeuCauRequest.getDonHang().getId() == null) {
-            throw new IllegalArgumentException("Đơn hàng hoặc ID đơn hàng không được để trống");
-        }
-
-        // Kiểm tra sản phẩm chi tiết
-        if (yeuCauRequest.getSpct() == null || yeuCauRequest.getSpct().getIdSpct() == null) {
-            throw new IllegalArgumentException("Sản phẩm chi tiết hoặc ID sản phẩm chi tiết không được để trống");
-        }
-
-        // Kiểm tra tình trạng hàng
-        if (yeuCauRequest.getTinhTrangHang() == null) {
-            throw new IllegalArgumentException("Tình trạng hàng không được để trống");
-        }
-        if (videoFile != null && videoFile.isEmpty()) {
-            throw new IllegalArgumentException("Tệp video không hợp lệ hoặc rỗng");
-        }
-        // Map YeuCauTraHangRequest thành YeuCauTraHang
-        YeuCauTraHang yeuCau = new YeuCauTraHang();
-        yeuCau.setDonHang(yeuCauRequest.getDonHang());
-        yeuCau.setTaiKhoan(yeuCauRequest.getTaiKhoan());
-        yeuCau.setSpct(yeuCauRequest.getSpct());
-        yeuCau.setSoLuong(yeuCauRequest.getSoLuong());
-        yeuCau.setTrangThai(yeuCauRequest.getTrangThai());
-        yeuCau.setLyDoTraHang(yeuCauRequest.getLyDoTraHang());
-        yeuCau.setTinhTrangHang(yeuCauRequest.getTinhTrangHang());
-        yeuCau.setHinhThucTraHang(yeuCauRequest.getHinhThucTraHang());
-        yeuCau.setGhiChu(yeuCauRequest.getGhiChu());
-
-
-        // Gọi service để tạo yêu cầu trả hàng
-        YeuCauTraHang savedYeuCau = traHangService.createYeuCauTraHang(yeuCau, idTaiKhoan, hinhAnhFiles, videoFile);
-
-        // Trả về phản hồi thành công
-        return ResponseEntity.ok(savedYeuCau);
+    @GetMapping
+    public ResponseEntity<Page<YeuCauTraHang>> getAllYeuCauTraHang(Pageable pageable) {
+        Page<YeuCauTraHang> yeuCauPage = yeuCauTraHangInterface.findAll(pageable);
+        return ResponseEntity.ok(yeuCauPage);
     }
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<YeuCauTraHang>> createYeuCauTraHang(
+            @RequestPart("yeuCauRequest") String yeuCauRequestJson,
+            @RequestPart("idTaiKhoan") String idTaiKhoanStr,
+            @RequestPart(value = "hinhAnh", required = false) List<MultipartFile> hinhAnhFiles,
+            @RequestPart(value = "video", required = false) List<MultipartFile> videoFiles) throws Exception {
 
+        System.out.println("Nhận được idTaiKhoan: " + idTaiKhoanStr);
+        System.out.println("Nhận được yeuCauRequestJson: " + yeuCauRequestJson);
+        System.out.println("Số lượng hinhAnhFiles: " + (hinhAnhFiles != null ? hinhAnhFiles.size() : 0));
+        System.out.println("Số lượng videoFiles: " + (videoFiles != null ? videoFiles.size() : 0));
+
+        // Parse idTaiKhoan
+        Integer idTaiKhoan;
+        try {
+            idTaiKhoan = Integer.parseInt(idTaiKhoanStr);
+        } catch (NumberFormatException e) {
+            throw new CustomException(
+                    "ID tài khoản không hợp lệ.",
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_TAI_KHOAN_ID"
+            );
+        }
+
+        // Parse yeuCauRequestJson
+        List<YeuCauTraHang> yeuCauList = objectMapper.readValue(yeuCauRequestJson,
+                new TypeReference<List<YeuCauTraHang>>() {});
+
+        List<YeuCauTraHang> savedYeuCauList = traHangService.createYeuCauTraHang(yeuCauList, idTaiKhoan, hinhAnhFiles, videoFiles);
+        return ResponseEntity.ok(savedYeuCauList);
+    }
     @PutMapping("/{id}/approve")
     public ResponseEntity<YeuCauTraHang> approveYeuCauTraHang(@PathVariable Integer id, @RequestParam Integer idTaiKhoanDuyet) {
         YeuCauTraHang approvedYeuCau = traHangService.approveYeuCauTraHang(id, idTaiKhoanDuyet);
@@ -122,9 +106,13 @@ public class TraHangControler {
     }
     // Lấy danh sách yêu cầu trả hàng theo tình trạng hàng
     @GetMapping("/tinh-trang/{tinhTrangHang}")
-    public ResponseEntity<List<YeuCauTraHang>> getYeuCauByTinhTrangHang(@PathVariable String tinhTrangHang) {
-        List<YeuCauTraHang> yeuCauList = traHangService.getYeuCauByTinhTrangHang(tinhTrangHang);
-        return ResponseEntity.ok(yeuCauList);
+    public ResponseEntity<Page<YeuCauTraHang>> getYeuCauByTinhTrangHang(
+            @PathVariable String tinhTrangHang,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<YeuCauTraHang> yeuCauPage = traHangService.getYeuCauByTinhTrangHang(tinhTrangHang, pageable);
+        return ResponseEntity.ok(yeuCauPage);
     }
     @GetMapping("/user/{idTaiKhoan}")
     public ResponseEntity<List<YeuCauTraHang>> getYeuCauByTaiKhoan(@PathVariable Integer idTaiKhoan) {
