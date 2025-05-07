@@ -20,7 +20,7 @@
   </div>
 
   <!-- Bảng danh sách yêu cầu trả hàng -->
-  <table *ngIf="!isLoading && yeuCauList.length > 0" class="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden">
+  <table *ngIf="!isLoading && yeuCauPage && yeuCauPage.content && yeuCauPage.content.length > 0" class="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden">
     <thead>
       <tr class="bg-gray-100 text-gray-700 text-sm">
         <th class="border-b border-gray-200 p-3 text-left font-semibold">ID</th>
@@ -37,7 +37,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let yeuCau of yeuCauList" class="hover:bg-gray-50 text-sm">
+      <tr *ngFor="let yeuCau of yeuCauPage.content" class="hover:bg-gray-50 text-sm">
         <td class="border-b border-gray-200 p-3">{{ yeuCau.id }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.donHang?.id || 'N/A' }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.spct?.idSpct || 'N/A' }}</td>
@@ -54,7 +54,6 @@
             <span class="text-gray-500">Không có</span>
           </ng-template>
         </td>
-        <!-- Cột Video trong bảng -->
         <td class="border-b border-gray-200 p-3">
           <div *ngIf="yeuCau.urlVideo && yeuCau.urlVideo.length > 0; else noVideo">
             <div (dblclick)="openVideoModal(yeuCau.urlVideo)" class="video-wrapper">
@@ -87,9 +86,31 @@
   </table>
 
   <!-- Thông báo khi không có dữ liệu -->
-  <div *ngIf="!isLoading && yeuCauList.length === 0 && !errorMessage" class="text-center p-4">
+  <div *ngIf="!isLoading && yeuCauPage && (!yeuCauPage.content || yeuCauPage.content.length === 0) && !errorMessage" class="text-center p-4">
     <span>Không có yêu cầu trả hàng nào.</span>
   </div>
+
+  <!-- Phân trang -->
+  <nav aria-label="Page navigation" class="mt-4" *ngIf="totalPages > 0">
+    <ul class="pagination justify-content-center flex gap-2">
+      <li class="page-item" [class.disabled]="currentPage === 0">
+        <button class="page-link bg-gray-300 text-black px-3 py-1 rounded hover:bg-gray-400" (click)="goToPage(0)">«</button>
+      </li>
+      <li class="page-item" [class.disabled]="currentPage === 0">
+        <button class="page-link bg-gray-300 text-black px-3 py-1 rounded hover:bg-gray-400" (click)="prevPage()">‹</button>
+      </li>
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === currentPage" [class.disabled]="p.isEllipsis">
+        <button *ngIf="!p.isEllipsis" class="page-link bg-gray-300 text-black px-3 py-1 rounded hover:bg-gray-400" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+        <span *ngIf="p.isEllipsis" class="page-link bg-gray-300 text-black px-3 py-1 rounded">...</span>
+      </li>
+      <li class="page-item" [class.disabled]="currentPage >= totalPages - 1">
+        <button class="page-link bg-gray-300 text-black px-3 py-1 rounded hover:bg-gray-400" (click)="nextPage()">›</button>
+      </li>
+      <li class="page-item" [class.disabled]="currentPage >= totalPages - 1">
+        <button class="page-link bg-gray-300 text-black px-3 py-1 rounded hover:bg-gray-400" (click)="goToPage(totalPages - 1)">»</button>
+      </li>
+    </ul>
+  </nav>
 
   <!-- Modal phóng to video -->
   <div *ngIf="selectedVideoUrl" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

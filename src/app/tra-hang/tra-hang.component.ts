@@ -1,194 +1,241 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, Inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { TokenService } from '../service/token.service';
 import { TraHangService } from '../service/TraHangService';
 import Swal from 'sweetalert2';
 import { YeuCauTraHang } from '../service/response/YeuCauTraHang';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-tra-hang',
   standalone: true,
-  imports: [HeaderComponent, FooterComponent, ReactiveFormsModule, CommonModule],
+  imports: [HeaderComponent, FooterComponent, ReactiveFormsModule, CommonModule, MatDialogModule],
   templateUrl: './tra-hang.component.html',
   styleUrls: ['./tra-hang.component.scss']
 })
 export class TraHangComponent implements OnInit {
   traHangForm: FormGroup;
-  successMessage: string | null = null;
+  successMsg: string | null = null;
   errorMessage: string | null = null;
-  hinhAnhFiles: File[] = [];
-  videoFile: File | null = null;
-  hinhAnhError: boolean = false;
-  videoError: boolean = false;
-  urlVideo: string | null = null;
-  hinhAnhUrls: string[] = [];
-
-  idTaiKhoan: number;
-  donHangs: any[] = [];
   spctList: any[] = [];
+  idTaiKhoan: number | null;
 
   constructor(
     private fb: FormBuilder,
     private traHangService: TraHangService,
     private tokenService: TokenService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<TraHangComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { maDonHang: number }
   ) {
     this.idTaiKhoan = this.tokenService.getUserId();
-    console.log('idTaiKhoan from TokenService:', this.idTaiKhoan);
-    if (!this.idTaiKhoan) {
-      this.errorMessage = 'Vui lòng đăng nhập để thực hiện yêu cầu trả hàng.';
-    }
-
+    console.log('idtk lay token:', this.idTaiKhoan);
     this.traHangForm = this.fb.group({
-      idDonHang: ['', [Validators.required]],
-      idSpct: ['', [Validators.required]],
-      soLuong: ['', [Validators.required, Validators.min(1)]],
-      lyDoTraHang: ['', [Validators.required]],
-      tinhTrangHang: ['NguyenVen', [Validators.required]],
-      hinhThucTraHang: ['TaiCuaHang', [Validators.required]],
-      ghiChu: ['']
+      idDonHang: [{ value: data.maDonHang, disabled: true }, [Validators.required]],
+      returnItems: this.fb.array([])
     });
   }
 
   ngOnInit(): void {
-    console.log('ngOnInit called');
-    this.loadCompletedDonHangs();
+    if (!this.idTaiKhoan) {
+      this.errorMessage = 'Vui lòng đăng nhập để thực hiện yêu cầu trả hàng.';
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: this.errorMessage,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#ef4444'
+      }).then(() => {
+        this.dialogRef.close(false);
+      });
+      return;
+    }
+
+    if (this.data.maDonHang) {
+      this.loadSpctList();
+    } else {
+      this.errorMessage = 'Không tìm thấy mã đơn hàng.';
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: this.errorMessage,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#ef4444'
+      }).then(() => {
+        this.dialogRef.close(false);
+      });
+    }
   }
 
-  loadCompletedDonHangs(): void {
-    if (this.idTaiKhoan) {
-      console.log('Calling API to load completed orders for idTaiKhoan:', this.idTaiKhoan);
-      this.traHangService.getCompletedDonHangs(this.idTaiKhoan).subscribe({
-        next: (data) => {
-          console.log('API Response:', data);
-          this.donHangs = data;
-          console.log('donHangs:', this.donHangs);
-          if (this.donHangs.length === 0) {
-            this.errorMessage = 'Bạn không có đơn hàng hoàn thành nào để trả.';
+  get returnItems(): FormArray {
+    return this.traHangForm.get('returnItems') as FormArray;
+  }
+
+  loadSpctList(): void {
+    if (this.data.maDonHang) {
+      this.traHangService.getSpctByDonHang(this.data.maDonHang.toString()).subscribe({
+        next: (spctData) => {
+          this.spctList = Array.isArray(spctData) ? spctData : [];
+          console.log('spct',spctData)
+          console.log('spct1',this.spctList)
+          if (!this.spctList || this.spctList.length === 0) {
+            this.errorMessage = 'Đơn hàng này không có sản phẩm để trả.';
             Swal.fire({
               icon: 'info',
               title: 'Thông báo',
               text: this.errorMessage,
               confirmButtonText: 'OK',
               confirmButtonColor: '#3b82f6'
+            }).then(() => {
+              this.dialogRef.close(false);
             });
+          } else {
+            this.returnItems.clear();
+            this.spctList.forEach(spct => {
+              const item = this.createReturnItem(spct);
+              if (item) {
+                this.returnItems.push(item);
+              }
+            });
+            if (this.returnItems.length === 0) {
+              this.errorMessage = 'Không có sản phẩm hợp lệ để trả hàng.';
+              Swal.fire({
+                icon: 'warning',
+                title: 'Cảnh báo',
+                text: this.errorMessage,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#f59e0b'
+              }).then(() => {
+                this.dialogRef.close(false);
+              });
+            }
           }
           this.cdr.detectChanges();
         },
         error: (err: Error) => {
-          console.error('Error loading completed orders:', err);
-          this.errorMessage = err.message; // Lấy thông báo lỗi từ backend
+          this.spctList = [];
+          this.errorMessage = err.message || 'Lỗi khi tải danh sách sản phẩm.';
           Swal.fire({
             icon: 'error',
             title: 'Lỗi!',
             text: this.errorMessage,
             confirmButtonText: 'OK',
             confirmButtonColor: '#ef4444'
+          }).then(() => {
+            this.dialogRef.close(false);
           });
-          this.cdr.detectChanges();
         }
       });
-    } else {
-      console.warn('idTaiKhoan is not set. Cannot load completed orders.');
     }
   }
 
-  onDonHangChange(): void {
-    console.log('onDonHangChange called');
-    const idDonHang = this.traHangForm.get('idDonHang')?.value;
-    console.log('Selected maDonHang:', idDonHang);
-
-    if (idDonHang) {
-      const maDonHangToCompare = this.donHangs.length > 0 && typeof this.donHangs[0]?.maDonHang === 'number' ? Number(idDonHang) : idDonHang;
-      const selectedDonHang = this.donHangs.find(dh => dh.maDonHang === maDonHangToCompare);
-      console.log('Selected donHang:', selectedDonHang);
-
-      if (selectedDonHang && selectedDonHang.maDonHang) {
-        this.traHangService.getSpctByDonHang(selectedDonHang.maDonHang).subscribe({
-          next: (spctData) => {
-            console.log('spctData from API:', spctData);
-            this.spctList = spctData;
-            console.log('spctList:', this.spctList);
-
-            if (this.spctList.length === 0) {
-              this.errorMessage = 'Đơn hàng này không có sản phẩm để trả.';
-              Swal.fire({
-                icon: 'info',
-                title: 'Thông báo',
-                text: this.errorMessage,
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#3b82f6'
-              });
-            } else {
-              this.errorMessage = null;
-            }
-            this.traHangForm.get('idSpct')?.setValue('');
+  createReturnItem(spct: any): FormGroup | null {
+    if (!spct || spct.idSpct == null || !spct.tenSanPham) {
+      return null;
+    }
+    const maxQuantity = spct.maxQuantity != null ? spct.maxQuantity : 999;
+    const item = this.fb.group({
+      selected: [false],
+      idSpct: [spct.idSpct, Validators.required],
+      tenSanPham: [spct.tenSanPham || 'Sản phẩm không xác định', Validators.required],
+      hasReturnRequest: [spct.hasReturnRequest || false], // Đảm bảo ánh xạ đúng hasReturnRequest
+      trangThai: [spct.trangThai],
+      soLuong: ['', [Validators.min(1), Validators.max(maxQuantity)]],
+      lyDoTraHang: [''],
+      tinhTrangHang: [''],
+      hinhThucTraHang: [''],
+      ghiChu: [''],
+      hinhAnhFiles: [[]],
+      videoFile: [null],
+      hinhAnhError: [true],
+      videoError: [true]
+    });
+  
+    // Log để kiểm tra giá trị
+    console.log(`Created item for idSpct ${spct.idSpct}: hasReturnRequest = ${spct.hasReturnRequest}`);
+  
+    item.get('selected')?.valueChanges.subscribe(selected => {
+      console.log(`Selected changed for ID ${spct.idSpct} to ${selected}`);
+      if (!selected && (item.get('soLuong')?.value || item.get('lyDoTraHang')?.value)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Xác nhận',
+          text: 'Bạn đã nhập dữ liệu cho sản phẩm này. Bạn có chắc muốn bỏ chọn?',
+          showCancelButton: true,
+          confirmButtonText: 'Có',
+          cancelButtonText: 'Không'
+        }).then(result => {
+          if (result.isConfirmed) {
+            this.resetItemValidators(item, maxQuantity);
             this.cdr.detectChanges();
-          },
-          error: (err: Error) => {
-            console.error('Error loading spct list:', err);
-            this.spctList = [];
-            this.errorMessage = err.message; // Lấy thông báo lỗi từ backend
-            Swal.fire({
-              icon: 'error',
-              title: 'Lỗi!',
-              text: this.errorMessage,
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#ef4444'
-            });
-            this.traHangForm.get('idSpct')?.setValue('');
+          } else {
+            item.get('selected')?.setValue(true, { emitEvent: false });
             this.cdr.detectChanges();
           }
         });
       } else {
-        this.spctList = [];
-        this.errorMessage = 'Không tìm thấy đơn hàng hợp lệ.';
-        Swal.fire({
-          icon: 'warning',
-          title: 'Cảnh báo!',
-          text: this.errorMessage,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#f59e0b'
-        });
-        this.traHangForm.get('idSpct')?.setValue('');
+        this.updateItemValidators(item, selected, maxQuantity);
         this.cdr.detectChanges();
       }
+    });
+  
+    return item;
+  }
+
+  updateItemValidators(item: FormGroup, selected: boolean, maxQuantity: number): void {
+    if (selected) {
+      item.get('soLuong')?.setValidators([Validators.required, Validators.min(1), Validators.max(maxQuantity)]);
+      item.get('lyDoTraHang')?.setValidators(Validators.required);
+      item.get('tinhTrangHang')?.setValidators(Validators.required);
+      item.get('hinhThucTraHang')?.setValidators(Validators.required);
     } else {
-      this.spctList = [];
-      this.errorMessage = 'Vui lòng chọn đơn hàng hợp lệ.';
-      Swal.fire({
-        icon: 'warning',
-        title: 'Cảnh báo!',
-        text: this.errorMessage,
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#f59e0b'
-      });
-      this.traHangForm.get('idSpct')?.setValue('');
-      this.cdr.detectChanges();
+      this.resetItemValidators(item, maxQuantity);
     }
+    item.get('soLuong')?.updateValueAndValidity({ emitEvent: true });
+    item.get('lyDoTraHang')?.updateValueAndValidity({ emitEvent: true });
+    item.get('tinhTrangHang')?.updateValueAndValidity({ emitEvent: true });
+    item.get('hinhThucTraHang')?.updateValueAndValidity({ emitEvent: true });
+    this.traHangForm.updateValueAndValidity();
   }
 
-  onTinhTrangHangChange(): void {
-    const tinhTrangHang = this.traHangForm.get('tinhTrangHang')?.value;
-    if (tinhTrangHang !== 'HuHong') {
-      this.hinhAnhFiles = [];
-      this.videoFile = null;
-      this.hinhAnhError = false;
-      this.videoError = false;
-    }
-    this.cdr.detectChanges();
+  resetItemValidators(item: FormGroup, maxQuantity: number): void {
+    item.get('soLuong')?.clearValidators();
+    item.get('lyDoTraHang')?.clearValidators();
+    item.get('tinhTrangHang')?.clearValidators();
+    item.get('hinhThucTraHang')?.clearValidators();
+    item.get('hinhAnhFiles')?.setValue([]);
+    item.get('videoFile')?.setValue(null);
+    item.get('hinhAnhError')?.setValue(true);
+    item.get('videoError')?.setValue(true);
+    item.get('soLuong')?.setValue('');
+    item.get('lyDoTraHang')?.setValue('');
+    item.get('tinhTrangHang')?.setValue('');
+    item.get('hinhThucTraHang')?.setValue('');
+    item.get('ghiChu')?.setValue('');
+    item.get('soLuong')?.updateValueAndValidity({ emitEvent: true });
+    item.get('lyDoTraHang')?.updateValueAndValidity({ emitEvent: true });
+    item.get('tinhTrangHang')?.updateValueAndValidity({ emitEvent: true });
+    item.get('hinhThucTraHang')?.updateValueAndValidity({ emitEvent: true });
+    this.traHangForm.updateValueAndValidity();
   }
 
-  onHinhAnhChange(event: Event): void {
+  getMaxQuantity(idSpct: number): number {
+    const spct = this.spctList.find(s => s.idSpct === idSpct);
+    return spct && spct.maxQuantity != null ? spct.maxQuantity : 999;
+  }
+
+  onHinhAnhChange(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
+    const item = this.returnItems.at(index) as FormGroup;
+
     if (input.files && input.files.length > 0) {
-      this.hinhAnhFiles = Array.from(input.files);
-      this.hinhAnhError = this.hinhAnhFiles.length === 0 && this.traHangForm.get('tinhTrangHang')?.value === 'HuHong';
-      if (this.hinhAnhFiles.length > 2) {
-        this.hinhAnhError = true;
+      const files = Array.from(input.files);
+      if (files.length > 2) {
+        item.get('hinhAnhError')?.setValue(true);
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
@@ -196,22 +243,60 @@ export class TraHangComponent implements OnInit {
           confirmButtonText: 'OK',
           confirmButtonColor: '#ef4444'
         });
-        this.hinhAnhFiles = [];
+        item.get('hinhAnhFiles')?.setValue([]);
+      } else if (files.some(file => !['image/jpeg', 'image/png'].includes(file.type))) {
+        item.get('hinhAnhError')?.setValue(true);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: 'Hình ảnh phải có định dạng JPEG hoặc PNG.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#ef4444'
+        });
+        item.get('hinhAnhFiles')?.setValue([]);
+      } else if (files.some(file => file.size > 5 * 1024 * 1024)) {
+        item.get('hinhAnhError')?.setValue(true);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: 'Kích thước hình ảnh không được vượt quá 5MB.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#ef4444'
+        });
+        item.get('hinhAnhFiles')?.setValue([]);
+      } else {
+        item.get('hinhAnhError')?.setValue(false);
+        item.get('hinhAnhFiles')?.setValue(files);
+        console.log(`Hình ảnh hợp lệ: ${files.length} files uploaded for ID ${item.get('idSpct')?.value}, hinhAnhError: ${item.get('hinhAnhError')?.value}`);
       }
-      this.cdr.detectChanges();
     } else {
-      this.hinhAnhFiles = [];
-      this.hinhAnhError = this.traHangForm.get('tinhTrangHang')?.value === 'HuHong';
-      this.cdr.detectChanges();
+      item.get('hinhAnhError')?.setValue(true);
+      item.get('hinhAnhFiles')?.setValue([]);
+      console.log(`Không có hình ảnh for ID ${item.get('idSpct')?.value}, hinhAnhError: true`);
     }
+    item.updateValueAndValidity();
+    this.traHangForm.updateValueAndValidity();
+    this.cdr.detectChanges();
   }
 
-  onVideoChange(event: Event): void {
+  onVideoChange(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
+    const item = this.returnItems.at(index) as FormGroup;
+
     if (input.files && input.files.length > 0) {
-      this.videoFile = input.files[0];
-      if (this.videoFile.size > 50 * 1024 * 1024) { // 50MB
-        this.videoError = true;
+      const file = input.files[0];
+      if (file.type !== 'video/mp4') {
+        item.get('videoError')?.setValue(true);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: 'Video phải có định dạng MP4.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#ef4444'
+        });
+        item.get('videoFile')?.setValue(null);
+      } else if (file.size > 50 * 1024 * 1024) {
+        item.get('videoError')?.setValue(true);
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
@@ -219,150 +304,273 @@ export class TraHangComponent implements OnInit {
           confirmButtonText: 'OK',
           confirmButtonColor: '#ef4444'
         });
-        this.videoFile = null;
+        item.get('videoFile')?.setValue(null);
       } else {
-        this.videoError = false;
+        item.get('videoError')?.setValue(false);
+        item.get('videoFile')?.setValue(file);
+        console.log(`Video hợp lệ: ${file.name} for ID ${item.get('idSpct')?.value}, videoError: ${item.get('videoError')?.value}`);
       }
-      this.cdr.detectChanges();
     } else {
-      this.videoFile = null;
-      this.videoError = this.traHangForm.get('tinhTrangHang')?.value === 'HuHong';
-      this.cdr.detectChanges();
+      item.get('videoError')?.setValue(true);
+      item.get('videoFile')?.setValue(null);
+      console.log(`Không có video for ID ${item.get('idSpct')?.value}, videoError: true`);
     }
+    item.updateValueAndValidity();
+    this.traHangForm.updateValueAndValidity();
+    this.cdr.detectChanges();
   }
 
+  onTinhTrangHangChange(index: number): void {
+    const item = this.returnItems.at(index) as FormGroup;
+    item.get('hinhAnhError')?.setValue(item.get('hinhAnhFiles')?.value.length === 0);
+    item.get('videoError')?.setValue(!item.get('videoFile')?.value);
+    item.updateValueAndValidity();
+    this.traHangForm.updateValueAndValidity();
+    this.cdr.detectChanges();
+  }
+
+  onSelectionChange(event: any, index: number): void {
+    const item = this.returnItems.at(index) as FormGroup;
+    const isChecked = event.target.checked;
+    if (!item.get('selected')) {
+      console.error(`Selected control not found for index ${index}`);
+      return;
+    }
+    item.get('selected')?.setValue(isChecked, { emitEvent: true });
+    console.log(`Manually set selected for index ${index} to ${isChecked}, idSpct: ${item.get('idSpct')?.value}`);
+    this.updateItemValidators(item, isChecked, this.getMaxQuantity(item.get('idSpct')?.value));
+    item.updateValueAndValidity();
+    this.traHangForm.updateValueAndValidity();
+    this.cdr.detectChanges();
+  }
+
+  isSubmitDisabled(): boolean {
+    const hasSelectedItem = this.returnItems.controls.some(item => (item as FormGroup).get('selected')?.value);
+    console.log('Has selected item:', hasSelectedItem);
+    if (!hasSelectedItem) {
+      console.log('No selected items, submit is disabled');
+      return true;
+    }
+
+    const selectedItems = this.returnItems.controls.filter(item => (item as FormGroup).get('selected')?.value);
+    console.log('Selected items count:', selectedItems.length);
+    const selectedItemsInvalid = selectedItems.some((item: AbstractControl) => {
+      const formGroupItem = item as FormGroup;
+      const idSpct = formGroupItem.get('idSpct')?.value;
+      const isInvalid = (
+        formGroupItem.get('soLuong')?.invalid ||
+        formGroupItem.get('lyDoTraHang')?.invalid ||
+        formGroupItem.get('tinhTrangHang')?.invalid ||
+        formGroupItem.get('hinhThucTraHang')?.invalid ||
+        formGroupItem.get('hinhAnhError')?.value ||
+        formGroupItem.get('videoError')?.value
+      );
+      console.log(`Item ${idSpct} invalid: ${isInvalid}`);
+      console.log(`- soLuong invalid: ${formGroupItem.get('soLuong')?.invalid}, value: ${formGroupItem.get('soLuong')?.value}, required: ${formGroupItem.get('soLuong')?.hasError('required')}`);
+      console.log(`- lyDoTraHang invalid: ${formGroupItem.get('lyDoTraHang')?.invalid}, value: ${formGroupItem.get('lyDoTraHang')?.value}, required: ${formGroupItem.get('lyDoTraHang')?.hasError('required')}`);
+      console.log(`- tinhTrangHang invalid: ${formGroupItem.get('tinhTrangHang')?.invalid}, value: ${formGroupItem.get('tinhTrangHang')?.value}, required: ${formGroupItem.get('tinhTrangHang')?.hasError('required')}`);
+      console.log(`- hinhThucTraHang invalid: ${formGroupItem.get('hinhThucTraHang')?.invalid}, value: ${formGroupItem.get('hinhThucTraHang')?.value}, required: ${formGroupItem.get('hinhThucTraHang')?.hasError('required')}`);
+      console.log(`- hinhAnhError: ${formGroupItem.get('hinhAnhError')?.value}, videoError: ${formGroupItem.get('videoError')?.value}`);
+      return isInvalid;
+    });
+
+    console.log('Selected items invalid:', selectedItemsInvalid);
+    return !hasSelectedItem || selectedItemsInvalid;
+  }
+  closeModal(): void {
+    const selectedItems = this.returnItems.controls.filter(item => (item as FormGroup).get('selected')?.value);
+    if (selectedItems.length > 0 && selectedItems.some(item => {
+      const formGroupItem = item as FormGroup;
+      return (
+        formGroupItem.get('soLuong')?.value ||
+        formGroupItem.get('lyDoTraHang')?.value ||
+        formGroupItem.get('tinhTrangHang')?.value ||
+        formGroupItem.get('hinhThucTraHang')?.value ||
+        formGroupItem.get('ghiChu')?.value ||
+        formGroupItem.get('hinhAnhFiles')?.value.length > 0 ||
+        formGroupItem.get('videoFile')?.value
+      );
+    })) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Xác nhận',
+        text: 'Bạn đã nhập dữ liệu cho một số sản phẩm. Bạn có chắc muốn đóng mà không gửi yêu cầu?',
+        showCancelButton: true,
+        confirmButtonText: 'Có',
+        cancelButtonText: 'Không',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#3b82f6'
+      }).then(result => {
+        if (result.isConfirmed) {
+          this.dialogRef.close(false);
+        }
+      });
+    } else {
+      this.dialogRef.close(false);
+    }
+  }
   onSubmit(): void {
     this.errorMessage = null;
-    if (this.traHangForm.valid) {
-      const tinhTrangHang = this.traHangForm.get('tinhTrangHang')?.value;
-      if (tinhTrangHang === 'HuHong') {
-        if (this.hinhAnhFiles.length === 0) {
-          this.hinhAnhError = true;
-          Swal.fire({
-            icon: 'error',
-            title: 'Lỗi!',
-            text: 'Vui lòng tải lên ít nhất một hình ảnh sản phẩm hỏng.',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#ef4444'
-          });
-          return;
-        }
-        if (!this.videoFile) {
-          this.videoError = true;
-          Swal.fire({
-            icon: 'error',
-            title: 'Lỗi!',
-            text: 'Vui lòng tải lên một video sản phẩm hỏng.',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#ef4444'
-          });
-          return;
-        }
-      }
+    this.successMsg = null;
 
-      // Hiển thị Swal loading
-      Swal.fire({
+    if (!this.idTaiKhoan) {
+        this.errorMessage = 'Không thể xác định ID tài khoản. Vui lòng đăng nhập lại.';
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi!',
+            text: this.errorMessage,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#ef4444'
+        }).then(() => {
+            this.dialogRef.close(false);
+        });
+        return;
+    }
+
+    const selectedItems = this.returnItems.controls.filter(item => (item as FormGroup).get('selected')?.value);
+    if (selectedItems.length === 0) {
+        this.errorMessage = 'Vui lòng chọn ít nhất một sản phẩm để trả hàng.';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cảnh báo!',
+            text: this.errorMessage,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#f59e0b'
+        });
+        return;
+    }
+
+    const selectedItemsInvalid = selectedItems.some((item: AbstractControl) => {
+        const formGroupItem = item as FormGroup;
+        const isInvalid = (
+            formGroupItem.get('soLuong')?.invalid ||
+            formGroupItem.get('lyDoTraHang')?.invalid ||
+            formGroupItem.get('tinhTrangHang')?.invalid ||
+            formGroupItem.get('hinhThucTraHang')?.invalid ||
+            formGroupItem.get('hinhAnhError')?.value ||
+            formGroupItem.get('videoError')?.value
+        );
+        return isInvalid;
+    });
+
+    if (selectedItemsInvalid) {
+        this.errorMessage = 'Vui lòng điền đầy đủ thông tin bắt buộc và tải lên hình ảnh/video minh chứng.';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cảnh báo!',
+            text: this.errorMessage,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#f59e0b'
+        });
+        return;
+    }
+
+    const hasFiles = selectedItems.every((item: AbstractControl) => {
+        const formGroupItem = item as FormGroup;
+        return (formGroupItem.get('hinhAnhFiles')?.value.length > 0 && formGroupItem.get('videoFile')?.value);
+    });
+    if (!hasFiles) {
+        this.errorMessage = 'Vui lòng tải lên ít nhất một hình ảnh và một video minh chứng cho mỗi sản phẩm.';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cảnh báo!',
+            text: this.errorMessage,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#f59e0b'
+        });
+        return;
+    }
+
+    Swal.fire({
         title: 'Đang gửi yêu cầu trả hàng...',
         text: 'Vui lòng đợi trong giây lát.',
         allowOutsideClick: false,
         didOpen: () => {
-          Swal.showLoading();
+            Swal.showLoading();
         }
-      });
+    });
 
-      const formValue = this.traHangForm.value;
-      const idDonHang = this.traHangForm.get('idDonHang')?.value;
-      const maDonHangToCompare = this.donHangs.length > 0 && typeof this.donHangs[0]?.maDonHang === 'number' ? Number(idDonHang) : idDonHang;
-      const selectedDonHang = this.donHangs.find(dh => dh.maDonHang === maDonHangToCompare);
-
-      if (selectedDonHang) {
-        const yeuCauTraHangRequest: YeuCauTraHang = {
-          idTaiKhoan: this.idTaiKhoan,
-          donHang: { id: selectedDonHang.id || selectedDonHang.maDonHang },
-          spct: { idSpct: Number(formValue.idSpct) },
-          soLuong: formValue.soLuong,
-          trangThai: 0,
-          lyDoTraHang: formValue.lyDoTraHang,
-          tinhTrangHang: formValue.tinhTrangHang,
-          hinhThucTraHang: formValue.hinhThucTraHang,
-          ghiChu: formValue.ghiChu || undefined,
-          hinhAnhUrls: undefined
+    const formData = new FormData();
+    const yeuCauTraHangList: YeuCauTraHang[] = selectedItems.map((item: AbstractControl) => {
+        const formGroupItem = item as FormGroup;
+        return {
+            idTaiKhoan: this.idTaiKhoan!,
+            donHang: { id: this.data.maDonHang },
+            spct: { idSpct: Number(formGroupItem.get('idSpct')?.value) },
+            soLuong: Number(formGroupItem.get('soLuong')?.value),
+            trangThai: 0,
+            lyDoTraHang: formGroupItem.get('lyDoTraHang')?.value,
+            tinhTrangHang: formGroupItem.get('tinhTrangHang')?.value,
+            hinhThucTraHang: formGroupItem.get('hinhThucTraHang')?.value,
+        ghiChu: formGroupItem.get('ghiChu')?.value || undefined,
+            hinhAnhUrls: undefined,
+            urlVideo: undefined
         };
+    });
 
-        const formData = new FormData();
-        formData.append('yeuCauRequest', new Blob([JSON.stringify(yeuCauTraHangRequest)], { type: 'application/json' }));
-        this.hinhAnhFiles.forEach((file) => {
-          formData.append('hinhAnh', file, file.name);
+    formData.append('yeuCauRequest', JSON.stringify(yeuCauTraHangList));
+    formData.append('idTaiKhoan', String(this.idTaiKhoan));
+
+    selectedItems.forEach((item: AbstractControl) => {
+        const formGroupItem = item as FormGroup;
+        const hinhAnhFiles: File[] = formGroupItem.get('hinhAnhFiles')?.value || [];
+        hinhAnhFiles.forEach(file => {
+            formData.append('hinhAnh', file, file.name);
         });
-        if (this.videoFile) {
-          formData.append('video', this.videoFile, this.videoFile.name);
+        const videoFile: File = formGroupItem.get('videoFile')?.value;
+        if (videoFile) {
+            formData.append('video', videoFile, videoFile.name);
         }
+    });
 
-        console.log('Dữ liệu gửi đi:', { yeuCauRequest: yeuCauTraHangRequest, hinhAnhFiles: this.hinhAnhFiles, videoFile: this.videoFile });
+    console.log('idTaiKhoan:', formData.get('idTaiKhoan'));
+    console.log('yeuCauRequest:', yeuCauTraHangList);
+    for (const pair of formData.entries()) {
+        console.log(`formData - ${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
+    }
 
-        this.traHangService.createYeuCauTraHang(formData).subscribe({
-          next: (response) => {
-            this.urlVideo = response.urlVideo || null;
-            this.hinhAnhUrls = response.hinhAnhUrls || [];
-            this.successMessage = 'Yêu cầu trả hàng đã được tạo thành công!';
+    this.traHangService.createYeuCauTraHang(formData).subscribe({
+        next: (response: YeuCauTraHang[]) => {
+            response.forEach((item, index) => {
+                const selectedItem = selectedItems[index] as FormGroup;
+                if (item.urlVideo) selectedItem.get('urlVideo')?.setValue(item.urlVideo);
+                if (item.hinhAnhUrls) selectedItem.get('hinhAnhUrls')?.setValue(item.hinhAnhUrls);
+            });
+
+            this.successMsg = 'Yêu cầu trả hàng đã được tạo thành công!';
             Swal.fire({
-              icon: 'success',
-              title: 'Thành công!',
-              text: this.successMessage,
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#3b82f6',
-              timer: 1500 // Tự đóng sau 1.5 giây
+                icon: 'success',
+                title: 'Thành công!',
+                text: this.successMsg,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3b82f6',
+                timer: 1500
+            }).then(() => {
+                this.dialogRef.close(true);
             });
 
             this.traHangForm.reset({
-              idDonHang: '',
-              idSpct: '',
-              soLuong: 1,
-              lyDoTraHang: 'Không thích',
-              tinhTrangHang: 'NguyenVen',
-              hinhThucTraHang: 'TaiCuaHang',
-              ghiChu: ''
+                idDonHang: this.data.maDonHang,
+                returnItems: []
             });
-            this.hinhAnhFiles = [];
-            this.videoFile = null;
-            this.spctList = [];
-            this.hinhAnhError = false;
-            this.videoError = false;
-            this.cdr.detectChanges();
-          },
-          error: (err: Error) => {
-            this.errorMessage = err.message;
+            this.returnItems.clear();
+            this.spctList.forEach(spct => {
+                const item = this.createReturnItem(spct);
+                if (item) {
+                    this.returnItems.push(item);
+                }
+            });
+        },
+        error: (err: any) => {
+            this.errorMessage = err.message || 'Lỗi khi tạo yêu cầu trả hàng.';
             Swal.fire({
-              icon: 'error',
-              title: 'Lỗi!',
-              text: this.errorMessage,
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#ef4444'
+                icon: 'error',
+                title: 'Lỗi!',
+                text: this.errorMessage,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#ef4444'
             });
-            this.cdr.detectChanges();
-          }
-        });
-      } else {
-        this.errorMessage = 'Không tìm thấy đơn hàng hợp lệ.';
-        Swal.fire({
-          icon: 'warning',
-          title: 'Cảnh báo!',
-          text: this.errorMessage,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#f59e0b'
-        });
-        this.cdr.detectChanges();
-      }
-    } else {
-      this.errorMessage = 'Vui lòng điền đầy đủ các thông tin bắt buộc.';
-      Swal.fire({
-        icon: 'warning',
-        title: 'Cảnh báo!',
-        text: this.errorMessage,
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#f59e0b'
-      });
-      this.cdr.detectChanges();
-    }
-  }
+        }
+    });
+}
 }

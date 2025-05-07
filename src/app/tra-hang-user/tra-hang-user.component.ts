@@ -21,7 +21,7 @@ export class TraHangUserComponent implements OnInit {
   yeuCauList: any[] = [];
   lichSuList: any[] = [];
   selectedYeuCau: number | null = null;
-  showHistory: boolean = false; // Added for mobile history toggle
+  showHistory: boolean = false;
   loading: boolean = false;
   error: string | null = null;
 
@@ -43,7 +43,7 @@ export class TraHangUserComponent implements OnInit {
       next: (data) => {
         this.yeuCauList = data;
         this.loading = false;
-        console.log('yeuCauList', data);
+        console.log('Danh sách yêu cầu:', data);
       },
       error: (err) => {
         this.error = 'Không thể tải danh sách yêu cầu trả hàng';
@@ -53,14 +53,25 @@ export class TraHangUserComponent implements OnInit {
   }
 
   loadLichSu(idYeuCau: number): void {
+    // Nếu yêu cầu được nhấn đã được chọn, đóng bảng lịch sử
+    if (this.selectedYeuCau === idYeuCau) {
+      this.selectedYeuCau = null;
+      this.lichSuList = [];
+      this.showHistory = false;
+      return;
+    }
+
+    // Đặt lại lịch sử trước đó và chọn yêu cầu mới
+    this.lichSuList = [];
+    this.selectedYeuCau = idYeuCau;
+    this.showHistory = true;
     this.loading = true;
+
     this.traHangService.getLichSuByYeuCauTraHang(idYeuCau).subscribe({
       next: (data) => {
         this.lichSuList = data;
-        this.selectedYeuCau = idYeuCau;
-        this.showHistory = true; // Show history modal on mobile
         this.loading = false;
-        console.log('lichSuList', data);
+        console.log('Danh sách lịch sử:', data);
       },
       error: (err) => {
         this.error = 'Không thể tải lịch sử trả hàng';

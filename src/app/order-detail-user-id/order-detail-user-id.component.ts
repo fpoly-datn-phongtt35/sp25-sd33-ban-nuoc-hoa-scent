@@ -8,13 +8,17 @@ import { DonhangService } from '../service/donhang.service';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
-import { DanhGiaService } from '../service/DanhGiaService';
-import { WebSocketService } from '../service/WebSocketService';
 
+import { WebSocketService } from '../service/WebSocketService';
+import { TraHangService } from '../service/TraHangService';
+import { MatDialog } from '@angular/material/dialog';
+import { TraHangComponent } from '../tra-hang/tra-hang.component';
+import { DanhGiaService } from '../service/DanhGiaService';
+import { MatDialogModule } from '@angular/material/dialog';
 @Component({
   selector: 'app-order-detail-user-id',
   standalone: true,
-  imports: [CommonModule, HeaderComponent, FooterComponent, FormsModule],
+  imports: [CommonModule, HeaderComponent, FooterComponent, FormsModule,MatDialogModule],
   templateUrl: './order-detail-user-id.component.html',
   styleUrls: ['./order-detail-user-id.component.scss'],
 })
@@ -46,11 +50,14 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     private donhangService: DonhangService,
     private danhGiaService: DanhGiaService,
     private cdRef: ChangeDetectorRef,
-    private webSocketService: WebSocketService
-  ) {}
+    private webSocketService: WebSocketService,
+    private traHangService: TraHangService,
+    public dialog: MatDialog
+  ) {
+    this.userId = this.tokenService.getUserId();
+  }
 
   ngOnInit(): void {
-    this.userId = this.tokenService.getUserId();
     if (!this.userId) {
       console.error('Không tìm thấy userId từ token');
       Swal.fire({
@@ -59,7 +66,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
         icon: 'error',
         confirmButtonText: 'OK',
       }).then(() => {
-        // Redirect to login page if needed
         // this.router.navigate(['/login']);
       });
       return;
@@ -68,7 +74,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     this.loadOrders();
     this.loadProvinces();
 
-    // Connect to WebSocket and subscribe to updates
     this.webSocketService.connect(this.userId);
     this.webSocketSubscription = this.webSocketService.getMessages().subscribe({
       next: (update: any) => this.handleWebSocketUpdate(update),
@@ -118,11 +123,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           ...order,
           statusLabel: this.getStatusLabel(order.trangThai),
         }));
-  
         this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
         this.filteredOrders = [...this.orders];
         console.log('Dữ liệu đơn hàng (sắp xếp theo maDonHang giảm dần):', this.orders);
-  
         if (this.selectedOrder) {
           const updatedOrder = this.orders.find((order) => order.maDonHang === this.selectedOrder.maDonHang);
           if (updatedOrder) {
@@ -276,21 +279,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       this.selectedOrder = order;
       this.danhGias = {};
       this.loadUserReviews();
-      if (this.selectedOrder.trangThai === 4) {
-        this.selectedOrder.chiTietDonHangs.forEach((item: any) => {
-          if (!item.idSanPham) {
-            console.error('Lỗi: sanPhamId không tồn tại cho sản phẩm:', item);
-            return;
-          }
-          if (!this.danhGias[item.idSanPham]) {
-            this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
-          }
-        });
-      }
     }
   }
 
-  // Lấy thông tin đánh giá của người dùng cho các sản phẩm trong đơn hàng
   loadUserReviews(): void {
     if (!this.selectedOrder || this.selectedOrder.trangThai !== 4) {
       this.danhGias = {};
@@ -415,7 +406,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     }
 
     if (danhGia.id) {
-        // Fetch the existing review to get the correct idDonHang
         this.danhGiaService.getUserDanhGia(productId, this.userId, this.selectedOrder.maDonHang).subscribe({
             next: (existingDanhGia: any) => {
                 if (existingDanhGia && existingDanhGia.id === danhGia.id) {
@@ -423,13 +413,10 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
                         id: danhGia.id,
                         idSanPham: productId,
                         idTaiKhoan: this.userId,
-                        idDonHang: existingDanhGia.idDonHang, // Use the idDonHang from the database
+                        idDonHang: existingDanhGia.idDonHang,
                         rating: danhGia.rating,
                         comment: danhGia.comment,
                     };
-
-                    console.log('Updating review with ID:', danhGia.id);
-                    console.log('DanhGiaDTO:', danhGiaDTO);
 
                     this.danhGiaService.updateDanhGia(danhGia.id, danhGiaDTO).subscribe({
                         next: (res) => {
@@ -503,7 +490,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
             },
         });
     }
-}
+  }
 
   deleteDanhGia(productId: number): void {
     const danhGia = this.danhGias[productId];
@@ -550,5 +537,27 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  openReturnModal(): void {
+    if (this.selectedOrder && this.selectedOrder.maDonHang) {
+      const dialogRef = this.dialog.open(TraHangComponent, {
+        width: '500px',
+        data: { maDonHang: this.selectedOrder.maDonHang }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.loadOrders(); // Cập nhật danh sách đơn hàng nếu có thay đổi
+        }
+      });
+    } else {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Không tìm thấy thông tin đơn hàng để trả.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
   }
 }

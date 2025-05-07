@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
-import { TraHangService } from '../service/TraHangService';
+import { TraHangService, Page } from '../service/TraHangService';
 import { TokenService } from '../service/token.service';
 import { YeuCauTraHang } from '../service/response/YeuCauTraHang';
 import Swal from 'sweetalert2';
@@ -16,7 +16,7 @@ import Swal from 'sweetalert2';
   styleUrls: ['./admin-tra-hang.component.scss']
 })
 export class AdminTraHangComponent implements OnInit {
-  yeuCauList: YeuCauTraHang[] = [];
+  yeuCauPage: Page<YeuCauTraHang> | null = null;
   tinhTrangHangFilter: string = '';
   errorMessage: string | null = null;
   idTaiKhoan: number;
@@ -26,6 +26,9 @@ export class AdminTraHangComponent implements OnInit {
   isLoading: boolean = false;
   selectedImageUrl: string | null = null;
   selectedVideoUrl: string | null = null;
+  currentPage: number = 0;
+  pageSize: number = 10;
+  totalPages: number = 0;
 
   constructor(
     private traHangService: TraHangService,
@@ -41,6 +44,14 @@ export class AdminTraHangComponent implements OnInit {
   ngOnInit(): void {
     if (this.idTaiKhoan) {
       this.loadYeuCauTraHang();
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: this.errorMessage || 'Vui lòng đăng nhập.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#ef4444'
+      });
     }
   }
 
@@ -49,48 +60,113 @@ export class AdminTraHangComponent implements OnInit {
     this.cdr.detectChanges();
 
     if (this.tinhTrangHangFilter) {
-      this.traHangService.getYeuCauByTinhTrangHang(this.tinhTrangHangFilter).subscribe({
-        next: (data) => {
-          this.yeuCauList = data;
+      this.traHangService.getYeuCauByTinhTrangHang(this.tinhTrangHangFilter, this.currentPage, this.pageSize).subscribe({
+        next: (response) => {
+          this.yeuCauPage = response;
+          this.totalPages = response.page.totalPages || 0;
           this.errorMessage = null;
           this.isLoading = false;
+          console.log('Dữ liệu yêu cầu sau khi tải:', this.yeuCauPage);
+          console.log('Content:', this.yeuCauPage?.content);
+          console.log('Total Pages:', this.totalPages);
           this.cdr.detectChanges();
-          console.log('Dữ liệu yêu cầu:', this.yeuCauList);
         },
         error: (error) => {
           this.errorMessage = 'Không thể tải danh sách yêu cầu: ' + (error.message || 'Lỗi không xác định');
-          this.yeuCauList = [];
+          this.yeuCauPage = null;
+          this.totalPages = 0;
           this.isLoading = false;
+          console.log('Lỗi tải dữ liệu:', error);
           this.cdr.detectChanges();
         }
       });
     } else {
-      this.traHangService.getYeuCauByTinhTrangHang('NguyenVen').subscribe({
-        next: (nguyenVenData) => {
-          this.traHangService.getYeuCauByTinhTrangHang('HuHong').subscribe({
-            next: (huHongData) => {
-              this.yeuCauList = [...nguyenVenData, ...huHongData];
-              this.errorMessage = null;
-              this.isLoading = false;
-              this.cdr.detectChanges();
-              console.log('Dữ liệu yêu cầu:', this.yeuCauList);
-            },
-            error: (error) => {
-              this.errorMessage = 'Không thể tải danh sách yêu cầu: ' + (error.message || 'Lỗi không xác định');
-              this.yeuCauList = [];
-              this.isLoading = false;
-              this.cdr.detectChanges();
-            }
-          });
+      this.traHangService.getAllYeuCauTraHang(this.currentPage, this.pageSize).subscribe({
+        next: (response) => {
+          this.yeuCauPage = response;
+          this.totalPages = response.page.totalPages || 0;
+          this.errorMessage = null;
+          this.isLoading = false;
+          console.log('Dữ liệu yêu cầu sau khi tải:', this.yeuCauPage);
+          console.log('Content:', this.yeuCauPage?.content);
+          console.log('Total Pages:', this.totalPages);
+          this.cdr.detectChanges();
         },
         error: (error) => {
           this.errorMessage = 'Không thể tải danh sách yêu cầu: ' + (error.message || 'Lỗi không xác định');
-          this.yeuCauList = [];
+          this.yeuCauPage = null;
+          this.totalPages = 0;
           this.isLoading = false;
+          console.log('Lỗi tải dữ liệu:', error);
           this.cdr.detectChanges();
         }
       });
     }
+  }
+
+  goToPage(p: number): void {
+    if (p >= 0 && p < this.totalPages && p !== this.currentPage) {
+      console.log('🔄 Chuyển đến trang:', p);
+      this.currentPage = p;
+      this.loadYeuCauTraHang();
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadYeuCauTraHang();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.loadYeuCauTraHang();
+    }
+  }
+
+  getPaginationRange(): { page: number, isEllipsis: boolean }[] {
+    const range: { page: number, isEllipsis: boolean }[] = [];
+    const maxVisiblePages = 3;
+
+    if (this.totalPages <= 0) return range;
+
+    if (this.totalPages <= 5) {
+      for (let i = 0; i < this.totalPages; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+    } else {
+      range.push({ page: 0, isEllipsis: false });
+
+      let start = Math.max(1, this.currentPage - 1);
+      let end = Math.min(this.totalPages - 2, this.currentPage + 1);
+
+      if (end - start + 1 < maxVisiblePages) {
+        if (start === 1) {
+          end = Math.min(start + maxVisiblePages - 1, this.totalPages - 2);
+        } else if (end === this.totalPages - 2) {
+          start = Math.max(1, end - maxVisiblePages + 1);
+        }
+      }
+
+      if (start > 1) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      for (let i = start; i <= end; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+
+      if (end < this.totalPages - 2) {
+        range.push({ page: -1, isEllipsis: true });
+      }
+
+      range.push({ page: this.totalPages - 1, isEllipsis: false });
+    }
+
+    console.log('📌 Pagination range:', range);
+    return range;
   }
 
   getTrangThaiText(trangThai: number): string {
@@ -204,17 +280,19 @@ export class AdminTraHangComponent implements OnInit {
 
   openImageModal(url: string): void {
     this.selectedImageUrl = url;
+    this.cdr.detectChanges();
   }
 
   closeImageModal(): void {
     this.selectedImageUrl = null;
+    this.cdr.detectChanges();
   }
 
   openVideoModal(url: string): void {
     this.selectedVideoUrl = url;
     this.cdr.detectChanges();
   }
-  
+
   closeVideoModal(): void {
     this.selectedVideoUrl = null;
     this.cdr.detectChanges();
