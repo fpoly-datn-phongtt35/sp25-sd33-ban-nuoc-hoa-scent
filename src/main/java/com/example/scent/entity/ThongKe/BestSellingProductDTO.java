@@ -12,20 +12,32 @@ public class BestSellingProductDTO {
     private String huongDau;
     private String huongGiua;
     private String huongCuoi;
-
+    private String stockStatus;
     // Product variant details from Spct
     private Integer idSpct;
     private Integer dungTich;
     private Integer soLuongTonKho;
+    private Long totalQuantitySold;
     private boolean stockWarning; // True if soLuongTonKho < 7
 
+    public String getStockStatus() {
+        return stockStatus;
+    }
+
+    public void setStockStatus(String stockStatus) {
+        this.stockStatus = stockStatus;
+    }
+
+    public void setTotalQuantitySold(Long totalQuantitySold) {
+        this.totalQuantitySold = totalQuantitySold;
+    }
+
     // Sales statistics
-    private long totalQuantitySold; // Total quantity sold in the selected time period
 
     // Constructor
-    public BestSellingProductDTO(Integer idSanPham, String tenSanPham, String moTaSanPham, String thuongHieu,
-                                 String nhomHuong, String danhMuc, String huongDau, String huongGiua, String huongCuoi,
-                                 Integer idSpct, Integer dungTich, Integer soLuongTonKho, long totalQuantitySold) {
+
+
+    public BestSellingProductDTO(Integer idSanPham, String tenSanPham, String moTaSanPham, String thuongHieu, String nhomHuong, String danhMuc, String huongDau, String huongGiua, String huongCuoi, String stockStatus, Integer idSpct, Integer dungTich, Integer soLuongTonKho, Long totalQuantitySold, boolean stockWarning) {
         this.idSanPham = idSanPham;
         this.tenSanPham = tenSanPham;
         this.moTaSanPham = moTaSanPham;
@@ -35,11 +47,12 @@ public class BestSellingProductDTO {
         this.huongDau = huongDau;
         this.huongGiua = huongGiua;
         this.huongCuoi = huongCuoi;
+        this.stockStatus = stockStatus;
         this.idSpct = idSpct;
         this.dungTich = dungTich;
         this.soLuongTonKho = soLuongTonKho;
         this.totalQuantitySold = totalQuantitySold;
-        this.stockWarning = soLuongTonKho < 7; // Set warning if stock is less than 7
+        this.stockWarning = stockWarning;
     }
 
     // Getters and setters

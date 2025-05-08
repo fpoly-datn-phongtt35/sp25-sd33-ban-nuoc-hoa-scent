@@ -130,32 +130,44 @@ public class ThongKeController {
 
     //===========sản phẩm====================
     @GetMapping("/best-selling/ngay")
-    public List<BestSellingProductDTO> getBestSellingProductsByDateRange(
+    public Page<BestSellingProductDTO> getBestSellingProductsByDateRange(
             @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate) {
-        return thongKeService.getBestSellingProductsByDateRange(startDate, endDate);
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return thongKeService.getBestSellingProductsByDateRange(startDate, endDate, pageable);
     }
 
-    // Best-selling products by week
+    // Best-selling products by week with pagination
     @GetMapping("/best-selling/tuan")
-    public List<BestSellingProductDTO> getBestSellingProductsByWeek(
+    public Page<BestSellingProductDTO> getBestSellingProductsByWeek(
             @RequestParam(value = "year", required = false) Integer year,
-            @RequestParam(value = "week", required = false) Integer week) {
-        return thongKeService.getBestSellingProductsByWeek(year, week);
+            @RequestParam(value = "week", required = false) Integer week,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return thongKeService.getBestSellingProductsByWeek(year, week, pageable);
     }
 
-    // Best-selling products by month
+    // Best-selling products by month with pagination
     @GetMapping("/best-selling/thang")
-    public List<BestSellingProductDTO> getBestSellingProductsByMonth(
+    public Page<BestSellingProductDTO> getBestSellingProductsByMonth(
             @RequestParam(value = "year", required = false) Integer year,
-            @RequestParam(value = "month", required = false) Integer month) {
-        return thongKeService.getBestSellingProductsByMonth(year, month);
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return thongKeService.getBestSellingProductsByMonth(year, month, pageable);
     }
 
-    // Best-selling products by year
+    // Best-selling products by year with pagination
     @GetMapping("/best-selling/nam")
-    public List<BestSellingProductDTO> getBestSellingProductsByYear(
-            @RequestParam(value = "year", required = false) Integer year) {
-        return thongKeService.getBestSellingProductsByYear(year);
+    public Page<BestSellingProductDTO> getBestSellingProductsByYear(
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return thongKeService.getBestSellingProductsByYear(year, pageable);
     }
 }

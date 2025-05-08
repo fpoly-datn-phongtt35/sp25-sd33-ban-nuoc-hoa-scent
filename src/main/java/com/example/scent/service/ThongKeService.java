@@ -7,6 +7,9 @@ import com.example.scent.entity.ThongKe.ThongKeTheoThoiGianDTO;
 import com.example.scent.repo.CTDHInterface;
 import com.example.scent.repo.DonHangInterface;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,7 +19,7 @@ import java.util.List;
 
 @Service
 public class ThongKeService {
-@Autowired
+    @Autowired
     CTDHInterface chiTietDonHangRepository;
     @Autowired
     private DonHangInterface donHangRepository;
@@ -375,47 +378,65 @@ public class ThongKeService {
         }
         return dtos;
     }
-    public List<BestSellingProductDTO> getBestSellingProductsByDateRange(String startDate, String endDate) {
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByDateRange(startDate, endDate);
-        return mapToBestSellingProductDTO(results);
+    public Page<BestSellingProductDTO> getBestSellingProductsByDateRange(String startDate, String endDate, Pageable pageable) {
+        Long offset = pageable.getOffset();
+        Integer pageSize = pageable.getPageSize();
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByDateRange(startDate, endDate, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByDateRange(startDate, endDate);
+        List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
+        return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    // Best-selling products by week
-    public List<BestSellingProductDTO> getBestSellingProductsByWeek(Integer year, Integer week) {
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByWeek(year, week);
-        return mapToBestSellingProductDTO(results);
+    public Page<BestSellingProductDTO> getBestSellingProductsByWeek(Integer year, Integer week, Pageable pageable) {
+        Long offset = pageable.getOffset();
+        Integer pageSize = pageable.getPageSize();
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByWeek(year, week, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByWeek(year, week);
+        List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
+        return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    // Best-selling products by month
-    public List<BestSellingProductDTO> getBestSellingProductsByMonth(Integer year, Integer month) {
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByMonth(year, month);
-        return mapToBestSellingProductDTO(results);
+    public Page<BestSellingProductDTO> getBestSellingProductsByMonth(Integer year, Integer month, Pageable pageable) {
+        Long offset = pageable.getOffset();
+        Integer pageSize = pageable.getPageSize();
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByMonth(year, month, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByMonth(year, month);
+        List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
+        return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    // Best-selling products by year
-    public List<BestSellingProductDTO> getBestSellingProductsByYear(Integer year) {
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByYear(year);
-        return mapToBestSellingProductDTO(results);
+    public Page<BestSellingProductDTO> getBestSellingProductsByYear(Integer year, Pageable pageable) {
+        Long offset = pageable.getOffset();
+        Integer pageSize = pageable.getPageSize();
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByYear(year, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByYear(year);
+        List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
+        return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    // Helper method to map query results to BestSellingProductDTO
+
     private List<BestSellingProductDTO> mapToBestSellingProductDTO(List<Object[]> results) {
         List<BestSellingProductDTO> dtos = new ArrayList<>();
         for (Object[] result : results) {
+            Integer soLuongTonKho = (Integer) result[11];
+            boolean stockWarning = soLuongTonKho < 7;
+
             dtos.add(new BestSellingProductDTO(
-                    (Integer) result[0], // id_san_pham
-                    (String) result[1], // ten_san_pham
-                    (String) result[2], // mo_ta_san_pham
-                    (String) result[3], // thuong_hieu
-                    (String) result[4], // nhom_huong
-                    (String) result[5], // danh_muc
-                    (String) result[6], // huong_dau
-                    (String) result[7], // huong_giua
-                    (String) result[8], // huong_cuoi
-                    (Integer) result[9], // id_spct
-                    (Integer) result[10], // dung_tich
-                    (Integer) result[11], // so_luong_ton_kho
-                    ((Number) result[12]).longValue() // total_quantity_sold
+                    (Integer) result[0], // idSanPham
+                    (String) result[1], // tenSanPham
+                    (String) result[2], // moTaSanPham
+                    (String) result[3], // thuongHieu
+                    (String) result[4], // nhomHuong
+                    (String) result[5], // danhMuc
+                    (String) result[6], // huongDau
+                    (String) result[7], // huongGiua
+                    (String) result[8], // huongCuoi
+                    (String) result[13], // stockStatus
+                    (Integer) result[9], // idSpct
+                    (Integer) result[10], // dungTich
+                    soLuongTonKho, // soLuongTonKho
+                    ((Number) result[12]).longValue(), // totalQuantitySold
+                    stockWarning // stockWarning
             ));
         }
         return dtos;
