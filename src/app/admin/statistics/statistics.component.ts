@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,11 +47,22 @@ interface BestSellingProductDTO {
   huongDau: string;
   huongGiua: string;
   huongCuoi: string;
+  stockStatus: string;
   idSpct: number;
   dungTich: number;
   soLuongTonKho: number;
-  stockWarning: boolean;
   totalQuantitySold: number;
+  stockWarning: boolean;
+}
+
+interface Page<T> {
+  content: T[];
+  page: {
+    totalPages: number;
+    totalElements: number;
+    number: number;
+    size: number;
+  };
 }
 
 @Component({
@@ -65,6 +76,10 @@ export class StatisticsComponent implements OnInit {
   thongKeTongQuan: ThongKeDonHangDTO | null = null;
   thongKeTongQuanFiltered: ThongKeDonHangDTO | null = null;
   bestSellingProducts: BestSellingProductDTO[] = [];
+  bestSellingProductsPage: Page<BestSellingProductDTO> | null = null;
+  currentPage: number = 0;
+  pageSize: number = 15;
+  errorMessage: string | null = null;
 
   doanhThuData: ThongKeTheoThoiGianDTO[] = [];
   soLuongDonData: SoLuongDonHangDTO[] = [];
@@ -78,8 +93,7 @@ export class StatisticsComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
 
-  // Tab control
-  selectedTab: string = 'don-hang-doanh-thu'; // Default tab
+  selectedTab: string = 'don-hang-doanh-thu';
 
   months = [
     { value: '1', label: 'Tháng 1' },
@@ -122,7 +136,7 @@ export class StatisticsComponent implements OnInit {
   };
   soLuongDonType: ChartType = 'bar';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     const today = new Date();
@@ -148,9 +162,11 @@ export class StatisticsComponent implements OnInit {
     this.loadDataForSelectedTimeType();
   }
 
-  // Switch tabs
   switchTab(tab: string): void {
     this.selectedTab = tab;
+    if (tab === 'san-pham') {
+      this.loadBestSellingProducts(this.currentPage);
+    }
   }
 
   onTimeTypeChange(): void {
@@ -166,6 +182,7 @@ export class StatisticsComponent implements OnInit {
     this.endDate = today.toISOString().split('T')[0];
     this.compareYear = null;
     this.compareDoanhThuData = [];
+    this.currentPage = 0;
 
     if (this.doanhThuOptions.scales && this.doanhThuOptions.scales['x']) {
       (this.doanhThuOptions.scales['x'] as any).title.text = this.getTimeLabel();
@@ -194,10 +211,10 @@ export class StatisticsComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.thongKeTongQuan = data;
-          console.log('Fixed Overview Data:', this.thongKeTongQuan);
+          console.log('Dữ liệu Tổng quan (Cố định):', this.thongKeTongQuan);
         },
         error: (err) => {
-          console.error('Error loading fixed overview:', err);
+          console.error('Lỗi khi tải tổng quan cố định:', err);
         }
       });
 
@@ -225,46 +242,74 @@ export class StatisticsComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.thongKeTongQuanFiltered = data;
-          console.log('Filtered Overview Data:', this.thongKeTongQuanFiltered);
+          console.log('Dữ liệu Tổng quan (Theo bộ lọc):', this.thongKeTongQuanFiltered);
         },
         error: (err) => {
-          console.error('Error loading filtered overview:', err);
-        }
-      });
-}
-
-  loadBestSellingProducts(): void {
-    let url = '';
-    switch (this.selectedTimeType) {
-      case 'ngay':
-        url = `http://localhost:8080/api/thong-ke/best-selling/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
-        break;
-      case 'tuan':
-        url = `http://localhost:8080/api/thong-ke/best-selling/tuan?year=${this.selectedYear}${this.selectedWeek ? `&week=${this.selectedWeek}` : ''}`;
-        break;
-      case 'thang':
-        url = `http://localhost:8080/api/thong-ke/best-selling/thang?year=${this.selectedYear}${this.selectedMonth ? `&month=${this.selectedMonth}` : ''}`;
-        break;
-      case 'nam':
-        url = `http://localhost:8080/api/thong-ke/best-selling/nam?year=${this.selectedYear}`;
-        break;
-    }
-
-    this.http.get<BestSellingProductDTO[]>(url)
-      .subscribe({
-        next: (data) => {
-          this.bestSellingProducts = data;
-          console.log('Best Selling Products:', this.bestSellingProducts);
-        },
-        error: (err) => {
-          console.error('Error loading best-selling products:', err);
+          console.error('Lỗi khi tải tổng quan theo bộ lọc:', err);
         }
       });
   }
 
+  loadBestSellingProducts(page: number = 0): void {
+    this.currentPage = page;
+    let url = '';
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        url = `http://localhost:8080/api/thong-ke/best-selling/ngay?startDate=${this.startDate}&endDate=${this.endDate}&page=${page}&size=${this.pageSize}`;
+        break;
+      case 'tuan':
+        url = `http://localhost:8080/api/thong-ke/best-selling/tuan?year=${this.selectedYear}${this.selectedWeek ? `&week=${this.selectedWeek}` : ''}&page=${page}&size=${this.pageSize}`;
+        break;
+      case 'thang':
+        url = `http://localhost:8080/api/thong-ke/best-selling/thang?year=${this.selectedYear}${this.selectedMonth ? `&month=${this.selectedMonth}` : ''}&page=${page}&size=${this.pageSize}`;
+        break;
+      case 'nam':
+        url = `http://localhost:8080/api/thong-ke/best-selling/nam?year=${this.selectedYear}&page=${page}&size=${this.pageSize}`;
+        break;
+    }
+  
+    console.log('Gọi API với URL:', url);
+    this.http.get<any>(url).subscribe({
+      next: (data) => {
+        console.log('Phản hồi từ API:', data);
+        this.bestSellingProductsPage = {
+          content: data.content || [],
+          page: {
+            totalPages: data.page?.totalPages || 0,
+            totalElements: data.page?.totalElements || 0,
+            number: data.page?.number || 0,
+            size: data.page?.size || this.pageSize
+          }
+        };
+        this.bestSellingProducts = this.bestSellingProductsPage.content;
+        this.currentPage = this.bestSellingProductsPage.page.number;
+        this.errorMessage = null;
+        console.log('Assigned bestSellingProductsPage:', this.bestSellingProductsPage);
+        console.log('Total Pages after assignment:', this.bestSellingProductsPage.page.totalPages);
+        console.log('Current Page after assignment:', this.currentPage);
+        console.log('Best Selling Products:', this.bestSellingProducts);
+        if (!data.content || this.bestSellingProductsPage.page.totalPages === 0) {
+          console.warn('Không có dữ liệu hoặc tổng số trang là 0, kiểm tra lại API.');
+        }
+        setTimeout(() => {
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        }, 0);
+      },
+      error: (err) => {
+        console.error('Lỗi khi tải sản phẩm bán chạy:', err);
+        this.errorMessage = 'Không thể tải danh sách sản phẩm bán chạy. Vui lòng thử lại sau.';
+        this.bestSellingProducts = [];
+        this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   loadDataForSelectedTimeType(): void {
+    this.currentPage = 0;
     this.loadThongKeTongQuanFiltered();
-    this.loadBestSellingProducts();
+    this.loadBestSellingProducts(this.currentPage);
     this.loadDoanhThu();
     this.loadSoLuongDon();
     if (this.compareYear) {
@@ -296,7 +341,7 @@ export class StatisticsComponent implements OnInit {
           this.updateDoanhThuChart();
         },
         error: (err) => {
-          console.error('Error loading revenue data:', err);
+          console.error('Lỗi khi tải dữ liệu doanh thu:', err);
         }
       });
   }
@@ -331,7 +376,7 @@ export class StatisticsComponent implements OnInit {
           this.updateDoanhThuChart();
         },
         error: (err) => {
-          console.error('Error loading compare revenue data:', err);
+          console.error('Lỗi khi tải dữ liệu doanh thu so sánh:', err);
         }
       });
   }
@@ -384,12 +429,74 @@ export class StatisticsComponent implements OnInit {
           };
         },
         error: (err) => {
-          console.error('Error loading order quantity data:', err);
+          console.error('Lỗi khi tải dữ liệu số lượng đơn:', err);
         }
       });
   }
 
   onCompareYearChange(): void {
     this.loadDataForSelectedTimeType();
+  }
+
+  prevPage(): void {
+    if (this.bestSellingProductsPage && this.currentPage > 0) {
+      this.loadBestSellingProducts(this.currentPage - 1);
+    }
+  }
+
+  nextPage(): void {
+    if (this.bestSellingProductsPage && this.currentPage < this.bestSellingProductsPage.page.totalPages - 1) {
+      this.loadBestSellingProducts(this.currentPage + 1);
+    }
+  }
+
+  goToPage(page: number): void {
+    if (this.bestSellingProductsPage && page >= 0 && page < this.bestSellingProductsPage.page.totalPages) {
+      this.loadBestSellingProducts(page);
+    }
+  }
+
+  getPaginationRange(): { page: number; isEllipsis: boolean }[] {
+    if (!this.bestSellingProductsPage) {
+      return [];
+    }
+    const totalPages = this.bestSellingProductsPage.page.totalPages;
+    const maxButtons = 5;
+    const range: { page: number; isEllipsis: boolean }[] = [];
+    const halfMaxButtons = Math.floor(maxButtons / 2);
+
+    if (totalPages <= maxButtons) {
+      for (let i = 0; i < totalPages; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+    } else {
+      let startPage = Math.max(0, this.currentPage - halfMaxButtons);
+      let endPage = Math.min(totalPages, startPage + maxButtons);
+
+      if (endPage - startPage < maxButtons) {
+        startPage = Math.max(0, endPage - maxButtons);
+      }
+
+      if (startPage > 0) {
+        range.push({ page: 0, isEllipsis: false });
+        if (startPage > 1) {
+          range.push({ page: -1, isEllipsis: true });
+        }
+      }
+
+      for (let i = startPage; i < endPage; i++) {
+        range.push({ page: i, isEllipsis: false });
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          range.push({ page: -1, isEllipsis: true });
+        }
+        range.push({ page: totalPages - 1, isEllipsis: false });
+      }
+    }
+
+    console.log('Pagination Range:', range);
+    return range;
   }
 }

@@ -85,7 +85,7 @@
           <div class="overview-section">
             <h3>Trạng thái đơn</h3>
             <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuan.onlineHoanThanh }}</p>
-            <p><span class="label">Online hủy:</span> {{ thongKeTongQuan.onlineHuy }}</p>
+            <p><span class="label">Online không hoàn thành:</span> {{ thongKeTongQuan.onlineHuy }}</p>
             <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuan.offlineHoanThanh }}</p>
             <p><span class="label">Offline hủy:</span> {{ thongKeTongQuan.offlineHuy }}</p>
           </div>
@@ -111,9 +111,8 @@
           <div class="overview-section">
             <h3>Trạng thái đơn</h3>
             <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHoanThanh }}</p>
-            <p><span class="label">Online hủy:</span> {{ thongKeTongQuanFiltered.onlineHuy }}</p>
+            <p><span class="label">Online không hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHuy }}</p>
             <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuanFiltered.offlineHoanThanh }}</p>
-            <p><span class="label">Offline hủy:</span> {{ thongKeTongQuanFiltered.offlineHuy }}</p>
           </div>
         </div>
       </div>
@@ -156,6 +155,11 @@
 
     <!-- Tab 2: Sản phẩm -->
     <div *ngIf="selectedTab === 'san-pham'">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
       <!-- Best-Selling Products -->
       <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0">
         <h2>Sản phẩm bán chạy nhất</h2>
@@ -172,7 +176,8 @@
               <th>Dung tích (ml)</th>
               <th>Số lượng bán</th>
               <th>Số lượng tồn kho</th>
-              <th>Cảnh báo</th>
+              <th>Trạng thái tồn kho</th>
+             
             </tr>
           </thead>
           <tbody>
@@ -187,12 +192,47 @@
               <td>{{ product.dungTich }}</td>
               <td>{{ product.totalQuantitySold }}</td>
               <td>{{ product.soLuongTonKho }}</td>
-              <td [ngClass]="{'warning': product.stockWarning}">
-                {{ product.stockWarning ? 'Sắp hết hàng' : 'Còn hàng' }}
+             
+              <td [ngClass]="{'warning': product.soLuongTonKho === 0 || product.soLuongTonKho < 10}">
+                {{ product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 10 ? 'Sắp hết hàng' : 'Còn hàng') }}
               </td>
             </tr>
           </tbody>
         </table>
+        <!-- Pagination Controls -->
+        <div class="pagination" *ngIf="bestSellingProductsPage?.page.totalPages > 1">
+          <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center flex gap-2">
+              <li class="page-item" [class.disabled]="currentPage === 0">
+                <button class="page-link" (click)="goToPage(0)">«</button>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === 0">
+                <button class="page-link" (click)="prevPage()">‹</button>
+              </li>
+              <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === currentPage" [class.disabled]="p.isEllipsis">
+                <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+                <span *ngIf="p.isEllipsis" class="page-link">...</span>
+              </li>
+              <li class="page-item" [class.disabled]="bestSellingProductsPage && currentPage >= bestSellingProductsPage.page.totalPages - 1">
+                <button class="page-link" (click)="nextPage()">›</button>
+              </li>
+              <li class="page-item" [class.disabled]="bestSellingProductsPage && currentPage >= bestSellingProductsPage.page.totalPages - 1">
+                <button class="page-link" (click)="goToPage(bestSellingProductsPage.page.totalPages - 1)">»</button>
+              </li>
+            </ul>
+          </nav>
+          <!-- Thông tin gỡ lỗi -->
+          <div class="debug-info">
+            Trang hiện tại: {{ currentPage + 1 }} / {{ bestSellingProductsPage?.page.totalPages || 0 }}, Tổng sản phẩm: {{ bestSellingProductsPage?.page.totalElements || 0 }}
+          </div>
+        </div>
+        <!-- Debug info -->
+        <div *ngIf="bestSellingProductsPage" class="debug-info">
+          Current Page: {{ currentPage + 1 }}, Total Pages: {{ bestSellingProductsPage.page.totalPages }}, Total Items: {{ bestSellingProductsPage.page.totalElements }}
+        </div>
+      </div>
+      <div *ngIf="bestSellingProducts.length === 0 && !errorMessage" class="no-data">
+        Không có dữ liệu sản phẩm.
       </div>
     </div>
   </div>

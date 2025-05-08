@@ -4,108 +4,6 @@
   margin: 0 auto;
 }
 
-.overview {
-  margin-bottom: 20px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.overview h2 {
-  font-size: 24px;
-  margin-bottom: 15px;
-}
-
-.overview-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.overview-section {
-  flex: 1;
-  padding: 10px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-.overview-section h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.overview-section p {
-  margin: 5px 0;
-  font-size: 14px;
-}
-
-.overview-section .label {
-  font-weight: bold;
-  margin-right: 5px;
-}
-
-.filters {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.filters label {
-  font-weight: bold;
-}
-
-.filters select,
-.filters input {
-  padding: 5px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.chart-container {
-  margin-bottom: 40px;
-}
-
-.chart-container h2 {
-  font-size: 24px;
-  margin-bottom: 15px;
-}
-
-.data-table {
-  margin-top: 20px;
-}
-
-.data-table h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.data-table table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-  padding: 10px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-
-.data-table th {
-  background-color: #f4f4f4;
-  font-weight: bold;
-}
-
-.data-table td {
-  background-color: #fff;
-}
-.statistics-container {
-  padding: 20px;
-}
-
 /* Tab Navigation */
 .tab-navigation {
   display: flex;
@@ -136,17 +34,22 @@
 /* Filters */
 .filters {
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 
   label {
-    margin-right: 10px;
     font-weight: bold;
+    margin-right: 10px;
+    color: #333;
   }
 
-  select, input {
+  select,
+  input {
     padding: 5px;
-    margin-right: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    margin-right: 10px;
   }
 }
 
@@ -155,6 +58,7 @@
   margin-bottom: 20px;
   padding: 20px;
   background-color: #f9f9f9;
+  border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
@@ -168,8 +72,15 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+    justify-content: space-between;
 
     .overview-section {
+      flex: 1;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+
       h3 {
         font-size: 1.2em;
         margin-bottom: 10px;
@@ -178,9 +89,12 @@
 
       p {
         margin: 5px 0;
+        font-size: 14px;
+
         .label {
           font-weight: bold;
           color: #555;
+          margin-right: 5px;
         }
       }
     }
@@ -189,7 +103,7 @@
 
 /* Chart Containers */
 .chart-container {
-  margin-bottom: 20px;
+  margin-bottom: 40px;
   padding: 20px;
   background-color: #f9f9f9;
   border-radius: 8px;
@@ -215,15 +129,21 @@
       border-collapse: collapse;
       font-size: 0.9em;
 
-      th, td {
+      th,
+      td {
         padding: 10px;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        border: 1px solid #ddd;
       }
 
       th {
         background-color: #4CAF50;
         color: white;
+        font-weight: bold;
+      }
+
+      td {
+        background-color: #fff;
       }
 
       tr:hover {
@@ -252,15 +172,17 @@
     border-collapse: collapse;
     font-size: 0.9em;
 
-    th, td {
+    th,
+    td {
       padding: 10px;
       text-align: left;
-      border-bottom: 1px solid #ddd;
+      border: 1px solid #ddd;
     }
 
     th {
       background-color: #4CAF50;
       color: white;
+      font-weight: bold;
     }
 
     tr:hover {
@@ -272,4 +194,65 @@
       font-weight: bold;
     }
   }
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+
+  button {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+
+    &:hover:not(:disabled) {
+      background-color: #e0e0e0;
+    }
+
+    &:disabled {
+      background-color: #f0f0f0;
+      cursor: not-allowed;
+    }
+
+    &.active {
+      background-color: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
+  }
+
+  span {
+    font-size: 16px;
+    color: #666;
+  }
+}
+
+/* Debug Info */
+.debug-info {
+  margin-top: 10px;
+  color: #888;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* No Data Message */
+.no-data {
+  text-align: center;
+  color: #666;
+  margin-top: 20px;
+}
+
+/* Error Message */
+.error-message {
+  color: red;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: bold;
 }

@@ -53,7 +53,9 @@
             <td class="wrap-text">
               {{ product.tenDanhMuc || 'Không xác định' }}
             </td>
-            <td>{{ product.tongSoLuong || 0 }}</td>
+            <td [ngClass]="{'low-stock': product.tongSoLuong < 10}">
+              {{ product.tongSoLuong || 0 }}
+            </td>
             <td>{{ product.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</td>
             <td>
               <div class="d-flex gap-2">

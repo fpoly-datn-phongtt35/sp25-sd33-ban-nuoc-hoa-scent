@@ -294,7 +294,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   requestCancellationReason(orderId: number): void {
     Swal.fire({
-      title: 'Vui lòng nhập lý do hủy đơn hàng:',
+      title: 'Vui lòng nhập lý do giao hàng không thành công:',
       input: 'text',
       inputPlaceholder: 'Nhập lý do...',
       showCancelButton: true,
@@ -315,7 +315,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       input: 'select',
       inputOptions: {
         '1': '✅ Đã Nhận Hàng (Hoàn thành)',
-        '2': '❌ Hủy Đơn (Khách không nhận)',
+        '2': '❌Giao không thành công',
       },
       inputPlaceholder: 'Chọn hành động',
       showCancelButton: true,
@@ -385,7 +385,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         }
         this.applySearch();
         this.filterOrders(this.getFilterKey(newStatus));
-        Swal.fire('✅ Thành công', 'Đơn hàng đã được hủy!', 'success');
+        Swal.fire('✅ Thành công', 'Đơn hàng đã được chuyển trạng thái thành giao không thành công!', 'success');
       },
       error: (error) => {
         console.error('Error updating status:', error);
