@@ -51,10 +51,19 @@ public class PhieuGiamGia {
 
     @Column(name = "ngay_het_han")
     private LocalDateTime ngayHetHan;
-
+    @Column(name = "trang_thai")
+    private Integer trangThai;
     @JsonIgnore
     @OneToMany(mappedBy = "phieuGiamGia")
     private List<DonHang> donHang;
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
 
     public Integer getId() {
         return id;

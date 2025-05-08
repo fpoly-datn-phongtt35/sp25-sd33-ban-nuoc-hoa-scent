@@ -92,7 +92,8 @@ public class SecurityConfig {
                 "rest/tai-khoan/verify-old-password",
                 "rest/tai-khoan/findByUsername",
                 "rest/tai-khoan/findByEmail",
-                "rest/tai-khoan/forgot-password/reset")
+                "rest/tai-khoan/forgot-password/reset"
+            ,"rest/phieu-giam-gia/update-status/**")
             .permitAll()
             .requestMatchers("rest/otp/send",
                 "rest/otp/verify")

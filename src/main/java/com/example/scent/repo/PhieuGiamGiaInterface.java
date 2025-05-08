@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,5 +26,6 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
                                                               Pageable pageable);
     boolean existsByMaGiamGia(String maGiamGia);
     Optional<PhieuGiamGia> findByMaGiamGia(String maGiamGia);
-
+    List<PhieuGiamGia> findAllByTrangThaiAndNgayHetHanBefore(int trangThai, LocalDateTime dateTime);
+    List<PhieuGiamGia> findAllByTrangThaiAndNgayHetHanAfter(int trangThai, LocalDateTime dateTime);
 }

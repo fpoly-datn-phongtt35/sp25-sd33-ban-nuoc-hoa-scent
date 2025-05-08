@@ -6,6 +6,7 @@ import com.example.scent.entity.SanPham;
 import com.example.scent.service.PhieuGiamGiaSv;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -86,6 +87,41 @@ public class PhieuGiamGiaCtrl {
             @RequestParam(value = "idTaiKhoan", required = false) Integer id) {
         PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id);
         return ResponseEntity.ok(phieuGiamGia);
+    }
+    @PutMapping("/update-status/{id}")
+    public ResponseEntity<Map<String, Object>> updateStatus(
+            @PathVariable Integer id,
+            @RequestParam Integer trangThai) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Kiểm tra trạng thái hợp lệ (0 hoặc 1)
+            if (trangThai != 0 && trangThai != 1) {
+                response.put("status", "error");
+                response.put("message", "Trạng thái phải là 0 hoặc 1!");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            // Lấy phiếu giảm giá
+            PhieuGiamGia phieuGiamGia = pggs.detail(id);
+            if (phieuGiamGia == null) {
+                response.put("status", "error");
+                response.put("message", "Phiếu giảm giá không tồn tại!");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+            // Cập nhật trạng thái
+            phieuGiamGia.setTrangThai(trangThai);
+            pggs.update(phieuGiamGia);
+
+            response.put("status", "success");
+            response.put("message", "Cập nhật trạng thái thành công!");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
 

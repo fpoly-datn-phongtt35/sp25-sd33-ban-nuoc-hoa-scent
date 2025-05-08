@@ -57,20 +57,45 @@ public class PhieuGiamGiaSv {
     }
 
 
+    @Transactional
     public PhieuGiamGia update(PhieuGiamGia phieuGiamGia) {
+        logger.info("Cập nhật phiếu giảm giá với ID: {}", phieuGiamGia.getId());
+
+        // Kiểm tra xem phiếu có tồn tại không
         if (!pggi.existsById(phieuGiamGia.getId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "⚠️ Mã giảm giá không tồn tại!");
+            logger.error("Phiếu giảm giá với ID {} không tồn tại!", phieuGiamGia.getId());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Mã giảm giá không tồn tại!");
         }
 
         // Kiểm tra ngày bắt đầu và ngày kết thúc
         if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
             if (phieuGiamGia.getNgayBatDau().isAfter(phieuGiamGia.getNgayHetHan())) {
+                logger.error("Ngày bắt đầu {} không được sau ngày kết thúc {}!",
+                        phieuGiamGia.getNgayBatDau(), phieuGiamGia.getNgayHetHan());
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "⚠️ Ngày bắt đầu không được sau ngày kết thúc!");
             }
         }
-        return pggi.save(phieuGiamGia);
+
+        // Cập nhật trạng thái dựa trên ngày hết hạn
+        if (phieuGiamGia.getNgayHetHan() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            if (phieuGiamGia.getNgayHetHan().isBefore(now)) {
+                phieuGiamGia.setTrangThai(0); // Đã hết hạn, chuyển thành Ngưng
+                logger.info("Phiếu giảm giá ID: {} đã hết hạn, cập nhật trạng thái thành Ngưng", phieuGiamGia.getId());
+            } else {
+                phieuGiamGia.setTrangThai(1); // Chưa hết hạn, chuyển thành Hoạt động
+                logger.info("Phiếu giảm giá ID: {} chưa hết hạn, cập nhật trạng thái thành Hoạt động", phieuGiamGia.getId());
+            }
+        } else {
+            logger.warn("Ngày hết hạn của phiếu giảm giá ID: {} là null, không cập nhật trạng thái", phieuGiamGia.getId());
+        }
+
+        // Lưu phiếu giảm giá đã cập nhật
+        PhieuGiamGia updatedVoucher = pggi.save(phieuGiamGia);
+        logger.info("Cập nhật thành công phiếu giảm giá với ID: {}, trạng thái: {}",
+                updatedVoucher.getId(), updatedVoucher.getTrangThai());
+        return updatedVoucher;
     }
 
 
@@ -161,4 +186,32 @@ public class PhieuGiamGiaSv {
 
         return phieuGiamGia;
     }
+    @Transactional
+    public void updateExpiredVouchersStatus() {
+        logger.info("Bắt đầu cập nhật trạng thái phiếu giảm giá");
+
+        // Lấy phiếu đang hoạt động (trangThai = 1) và đã hết hạn (ngayHetHan trước hiện tại)
+        List<PhieuGiamGia> expiredVouchers = pggi.findAllByTrangThaiAndNgayHetHanBefore(1, LocalDateTime.now());
+        int expiredUpdatedCount = 0;
+
+        for (PhieuGiamGia voucher : expiredVouchers) {
+            voucher.setTrangThai(0); // Chuyển thành Ngưng
+            pggi.save(voucher);
+            expiredUpdatedCount++;
+        }
+
+        // Lấy phiếu đang ngưng (trangThai = 0) nhưng chưa hết hạn (ngayHetHan sau hiện tại)
+        List<PhieuGiamGia> notExpiredVouchers = pggi.findAllByTrangThaiAndNgayHetHanAfter(0, LocalDateTime.now());
+        int notExpiredUpdatedCount = 0;
+
+        for (PhieuGiamGia voucher : notExpiredVouchers) {
+            voucher.setTrangThai(1); // Chuyển thành Hoạt động
+            pggi.save(voucher);
+            notExpiredUpdatedCount++;
+        }
+
+        logger.info("Đã cập nhật {} phiếu hết hạn thành trạng thái Ngưng", expiredUpdatedCount);
+        logger.info("Đã cập nhật {} phiếu chưa hết hạn thành trạng thái Hoạt động", notExpiredUpdatedCount);
+    }
+
 }
