@@ -1,7 +1,7 @@
 <div class="tra-hang-form-modal">
   <button type="button" class="close-button" (click)="closeModal()">✖</button>
   <div class="tra-hang-form-container">
-    
+
     <form [formGroup]="traHangForm" class="tra-hang-form">
       <div formArrayName="returnItems" class="return-items-container">
         <div *ngFor="let item of returnItems.controls; let i = index" [formGroupName]="i" class="return-item-wrapper">
@@ -98,6 +98,7 @@
         </div>
       </div>
       <div class="form-actions">
+        <button type="button" class="close-button" (click)="closeModal()">✖</button>
         <button type="button" class="submit-button" (click)="onSubmit()" [disabled]="isSubmitDisabled()">Gửi Yêu Cầu Trả Hàng</button>
       </div>
     </form>

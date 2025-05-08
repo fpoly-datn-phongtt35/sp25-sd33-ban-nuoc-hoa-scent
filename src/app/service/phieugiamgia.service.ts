@@ -65,6 +65,8 @@ private handleError(error: HttpErrorResponse) {
       catchError(this.handleError)
     );
   }
+  updateStatus(id: number, trangThai: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/update-status/${id}?trangThai=${trangThai}`, {});
+  }
 
-  
 }

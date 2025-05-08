@@ -1,27 +1,29 @@
-import { Component,ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-import { Injectable, Inject } from '@angular/core';
-import { NgbModal,NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AddVoucherComponent } from '../add-voucher/add-voucher.component';
 import { EditVoucherComponent } from '../edit-voucher/edit-voucher.component';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
+
 @Component({
   selector: 'app-vourcher',
   standalone: true,
-  imports: [CommonModule,NgbModalModule],
+  imports: [CommonModule, NgbModalModule],
   templateUrl: './vourcher.component.html',
-  styleUrl: './vourcher.component.scss'
+  styleUrls: ['./vourcher.component.scss']
 })
 export class VourcherComponent {
   phieuGiamGias: any[] = [];
-  filteredPhieuGiamGias: any[] = []; // Danh sách đã lọc để hiển thị
-  currentPage: number = 0;
+  filteredPhieuGiamGias: any[] = [];
   page: number = 0;
   size: number = 5;
-  totalPages: number = 20;
-  filterType: string = 'all'; // Trạng thái bộ lọc: 'all', 'online', 'offline'
-  
+  totalPages: number = 1;
+  filterType: string = 'all';
+  sortField: string = 'id';
+  sortDirection: string = 'asc';
+
   constructor(
     private phieuGiamGiaService: PhieugiamgiaService,
     private modalService: NgbModal,
@@ -39,39 +41,57 @@ export class VourcherComponent {
         console.log('✅ API response:', response);
         this.phieuGiamGias = response.content || [];
         this.totalPages = response.page?.totalPages || 1;
-        this.applyFilter(); // Áp dụng bộ lọc ngay sau khi tải dữ liệu
+        this.applyFilter();
       },
       error: (error) => {
-        console.error('❌ Lỗi khi lấy dữ liệu khách hàng:', error);
+        console.error('❌ Lỗi khi lấy dữ liệu:', error);
+        alert('Không thể tải dữ liệu phiếu giảm giá: ' + (error.message || 'Kiểm tra console!'));
       }
     });
   }
 
-  // Hàm lọc dữ liệu dựa trên loại luồng
   filterVouchers(type: string): void {
     this.filterType = type;
-    this.page = 0; // Reset về trang đầu tiên khi thay đổi bộ lọc
+    this.page = 0;
     this.applyFilter();
   }
 
-  // Áp dụng bộ lọc cho danh sách
   applyFilter(): void {
     console.log('📌 Dữ liệu trước khi lọc:', this.phieuGiamGias);
-    if (this.filterType === 'all') {
-      this.filteredPhieuGiamGias = [...this.phieuGiamGias];
-    } else if (this.filterType === 'online') {
-      this.filteredPhieuGiamGias = this.phieuGiamGias.filter(item => item.dieuKienapDung !== 0);
+    let filtered = [...this.phieuGiamGias];
+    if (this.filterType === 'online') {
+      filtered = filtered.filter(item => item.dieuKienapDung !== 0);
     } else if (this.filterType === 'offline') {
-      this.filteredPhieuGiamGias = this.phieuGiamGias.filter(item => item.dieuKienapDung === 0);
+      filtered = filtered.filter(item => item.dieuKienapDung === 0);
     }
+    this.filteredPhieuGiamGias = this.sortData(filtered);
     console.log('📌 Dữ liệu sau khi lọc:', this.filteredPhieuGiamGias);
-    this.cdr.detectChanges(); // Cập nhật UI
+    this.cdr.detectChanges();
   }
 
-  // Cập nhật các hàm khác để dùng filteredPhieuGiamGias thay vì phieuGiamGias
+  sortVouchers(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.sortField = select.value;
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    this.applyFilter();
+  }
+
+  sortData(data: any[]): any[] {
+    return data.sort((a, b) => {
+      const fieldA = a[this.sortField];
+      const fieldB = b[this.sortField];
+      let comparison = 0;
+      if (typeof fieldA === 'string') {
+        comparison = fieldA.localeCompare(fieldB);
+      } else {
+        comparison = fieldA > fieldB ? 1 : fieldA < fieldB ? -1 : 0;
+      }
+      return this.sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }
+
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
-      console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
       this.loadAllPhieuGiamGia();
     }
@@ -128,54 +148,113 @@ export class VourcherComponent {
       range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
-    console.log('📌 Pagination range:', range);
     return range;
   }
-  openAddVoucherModal() {
+
+  openAddVoucherModal(): void {
     const modalRef = this.modalService.open(AddVoucherComponent, { backdrop: 'static', keyboard: false });
-
     modalRef.componentInstance.voucherAdded.subscribe((newVoucher: any) => {
-      console.log('🎉 Voucher mới nhận được:', newVoucher);
       this.phieuGiamGias.push(newVoucher);
-      this.applyFilter(); // Áp dụng lại bộ lọc sau khi thêm
+      this.applyFilter();
     });
   }
 
-  deleteVoucher(voucherId: number) {
-    if (confirm('Bạn có chắc chắn muốn xóa voucher này không?')) {
-      this.phieuGiamGiaService.deleteVoucher(voucherId).subscribe(
-        () => {
-          alert('Xóa voucher thành công!');
-          this.phieuGiamGias = this.phieuGiamGias.filter(item => item.id !== voucherId);
-          this.applyFilter(); // Áp dụng lại bộ lọc sau khi xóa
-        },
-        (error: any) => {
-          console.error('❌ Lỗi khi xóa voucher:', error);
-        }
-      );
-    }
-  }
-
-  openEditVoucherModal(voucher: any) {
-    const modalRef = this.modalService.open(EditVoucherComponent, {
-      backdrop: 'static',
-      keyboard: false
-    });
-
+  openEditVoucherModal(voucher: any): void {
+    const modalRef = this.modalService.open(EditVoucherComponent, { backdrop: 'static', keyboard: false });
     modalRef.componentInstance.voucher = { ...voucher };
-
     modalRef.componentInstance.voucherUpdated.subscribe((updatedVoucher: any) => {
       if (updatedVoucher) {
-        console.log('🔄 Cập nhật voucher:', updatedVoucher);
         const index = this.phieuGiamGias.findIndex((v) => v.id === updatedVoucher.id);
         if (index !== -1) {
           this.phieuGiamGias[index] = { ...updatedVoucher };
-          this.applyFilter(); // Áp dụng lại bộ lọc sau khi chỉnh sửa
+          this.applyFilter();
         }
         this.cdr.detectChanges();
       }
     });
   }
 
-  
+  toggleStatus(voucher: any): void {
+    console.log('📌 Thay đổi trạng thái voucher:', voucher.id, 'trangThai hiện tại:', voucher.trangThai);
+    const newStatus = voucher.trangThai === 1 ? 0 : 1;
+    this.phieuGiamGiaService.updateStatus(voucher.id, newStatus).subscribe({
+      next: (response) => {
+        console.log('✅ Cập nhật trạng thái thành công:', response);
+        voucher.trangThai = newStatus;
+        this.applyFilter();
+        alert(`Voucher đã được ${newStatus === 1 ? 'kích hoạt' : 'dừng hoạt động'} thành công!`);
+      },
+      error: (error) => {
+        console.error('❌ Lỗi khi cập nhật trạng thái:', error);
+        alert('Lỗi khi cập nhật trạng thái: ' + (error.message || 'Kiểm tra console để biết chi tiết!'));
+      }
+    });
+  }
+
+  isNotExpired(expiryDate: string): boolean {
+    if (!expiryDate) {
+      console.log('📌 Ngày hết hạn không tồn tại hoặc rỗng:', expiryDate);
+      return false;
+    }
+    const expiry = new Date(expiryDate).getTime();
+    if (isNaN(expiry)) {
+      console.log('📌 Định dạng ngày hết hạn không hợp lệ:', expiryDate);
+      return false;
+    }
+    const now = new Date().getTime();
+    console.log('📌 So sánh ngày hết hạn:', expiryDate, '=>', expiry, 'với hiện tại:', now, 'chưa hết hạn:', expiry > now);
+    return expiry > now;
+  }
+
+  shouldShowToggleButton(item: any): boolean {
+    const show = item.trangThai === 1 && this.isNotExpired(item.ngayHetHan);
+    console.log('📌 Kiểm tra hiển thị nút Dừng hoạt động cho voucher:', item.id, 'trangThai:', item.trangThai, 'ngayHetHan:', item.ngayHetHan, 'kết quả:', show);
+    return show;
+  }
+
+  shouldShowActivateButton(item: any): boolean {
+    const show = item.trangThai === 0 && this.isNotExpired(item.ngayHetHan);
+    console.log('📌 Kiểm tra hiển thị nút Kích hoạt cho voucher:', item.id, 'trangThai:', item.trangThai, 'ngayHetHan:', item.ngayHetHan, 'kết quả:', show);
+    return show;
+  }
+
+  exportToExcel(): void {
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.filteredPhieuGiamGias.map(item => ({
+      ID: item.id,
+      'Mã giảm giá': item.maGiamGia,
+      'Giá trị': item.giaTriGiam,
+      'Ngày bắt đầu': new Date(item.ngayBatDau).toLocaleDateString(),
+      'Giờ bắt đầu': new Date(item.ngayBatDau).toLocaleTimeString(),
+      'Ngày hết hạn': new Date(item.ngayHetHan).toLocaleDateString(),
+      'Giờ hết hạn': new Date(item.ngayHetHan).toLocaleTimeString(),
+      'Số lượng': item.soLuong,
+      'Luồng': item.dieuKienapDung === 0 ? 'Offline' : 'Online',
+      'Giá trị tối đa': item.gia_tri_toi_da,
+      'Trạng thái': item.trangThai === 1 ? 'Hoạt động' : 'Ngưng'
+    })));
+
+    const colWidths = [
+      { wch: 5 },  // ID
+      { wch: 15 }, // Mã giảm giá
+      { wch: 10 }, // Giá trị
+      { wch: 15 }, // Ngày bắt đầu
+      { wch: 15 }, // Giờ bắt đầu
+      { wch: 15 }, // Ngày hết hạn
+      { wch: 15 }, // Giờ hết hạn
+      { wch: 10 }, // Số lượng
+      { wch: 10 }, // Luồng
+      { wch: 15 }, // Giá trị tối đa
+      { wch: 15 }  // Trạng thái
+    ];
+    worksheet['!cols'] = colWidths;
+
+    const workbook: XLSX.WorkBook = { Sheets: { 'data': worksheet }, SheetNames: ['data'] };
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    this.saveAsExcelFile(excelBuffer, 'phieu_giam_gia');
+  }
+
+  saveAsExcelFile(buffer: any, fileName: string): void {
+    const data: Blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    FileSaver.saveAs(data, fileName + '_export_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  }
 }

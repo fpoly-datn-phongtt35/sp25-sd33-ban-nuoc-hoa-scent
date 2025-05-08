@@ -25,9 +25,9 @@
               'rejected': yeuCau.trangThai === 2,
               'done': yeuCau.trangThai === 3
             }">
-              {{ yeuCau.trangThai === 0 ? 'Chờ xác nhận' : 
-                 yeuCau.trangThai === 1 ? 'Đã duyệt' : 
-                 yeuCau.trangThai === 2 ? 'Từ chối' : 
+              {{ yeuCau.trangThai === 0 ? 'Chờ xác nhận' :
+                 yeuCau.trangThai === 1 ? 'Đã duyệt' :
+                 yeuCau.trangThai === 2 ? 'Từ chối' :
                  yeuCau.trangThai === 3 ? 'Hoàn thành' : 'Không xác định' }}
             </span>
           </div>
@@ -80,27 +80,27 @@
         <div class="history-list-scroll">
           <mat-card *ngFor="let lichSu of lichSuList" class="history-card">
             <p><strong>Thời gian:</strong> {{ lichSu.thoiGianThaoTac | date:'medium' }}</p>
-            <p><strong>Thao tác:</strong> 
-              {{ lichSu.thaoTac === 0 ? 'Chờ xác nhận' : 
-                 lichSu.thaoTac === 1 ? 'Xác nhận' : 
-                 lichSu.thaoTac === 2 ? 'Từ chối' : 
+            <p><strong>Thao tác:</strong>
+              {{ lichSu.thaoTac === 0 ? 'Chờ xác nhận' :
+                 lichSu.thaoTac === 1 ? 'Xác nhận' :
+                 lichSu.thaoTac === 2 ? 'Từ chối' :
                  lichSu.thaoTac === 3 ? 'Hoàn thành' : 'Không xác định' }}
             </p>
-            <p><strong>Trạng thái cũ:</strong> 
-              {{ lichSu.trangThaiCu === null ? 'Không có' : 
-                 lichSu.trangThaiCu === 0 ? 'Chờ xác nhận' : 
-                 lichSu.trangThaiCu === 1 ? 'Đã duyệt' : 
-                 lichSu.trangThaiCu === 2 ? 'Từ chối' : 
+            <p><strong>Trạng thái cũ:</strong>
+              {{ lichSu.trangThaiCu === null ? 'Không có' :
+                 lichSu.trangThaiCu === 0 ? 'Chờ xác nhận' :
+                 lichSu.trangThaiCu === 1 ? 'Đã duyệt' :
+                 lichSu.trangThaiCu === 2 ? 'Từ chối' :
                  lichSu.trangThaiCu === 3 ? 'Hoàn thành' : 'Không xác định' }}
             </p>
-            <p><strong>Trạng thái mới:</strong> 
-              {{ lichSu.trangThaiMoi === 0 ? 'Chờ xác nhận' : 
-                 lichSu.trangThaiMoi === 1 ? 'Đã duyệt' : 
-                 lichSu.trangThaiMoi === 2 ? 'Từ chối' : 
+            <p><strong>Trạng thái mới:</strong>
+              {{ lichSu.trangThaiMoi === 0 ? 'Chờ xác nhận' :
+                 lichSu.trangThaiMoi === 1 ? 'Đã duyệt' :
+                 lichSu.trangThaiMoi === 2 ? 'Từ chối' :
                  lichSu.trangThaiMoi === 3 ? 'Hoàn thành' : 'Không xác định' }}
             </p>
             <p><strong>Người thực hiện:</strong> {{ lichSu.taiKhoan?.tenDangNhap || 'N/A' }} (ID: {{ lichSu.taiKhoan?.id || 'N/A' }})</p>
-            <p><strong>Lý do từ chối:</strong> {{ lichSu.lyDoTuChoi || 'Không có' }}</p>
+            <p ><strong>Lý do từ chối:</strong> {{ lichSu.lyDoTuChoi || 'Không có' }}</p>
             <p><strong>Ghi chú:</strong> {{ lichSu.ghiChu || 'Không có' }}</p>
           </mat-card>
         </div>
