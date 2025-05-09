@@ -7,7 +7,7 @@
         <div class="search-box">
           <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="🔍 Tìm kiếm" />
         </div>
-        <button class="export-btn">Export Excel</button>
+        <button class="export-btn" (click)="exportToExcel()">Export Excel</button>
       </div>
     </div>
 

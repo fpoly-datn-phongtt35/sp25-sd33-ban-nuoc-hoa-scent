@@ -8,6 +8,7 @@ import { AddStaffAccountComponent } from '../add-staff-account/add-staff-account
 import { AccountStaffUpdateComponent } from '../account-staff-update/account-staff-update.component';
 import { TokenService } from '../../../service/token.service';
 import Swal from 'sweetalert2';
+import * as XLSX from 'xlsx';
 
 // Thêm interface Account để fix lỗi TS2304
 interface Account {
@@ -64,6 +65,7 @@ export class UserAdminComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu tài khoản:', error);
+        Swal.fire('Lỗi', 'Không thể tải danh sách nhân viên.', 'error');
       }
     });
   }
@@ -137,18 +139,33 @@ export class UserAdminComponent implements OnInit {
   }
 
   resetPassword(email: string): void {
-    if (confirm('Bạn có chắc chắn muốn cấp lại mật khẩu cho tài khoản này?')) {
-      this.accountService.resetPassword(email).subscribe({
-        next: (response) => {
-          console.log('✅ Cấp lại mật khẩu thành công:', response);
-          alert('Mật khẩu mới đã được gửi tới email: ' + email);
-        },
-        error: (error) => {
-          console.error('❌ Lỗi khi cấp lại mật khẩu:', error);
-          alert('Cấp lại mật khẩu thất bại. Vui lòng thử lại.');
-        }
-      });
-    }
+    Swal.fire({
+      title: 'Xác nhận',
+      text: `Bạn có chắc chắn muốn cấp lại mật khẩu cho ${email}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.accountService.resetPassword(email).subscribe({
+          next: (response) => {
+            console.log('✅ Cấp lại mật khẩu thành công:', response);
+            Swal.fire({
+              title: 'Thành công',
+              text: `Mật khẩu mới đã được gửi tới email: ${email}`,
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          },
+          error: (error) => {
+            console.error('❌ Lỗi khi cấp lại mật khẩu:', error);
+            Swal.fire('Lỗi', 'Cấp lại mật khẩu thất bại. Vui lòng thử lại.', 'error');
+          }
+        });
+      }
+    });
   }
 
   toggleStatus(account: Account): void {
@@ -196,6 +213,7 @@ export class UserAdminComponent implements OnInit {
         console.error('❌ Lỗi khi lấy danh sách đơn hàng:', error);
         this.orders = [];
         this.filteredDonhang = [];
+        Swal.fire('Lỗi', 'Không thể tải danh sách đơn hàng.', 'error');
       }
     });
   }
@@ -227,7 +245,16 @@ export class UserAdminComponent implements OnInit {
   }
 
   getPaymentMethod(method: string): string {
-    return method === 'tm' ? 'Tiền mặt' : 'Chuyển khoản';
+    const normalized = method?.toLowerCase();
+    switch (normalized) {
+      case 'tm':
+      case 'tienmat':
+        return 'Tiền mặt';
+      case 'ck':
+        return 'Chuyển khoản';
+      default:
+        return 'Không rõ';
+    }
   }
 
   calculateTotal(chiTietDonHangs: any[]): number {
@@ -256,9 +283,9 @@ export class UserAdminComponent implements OnInit {
         htmlContent += `
           <tr style="border-bottom: 1px solid #ddd;">
             <td style="padding: 8px;">${index + 1}</td>
-            <td style="padding: 8px;">${item.spct.sanPham.tenSanPham || 'Không có'}</td>
+            <td style="padding: 8px;">${item.spct?.sanPham?.tenSanPham || 'Không có'}</td>
             <td style="padding: 8px;">${item.soLuong || 0}</td>
-            <td style="padding: 8px;">${(item.spct.donGia || 0).toLocaleString('vi-VN')} VNĐ</td>
+            <td style="padding: 8px;">${(item.donGia || 0).toLocaleString('vi-VN')} VNĐ</td>
             <td style="padding: 8px;">${((item.soLuong || 0) * (item.donGia || 0)).toLocaleString('vi-VN')} VNĐ</td>
           </tr>
         `;
@@ -289,5 +316,115 @@ export class UserAdminComponent implements OnInit {
         popup: 'swal2-order-detail'
       }
     });
+  }
+
+  async exportToExcel(): Promise<void> {
+    const exportData: any[] = [];
+    let index = 0;
+    let allAccounts: any[] = [];
+
+    // Define headers for width calculation
+    const headers = {
+      'STT': 'STT',
+      'Tên người dùng': 'Tên người dùng',
+      'Username': 'Username',
+      'Email': 'Email',
+      'SDT': 'SDT',
+      'Trạng thái': 'Trạng thái',
+      'Số lượng đơn hàng': 'Số lượng đơn hàng',
+      'Tổng tiền': 'Tổng tiền'
+    };
+
+    try {
+      // Fetch the first page to get totalPages
+      const firstResponse = await this.accountService.getStaffAccounts('', 0, 100).toPromise();
+      const totalPages = firstResponse.page?.totalPages || 1;
+      allAccounts = firstResponse.content || [];
+
+      // Fetch remaining pages if totalPages > 1
+      if (totalPages > 1) {
+        for (let page = 1; page < totalPages; page++) {
+          const response = await this.accountService.getStaffAccounts('', page, 100).toPromise();
+          allAccounts = allAccounts.concat(response.content || []);
+        }
+      }
+
+      for (const account of allAccounts) {
+        try {
+          const orders = await this.accountService.getOrdersByTaiKhoanId(account.id).toPromise();
+          // Count completed orders (trangThai = 4) and calculate total revenue
+          const completedOrders = orders.filter((order: any) => order.trangThai === 4);
+          const orderCount = completedOrders.length;
+          const totalRevenue = completedOrders.reduce((total: number, order: any) => {
+            return total + this.calculateTotal(order.chiTietDonHangs);
+          }, 0);
+
+          exportData.push({
+            'STT': ++index,
+            'Tên người dùng': account.hoTen || 'N/A',
+            'Username': account.tenDangNhap || 'N/A',
+            'Email': account.email || 'N/A',
+            'SDT': account.sdt || 'N/A',
+            'Trạng thái': account.trangThai === 1 ? 'Đang làm' : 'Nghỉ làm',
+            'Số lượng đơn hàng': orderCount,
+            'Tổng tiền': totalRevenue.toLocaleString('vi-VN') + ' VND'
+          });
+        } catch (error) {
+          console.error(`❌ Lỗi khi lấy đơn hàng cho tài khoản ${account.id}:`, error);
+          exportData.push({
+            'STT': ++index,
+            'Tên người dùng': account.hoTen || 'N/A',
+            'Username': account.tenDangNhap || 'N/A',
+            'Email': account.email || 'N/A',
+            'SDT': account.sdt || 'N/A',
+            'Trạng thái': account.trangThai === 1 ? 'Đang làm' : 'Nghỉ làm',
+            'Số lượng đơn hàng': 0,
+            'Tổng tiền': '0 VND'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Lỗi khi lấy toàn bộ tài khoản:', error);
+      Swal.fire('Lỗi', 'Không thể xuất danh sách nhân viên.', 'error');
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet([headers, ...exportData], { skipHeader: true });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh Sách Nhân Viên');
+
+    // Calculate column widths based on content and headers
+    const colWidths = Object.keys(headers).reduce((widths, key, i) => {
+      // Get max length for this column (data + header)
+      const maxLength = exportData.reduce((max, row) => {
+        const value = row[key] ? row[key].toString() : '';
+        return Math.max(max, value.length);
+      }, key.length); // Compare with header length
+      // Convert to Excel width units (approx. 1 char = 1 unit, with padding)
+      const width = Math.min(Math.max(maxLength + 2, 10), 80); // Min 10, max 80
+      widths[i] = width;
+      return widths;
+    }, [] as number[]);
+    worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    // Add headers styling
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
+      if (cell) {
+        cell.s = {
+          font: { bold: true },
+          alignment: { horizontal: 'center' },
+          border: {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+          }
+        };
+      }
+    }
+
+    XLSX.writeFile(workbook, 'Danh_Sach_Nhan_Vien.xlsx');
   }
 }

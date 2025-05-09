@@ -7,8 +7,10 @@ import { AddProductComponent } from '../add-product/add-product.component';
 import { UpdateProductComponent } from '../update-product/update-product.component';
 import { SpctComponent } from '../product-detail/spct-list/spct.component';
 import { SanPhamService } from '../../../service/product.service';
+import { SpctService } from '../../../service/spct.service';
 import { TokenService } from '../../../service/token.service';
 import { ChangeDetectorRef } from '@angular/core';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-product-admin',
@@ -17,7 +19,7 @@ import { ChangeDetectorRef } from '@angular/core';
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    SpctComponent // Ensure this is included
+    SpctComponent
   ],
   templateUrl: './product-admin.component.html',
   styleUrls: ['./product-admin.component.scss'],
@@ -39,6 +41,7 @@ export class ProductAdminComponent implements OnInit {
 
   constructor(
     private sanPhamService: SanPhamService,
+    private spctService: SpctService,
     private router: Router,
     private modalService: NgbModal,
     private tokenService: TokenService,
@@ -73,7 +76,8 @@ export class ProductAdminComponent implements OnInit {
           ...product,
           huongDauString: this.getNotesString(product.huongDau),
           huongGiuaString: this.getNotesString(product.huongGiua),
-          huongCuoiString: this.getNotesString(product.huongCuoi)
+          huongCuoiString: this.getNotesString(product.huongCuoi),
+          phongCachString: this.getPhongCachString(product.phongCach)
         }));
         this.totalPages = response.page?.totalPages || 1;
         console.log('✅ Sản phẩm response:', response);
@@ -292,5 +296,138 @@ export class ProductAdminComponent implements OnInit {
 
     console.log('📌 Pagination range:', range);
     return range;
+  }
+
+  async exportToExcel(): Promise<void> {
+    const exportData: any[] = [];
+    let index = 0;
+    let allProducts: any[] = [];
+
+    try {
+      // Fetch the first page to get totalPages
+      const firstResponse = await this.sanPhamService.getSanPhamDetailonAdmin('', 0, 100).toPromise();
+      const totalPages = firstResponse.page?.totalPages || 1;
+      allProducts = (firstResponse.content || []).map((product: any) => ({
+        ...product,
+        huongDauString: this.getNotesString(product.huongDau),
+        huongGiuaString: this.getNotesString(product.huongGiua),
+        huongCuoiString: this.getNotesString(product.huongCuoi),
+        phongCachString: this.getPhongCachString(product.phongCach)
+      }));
+
+      // Fetch remaining pages if totalPages > 1
+      if (totalPages > 1) {
+        for (let page = 1; page < totalPages; page++) {
+          const response = await this.sanPhamService.getSanPhamDetailonAdmin('', page, 100).toPromise();
+          const pageProducts = (response.content || []).map((product: any) => ({
+            ...product,
+            huongDauString: this.getNotesString(product.huongDau),
+            huongGiuaString: this.getNotesString(product.huongGiua),
+            huongCuoiString: this.getNotesString(product.huongCuoi),
+            phongCachString: this.getPhongCachString(product.phongCach)
+          }));
+          allProducts = allProducts.concat(pageProducts);
+        }
+      }
+
+      for (const product of allProducts) {
+        try {
+          const spctResponse = await this.spctService.geSpctByIdProduct(product.idSanPham).toPromise();
+          const spctList = spctResponse?.content || spctResponse || [];
+
+          if (spctList.length === 0) {
+            // Add a row for the product with no SPCT
+            exportData.push({
+              'STT': ++index,
+              'Tên Sản Phẩm': product.tenSanPham || 'Không xác định',
+              'Thương Hiệu': product.tenThuongHieu || 'Không xác định',
+              'Danh Mục': product.tenDanhMuc || 'Không xác định',
+              'Tồn Kho': product.tongSoLuong || 0,
+              'Trạng Thái': product.trangThai === 1 ? 'Đang bán' : 'Ngưng bán',
+              'Hương Đầu': product.huongDauString || 'Không xác định',
+              'Hương Giữa': product.huongGiuaString || 'Không xác định',
+              'Hương Cuối': product.huongCuoiString || 'Không xác định',
+              'Phong Cách': product.phongCachString || 'Không có phong cách',
+              'Giá': 'Không có giá',
+              'Số Lượng': 'Không có số lượng',
+              'Dung Tích': 'Không có dung tích'
+            });
+          } else {
+            // Add a row for each SPCT
+            for (const spct of spctList) {
+              exportData.push({
+                'STT': ++index,
+                'Tên Sản Phẩm': product.tenSanPham || 'Không xác định',
+                'Thương Hiệu': product.tenThuongHieu || 'Không xác định',
+                'Danh Mục': product.tenDanhMuc || 'Không xác định',
+                'Tồn Kho': product.tongSoLuong || 0,
+                'Trạng Thái': product.trangThai === 1 ? 'Đang bán' : 'Ngưng bán',
+                'Hương Đầu': product.huongDauString || 'Không xác định',
+                'Hương Giữa': product.huongGiuaString || 'Không xác định',
+                'Hương Cuối': product.huongCuoiString || 'Không xác định',
+                'Phong Cách': product.phongCachString || 'Không có phong cách',
+                'Giá': spct.donGia ? spct.donGia.toLocaleString('vi-VN') + ' VND' : 'N/A',
+                'Số Lượng': spct.soLuongTonKho || 'N/A',
+                'Dung Tích': spct.dungTich ? spct.dungTich + ' ml' : 'N/A'
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Lỗi khi lấy SPCT cho sản phẩm ${product.idSanPham}:`, error);
+          exportData.push({
+            'STT': ++index,
+            'Tên Sản Phẩm': product.tenSanPham || 'Không xác định',
+            'Thương Hiệu': product.tenThuongHieu || 'Không xác định',
+            'Danh Mục': product.tenDanhMuc || 'Không xác định',
+            'Tồn Kho': product.tongSoLuong || 0,
+            'Trạng Thái': product.trangThai === 1 ? 'Đang bán' : 'Ngưng bán',
+            'Hương Đầu': product.huongDauString || 'Không xác định',
+            'Hương Giữa': product.huongGiuaString || 'Không xác định',
+            'Hương Cuối': product.huongCuoiString || 'Không xác định',
+            'Phong Cách': product.phongCachString || 'Không có phong cách',
+            'Giá': 'Không có giá',
+            'Số Lượng': 'Không có số lượng',
+            'Dung Tích': 'Không có dung tích'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Lỗi khi lấy toàn bộ sản phẩm:', error);
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh Sách Sản Phẩm');
+
+    // Auto-size columns
+    const colWidths = exportData.reduce((widths, row) => {
+      Object.keys(row).forEach((key, i) => {
+        const value = row[key] ? row[key].toString() : '';
+        widths[i] = Math.max(widths[i] || 10, Math.min(value.length, 50));
+      });
+      return widths;
+    }, []);
+    worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    // Add headers styling
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
+      if (cell) {
+        cell.s = {
+          font: { bold: true },
+          alignment: { horizontal: 'center' },
+          border: {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+          }
+        };
+      }
+    }
+
+    XLSX.writeFile(workbook, 'Danh_Sach_San_Pham.xlsx');
   }
 }

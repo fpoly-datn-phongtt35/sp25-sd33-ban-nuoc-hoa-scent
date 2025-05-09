@@ -7,6 +7,7 @@ import { TokenService } from '../../../service/token.service';
 import { WebSocketService } from '../../../service/WebSocketService';
 import Swal from 'sweetalert2';
 import { Subscription } from 'rxjs';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-customer',
@@ -539,5 +540,115 @@ export class CustomerComponent implements OnInit, OnDestroy {
       default:
         return 'Không xác định';
     }
+  }
+
+  async exportToExcel(): Promise<void> {
+    const exportData: any[] = [];
+    let index = 0;
+    let allAccounts: any[] = [];
+
+    // Define headers for width calculation
+    const headers = {
+      'STT': 'STT',
+      'Tên người dùng': 'Tên người dùng',
+      'Username': 'Username',
+      'Email': 'Email',
+      'SDT': 'SDT',
+      'Địa chỉ': 'Địa chỉ',
+      'Số lượng đơn hàng': 'Số lượng đơn hàng',
+      'Tổng tiền': 'Tổng tiền'
+    };
+
+    try {
+      // Fetch the first page to get totalPages
+      const firstResponse = await this.accountService.getUserAccounts('', 0, 100).toPromise();
+      const totalPages = firstResponse.page?.totalPages || 1;
+      allAccounts = firstResponse.content || [];
+
+      // Fetch remaining pages if totalPages > 1
+      if (totalPages > 1) {
+        for (let page = 1; page < totalPages; page++) {
+          const response = await this.accountService.getUserAccounts('', page, 100).toPromise();
+          allAccounts = allAccounts.concat(response.content || []);
+        }
+      }
+
+      for (const account of allAccounts) {
+        try {
+          const orders = await this.accountService.getOrdersByTaiKhoanId(account.id).toPromise();
+          // Count completed orders (trangThai = 4) and calculate total revenue
+          const completedOrders = orders.filter((order: any) => order.trangThai === 4);
+          const orderCount = completedOrders.length;
+          const totalRevenue = completedOrders.reduce((total: number, order: any) => {
+            return total + this.calculateTotal(order.chiTietDonHangs);
+          }, 0);
+
+          exportData.push({
+            'STT': ++index,
+            'Tên người dùng': account.hoTen || 'Không xác định',
+            'Username': account.tenDangNhap || 'Không xác định',
+            'Email': account.email || 'Không xác định',
+            'SDT': account.sdt || 'Không xác định',
+            'Địa chỉ': account.diaChi || 'Không xác định',
+            'Số lượng đơn hàng': orderCount,
+            'Tổng tiền': totalRevenue.toLocaleString('vi-VN') + ' VND'
+          });
+        } catch (error) {
+          console.error(`❌ Lỗi khi lấy đơn hàng cho tài khoản ${account.id}:`, error);
+          exportData.push({
+            'STT': ++index,
+            'Tên người dùng': account.hoTen || 'Không xác định',
+            'Username': account.tenDangNhap || 'Không xác định',
+            'Email': account.email || 'Không xác định',
+            'SDT': account.sdt || 'Không xác định',
+            'Địa chỉ': account.diaChi || 'Không xác định',
+            'Số lượng đơn hàng': 0,
+            'Tổng tiền': '0 VND'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Lỗi khi lấy toàn bộ tài khoản:', error);
+      this.showErrorMessage('Không thể xuất danh sách khách hàng.');
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet([headers, ...exportData], { skipHeader: true });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh Sách Khách Hàng');
+
+    // Calculate column widths based on content and headers
+    const colWidths = Object.keys(headers).reduce((widths, key, i) => {
+      // Get max length for this column (data + header)
+      const maxLength = exportData.reduce((max, row) => {
+        const value = row[key] ? row[key].toString() : '';
+        return Math.max(max, value.length);
+      }, key.length); // Compare with header length
+      // Convert to Excel width units (approx. 1 char = 1 unit, with padding)
+      const width = Math.min(Math.max(maxLength + 2, 10), 80); // Min 10, max 80
+      widths[i] = width;
+      return widths;
+    }, [] as number[]);
+    worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    // Add headers styling
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
+      if (cell) {
+        cell.s = {
+          font: { bold: true },
+          alignment: { horizontal: 'center' },
+          border: {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' }
+          }
+        };
+      }
+    }
+
+    XLSX.writeFile(workbook, 'Danh_Sach_Khach_Hang.xlsx');
   }
 }

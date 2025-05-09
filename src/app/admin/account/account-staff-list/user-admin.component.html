@@ -10,7 +10,7 @@
         <div class="search-box">
           <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Tìm kiếm" />
         </div>
-        <button class="export-btn">Export Excel</button>
+        <button class="export-btn" (click)="exportToExcel()">Export Excel</button>
       </div>
     </div>
 
@@ -92,7 +92,7 @@
   <div *ngIf="!showMainContent && selectedAccountId !== null">
     <div class="employee-container">
       <a href="javascript:void(0)" (click)="closeOrders()" class="text-decoration-none text-muted fw-medium">
-        <i class="bi bi-arrow-left-circle me-1"></i> Quay lại đơn hàng
+        <i class="bi bi-arrow-left-circle me-1"></i> Quay lại danh sách nhân viên
       </a>
       <div class="mt-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
