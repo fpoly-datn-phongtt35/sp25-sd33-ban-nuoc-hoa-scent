@@ -1,5 +1,9 @@
-<!-- Container -->
 <div class="statistics-container">
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
   <!-- Tab Navigation -->
   <div class="tab-navigation">
     <button [class.active]="selectedTab === 'don-hang-doanh-thu'" (click)="switchTab('don-hang-doanh-thu')">
@@ -13,7 +17,7 @@
   <!-- Filters (shared between tabs) -->
   <div class="filters">
     <label for="timeTypeSelect">Chọn loại thống kê: </label>
-    <select id="timeTypeSelect" [(ngModel)]="selectedTimeType" (change)="onTimeTypeChange()">
+    <select id="timeTypeSelect" [(ngModel)]="selectedTimeType" (ngModelChange)="onTimeTypeChange()">
       <option value="ngay">Theo ngày</option>
       <option value="tuan">Theo tuần</option>
       <option value="thang">Theo tháng</option>
@@ -24,19 +28,19 @@
   <!-- Form chọn ngày -->
   <div *ngIf="selectedTimeType === 'ngay'" class="filters">
     <label for="startDate">Ngày bắt đầu: </label>
-    <input type="date" id="startDate" [(ngModel)]="startDate" (change)="loadDataForSelectedTimeType()" />
+    <input type="date" id="startDate" [(ngModel)]="startDate" (ngModelChange)="onFilterChange()" />
     <label for="endDate">Ngày kết thúc: </label>
-    <input type="date" id="endDate" [(ngModel)]="endDate" (change)="loadDataForSelectedTimeType()" />
+    <input type="date" id="endDate" [(ngModel)]="endDate" (ngModelChange)="onFilterChange()" />
   </div>
 
   <!-- Form chọn tuần -->
   <div *ngIf="selectedTimeType === 'tuan'" class="filters">
     <label for="weekSelect">Chọn tuần: </label>
-    <select id="weekSelect" [(ngModel)]="selectedWeek" (change)="loadDataForSelectedTimeType()">
-      <option *ngFor="let week of weeks" [value]="week">{{ week }}</option>
+    <select id="weekSelect" [(ngModel)]="selectedWeek" (ngModelChange)="onFilterChange()">
+      <option *ngFor="let week of weeks" [value]="week">Tuần {{ week }}</option>
     </select>
     <label for="yearSelectTuan">Chọn năm: </label>
-    <select id="yearSelectTuan" [(ngModel)]="selectedYear" (change)="loadDataForSelectedTimeType()">
+    <select id="yearSelectTuan" [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
       <option *ngFor="let year of years" [value]="year">{{ year }}</option>
     </select>
   </div>
@@ -44,12 +48,11 @@
   <!-- Form chọn tháng -->
   <div *ngIf="selectedTimeType === 'thang'" class="filters">
     <label for="monthSelect">Chọn tháng: </label>
-    <select id="monthSelect" [(ngModel)]="selectedMonth" (change)="loadDataForSelectedTimeType()">
-      <option value="">Tất cả</option>
+    <select id="monthSelect" [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()">
       <option *ngFor="let month of months" [value]="month.value">{{ month.label }}</option>
     </select>
     <label for="yearSelectThang">Chọn năm: </label>
-    <select id="yearSelectThang" [(ngModel)]="selectedYear" (change)="loadDataForSelectedTimeType()">
+    <select id="yearSelectThang" [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
       <option *ngFor="let year of years" [value]="year">{{ year }}</option>
     </select>
   </div>
@@ -57,7 +60,7 @@
   <!-- Form chọn năm -->
   <div *ngIf="selectedTimeType === 'nam'" class="filters">
     <label for="yearSelectNam">Chọn năm: </label>
-    <select id="yearSelectNam" [(ngModel)]="selectedYear" (change)="loadDataForSelectedTimeType()">
+    <select id="yearSelectNam" [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
       <option *ngFor="let year of years" [value]="year">{{ year }}</option>
     </select>
   </div>
@@ -113,6 +116,7 @@
             <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHoanThanh }}</p>
             <p><span class="label">Online không hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHuy }}</p>
             <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuanFiltered.offlineHoanThanh }}</p>
+            <p><span class="label">Offline hủy:</span> {{ thongKeTongQuanFiltered.offlineHuy }}</p>
           </div>
         </div>
       </div>
@@ -155,13 +159,19 @@
 
     <!-- Tab 2: Sản phẩm -->
     <div *ngIf="selectedTab === 'san-pham'">
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
+      <!-- Filter Info -->
+      <div class="filter-info" *ngIf="validateFilters()">
+        <p>
+          Dữ liệu sản phẩm bán chạy cho:
+          <span *ngIf="selectedTimeType === 'ngay'">từ {{ startDate }} đến {{ endDate }}</span>
+          <span *ngIf="selectedTimeType === 'tuan'">tuần {{ selectedWeek }} năm {{ selectedYear }}</span>
+          <span *ngIf="selectedTimeType === 'thang'">tháng {{ selectedMonth }} năm {{ selectedYear }}</span>
+          <span *ngIf="selectedTimeType === 'nam'">năm {{ selectedYear }}</span>
+        </p>
       </div>
 
       <!-- Best-Selling Products -->
-      <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0">
+      <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0; else noProducts">
         <h2>Sản phẩm bán chạy nhất</h2>
         <table>
           <thead>
@@ -175,9 +185,9 @@
               <th>Hương cuối</th>
               <th>Dung tích (ml)</th>
               <th>Số lượng bán</th>
+              <th>Số lượt trả hàng</th>
               <th>Số lượng tồn kho</th>
               <th>Trạng thái tồn kho</th>
-             
             </tr>
           </thead>
           <tbody>
@@ -191,8 +201,8 @@
               <td>{{ product.huongCuoi }}</td>
               <td>{{ product.dungTich }}</td>
               <td>{{ product.totalQuantitySold }}</td>
+              <td>{{ product.soLuotTraHang }}</td>
               <td>{{ product.soLuongTonKho }}</td>
-             
               <td [ngClass]="{'warning': product.soLuongTonKho === 0 || product.soLuongTonKho < 10}">
                 {{ product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 10 ? 'Sắp hết hàng' : 'Còn hàng') }}
               </td>
@@ -226,14 +236,12 @@
             Trang hiện tại: {{ currentPage + 1 }} / {{ bestSellingProductsPage?.page.totalPages || 0 }}, Tổng sản phẩm: {{ bestSellingProductsPage?.page.totalElements || 0 }}
           </div>
         </div>
-        <!-- Debug info -->
-        <div *ngIf="bestSellingProductsPage" class="debug-info">
-          Current Page: {{ currentPage + 1 }}, Total Pages: {{ bestSellingProductsPage.page.totalPages }}, Total Items: {{ bestSellingProductsPage.page.totalElements }}
+      </div>
+      <ng-template #noProducts>
+        <div class="no-data">
+          Không có dữ liệu sản phẩm cho khoảng thời gian này.
         </div>
-      </div>
-      <div *ngIf="bestSellingProducts.length === 0 && !errorMessage" class="no-data">
-        Không có dữ liệu sản phẩm.
-      </div>
+      </ng-template>
     </div>
   </div>
 </div>
