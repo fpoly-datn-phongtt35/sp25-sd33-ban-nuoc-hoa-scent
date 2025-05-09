@@ -23,7 +23,8 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
-            "COALESCE(SUM(ctdh.so_luong), 0) AS total_quantity_sold, " +
+            "(COALESCE(SUM(ctdh.so_luong), 0) - COALESCE(SUM(ycth.so_luong), 0)) AS total_quantity_sold, " +
+            "COALESCE(SUM(ycth.so_luong), 0) AS so_luot_tra_hang, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
             "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
@@ -39,8 +40,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "AND dh.trang_thai = 3 " +
-            "AND (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate) " +
-            "AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
+            "AND CONVERT(DATE, dh.ngay_tao) >= :startDate " +
+            "AND CONVERT(DATE, dh.ngay_tao) <= :endDate " +
+            "LEFT JOIN yeu_cau_tra_hang ycth ON spct.id = ycth.id_spct " +
+            "AND ycth.trangThai = 3 " +
+            "AND CONVERT(DATE, ycth.ngay_duyet) >= :startDate " +
+            "AND CONVERT(DATE, ycth.ngay_duyet) <= :endDate " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             "ORDER BY total_quantity_sold DESC " +
@@ -53,14 +58,20 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
+            "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
+            "AND dh.trang_thai = 3 " +
+            "AND CONVERT(DATE, dh.ngay_tao) >= :startDate " +
+            "AND CONVERT(DATE, dh.ngay_tao) <= :endDate", nativeQuery = true)
     Long countBestSellingProductsByDateRange(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
-            "COALESCE(SUM(ctdh.so_luong), 0) AS total_quantity_sold, " +
+            "(COALESCE(SUM(ctdh.so_luong), 0) - COALESCE(SUM(ycth.so_luong), 0)) AS total_quantity_sold, " +
+            "COALESCE(SUM(ycth.so_luong), 0) AS so_luot_tra_hang, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
             "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
@@ -76,8 +87,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "AND dh.trang_thai = 3 " +
-            "AND (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "AND (:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
+            "AND DATEPART(YEAR, dh.ngay_tao) = :year " +
+            "AND DATEPART(WEEK, dh.ngay_tao) = :week " +
+            "LEFT JOIN yeu_cau_tra_hang ycth ON spct.id = ycth.id_spct " +
+            "AND ycth.trangThai = 3 " +
+            "AND DATEPART(YEAR, ycth.ngay_duyet) = :year " +
+            "AND DATEPART(WEEK, ycth.ngay_duyet) = :week " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             "ORDER BY total_quantity_sold DESC " +
@@ -90,14 +105,20 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
+            "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
+            "AND dh.trang_thai = 3 " +
+            "AND DATEPART(YEAR, dh.ngay_tao) = :year " +
+            "AND DATEPART(WEEK, dh.ngay_tao) = :week", nativeQuery = true)
     Long countBestSellingProductsByWeek(@Param("year") Integer year, @Param("week") Integer week);
 
     @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
-            "COALESCE(SUM(ctdh.so_luong), 0) AS total_quantity_sold, " +
+            "(COALESCE(SUM(ctdh.so_luong), 0) - COALESCE(SUM(ycth.so_luong), 0)) AS total_quantity_sold, " +
+            "COALESCE(SUM(ycth.so_luong), 0) AS so_luot_tra_hang, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
             "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
@@ -113,8 +134,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "AND dh.trang_thai = 3 " +
-            "AND (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
+            "AND DATEPART(YEAR, dh.ngay_tao) = :year " +
+            "AND DATEPART(MONTH, dh.ngay_tao) = :month " +
+            "LEFT JOIN yeu_cau_tra_hang ycth ON spct.id = ycth.id_spct " +
+            "AND ycth.trangThai = 3 " +
+            "AND DATEPART(YEAR, ycth.ngay_duyet) = :year " +
+            "AND DATEPART(MONTH, ycth.ngay_duyet) = :month " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             "ORDER BY total_quantity_sold DESC " +
@@ -127,14 +152,20 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
+            "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
+            "AND dh.trang_thai = 3 " +
+            "AND DATEPART(YEAR, dh.ngay_tao) = :year " +
+            "AND DATEPART(MONTH, dh.ngay_tao) = :month", nativeQuery = true)
     Long countBestSellingProductsByMonth(@Param("year") Integer year, @Param("month") Integer month);
 
     @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
-            "COALESCE(SUM(ctdh.so_luong), 0) AS total_quantity_sold, " +
+            "(COALESCE(SUM(ctdh.so_luong), 0) - COALESCE(SUM(ycth.so_luong), 0)) AS total_quantity_sold, " +
+            "COALESCE(SUM(ycth.so_luong), 0) AS so_luot_tra_hang, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
             "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
@@ -150,7 +181,10 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "AND dh.trang_thai = 3 " +
-            "AND (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "AND DATEPART(YEAR, dh.ngay_tao) = :year " +
+            "LEFT JOIN yeu_cau_tra_hang ycth ON spct.id = ycth.id_spct " +
+            "AND ycth.trangThai = 3 " +
+            "AND DATEPART(YEAR, ycth.ngay_duyet) = :year " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             "ORDER BY total_quantity_sold DESC " +
@@ -162,8 +196,15 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
+            "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
+            "AND dh.trang_thai = 3 " +
+            "AND DATEPART(YEAR, dh.ngay_tao) = :year", nativeQuery = true)
     Long countBestSellingProductsByYear(@Param("year") Integer year);
+
+
+
     @Query("SELECT new com.example.scent.dto.BestSellingSanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +
@@ -187,6 +228,4 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer>{
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate " +
             "ORDER BY SUM(ctdh.soLuong) DESC")
     List<BestSellingSanPhamInfoDTO> findTopSellingProducts();
-
-
 }

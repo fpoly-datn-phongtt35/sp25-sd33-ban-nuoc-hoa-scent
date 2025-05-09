@@ -19,6 +19,15 @@ public class BestSellingProductDTO {
     private Integer soLuongTonKho;
     private Long totalQuantitySold;
     private boolean stockWarning; // True if soLuongTonKho < 7
+    private Long soLuotTraHang;
+
+    public Long getSoLuotTraHang() {
+        return soLuotTraHang;
+    }
+
+    public void setSoLuotTraHang(Long soLuotTraHang) {
+        this.soLuotTraHang = soLuotTraHang;
+    }
 
     public String getStockStatus() {
         return stockStatus;
@@ -37,7 +46,7 @@ public class BestSellingProductDTO {
     // Constructor
 
 
-    public BestSellingProductDTO(Integer idSanPham, String tenSanPham, String moTaSanPham, String thuongHieu, String nhomHuong, String danhMuc, String huongDau, String huongGiua, String huongCuoi, String stockStatus, Integer idSpct, Integer dungTich, Integer soLuongTonKho, Long totalQuantitySold, boolean stockWarning) {
+    public BestSellingProductDTO(Integer idSanPham, String tenSanPham, String moTaSanPham, String thuongHieu, String nhomHuong, String danhMuc, String huongDau, String huongGiua, String huongCuoi, String stockStatus, Integer idSpct, Integer dungTich, Integer soLuongTonKho, Long totalQuantitySold, boolean stockWarning, Long soLuotTraHang) {
         this.idSanPham = idSanPham;
         this.tenSanPham = tenSanPham;
         this.moTaSanPham = moTaSanPham;
@@ -53,6 +62,7 @@ public class BestSellingProductDTO {
         this.soLuongTonKho = soLuongTonKho;
         this.totalQuantitySold = totalQuantitySold;
         this.stockWarning = stockWarning;
+        this.soLuotTraHang = soLuotTraHang;
     }
 
     // Getters and setters

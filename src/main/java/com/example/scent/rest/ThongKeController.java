@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -130,44 +131,53 @@ public class ThongKeController {
 
     //===========sản phẩm====================
     @GetMapping("/best-selling/ngay")
-    public Page<BestSellingProductDTO> getBestSellingProductsByDateRange(
-            @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
+    public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByDateRange(
+            @RequestParam(value = "startDate") String startDate,
+            @RequestParam(value = "endDate") String endDate,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
+        if (startDate == null || endDate == null || startDate.isEmpty() || endDate.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
         Pageable pageable = PageRequest.of(page, size);
-        return thongKeService.getBestSellingProductsByDateRange(startDate, endDate, pageable);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByDateRange(startDate, endDate, pageable));
     }
 
-    // Best-selling products by week with pagination
     @GetMapping("/best-selling/tuan")
-    public Page<BestSellingProductDTO> getBestSellingProductsByWeek(
-            @RequestParam(value = "year", required = false) Integer year,
-            @RequestParam(value = "week", required = false) Integer week,
+    public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByWeek(
+            @RequestParam(value = "year") Integer year,
+            @RequestParam(value = "week") Integer week,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
+        if (year == null || week == null || week < 1 || week > 52) {
+            return ResponseEntity.badRequest().build();
+        }
         Pageable pageable = PageRequest.of(page, size);
-        return thongKeService.getBestSellingProductsByWeek(year, week, pageable);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByWeek(year, week, pageable));
     }
 
-    // Best-selling products by month with pagination
     @GetMapping("/best-selling/thang")
-    public Page<BestSellingProductDTO> getBestSellingProductsByMonth(
-            @RequestParam(value = "year", required = false) Integer year,
-            @RequestParam(value = "month", required = false) Integer month,
+    public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByMonth(
+            @RequestParam(value = "year") Integer year,
+            @RequestParam(value = "month") Integer month,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
+        if (year == null || month == null || month < 1 || month > 12) {
+            return ResponseEntity.badRequest().build();
+        }
         Pageable pageable = PageRequest.of(page, size);
-        return thongKeService.getBestSellingProductsByMonth(year, month, pageable);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByMonth(year, month, pageable));
     }
 
-    // Best-selling products by year with pagination
     @GetMapping("/best-selling/nam")
-    public Page<BestSellingProductDTO> getBestSellingProductsByYear(
-            @RequestParam(value = "year", required = false) Integer year,
+    public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByYear(
+            @RequestParam(value = "year") Integer year,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
+        if (year == null) {
+            return ResponseEntity.badRequest().build();
+        }
         Pageable pageable = PageRequest.of(page, size);
-        return thongKeService.getBestSellingProductsByYear(year, pageable);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByYear(year, pageable));
     }
 }

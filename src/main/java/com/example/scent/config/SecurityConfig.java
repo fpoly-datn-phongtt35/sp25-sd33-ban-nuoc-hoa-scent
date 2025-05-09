@@ -225,19 +225,16 @@ public class SecurityConfig {
                 "/api/chat/products-by-brand/**", "/api/chat/fragrance-groups",
                 "/api/chat/products-by-fragrance-group/**", "/api/chat/top-10-products")
             .permitAll()
-
                 .requestMatchers("rest/spct/getAll","rest/spct/getByidSanPham/**","rest/spct/add","rest/spct/update").permitAll()
                 .requestMatchers("/api/thong-ke/doanh-thu/nam","/api/thong-ke/doanh-thu/thang","/api/thong-ke/doanh-thu/tuan","/api/thong-ke/doanh-thu/ngay"
                         ,"/api/thong-ke/so-luong-don/nam","/api/thong-ke/so-luong-don/thang","/api/thong-ke/so-luong-don/tuan","/api/thong-ke/so-luong-don/ngay","/api/thong-ke/tong-quan","/api/thong-ke/count-by-luong-ban-trang-thai","rest/nong-do"
                         ,"/api/thong-ke/tong-quan/tuan","/api/thong-ke/tong-quan/thang","/api/thong-ke/tong-quan/nam","/api/thong-ke/tong-quan/ngay",
                         "/api/thong-ke/best-selling/ngay","/api/thong-ke/best-selling/tuan","/api/thong-ke/best-selling/thang","/api/thong-ke/best-selling/nam","rest/tai-khoan/setTrangThaiByIdTaiKhoan/**","/api/tra-hang").permitAll()
-//                         // // // // // // // // // // // // // // // // // // // //
                 .requestMatchers("/rest/tai-khoan/users","/api/chat/create-guest","/api/chat/users-with-messages/**","/api/chat/messages/user/**","/api/chat/messages/**","/api/chat/webhook/**","/api/cart/remove-multiple/**","/api/danhgia/user/**","/api/danhgia/**","/api/danhgia/sanpham/**","/rest/san-pham/statuse/**","/rest/tai-khoan/**","/rest/spct/status/multiple","/rest/spct/status/**","/rest/tai-khoan/search-by-sdt/**","/rest/san-pham/recommended","/rest/don-hang/latest/**","/rest/phieu-giam-gia/check/**","/ws/**","api/danhgia","api/danhgia/sanpham/**","/rest/don-hang/diachi/**","/rest/don-hang/update-address/**").permitAll()
                 .requestMatchers("/api/chat/messages/user/{adminId}/{userId}").permitAll()
                 .requestMatchers("/api/chat/add-user/**","/api/tra-hang/defective-products","/api/tra-hang/send-to-manufacturer/**","/api/chat/{productId}/details/**","/api/chat/chat-search/**","/api/thong-ke/top-san-pham/**","/api/chat/recall/**","/api/chat/brands","/api/chat/products-by-brand/**","/api/chat/fragrance-groups","/api/chat/products-by-fragrance-group/**","/api/chat/top-10-products").permitAll()
                 .requestMatchers("/api/tra-hang/{idTaiKhoan}/history","/api/tra-hang/user/{idTaiKhoan}/**").permitAll()
                 .requestMatchers("/uploads/**","/api/tra-hang/sum-so-luong/**","/api/tra-hang/tinh-trang/**","/api/tra-hang/{id}/complete/**","/api/tra-hang/{id}/reject/**","/api/tra-hang/{id}/approve/**","/api/tra-hang/**","/rest/don-hang/user/{idTaiKhoan}/completed-orders","/rest/ctdh/don-hang/{idDonHang}/spct").permitAll()
-
             .anyRequest().authenticated())
         // http.formLogin(Customizer.withDefaults()); //xác thực bằng gửi biểu mẫu yêu
         // cầu đăng nhập

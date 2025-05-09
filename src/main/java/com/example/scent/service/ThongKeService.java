@@ -414,7 +414,6 @@ public class ThongKeService {
         return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-
     private List<BestSellingProductDTO> mapToBestSellingProductDTO(List<Object[]> results) {
         List<BestSellingProductDTO> dtos = new ArrayList<>();
         for (Object[] result : results) {
@@ -431,12 +430,13 @@ public class ThongKeService {
                     (String) result[6], // huongDau
                     (String) result[7], // huongGiua
                     (String) result[8], // huongCuoi
-                    (String) result[13], // stockStatus
+                    (String) result[14], // stockStatus
                     (Integer) result[9], // idSpct
                     (Integer) result[10], // dungTich
                     soLuongTonKho, // soLuongTonKho
                     ((Number) result[12]).longValue(), // totalQuantitySold
-                    stockWarning // stockWarning
+                    stockWarning, // stockWarning
+                    ((Number) result[13]).longValue() // soLuotTraHang
             ));
         }
         return dtos;
