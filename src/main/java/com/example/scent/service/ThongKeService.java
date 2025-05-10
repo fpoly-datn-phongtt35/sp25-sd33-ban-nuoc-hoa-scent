@@ -417,26 +417,30 @@ public class ThongKeService {
     private List<BestSellingProductDTO> mapToBestSellingProductDTO(List<Object[]> results) {
         List<BestSellingProductDTO> dtos = new ArrayList<>();
         for (Object[] result : results) {
+            if (result.length < 15) { // Kiểm tra độ dài mảng (bây giờ là 15 cột)
+                System.out.println("Invalid result length: " + result.length);
+                continue;
+            }
             Integer soLuongTonKho = (Integer) result[11];
             boolean stockWarning = soLuongTonKho < 7;
 
             dtos.add(new BestSellingProductDTO(
-                    (Integer) result[0], // idSanPham
-                    (String) result[1], // tenSanPham
-                    (String) result[2], // moTaSanPham
-                    (String) result[3], // thuongHieu
-                    (String) result[4], // nhomHuong
-                    (String) result[5], // danhMuc
-                    (String) result[6], // huongDau
-                    (String) result[7], // huongGiua
-                    (String) result[8], // huongCuoi
-                    (String) result[14], // stockStatus
-                    (Integer) result[9], // idSpct
+                    (Integer) result[0],  // idSanPham
+                    (String) result[1],   // tenSanPham
+                    (String) result[2],   // moTaSanPham
+                    (String) result[3],   // thuongHieu
+                    (String) result[4],   // nhomHuong
+                    (String) result[5],   // danhMuc
+                    (String) result[6],   // huongDau
+                    (String) result[7],   // huongGiua
+                    (String) result[8],   // huongCuoi
+                    (String) result[13],  // stockStatus
+                    (Integer) result[9],  // idSpct
                     (Integer) result[10], // dungTich
-                    soLuongTonKho, // soLuongTonKho
+                    soLuongTonKho,        // soLuongTonKho
                     ((Number) result[12]).longValue(), // totalQuantitySold
-                    stockWarning, // stockWarning
-                    ((Number) result[13]).longValue() // soLuotTraHang
+                    stockWarning,         // stockWarning
+                    ((Number) result[14]).longValue()  // soLuotTraHang
             ));
         }
         return dtos;
