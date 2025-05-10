@@ -11,7 +11,10 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { debounceTime, Subject } from 'rxjs';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
+// Giao diện dữ liệu giữ nguyên như trong mã gốc
 interface ThongKeDonHangDTO {
   tongDoanhThu: number;
   doanhThuOnline: number;
@@ -92,6 +95,7 @@ interface Page<T> {
   styleUrls: ['./statistics.component.scss']
 })
 export class StatisticsComponent implements OnInit {
+  // Các thuộc tính giữ nguyên như trong mã gốc
   thongKeTongQuan: ThongKeDonHangDTO | null = null;
   thongKeTongQuanFiltered: ThongKeDonHangDTO | null = null;
   bestSellingProducts: BestSellingProductDTO[] = [];
@@ -169,7 +173,7 @@ export class StatisticsComponent implements OnInit {
     this.loadDataForSelectedTimeType();
   }
 
-  // Hàm định dạng ngày thành YYYY-MM-DD
+  // Các phương thức gốc giữ nguyên, chỉ thêm các phương thức xuất Excel
   private formatDate(date: Date | string): string {
     if (!date) return '';
     const d = new Date(date);
@@ -338,11 +342,11 @@ export class StatisticsComponent implements OnInit {
         break;
     }
 
-    console.log('Gửi request API:', url); // Log URL để debug
+    console.log('Gửi request API:', url);
 
     this.http.get<Page<BestSellingProductDTO>>(url).subscribe({
       next: (data) => {
-        console.log('Dữ liệu sản phẩm bán chạy:', data); // Log dữ liệu trả về
+        console.log('Dữ liệu sản phẩm bán chạy:', data);
         this.bestSellingProductsPage = data;
         this.bestSellingProducts = data.content || [];
         this.currentPage = data.page.number;
@@ -350,7 +354,7 @@ export class StatisticsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi khi tải sản phẩm bán chạy:', err); // Log lỗi
+        console.error('Lỗi khi tải sản phẩm bán chạy:', err);
         this.errorMessage = err.status === 400 ? 'Dữ liệu bộ lọc không hợp lệ. Vui lòng kiểm tra lại.' : 'Lỗi khi tải dữ liệu sản phẩm bán chạy.';
         this.bestSellingProducts = [];
         this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
@@ -358,6 +362,63 @@ export class StatisticsComponent implements OnInit {
       }
     });
   }
+
+// Hàm mới để lấy tất cả sản phẩm cho xuất Excel
+loadAllBestSellingProducts(): Promise<BestSellingProductDTO[]> {
+  return new Promise((resolve, reject) => {
+    if (!this.validateFilters()) {
+      this.errorMessage = 'Bộ lọc không hợp lệ cho xuất sản phẩm.';
+      this.cdr.detectChanges();
+      reject('Bộ lọc không hợp lệ');
+      return;
+    }
+
+    const allProducts: BestSellingProductDTO[] = [];
+    let currentPage = 0;
+    const pageSize = 10000; // Sử dụng pageSize hợp lý (100) để tối ưu hóa
+
+    const fetchPage = (page: number) => {
+      let url = '';
+      switch (this.selectedTimeType) {
+        case 'ngay':
+          url = `http://localhost:8080/api/thong-ke/best-selling/ngay?startDate=${this.formatDate(this.startDate)}&endDate=${this.formatDate(this.endDate)}&page=${page}&size=${pageSize}`;
+          break;
+        case 'tuan':
+          url = `http://localhost:8080/api/thong-ke/best-selling/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}&page=${page}&size=${pageSize}`;
+          break;
+        case 'thang':
+          url = `http://localhost:8080/api/thong-ke/best-selling/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}&page=${page}&size=${pageSize}`;
+          break;
+        case 'nam':
+          url = `http://localhost:8080/api/thong-ke/best-selling/nam?year=${this.selectedYear}&page=${page}&size=${pageSize}`;
+          break;
+      }
+
+      this.http.get<Page<BestSellingProductDTO>>(url).subscribe({
+        next: (data) => {
+          if (data && data.content) {
+            allProducts.push(...data.content);
+            if (page + 1 < data.page.totalPages) {
+              fetchPage(page + 1); // Tiếp tục lấy trang tiếp theo
+            } else {
+              resolve(allProducts); // Hoàn thành khi lấy hết các trang
+            }
+          } else {
+            resolve(allProducts); // Nếu không có dữ liệu, trả về mảng rỗng
+          }
+        },
+        error: (err) => {
+          console.error('Lỗi khi tải tất cả sản phẩm bán chạy:', err);
+          this.errorMessage = 'Lỗi khi tải dữ liệu tất cả sản phẩm bán chạy. Vui lòng kiểm tra kết nối hoặc liên hệ admin.';
+          this.cdr.detectChanges();
+          reject(err);
+        }
+      });
+    };
+
+    fetchPage(currentPage); // Bắt đầu lấy từ trang 0
+  });
+}
 
   loadDataForSelectedTimeType(): void {
     if (!this.validateFilters()) {
@@ -581,4 +642,225 @@ export class StatisticsComponent implements OnInit {
 
     return range;
   }
+
+// Hàm xuất Excel cho tab Đơn hàng - Doanh thu
+exportToExcelDonHangDoanhThu(): void {
+  if (!this.thongKeTongQuan || !this.thongKeTongQuanFiltered || !this.doanhThuData || !this.soLuongDonData) {
+    this.errorMessage = 'Không có dữ liệu để xuất Excel.';
+    this.cdr.detectChanges();
+    return;
+  }
+
+  const workbook = XLSX.utils.book_new();
+
+  // 1. Tổng quan cố định
+  const tongQuanData = [
+    ['Tổng quan cố định'],
+    ['Tổng doanh thu', this.thongKeTongQuan.tongDoanhThu],
+    ['Doanh thu online', this.thongKeTongQuan.doanhThuOnline],
+    ['Doanh thu offline', this.thongKeTongQuan.doanhThuOffline],
+    ['Tổng số lượng đơn', this.thongKeTongQuan.soLuongDon],
+    ['Số lượng đơn online', this.thongKeTongQuan.soLuongDonOnline],
+    ['Số lượng đơn offline', this.thongKeTongQuan.soLuongDonOffline],
+    ['Online hoàn thành', this.thongKeTongQuan.onlineHoanThanh],
+    ['Online không hoàn thành', this.thongKeTongQuan.onlineHuy],
+    ['Offline hoàn thành', this.thongKeTongQuan.offlineHoanThanh],
+    ['Offline hủy', this.thongKeTongQuan.offlineHuy],
+    [],
+  ];
+
+  // 2. Tổng quan theo bộ lọc
+  const tongQuanFilteredData = [
+    ['Tổng quan theo bộ lọc'],
+    ['Tổng doanh thu', this.thongKeTongQuanFiltered.tongDoanhThu],
+    ['Doanh thu online', this.thongKeTongQuanFiltered.doanhThuOnline],
+    ['Doanh thu offline', this.thongKeTongQuanFiltered.doanhThuOffline],
+    ['Tổng số lượng đơn', this.thongKeTongQuanFiltered.soLuongDon],
+    ['Số lượng đơn online', this.thongKeTongQuanFiltered.soLuongDonOnline],
+    ['Số lượng đơn offline', this.thongKeTongQuanFiltered.soLuongDonOffline],
+    ['Online hoàn thành', this.thongKeTongQuanFiltered.onlineHoanThanh],
+    ['Online không hoàn thành', this.thongKeTongQuanFiltered.onlineHuy],
+    ['Offline hoàn thành', this.thongKeTongQuanFiltered.offlineHoanThanh],
+    ['Offline hủy', this.thongKeTongQuanFiltered.offlineHuy],
+    [],
+  ];
+
+  // 3. Chi tiết doanh thu
+  const chiTietDoanhThuData = [
+    ['Chi tiết doanh thu'],
+    ['Thời gian', 'Tổng doanh thu', 'Doanh thu online', 'Doanh thu offline', 'Tỉ lệ tăng trưởng (%)'],
+    ...this.doanhThuData.map(item => [
+      item.thoiGian,
+      item.tongDoanhThu,
+      item.doanhThuOnline,
+      item.doanhThuOffline,
+      item.tiLeTangTruongDoanhThu !== null ? item.tiLeTangTruongDoanhThu : 'N/A'
+    ]),
+    [],
+  ];
+
+  // 4. Số lượng đơn
+  const soLuongDonData = [
+    ['Số lượng đơn'],
+    ['Thời gian', 'Số lượng đơn'],
+    ...this.soLuongDonData.map(item => [item.thoiGian, item.soLuongDon]),
+  ];
+
+  // Gộp dữ liệu vào một sheet
+  const sheetData = [
+    ...tongQuanData,
+    ...tongQuanFilteredData,
+    ...chiTietDoanhThuData,
+    ...soLuongDonData,
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+  // Tự động điều chỉnh kích thước cột dựa trên nội dung
+  const colWidths = [];
+  const minWidth = 15; // Tăng chiều rộng tối thiểu để tránh cột quá hẹp
+  const maxWidth = 60; // Tăng chiều rộng tối đa để chứa dữ liệu lớn
+  const numberMultiplier = 1.5; // Hệ số nhân cho số (để tính đến định dạng tiền tệ)
+  const stringMultiplier = 1.2; // Hệ số nhân cho chuỗi (để tính đến font và khoảng cách)
+
+  for (let i = 0; i < sheetData[0].length; i++) {
+    let maxWidthForCol = 0;
+    for (let j = 0; j < sheetData.length; j++) {
+      const cellValue = sheetData[j][i] ? sheetData[j][i].toString() : '';
+      let width;
+
+      // Nếu là số, nhân với hệ số để tính đến định dạng tiền tệ (dấu phẩy, VNĐ)
+      if (!isNaN(Number(cellValue)) && cellValue !== 'N/A') {
+        width = (cellValue.length * numberMultiplier) + 5; // Thêm padding cho số
+      } else {
+        width = (cellValue.length * stringMultiplier) + 2; // Nhân hệ số cho chuỗi
+      }
+
+      maxWidthForCol = Math.max(maxWidthForCol, width);
+    }
+    // Giới hạn chiều rộng trong khoảng minWidth và maxWidth
+    maxWidthForCol = Math.max(minWidth, Math.min(maxWidth, maxWidthForCol));
+    colWidths.push({ wch: maxWidthForCol });
+  }
+  ws['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(workbook, ws, 'DonHang-DoanhThu');
+
+  // Tạo tên file dựa trên selectedTimeType
+  let fileName = 'don_hang_doanh_thu';
+  switch (this.selectedTimeType) {
+    case 'ngay':
+      fileName += `_${this.startDate}_den_${this.endDate}`;
+      break;
+    case 'tuan':
+      fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+      break;
+    case 'thang':
+      fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+      break;
+    case 'nam':
+      fileName += `_${this.selectedYear}`;
+      break;
+  }
+
+  // Tạo và tải file
+  const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  saveAs(blob, `${fileName}.xlsx`);
+}
+// Hàm xuất Excel cho tab Sản phẩm
+async exportToExcelSanPham(): Promise<void> {
+  try {
+    const products = await this.loadAllBestSellingProducts();
+    if (!products || products.length === 0) {
+      this.errorMessage = 'Không có dữ liệu sản phẩm để xuất Excel.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Chuẩn bị dữ liệu cho Excel
+    const productData = [
+      ['Sản phẩm bán chạy'],
+      [
+        'Tên sản phẩm',
+        'Thương hiệu',
+        'Danh mục',
+        'Dung tích (ml)',
+        'Số lượng bán',
+        'Số lượt trả hàng',
+        'Số lượng tồn kho',
+        'Trạng thái tồn kho'
+      ],
+      ...products.map(product => [
+        product.tenSanPham || 'N/A',
+        product.thuongHieu || 'N/A',
+        product.danhMuc || 'N/A',
+        product.dungTich || 0,
+        product.totalQuantitySold || 0,
+        product.soLuotTraHang || 0,
+        product.soLuongTonKho || 0,
+        product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 10 ? 'Sắp hết hàng' : 'Còn hàng')
+      ])
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(productData);
+
+    // Tự động điều chỉnh kích thước cột dựa trên nội dung
+    const colWidths = [];
+    const minWidth = 15; // Tăng chiều rộng tối thiểu
+    const maxWidth = 60; // Tăng chiều rộng tối đa
+    const numberMultiplier = 1.5; // Hệ số nhân cho số
+    const stringMultiplier = 1.2; // Hệ số nhân cho chuỗi
+
+    for (let i = 0; i < productData[0].length; i++) {
+      let maxWidthForCol = 0;
+      for (let j = 0; j < productData.length; j++) {
+        const cellValue = productData[j][i] ? productData[j][i].toString() : '';
+        let width;
+
+        // Nếu là số, nhân với hệ số để tính đến định dạng số
+        if (!isNaN(Number(cellValue)) && cellValue !== 'N/A') {
+          width = (cellValue.length * numberMultiplier) + 5; // Thêm padding cho số
+        } else {
+          width = (cellValue.length * stringMultiplier) + 2; // Nhân hệ số cho chuỗi
+        }
+
+        maxWidthForCol = Math.max(maxWidthForCol, width);
+      }
+      // Giới hạn chiều rộng trong khoảng minWidth và maxWidth
+      maxWidthForCol = Math.max(minWidth, Math.min(maxWidth, maxWidthForCol));
+      colWidths.push({ wch: maxWidthForCol });
+    }
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(workbook, ws, 'SanPham');
+
+    // Tạo tên file dựa trên selectedTimeType
+    let fileName = 'thong_ke_san_pham';
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        fileName += `_${this.startDate}_den_${this.endDate}`;
+        break;
+      case 'tuan':
+        fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+        break;
+      case 'thang':
+        fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+        break;
+      case 'nam':
+        fileName += `_${this.selectedYear}`;
+        break;
+    }
+
+    // Tạo và tải file
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, `${fileName}.xlsx`);
+  } catch (error) {
+    console.error('Lỗi khi xuất Excel:', error);
+    this.errorMessage = 'Lỗi khi xuất dữ liệu sản phẩm ra Excel. Vui lòng kiểm tra kết nối hoặc liên hệ admin.';
+    this.cdr.detectChanges();
+  }
+}
 }

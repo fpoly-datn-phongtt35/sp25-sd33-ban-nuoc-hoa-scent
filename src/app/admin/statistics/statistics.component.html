@@ -65,6 +65,17 @@
     </select>
   </div>
 
+<!-- Export Button (Global) -->
+<div class="export-button-container" *ngIf="validateFilters()">
+  <button
+    mat-raised-button
+    class="export-button"
+    (click)="selectedTab === 'don-hang-doanh-thu' ? exportToExcelDonHangDoanhThu() : exportToExcelSanPham()"
+    [disabled]="!validateFilters()"
+  >
+    <i class="fas fa-download"></i> Xuất Excel
+  </button>
+</div>
   <!-- Tab Content -->
   <div class="tab-content">
     <!-- Tab 1: Đơn hàng - Doanh thu -->
@@ -245,3 +256,15 @@
     </div>
   </div>
 </div>
+
+<style>
+  .export-button-container {
+    margin: 10px 0;
+    text-align: center;
+  }
+  .error-message {
+    color: red;
+    text-align: center;
+    margin: 10px 0;
+  }
+</style>

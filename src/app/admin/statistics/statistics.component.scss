@@ -256,3 +256,47 @@
   margin-bottom: 20px;
   font-weight: bold;
 }
+/* Export Button */
+.export-button-container {
+  margin: 20px 0;
+  text-align: left; /* Giữ nút bên phải (hoặc đổi thành left nếu muốn bên trái) */
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Khoảng cách giữa biểu tượng và chữ */
+  padding: 12px 24px; /* Tăng padding để nút lớn hơn, dễ nhấn hơn */
+  font-size: 1.1em; /* Tăng kích thước chữ một chút */
+  font-weight: 600; /* Font trọng lượng vừa phải, không quá đậm */
+  color: white;
+  background: linear-gradient(135deg, #4CAF50, #3d8b40); /* Gradient xanh lá cho cảm giác hiện đại */
+  border: none;
+  border-radius: 6px; /* Bo góc mềm mại hơn */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Tăng bóng để tạo chiều sâu */
+  transition: all 0.3s ease; /* Hiệu ứng mượt mà cho tất cả thay đổi */
+  cursor: pointer;
+}
+
+.export-button i {
+  font-size: 0.9em; /* Kích thước biểu tượng nhỏ hơn chữ một chút */
+}
+
+.export-button:hover:enabled {
+  background: linear-gradient(135deg, #45a049, #367c39); /* Gradient đậm hơn khi hover */
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2); /* Tăng bóng khi hover */
+  transform: translateY(-2px); /* Nâng nút lên nhẹ hơn */
+}
+
+.export-button:active:enabled {
+  transform: translateY(1px); /* Hiệu ứng nhấn xuống */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Giảm bóng khi nhấn */
+}
+
+.export-button:disabled {
+  background: #cccccc; /* Màu xám khi vô hiệu hóa */
+  color: #666; /* Chữ xám để dễ đọc hơn */
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
