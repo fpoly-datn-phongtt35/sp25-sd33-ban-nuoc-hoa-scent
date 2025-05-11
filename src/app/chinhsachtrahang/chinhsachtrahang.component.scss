@@ -1,0 +1,119 @@
+/* Guidelines Section */
+.guidelines-section {
+    padding: 60px 0;
+    background-color: #fff;
+    font-family: 'Playfair Display', serif;
+  }
+  
+  .return-policy {
+    background: linear-gradient(135deg, #fff7f0 0%, #ffe7e7 100%); /* Gradient cam nhạt - hồng nhạt */
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .section-title {
+    font-size: 2.5rem;
+    color: #4a2c2a;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    animation: fadeIn 1s ease-in-out;
+  }
+  
+  .section-title::after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 3px;
+    background-color: #e91e63;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .section-description {
+    font-size: 1.1rem;
+    color: #5d4037;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.8;
+    animation: fadeIn 1.2s ease-in-out;
+  }
+  
+  .policy-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+  }
+  
+  .policy-item {
+    flex: 1;
+    min-width: 300px;
+    max-width: 600px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+    animation: slideUp 1s ease-in-out;
+  }
+  
+  .policy-item:hover {
+    transform: translateY(-5px);
+  }
+  
+  .policy-item h3 {
+    font-size: 1.5rem;
+    color: #4a2c2a;
+    margin-bottom: 10px;
+  }
+  
+  .policy-item p {
+    font-size: 1rem;
+    color: #5d4037;
+    line-height: 1.6;
+  }
+  
+  /* Hiệu ứng animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .section-title {
+      font-size: 2rem;
+    }
+  
+    .policy-details {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .policy-item {
+      max-width: 100%;
+    }
+  }

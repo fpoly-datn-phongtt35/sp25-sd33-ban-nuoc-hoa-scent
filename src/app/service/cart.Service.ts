@@ -25,7 +25,6 @@ export interface CartItem {
 
 export interface CartItemWithKey extends CartItem {
   key: string;
-  
 }
 
 export interface BackendCartItem {
@@ -45,6 +44,7 @@ export interface BackendCartItem {
 export class CartService {
   private cart: Map<string, CartItem> = new Map();
   private cartSubject: BehaviorSubject<Map<string, CartItem>> = new BehaviorSubject(new Map());
+  private cartItemCountSubject: BehaviorSubject<number> = new BehaviorSubject<number>(0); // Thêm để theo dõi số lượng
   private apiUrl = 'http://localhost:8080/api/cart';
   private userId: string | null = null;
   private selectedCartItems: CartItemWithKey[] = [];
@@ -59,6 +59,7 @@ export class CartService {
     this.loadCart();
     this.setupWebSocket();
   }
+
   updateStock(productId: number, newStock: number): void {
     this.cart.forEach((item, key) => {
       if (item.product.idSanPham === productId) {
@@ -66,7 +67,9 @@ export class CartService {
       }
     });
     this.cartSubject.next(this.cart);
+    this.updateCartItemCount(); // Cập nhật số lượng sau khi thay đổi giỏ hàng
   }
+
   private setupWebSocket(): void {
     const userId = this.getUserId();
     if (userId) {
@@ -91,6 +94,7 @@ export class CartService {
     });
     if (updated) {
       this.cartSubject.next(new Map(this.cart));
+      this.updateCartItemCount(); // Cập nhật số lượng
     }
   }
 
@@ -144,6 +148,7 @@ export class CartService {
     if (!isPlatformBrowser(this.platformId)) {
       this.cart = new Map();
       this.cartSubject.next(new Map(this.cart));
+      this.updateCartItemCount();
       return;
     }
 
@@ -151,6 +156,7 @@ export class CartService {
     if (!storedCart) {
       this.cart = new Map();
       this.cartSubject.next(new Map(this.cart));
+      this.updateCartItemCount();
       return;
     }
 
@@ -176,11 +182,13 @@ export class CartService {
         }
       });
       this.cartSubject.next(new Map(this.cart));
+      this.updateCartItemCount();
     } catch (error) {
       console.error('❌ Lỗi khi parse JSON giỏ hàng tạm từ localStorage:', error);
       localStorage.removeItem('temp-cart');
       this.cart = new Map();
       this.cartSubject.next(new Map(this.cart));
+      this.updateCartItemCount();
     }
   }
 
@@ -210,6 +218,7 @@ export class CartService {
         }
         this.mergeTempCart(userId);
         this.cartSubject.next(new Map(this.cart));
+        this.updateCartItemCount();
       }),
       catchError(err => {
         console.error('❌ Lỗi khi tải giỏ hàng từ backend:', err);
@@ -221,6 +230,7 @@ export class CartService {
         });
         this.cart = new Map();
         this.cartSubject.next(new Map(this.cart));
+        this.updateCartItemCount();
         return throwError(err);
       })
     ).subscribe();
@@ -353,6 +363,7 @@ export class CartService {
     }
     this.saveCart();
     this.cartSubject.next(new Map(this.cart));
+    this.updateCartItemCount(); // Cập nhật số lượng
     Swal.fire({
       icon: 'success',
       title: 'Đã thêm vào giỏ hàng',
@@ -401,6 +412,7 @@ export class CartService {
           this.cart.set(productKey, item);
           this.saveCart();
           this.cartSubject.next(new Map(this.cart));
+          this.updateCartItemCount();
         }
       }
     }
@@ -432,6 +444,7 @@ export class CartService {
         this.cart.delete(productKey);
         this.saveCart();
         this.cartSubject.next(new Map(this.cart));
+        this.updateCartItemCount();
       }
     }
   }
@@ -451,6 +464,7 @@ export class CartService {
         });
         this.saveCart();
         this.cartSubject.next(new Map(this.cart));
+        this.updateCartItemCount();
         resolve();
         return;
       }
@@ -527,6 +541,7 @@ export class CartService {
       this.cart.clear();
       this.saveCart();
       this.cartSubject.next(new Map(this.cart));
+      this.updateCartItemCount();
     }
   }
 
@@ -534,6 +549,7 @@ export class CartService {
     this.cart.clear();
     this.saveCart();
     this.cartSubject.next(new Map(this.cart));
+    this.updateCartItemCount();
   }
 
   private saveCart(): void {
@@ -561,5 +577,19 @@ export class CartService {
 
   public reloadCart(): void {
     this.loadCart();
+  }
+
+  // Thêm phương thức để tính tổng số lượng sản phẩm
+  private updateCartItemCount(): void {
+    const totalQuantity = Array.from(this.cart.values()).reduce((sum, item) => sum + item.quantity, 0);
+    this.cartItemCountSubject.next(totalQuantity);
+  }
+
+  getCartItemCount(): Observable<number> {
+    return this.cartItemCountSubject.asObservable();
+  }
+
+  getCartItemCountValue(): number {
+    return Array.from(this.cart.values()).reduce((sum, item) => sum + item.quantity, 0);
   }
 }

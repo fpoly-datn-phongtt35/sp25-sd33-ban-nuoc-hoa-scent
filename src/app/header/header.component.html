@@ -4,10 +4,21 @@
   </div>
   <nav class="navbar">
     <a routerLink="/">Trang Chủ</a>
+    <a routerLink="/app-gioithieu">Giới thiệu</a>
+    <!-- Thanh tìm kiếm chỉ hiển thị trên trang chủ -->
+    <div class="search-box" *ngIf="isHomePage">
+      <input
+        type="text"
+        [(ngModel)]="query"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="🔍 Tìm kiếm sản phẩm..."
+        class="form-control">
+    </div>
   </nav>
   <div class="header-actions">
     <a class="icon-link" (click)="toggleShoppingCart()">
       <i class="bi bi-cart"></i>
+      <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
     </a>
     <ng-container *ngIf="isLoggedIn; else notLoggedIn">
       <div class="user-dropdown" (mouseenter)="showDropdown()" (mouseleave)="hideDropdown()">

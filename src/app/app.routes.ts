@@ -16,6 +16,11 @@ import { AccountInfoComponent } from './account-info/account-info.component';
 import { ContactComponent } from './contact/contact.component';
 import { TraHangComponent } from './tra-hang/tra-hang.component';
 import { TraHangUserComponent } from './tra-hang-user/tra-hang-user.component';
+import { GioithieuComponent } from './gioithieu/gioithieu.component';
+import { HuongdanmuahangComponent } from './huongdanmuahang/huongdanmuahang.component';
+import { HuongdanthanhtoanComponent } from './huongdanthanhtoan/huongdanthanhtoan.component';
+import { ChinhsachvanchuyenComponent } from './chinhsachvanchuyen/chinhsachvanchuyen.component';
+import { ChinhsachtrahangComponent } from './chinhsachtrahang/chinhsachtrahang.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -25,6 +30,7 @@ export const routes: Routes = [
   { path: 'app-order-id', component: OrderDetailUserIDComponent },
   { path: 'app-order-id/:orderId', component: OrderDetailUserIDComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'app-gioithieu', component: GioithieuComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'app-tra-hang', component: TraHangComponent },
   { path: 'app-tra-hang-user', component: TraHangUserComponent },
@@ -34,7 +40,11 @@ export const routes: Routes = [
   { path: 'order-details/:id', component: OrderDetailComponent },
   { path: 'product_admin', component: ProductAdminComponent, canActivate: [AdminGuard] },
   { path: 'login', component: LoginComponent },
+  { path: 'app-chinhsachtrahang', component: ChinhsachtrahangComponent },
+  { path: 'app-huongdanmuahang', component: HuongdanmuahangComponent },
+  { path: 'app-huongdanthanhtoan', component: HuongdanthanhtoanComponent },
   { path: 'detail/:id', component: ProductDetailComponent },
+  { path: 'app-chinhsachvanchuyen', component: ChinhsachvanchuyenComponent },
   { path: 'product/:id', component: ProductDetailComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'account-info', component: AccountInfoComponent }, // Route mới cho thông tin tài khoản

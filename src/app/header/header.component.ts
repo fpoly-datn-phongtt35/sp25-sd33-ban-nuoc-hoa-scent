@@ -1,28 +1,30 @@
-
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-
-import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TokenService } from '../service/token.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ChangePasswordModalComponent } from '../change-password/change-password.component';
 import { ShoppingCartComponent } from '../shopping-cart/shopping-cart.component';
 import { CartService } from '../service/cart.Service';
-import { TraHangComponent } from '../tra-hang/tra-hang.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, ShoppingCartComponent],
+  imports: [CommonModule, RouterModule, ShoppingCartComponent, FormsModule],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
+  @Input() query: string = '';
+  @Output() queryChange = new EventEmitter<string>();
+
   isShoppingCartOpen: boolean = false;
   isLoggedIn: boolean = false;
   username: string | null = null;
   isDropdownOpen: boolean = false;
+  isHomePage: boolean = true;
+  cartItemCount: number = 0; // Số lượng sản phẩm trong giỏ hàng
 
   constructor(
     private router: Router,
@@ -31,6 +33,23 @@ export class HeaderComponent {
     private modalService: NgbModal
   ) {
     this.checkLoginStatus();
+    this.checkRoute();
+    this.router.events.subscribe(() => {
+      this.checkRoute();
+    });
+  }
+
+  ngOnInit(): void {
+    // Lấy số lượng sản phẩm ban đầu từ giỏ hàng
+    this.cartItemCount = this.cartService.getCartItemCountValue();
+    // Theo dõi thay đổi số lượng giỏ hàng
+    this.cartService.getCartItemCount().subscribe(count => {
+      this.cartItemCount = count;
+    });
+  }
+
+  checkRoute(): void {
+    this.isHomePage = this.router.url === '/';
   }
 
   toggleShoppingCart() {
@@ -64,10 +83,10 @@ export class HeaderComponent {
       if (confirmLogout) {
         this.tokenService.removeToken();
         this.cartService.setUserId(null);
-        this.checkLoginStatus(); // Call this to update the login status
+        this.checkLoginStatus();
         alert('Bạn đã đăng xuất thành công!');
         this.router.navigate(['/']).then(() => {
-          window.location.reload(); // Optional: Force a page reload if needed
+          window.location.reload();
         });
       }
     } else {
@@ -91,5 +110,8 @@ export class HeaderComponent {
       keyboard: false,
     });
   }
- 
+
+  onSearchChange(newQuery: string): void {
+    this.queryChange.emit(newQuery);
+  }
 }

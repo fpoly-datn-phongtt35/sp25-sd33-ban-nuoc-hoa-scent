@@ -1,0 +1,177 @@
+/* Introduction Section */
+.introduction-section {
+    background: linear-gradient(135deg, #fff5f7 0%, #fef9e7 100%); /* Gradient hồng nhạt - vàng nhạt */
+    padding: 60px 0;
+    font-family: 'Playfair Display', serif; /* Font chữ sang trọng */
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .intro-content {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap; /* Để responsive trên màn hình nhỏ */
+  }
+  
+  /* Cột trái: Nội dung văn bản */
+  .intro-text {
+    flex: 1;
+    min-width: 500px; /* Đảm bảo nội dung không bị co quá nhỏ */
+  }
+  
+  .intro-title {
+    font-size: 2.5rem;
+    color: #4a2c2a; /* Màu nâu đậm sang trọng */
+    line-height: 1.3;
+    margin-bottom: 20px;
+    position: relative;
+    animation: fadeIn 1s ease-in-out;
+  }
+  
+  .intro-title::after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 3px;
+    background-color: #e91e63; /* Màu hồng đậm làm điểm nhấn */
+    bottom: -10px;
+    left: 0;
+  }
+  
+  .intro-description {
+    font-size: 1.1rem;
+    color: #5d4037; /* Màu nâu nhạt */
+    line-height: 1.8;
+    margin-bottom: 30px;
+    animation: fadeIn 1.2s ease-in-out;
+  }
+  
+  .intro-about,
+  .intro-values,
+  .intro-journey {
+    margin-bottom: 30px;
+  }
+  
+  .intro-about h2,
+  .intro-values h2,
+  .intro-journey h2 {
+    font-size: 1.8rem;
+    color: #4a2c2a;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .intro-about p,
+  .intro-journey p {
+    font-size: 1rem;
+    color: #5d4037;
+    line-height: 1.8;
+  }
+  
+  .intro-values ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .intro-values li {
+    font-size: 1rem;
+    color: #5d4037;
+    line-height: 1.8;
+    margin-bottom: 10px;
+    position: relative;
+    padding-left: 25px;
+  }
+  
+  .intro-values li::before {
+    content: '🌸'; /* Icon hoa làm điểm nhấn */
+    position: absolute;
+    left: 0;
+    font-size: 1.2rem;
+  }
+  
+  .intro-values li strong {
+    color: #e91e63; /* Màu hồng đậm cho phần nổi bật */
+  }
+  
+  /* Cột phải: Hai ảnh */
+  .intro-image {
+    flex: 1;
+    min-width: 400px; /* Đảm bảo ảnh không bị co quá nhỏ */
+    display: flex;
+    flex-direction: column; /* Sắp xếp ảnh theo chiều dọc */
+    gap: 20px; /* Khoảng cách giữa hai ảnh */
+  }
+  
+  .store-image {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Hiệu ứng bóng nhẹ */
+    transition: transform 0.3s ease-in-out;
+    animation: slideIn 1s ease-in-out;
+  }
+  
+  .store-image:hover {
+    transform: scale(1.05); /* Hiệu ứng phóng to nhẹ khi hover */
+  }
+  
+  /* Hiệu ứng animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .intro-content {
+      flex-direction: column;
+      text-align: center;
+    }
+  
+    .intro-text,
+    .intro-image {
+      min-width: 100%;
+    }
+  
+    .intro-title {
+      font-size: 2rem;
+    }
+  
+    .intro-title::after {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  
+    .intro-image {
+      margin-top: 20px;
+    }
+  
+    .store-image {
+      max-width: 100%;
+    }
+  }

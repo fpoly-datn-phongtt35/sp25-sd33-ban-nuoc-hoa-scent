@@ -84,60 +84,94 @@
       <button [class.active]="activeTab === 'usage'" (click)="setActiveTab('usage')">Sử dụng và bảo quản</button>
     </div>
 
-<!-- Trong phần tab "details" -->
-<div class="tab-pane" *ngIf="activeTab === 'details'">
-  <div class="product-specs">
-    <p><strong>Thương hiệu:</strong> {{ product.tenThuongHieu || 'Không có thông tin' }}</p>
-    <p><strong>Phong cách:</strong> {{ product.phongCachs || 'Không có thông tin' }}</p>
-    <p><strong>Nhóm hương:</strong> {{ product.tenNhomHuong || 'Không có thông tin' }}</p>
-    <div class="fragrance-notes">
-      <p><strong>Hương đầu:</strong> {{ product.moTaHuongDau || 'Không có thông tin' }}</p>
-      <p><strong>Hương giữa:</strong> {{ product.moTaHuongGiua || 'Không có thông tin' }}</p>
-      <p><strong>Hương cuối:</strong> {{ product.moTaHuongCuoi || 'Không có thông tin' }}</p>
+    <!-- Tab "Chi tiết sản phẩm" -->
+    <div class="tab-pane" *ngIf="activeTab === 'details'">
+      <div class="product-specs">
+        <p><strong>Thương hiệu:</strong> {{ product.tenThuongHieu || 'Không có thông tin' }}</p>
+        <p><strong>Phong cách:</strong> {{ product.phongCachs || 'Không có thông tin' }}</p>
+        <p><strong>Nhóm hương:</strong> {{ product.tenNhomHuong || 'Không có thông tin' }}</p>
+        <div class="fragrance-notes">
+          <p><strong>Hương đầu:</strong> {{ product.moTaHuongDau || 'Không có thông tin' }}</p>
+          <p><strong>Hương giữa:</strong> {{ product.moTaHuongGiua || 'Không có thông tin' }}</p>
+          <p><strong>Hương cuối:</strong> {{ product.moTaHuongCuoi || 'Không có thông tin' }}</p>
+        </div>
+        <p><strong>Nồng độ:</strong></p>
+        <div [ngSwitch]="product.nongDo">
+          <p *ngSwitchCase="'Parfum classic'">
+            Parfum classic<br>
+            Nồng độ: 20% - 40%<br>
+            Độ lưu hương: 8-12 tiếng hoặc hơn<br>
+            <span style="color: #e74c3c;">Rất đậm đặc, lưu hương mạnh, lâu dài nhất</span>
+          </p>
+          <p *ngSwitchCase="'Eau de parfum'">
+            Eau de parfum<br>
+            Nồng độ: 15% - 20%<br>
+            Độ lưu hương: 6-8 tiếng<br>
+            <span style="color: #e74c3c;">Đậm đặc, lưu hương tốt, dùng phổ biến nhất</span>
+          </p>
+          <p *ngSwitchCase="'Eau de toilette'">
+            Eau de toilette<br>
+            Nồng độ: 5% - 15%<br>
+            Độ lưu hương: 4-6 tiếng<br>
+            <span style="color: #e74c3c;">Nhẹ nhàng hơn, thích hợp sử dụng ban ngày</span>
+          </p>
+          <p *ngSwitchCase="'Eau de cologne'">
+            Eau de cologne<br>
+            Nồng độ: 2% - 5%<br>
+            Độ lưu hương: 2-4 tiếng<br>
+            <span style="color: #e74c3c;">Rất nhẹ, mát mẻ, phù hợp sử dụng sau tắm hoặc thể thao</span>
+          </p>
+          <p *ngSwitchCase="'Eau fraiche'">
+            Eau fraîche<br>
+            Nồng độ: 1% - 3%<br>
+            Độ lưu hương: 1-2 tiếng<br>
+            <span style="color: #e74c3c;">Cực kỳ nhẹ, chủ yếu là cảm giác tươi mát, thơm</span>
+          </p>
+          <p *ngSwitchDefault>
+            Không xác định nồng độ
+          </p>
+        </div>
+      </div>
+      <div class="product-description" *ngIf="product.moTaSanPham">
+        <h3>Mô tả sản phẩm</h3>
+        <p>{{ product.moTaSanPham }}</p>
+      </div>
     </div>
-    <p><strong>Nồng độ:</strong></p>
-    <div [ngSwitch]="product.nongDo">
-      <p *ngSwitchCase="'Parfum classic'">
-        Parfum classic<br>
-        Nồng độ: 20% - 40%<br>
-        Độ lưu hương: 8-12 tiếng hoặc hơn<br>
-        <span style="color: #e74c3c;">Rất đậm đặc, lưu hương mạnh, lâu dài nhất</span>
-      </p>
-      <p *ngSwitchCase="'Eau de parfum'">
-        Eau de parfum<br>
-        Nồng độ: 15% - 20%<br>
-        Độ lưu hương: 6-8 tiếng<br>
-        <span style="color: #e74c3c;">Đậm đặc, lưu hương tốt, dùng phổ biến nhất</span>
-      </p>
-      <p *ngSwitchCase="'Eau de toilette'">
-        Eau de toilette<br>
-        Nồng độ: 5% - 15%<br>
-        Độ lưu hương: 4-6 tiếng<br>
-        <span style="color: #e74c3c;">Nhẹ nhàng hơn, thích hợp sử dụng ban ngày</span>
-      </p>
-      <p *ngSwitchCase="'Eau de cologne'">
-        Eau de cologne<br>
-        Nồng độ: 2% - 5%<br>
-        Độ lưu hương: 2-4 tiếng<br>
-        <span style="color: #e74c3c;">Rất nhẹ, mát mẻ, phù hợp sử dụng sau tắm hoặc thể thao</span>
-      </p>
-      <p *ngSwitchCase="'Eau fraiche'">
-        Eau fraîche<br>
-        Nồng độ: 1% - 3%<br>
-        Độ lưu hương: 1-2 tiếng<br>
-        <span style="color: #e74c3c;">Cực kỳ nhẹ, chủ yếu là cảm giác tươi mát, thơm</span>
-      </p>
-      <p *ngSwitchDefault>
-        Không xác định nồng độ
-      </p>
+
+    <!-- Tab "Sử dụng và bảo quản" -->
+    <div class="tab-pane" *ngIf="activeTab === 'usage'">
+      <h3>Hướng dẫn sử dụng</h3>
+      <ul>
+        <li>Xịt nước hoa sau khi tắm và dưỡng ẩm</li>
+        <li>Lúc này da sạch và lỗ chân lông còn mở, giúp nước hoa bám mùi tốt hơn.</li>
+        <li>Có thể dùng kem dưỡng không mùi để tăng độ bám mùi.</li>
+        <li>Xịt vào các điểm mạch đập (pulse points)</li>
+        <li>Các vị trí nên xịt: cổ tay, sau tai, sau gáy, khuỷu tay trong, giữa ngực.</li>
+        <li>Đây là những điểm có nhiệt độ cao giúp khuếch tán hương thơm tốt.</li>
+        <li>Xịt cách da khoảng 15–20 cm</li>
+        <li>Không nên xịt quá gần khiến hương đọng lại một chỗ, dễ gây nồng.</li>
+        <li>Không chà xát cổ tay sau khi xịt</li>
+        <li>Hành động này phá vỡ cấu trúc phân tử mùi hương, làm hương biến đổi và bay nhanh.</li>
+        <li>Có thể xịt một chút lên tóc hoặc quần áo (nếu phù hợp)</li>
+        <li>Lưu ý tránh những loại nước hoa có thể làm ố vải hoặc khô tóc (nên thử trước).</li>
+      </ul>
+
+      <h3>📦 Cách bảo quản nước hoa đúng cách</h3>
+      <ul>
+        <li>Tránh ánh nắng trực tiếp</li>
+        <li>Tia UV có thể phá vỡ cấu trúc hóa học, làm hỏng nước hoa.</li>
+        <li>Không để ở nơi có nhiệt độ cao/thay đổi thất thường</li>
+        <li>Phòng tắm không phải là nơi lý tưởng vì có độ ẩm và nhiệt độ thay đổi liên tục.</li>
+        <li>Bảo quản nơi khô ráo, thoáng mát</li>
+        <li>Nơi tốt nhất: tủ đựng, ngăn kéo, hộp gốc đi kèm.</li>
+        <li>Giữ nắp kín sau khi sử dụng</li>
+        <li>Tránh bay hơi và tiếp xúc không khí gây oxi hóa.</li>
+        <li>Không lắc chai nước hoa</li>
+        <li>Việc lắc có thể tạo bọt khí, ảnh hưởng đến mùi hương và chất lượng.</li>
+      </ul>
     </div>
   </div>
-  <div class="product-description" *ngIf="product.moTaSanPham">
-    <h3>Mô tả sản phẩm</h3>
-    <p>{{ product.moTaSanPham }}</p>
-  </div>
-</div>
-  </div>
+
   <div class="average-rating-container" *ngIf="danhGias.length > 0">
     <div class="rating-stars">
       <ng-container *ngFor="let type of starTypes">
@@ -153,13 +187,10 @@
     Chưa có đánh giá
   </div>
 
-
   <!-- Phần Đánh giá sản phẩm -->
   <div class="reviews">
     <h2>Đánh giá sản phẩm</h2>
     <!-- Form gửi đánh giá mới -->
-
-
 
     <div class="filter-stars">
       <button [class.active]="selectedStarFilter === null" (click)="filterByStars(null)">Tất cả</button>

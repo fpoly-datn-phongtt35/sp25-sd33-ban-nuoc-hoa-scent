@@ -1,0 +1,153 @@
+/* Guidelines Section */
+.guidelines-section {
+    padding: 60px 0;
+    background-color: #fff;
+    font-family: 'Playfair Display', serif;
+  }
+  
+  .payment-guide {
+    background: linear-gradient(135deg, #f9f7ff 0%, #e7f0ff 100%); /* Gradient tím nhạt - xanh nhạt */
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .section-title {
+    font-size: 2.5rem;
+    color: #4a2c2a;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    animation: fadeIn 1s ease-in-out;
+  }
+  
+  .section-title::after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 3px;
+    background-color: #e91e63;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .section-description {
+    font-size: 1.1rem;
+    color: #5d4037;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.8;
+    animation: fadeIn 1.2s ease-in-out;
+  }
+  
+  .guide-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+  }
+  
+  .step {
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+    animation: slideUp 1s ease-in-out;
+  }
+  
+  .step:hover {
+    transform: translateY(-5px);
+  }
+  
+  .step h3 {
+    font-size: 1.5rem;
+    color: #4a2c2a;
+    margin-bottom: 10px;
+  }
+  
+  .step p {
+    font-size: 1rem;
+    color: #5d4037;
+    line-height: 1.6;
+  }
+  
+  .payment-options {
+    margin-top: 30px;
+    text-align: center;
+  }
+  
+  .payment-options h3 {
+    font-size: 1.5rem;
+    color: #4a2c2a;
+    margin-bottom: 15px;
+  }
+  
+  .payment-options ul {
+    list-style: none;
+    padding: 0;
+    display: inline-block;
+    text-align: left;
+  }
+  
+  .payment-options li {
+    font-size: 1rem;
+    color: #5d4037;
+    line-height: 1.8;
+    margin-bottom: 10px;
+    position: relative;
+    padding-left: 20px;
+  }
+  
+  .payment-options li::before {
+    content: '💎'; /* Icon kim cương làm điểm nhấn */
+    position: absolute;
+    left: 0;
+    font-size: 1.1rem;
+  }
+  
+  /* Hiệu ứng animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .section-title {
+      font-size: 2rem;
+    }
+  
+    .guide-steps {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .step {
+      max-width: 100%;
+    }
+  }

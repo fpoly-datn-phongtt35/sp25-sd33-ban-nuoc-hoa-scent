@@ -1,13 +1,33 @@
 <!-- Header -->
-<app-header></app-header>
+<app-header [query]="query" (queryChange)="onQueryChange($event)"></app-header>
 
 <!-- Banner Section -->
 <div class="banner-section">
   <div class="banner">
-    <img src="banner1.jpg" alt="Banner Sản Phẩm" class="banner-image" />
-    <div class="banner-overlay">
-      <h1 class="banner-title">Khám Phá Sản Phẩm Mới</h1>
-      <p class="banner-subtitle">Tìm kiếm và trải nghiệm những sản phẩm tuyệt vời nhất!</p>
+    <div class="banner-slides" [class.slide-transition]="!isTransitioning" [style.transform]="'translateX(-' + (currentSlide * 25) + '%)'">
+      <div class="banner-slide" *ngFor="let slide of slides; let i = index" [attr.data-index]="i">
+        <img
+          [src]="slide.image"
+          alt="Banner Sản Phẩm"
+          class="banner-image"
+          loading="lazy"
+          (error)="onImageError(i)"
+        />
+        <div class="banner-overlay">
+          <h1 class="banner-title">Khám Phá Sản Phẩm Mới</h1>
+          <p class="banner-subtitle">Tìm kiếm và trải nghiệm những sản phẩm tuyệt vời nhất!</p>
+        </div>
+      </div>
+    </div>
+    <button class="banner-nav banner-nav-prev" (click)="prevSlide()">❮</button>
+    <button class="banner-nav banner-nav-next" (click)="nextSlide()">❯</button>
+    <div class="banner-dots">
+      <span
+        *ngFor="let slide of slides; let i = index"
+        class="banner-dot"
+        [class.active]="i === currentSlide"
+        (click)="goToSlide(i)"
+      ></span>
     </div>
   </div>
 </div>
@@ -65,16 +85,16 @@
           </div>
         </div>
 
-        <!-- Best-Selling Products Section -->
+        <!-- Sản phẩm bán chạy -->
         <div class="best-selling-section">
           <h4 class="filter-subtitle">Sản Phẩm Bán Chạy</h4>
-          <!-- Loading state -->
+          <!-- Trạng thái tải -->
           <div class="loading-state text-center" *ngIf="isBestSellingLoading">
             <div class="spinner-border spinner-border-sm" role="status">
               <span class="visually-hidden">Đang tải...</span>
             </div>
           </div>
-          <!-- Product list -->
+          <!-- Danh sách sản phẩm -->
           <div class="best-selling-list" *ngIf="!isBestSellingLoading">
             <div *ngFor="let product of bestSellingProducts" class="best-selling-card">
               <div
@@ -83,12 +103,10 @@
               >
                 <div class="best-selling-image-container">
                   <img [src]="product.imageURL || 'assets/images/placeholder.png'" alt="{{ product.tenSanPham }}" class="best-selling-image" />
-                  <span class="hot-badge">HOT</span> <!-- Added HOT badge -->
-                  <!-- Thông báo sắp hết hàng -->
+                  <span class="hot-badge">HOT</span>
                   <div *ngIf="product.tongSoLuongTonKho > 0 && product.tongSoLuongTonKho < 15" class="low-stock-overlay">
                     <span class="low-stock-text">SẮP HẾT HÀNG</span>
                   </div>
-                  <!-- Thông báo hết hàng -->
                   <div *ngIf="product.tongSoLuongTonKho <= 0" class="out-of-stock-overlay">
                     <span class="out-of-stock-text">HẾT HÀNG</span>
                   </div>
@@ -110,14 +128,7 @@
       <!-- Danh sách sản phẩm bên phải -->
       <div class="col-md-9 product-section">
         <div class="search-filter-container">
-          <div class="search-box">
-            <input
-              type="text"
-              [(ngModel)]="query"
-              (ngModelChange)="onSearch()"
-              placeholder="🔍 Tìm kiếm sản phẩm..."
-              class="form-control">
-          </div>
+          
           <div class="sort-container">
             <label for="sort-filter" class="sort-label">Sắp xếp theo</label>
             <select id="sort-filter" class="form-select" [(ngModel)]="selectedFilters.sort" (ngModelChange)="sortProducts(selectedFilters.sort)">
@@ -129,7 +140,7 @@
           </div>
         </div>
 
-        <!-- Hiển thị trạng thái loading -->
+        <!-- Trạng thái tải -->
         <div class="loading-state" *ngIf="isLoading">
           <p>Đang tải sản phẩm...</p>
         </div>
@@ -143,14 +154,12 @@
             >
               <div class="product-image-container">
                 <img [src]="product.imageURL || 'assets/images/placeholder.png'" alt="{{ product.tenSanPham }}" class="product-image" />
-                <!-- Thông báo sắp hết hàng -->
                 <div *ngIf="isNewProduct(product.createDate)" class="new-product-overlay">
                   <span class="new-product-text">NEW</span>
                 </div>
                 <div *ngIf="product.tongSoLuongTonKho > 0 && product.tongSoLuongTonKho < 15" class="low-stock-overlay">
                   <span class="low-stock-text">SẮP HẾT HÀNG</span>
                 </div>
-                <!-- Thông báo hết hàng -->
                 <div *ngIf="product.tongSoLuongTonKho <= 0" class="out-of-stock-overlay">
                   <span class="out-of-stock-text">HẾT HÀNG</span>
                 </div>
