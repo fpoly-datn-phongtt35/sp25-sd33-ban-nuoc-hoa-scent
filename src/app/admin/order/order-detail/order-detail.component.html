@@ -43,7 +43,7 @@
           <i class="bi bi-truck me-1"></i> {{ getOrderStatus(order?.selectedStatus) }}
           <br *ngIf="order?.selectedStatus === 5 && order?.lyDoHuy">
           <span class="text-danger" *ngIf="order?.selectedStatus === 5 && order?.lyDoHuy">
-            <i class="bi bi-exclamation-circle me-1"></i>Lý do hủy: {{ order?.lyDoHuy }}
+            <i class="bi bi-exclamation-circle me-1"></i>Lý do giao hàng không thành công: {{ order?.lyDoHuy }}
           </span>
         </p>
         <p class="mb-0"><i class="bi bi-calendar me-1"></i> {{ order?.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</p>

@@ -47,7 +47,7 @@ export class OrderDetaiComponent {
       case 2: return '✅ Đã xác nhận';
       case 3: return '🚚 Đang giao';
       case 4: return '🎉 Hoàn thành';
-      case 5: return '❌ Đã hủy';
+      case 5: return '❌ Giao hàng không thành công';
       case 6: return '💰 Đã thanh toán (CK)';
       default: return 'Không rõ';
     }

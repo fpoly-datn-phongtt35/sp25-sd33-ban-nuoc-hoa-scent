@@ -182,7 +182,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           next: (data: any) => {
             if (data && data.length > 0) {
               this.product = { ...data[0] };
-              // console.log('Chi tiết sản phẩm:', data);
+               console.log('Chi tiết sản phẩm:', data);
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }
@@ -283,7 +283,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       const sub = this.detailService.getRecommendedProducts1(this.product).subscribe({
         next: (data: any[]) => {
           this.recommendedProducts = data;
-          // console.log('Sản phẩm gợi ý:', this.recommendedProducts);
+           console.log('Sản phẩm gợi ý:', this.recommendedProducts);
         },
         error: (err) => console.error('Lỗi khi tải sản phẩm gợi ý:', err),
       });
