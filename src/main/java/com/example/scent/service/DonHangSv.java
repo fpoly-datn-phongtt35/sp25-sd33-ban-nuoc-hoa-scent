@@ -289,6 +289,12 @@ public class DonHangSv {
                                 "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
 
                 LocalDateTime now = LocalDateTime.now();
+                if (phieuGiamGia.getTrangThai() != 1) {
+                    logger.error("Mã giảm giá không hoạt động: {}", orderRequest.getMaGiamGia());
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "⚠️ Mã giảm giá không hoạt động!");
+                }
+
                 if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
                     logger.error("Mã giảm giá đã hết hạn: {}", orderRequest.getMaGiamGia());
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

@@ -27,4 +27,5 @@ public interface donhangDetailDTO {
     BigDecimal getDonGiaSPCT();
     Integer getSoLuong();
     String getHinhAnh();
+    Integer trangThai();
 }

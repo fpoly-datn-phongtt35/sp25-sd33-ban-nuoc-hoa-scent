@@ -67,7 +67,8 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
         spct.dung_tich AS dungTich,
         spct.don_gia AS donGiaSPCT,
         ctdh.so_luong AS soLuong,
-        STRING_AGG(ha.link, ', ') AS hinhAnh
+        STRING_AGG(ha.link, ', ') AS hinhAnh,
+        dh.trang_thai as trangThai
     FROM don_hang dh
     JOIN chi_tiet_don_hang ctdh ON dh.id = ctdh.id_don_hang
     JOIN spct spct ON ctdh.id_spct = spct.id
@@ -78,7 +79,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
         dh.id, dh.ten_nguoi_nhan_hang, dh.dia_chi_giao_hang, dh.sdt_nguoi_nhan,
         dh.tong_tien, dh.ngay_tao, dh.ngay_van_chuyen,
         dh.phuong_thuc_van_chuyen, dh.phuong_thuc_thanh_toan,
-        sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, ctdh.so_luong
+        sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, ctdh.so_luong,dh.trang_thai
 """, nativeQuery = true)
     List<donhangDetailDTO> findDonHangDetailsById(@Param("id") Integer id);
 
