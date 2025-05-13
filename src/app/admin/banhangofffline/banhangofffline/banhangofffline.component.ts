@@ -192,7 +192,35 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       });
     }
   }
-
+  cancelDiscount(): void {
+    if (this.isLoading) return;
+  
+    this.currentOrder.maGiamGia = null;
+    this.discountCodeInput = '';
+    this.discountAmount = 0;
+    this.totalAfterDiscount = this.totalBeforeDiscount;
+    this.discountDetails = null;
+    this.discountMessage = 'Đã hủy áp dụng mã giảm giá!';
+  
+    this.orderStateService.updateState({
+      orders: this.orders,
+      discountCodeInput: this.discountCodeInput,
+      discountMessage: this.discountMessage,
+      totalAfterDiscount: this.totalAfterDiscount,
+      discountAmount: this.discountAmount,
+      discountDetails: this.discountDetails,
+    });
+  
+    Swal.fire({
+      icon: 'info',
+      title: 'Hủy mã giảm giá',
+      text: 'Mã giảm giá đã được hủy thành công.',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  
+    this.cdr.detectChanges();
+  }
   ngOnDestroy(): void {
     if (this.stateSubscription) {
       this.stateSubscription.unsubscribe();

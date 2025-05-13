@@ -84,7 +84,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       complete: () => console.log('WebSocket subscription completed'),
     });
 
-    // Kiểm tra orderId từ route
     const orderId = this.route.snapshot.paramMap.get('orderId');
     if (orderId) {
       this.loadOrders().then(() => {
@@ -140,6 +139,10 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     }
   }
 
+  calculateProductTotal(chiTietDonHangs: any[]): number {
+    return chiTietDonHangs.reduce((total, item) => total + (item.donGia * item.quantity), 0);
+  }
+
   loadOrders(): Promise<void> {
     return new Promise((resolve) => {
       this.userService.getOrders(this.userId).subscribe({
@@ -174,9 +177,16 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           id: parseInt(key),
           name: response.result[key],
         }));
+        console.log('Danh sách tỉnh đã tải:', this.provinces);
+        if (this.provinces.length === 0) {
+          console.warn('Danh sách tỉnh rỗng, thử tải lại sau 2 giây');
+          setTimeout(() => this.loadProvinces(), 2000); // Retry sau 2 giây
+        }
       },
       error: (error) => {
         console.error('Lỗi khi lấy danh sách tỉnh:', error);
+        console.warn('Thử tải lại danh sách tỉnh sau 2 giây');
+        setTimeout(() => this.loadProvinces(), 2000); // Retry sau 2 giây
       },
     });
   }
@@ -248,18 +258,61 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       maQuan: parseInt(formData.maQuan),
       maPhuong: formData.maPhuong,
     };
-
+  
     this.donhangService.updateOrderAddress(this.selectedOrder.maDonHang, updateData).subscribe({
       next: (response) => {
-        this.isUpdateAddressFormVisible = false;
-        Swal.fire({
-          title: 'Thành công!',
-          text: 'Địa chỉ giao hàng đã được cập nhật.',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false,
+        // Gọi lại API getOrders để lấy dữ liệu đầy đủ
+        this.userService.getOrders(this.userId).subscribe({
+          next: (data) => {
+            this.orders = data.map((order: { trangThai: number }) => ({
+              ...order,
+              statusLabel: this.getStatusLabel(order.trangThai),
+            }));
+            this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
+            this.filteredOrders = [...this.orders];
+  
+            // Cập nhật lại selectedOrder từ danh sách orders
+            const updatedOrder = this.orders.find(order => order.maDonHang === this.selectedOrder.maDonHang);
+            if (updatedOrder) {
+              this.selectedOrder = {
+                ...this.selectedOrder,
+                ...updatedOrder,
+                statusLabel: this.getStatusLabel(updatedOrder.trangThai),
+              };
+  
+              // Xử lý diaChiGiaoHang
+              if (updatedOrder.diaChiGiaoHang) {
+                this.selectedOrder.diaChiGiaoHang = updatedOrder.diaChiGiaoHang;
+              } else {
+                if (!this.provinces || this.provinces.length === 0) {
+                  this.loadProvincesWithRetry();
+                } else {
+                  this.processAddressUpdate(updatedOrder);
+                }
+              }
+            }
+  
+            this.isUpdateAddressFormVisible = false;
+            this.cdRef.detectChanges();
+            Swal.fire({
+              title: 'Thành công!',
+              text: 'Địa chỉ giao hàng đã được cập nhật.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          },
+          error: (error) => {
+            console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+            this.isUpdateAddressFormVisible = false;
+            Swal.fire({
+              title: 'Lỗi',
+              text: 'Cập nhật địa chỉ thành công nhưng không thể tải lại thông tin.',
+              icon: 'warning',
+              confirmButtonText: 'OK',
+            });
+          },
         });
-        this.loadOrders();
       },
       error: (error) => {
         const errorMessage = error.error?.message || 'Có lỗi xảy ra khi cập nhật địa chỉ.';
@@ -271,6 +324,156 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  // Tải provinces với retry logic
+  private loadProvincesWithRetry(attempts: number = 3): void {
+    this.donhangService.getProvinces().subscribe({
+      next: (response: { result: { [key: number]: string } }) => {
+        this.provinces = Object.keys(response.result).map((key) => ({
+          id: parseInt(key),
+          name: response.result[key],
+        }));
+        console.log('Danh sách tỉnh sau khi tải lại:', this.provinces);
+  
+        // Kiểm tra xem id: 215 có trong provinces không
+        const province215 = this.provinces.find(p => p.id === 215);
+        console.log('Tỉnh với id 215:', province215);
+  
+        if (this.provinces.length === 0 && attempts > 1) {
+          console.warn(`Danh sách tỉnh rỗng, thử lại sau 2 giây (còn ${attempts - 1} lần)`);
+          setTimeout(() => this.loadProvincesWithRetry(attempts - 1), 2000);
+        } else {
+          this.processAddressUpdate(this.selectedOrder);
+        }
+      },
+      error: (error) => {
+        console.error('Lỗi khi lấy danh sách tỉnh:', error);
+        if (attempts > 1) {
+          console.warn(`Thử lại tải danh sách tỉnh sau 2 giây (còn ${attempts - 1} lần)`);
+          setTimeout(() => this.loadProvincesWithRetry(attempts - 1), 2000);
+        } else {
+          this.processAddressUpdate(this.selectedOrder);
+        }
+      },
+    });
+  }
+
+  // Phương thức xử lý tiếp theo sau khi provinces đã được tải
+  private processAddressUpdate(updatedOrder: any): void {
+    if (updatedOrder.maTinh) {
+      this.donhangService.getDistricts(updatedOrder.maTinh).subscribe({
+        next: (districtResponse: { result: { [key: string]: string } }) => {
+          this.districts = Object.keys(districtResponse.result).map((key) => ({
+            id: key,
+            name: districtResponse.result[key],
+          }));
+          console.log('Danh sách quận:', this.districts);
+
+          if (updatedOrder.maQuan) {
+            this.donhangService.getWards(updatedOrder.maQuan).subscribe({
+              next: (wardResponse: { result: { [key: string]: string } }) => {
+                this.wards = Object.keys(wardResponse.result).map((key) => ({
+                  id: key,
+                  name: wardResponse.result[key],
+                }));
+                console.log('Danh sách phường:', this.wards);
+
+                this.buildDiaChiGiaoHang();
+                this.isUpdateAddressFormVisible = false;
+                this.cdRef.detectChanges(); // Đảm bảo render giao diện
+                Swal.fire({
+                  title: 'Thành công!',
+                  text: 'Địa chỉ giao hàng đã được cập nhật.',
+                  icon: 'success',
+                  timer: 1500,
+                  showConfirmButton: false,
+                });
+              },
+              error: (error) => {
+                console.error('Lỗi khi lấy danh sách phường:', error);
+                this.buildDiaChiGiaoHang();
+                this.isUpdateAddressFormVisible = false;
+                this.cdRef.detectChanges(); // Đảm bảo render giao diện
+                Swal.fire({
+                  title: 'Thành công!',
+                  text: 'Địa chỉ giao hàng đã được cập nhật, nhưng không thể tải đầy đủ thông tin phường.',
+                  icon: 'warning',
+                  confirmButtonText: 'OK',
+                });
+              },
+            });
+          } else {
+            this.buildDiaChiGiaoHang();
+            this.isUpdateAddressFormVisible = false;
+            this.cdRef.detectChanges(); // Đảm bảo render giao diện
+            Swal.fire({
+              title: 'Thành công!',
+              text: 'Địa chỉ giao hàng đã được cập nhật.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Lỗi khi lấy danh sách quận:', error);
+          this.buildDiaChiGiaoHang();
+          this.isUpdateAddressFormVisible = false;
+          this.cdRef.detectChanges(); // Đảm bảo render giao diện
+          Swal.fire({
+            title: 'Thành công!',
+            text: 'Địa chỉ giao hàng đã được cập nhật, nhưng không thể tải đầy đủ thông tin quận.',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+          });
+        },
+      });
+    } else {
+      this.buildDiaChiGiaoHang();
+      this.isUpdateAddressFormVisible = false;
+      this.cdRef.detectChanges(); // Đảm bảo render giao diện
+      Swal.fire({
+        title: 'Thành công!',
+        text: 'Địa chỉ giao hàng đã được cập nhật.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    }
+  }
+
+  // Phương thức xây dựng lại diaChiGiaoHang
+  private buildDiaChiGiaoHang(): void {
+    console.log('Dữ liệu trước khi xây dựng diaChiGiaoHang:');
+    console.log('maTinh:', this.selectedOrder.maTinh);
+    console.log('Provinces:', this.provinces);
+    console.log('maQuan:', this.selectedOrder.maQuan);
+    console.log('Districts:', this.districts);
+    console.log('maPhuong:', this.selectedOrder.maPhuong);
+    console.log('Wards:', this.wards);
+    console.log('diaChiChiTiet:', this.selectedOrder.diaChiChiTiet);
+  
+    // Nếu diaChiGiaoHang từ API đã đúng và không cần xây dựng lại, sử dụng nó
+    if (this.selectedOrder.diaChiGiaoHang && !this.isUpdateAddressFormVisible) {
+      console.log('Sử dụng diaChiGiaoHang từ API:', this.selectedOrder.diaChiGiaoHang);
+      return;
+    }
+  
+    // Chuẩn hóa maTinh thành kiểu number để so sánh với provinces
+    const maTinh = typeof this.selectedOrder.maTinh === 'string' 
+      ? parseInt(this.selectedOrder.maTinh, 10) 
+      : this.selectedOrder.maTinh;
+  
+    // Tìm tên tỉnh, quận, phường
+    const province = this.provinces.find(p => p.id === maTinh)?.name || 'Tỉnh không xác định';
+    const district = this.districts.find(d => d.id === this.selectedOrder.maQuan?.toString())?.name || '';
+    const ward = this.wards.find(w => w.id === this.selectedOrder.maPhuong)?.name || '';
+    const diaChiChiTiet = this.selectedOrder.diaChiChiTiet || '';
+  
+    // Xây dựng địa chỉ giao hàng
+    this.selectedOrder.diaChiGiaoHang = `${diaChiChiTiet}${ward ? ', ' + ward : ''}${district ? ', ' + district : ''}${province ? ', ' + province : ''}`;
+    console.log('Địa chỉ giao hàng đã xây dựng:', this.selectedOrder.diaChiGiaoHang);
   }
 
   getStatusLabel(statusCode: number): string {
@@ -295,11 +498,11 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   toggleOrderDetail(order: any): void {
     if (this.selectedOrder === order) {
       this.selectedOrder = null;
-      this.router.navigate(['/app-order-id']); // Quay lại danh sách khi đóng chi tiết
+      this.router.navigate(['/app-order-id']);
     } else {
       this.selectedOrder = order;
       this.loadUserReviews();
-      this.router.navigate(['/app-order-id', order.maDonHang]); // Điều hướng đến chi tiết với orderId
+      this.router.navigate(['/app-order-id', order.maDonHang]);
     }
     this.cdRef.detectChanges();
   }
@@ -347,7 +550,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   goBack(): void {
     this.selectedOrder = null;
     this.danhGias = {};
-    this.router.navigate(['/app-order-id']); // Quay lại danh sách
+    this.router.navigate(['/app-order-id']);
   }
 
   cancelOrder(orderId: number): void {

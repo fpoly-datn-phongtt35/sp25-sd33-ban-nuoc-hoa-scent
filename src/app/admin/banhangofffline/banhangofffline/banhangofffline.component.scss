@@ -12,7 +12,24 @@
   margin-bottom: 20px;
   text-align: center;
 }
+.btn-cancel-discount {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 5px;
 
+  &:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    background-color: #c82333;
+  }
+}
 /* Tabs đơn hàng */
 /* Tabs đơn hàng */
 .order-tabs {
