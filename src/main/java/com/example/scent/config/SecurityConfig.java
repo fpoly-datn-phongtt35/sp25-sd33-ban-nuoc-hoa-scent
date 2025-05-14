@@ -234,6 +234,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/chat/messages/user/{adminId}/{userId}").permitAll()
                 .requestMatchers("/api/chat/add-user/**","/api/tra-hang/defective-products","/api/tra-hang/send-to-manufacturer/**","/api/chat/{productId}/details/**","/api/chat/chat-search/**","/api/thong-ke/top-san-pham/**","/api/chat/recall/**","/api/chat/brands","/api/chat/products-by-brand/**","/api/chat/fragrance-groups","/api/chat/products-by-fragrance-group/**","/api/chat/top-10-products").permitAll()
                 .requestMatchers("/api/tra-hang/{idTaiKhoan}/history","/api/tra-hang/user/{idTaiKhoan}/**").permitAll()
+                .requestMatchers("/api/banners/**","/api/banners/**","/api/banners/{id}/toggle-status","/api/banners/**","/api/banners/**","/api/banners/**","/api/banners/active").permitAll()
                 .requestMatchers("/uploads/**","/api/tra-hang/sum-so-luong/**","/api/tra-hang/tinh-trang/**","/api/tra-hang/{id}/complete/**","/api/tra-hang/{id}/reject/**","/api/tra-hang/{id}/approve/**","/api/tra-hang/**","/rest/don-hang/user/{idTaiKhoan}/completed-orders","/rest/ctdh/don-hang/{idDonHang}/spct").permitAll()
             .anyRequest().authenticated())
         // http.formLogin(Customizer.withDefaults()); //xác thực bằng gửi biểu mẫu yêu
