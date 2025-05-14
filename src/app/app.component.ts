@@ -37,7 +37,7 @@ import { Component, OnInit } from '@angular/core';
      private checkUrl(): void {
        const currentUrl = this.router.url;
        this.shouldShowChatButton = !currentUrl.includes('/admin');
-       console.log('[AppComponent] Current URL:', currentUrl, 'Show chat button:', this.shouldShowChatButton);
+       
      }
 
      toggleChat(): void {

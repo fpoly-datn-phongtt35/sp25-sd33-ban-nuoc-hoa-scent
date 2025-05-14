@@ -7,21 +7,26 @@
     <div class="banner-slides" [class.slide-transition]="!isTransitioning" [style.transform]="'translateX(-' + (currentSlide * 25) + '%)'">
       <div class="banner-slide" *ngFor="let slide of slides; let i = index" [attr.data-index]="i">
         <img
-          [src]="slide.image"
-          alt="Banner Sản Phẩm"
+          [src]="slide.banner.imageUrl"
+          alt="Banner {{ slide.banner.title || 'Sản Phẩm' }}"
           class="banner-image"
           loading="lazy"
           (error)="onImageError(i)"
         />
         <div class="banner-overlay">
-          <h1 class="banner-title">Khám Phá Sản Phẩm Mới</h1>
+          <h1 class="banner-title">{{ slide.banner.title || 'Khám Phá Sản Phẩm Mới' }}</h1>
           <p class="banner-subtitle">Tìm kiếm và trải nghiệm những sản phẩm tuyệt vời nhất!</p>
         </div>
       </div>
     </div>
-    <button class="banner-nav banner-nav-prev" (click)="prevSlide()">❮</button>
-    <button class="banner-nav banner-nav-next" (click)="nextSlide()">❯</button>
-    <div class="banner-dots">
+    <!-- Hiển thị thông báo nếu không có banner -->
+    <div class="no-banner" *ngIf="slides.length === 0">
+      <p>Chưa có banner nào được hiển thị.</p>
+    </div>
+    <!-- Nút điều hướng -->
+    <button class="banner-nav banner-nav-prev" (click)="prevSlide()" [disabled]="slides.length <= 1">❮</button>
+    <button class="banner-nav banner-nav-next" (click)="nextSlide()" [disabled]="slides.length <= 1">❯</button>
+    <div class="banner-dots" *ngIf="slides.length > 1">
       <span
         *ngFor="let slide of slides; let i = index"
         class="banner-dot"
@@ -128,7 +133,6 @@
       <!-- Danh sách sản phẩm bên phải -->
       <div class="col-md-9 product-section">
         <div class="search-filter-container">
-          
           <div class="sort-container">
             <label for="sort-filter" class="sort-label">Sắp xếp theo</label>
             <select id="sort-filter" class="form-select" [(ngModel)]="selectedFilters.sort" (ngModelChange)="sortProducts(selectedFilters.sort)">

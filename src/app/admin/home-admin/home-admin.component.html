@@ -76,7 +76,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link" [ngClass]="{'active': selectedComponent === 'admintrahang'}" (click)="showComponent('admintrahang')">
-          <i class="bi bi-people"></i> Trả hàng
+          <i class="bi bi-arrow-return-left"></i> Trả hàng
         </a>
       </li>
       <li class="nav-item">
@@ -87,7 +87,12 @@
       </li>
       <li class="nav-item" >
         <a class="nav-link" [ngClass]="{'active': selectedComponent === 'trahangnsx'}" (click)="showComponent('trahangnsx')">
-          <i class="bi bi-person"></i>Trả hàng nhà sản xuất
+          <i class="bi bi-arrow-return-right"></i>Trả hàng hỏng về nơi nhập
+        </a>
+      </li>
+      <li class="nav-item" >
+        <a class="nav-link" [ngClass]="{'active': selectedComponent === 'banner'}" (click)="showComponent('banner')">
+          <i class="bi bi-person"></i>Quản lý banner
         </a>
       </li>
     </nav>
@@ -111,6 +116,7 @@
       <app-not-huong *ngSwitchCase="'note'"></app-not-huong>
       <app-admin-tra-hang *ngSwitchCase="'admintrahang'"></app-admin-tra-hang>
       <app-tra-hang-nha-san-xuat *ngSwitchCase="'trahangnsx'"></app-tra-hang-nha-san-xuat>
+      <app-banner *ngSwitchCase="'banner'"></app-banner>
       <div *ngSwitchCase="'chat'" class="chat-container">
         
         <h2>Tin nhắn</h2>
