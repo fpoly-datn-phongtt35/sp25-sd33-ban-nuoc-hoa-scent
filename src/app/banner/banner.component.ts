@@ -39,7 +39,7 @@ export class BannerComponent implements OnInit {
         }));
       },
       error: (error) => {
-        console.error('Error loading banners:', error);
+        
         Swal.fire({
           title: 'Lỗi',
           text: 'Không thể tải danh sách banner.',
@@ -98,7 +98,7 @@ export class BannerComponent implements OnInit {
         });
       },
       error: (error) => {
-        console.error('Error creating banner:', error);
+        
         Swal.fire({
           title: 'Lỗi',
           text: 'Không thể thêm banner.',
@@ -129,7 +129,7 @@ export class BannerComponent implements OnInit {
     if (this.formData.position) formDataToSend.append('position', this.formData.position);
     formDataToSend.append('isActive', String(this.formData.isActive));
 
-    console.log('Dữ liệu gửi đi:', [...formDataToSend.entries()]);
+    
 
     this.bannerService.updateBanner(this.selectedBanner.id, formDataToSend).subscribe({
       next: (updatedBanner) => {
@@ -169,7 +169,7 @@ export class BannerComponent implements OnInit {
         });
       },
       error: (error) => {
-        console.error('Error toggling status:', error);
+       
         Swal.fire({
           title: 'Lỗi',
           text: 'Không thể thay đổi trạng thái banner.',
@@ -202,7 +202,7 @@ export class BannerComponent implements OnInit {
             });
           },
           error: (error) => {
-            console.error('Error deleting banner:', error);
+           
             Swal.fire({
               title: 'Lỗi',
               text: 'Không thể xóa banner.',

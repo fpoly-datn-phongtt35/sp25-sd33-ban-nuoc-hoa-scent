@@ -15,10 +15,7 @@
         <input type="file" id="file" (change)="onFileChange($event)" [required]="!isEditing">
       </div>
 
-      <div class="form-group">
-        <label for="linkUrl">Link URL:</label>
-        <input type="text" id="linkUrl" [(ngModel)]="formData.linkUrl" name="linkUrl">
-      </div>
+    
 
       <div class="form-group">
         <label for="position">Vị trí:</label>
@@ -43,7 +40,7 @@
           <th>ID</th>
           <th>Tiêu đề</th>
           <th>Hình ảnh</th>
-          <th>Link</th>
+         
           <th>Vị trí</th>
           <th>Trạng thái</th>
           <th>Hành động</th>
@@ -54,7 +51,7 @@
           <td>{{ banner.id }}</td>
           <td>{{ banner.title }}</td>
           <td><img [src]="banner.imageUrl" alt="Banner" style="width: 100px;"></td>
-          <td>{{ banner.linkUrl || 'Không có' }}</td>
+        
           <td>{{ banner.position || 'Không có' }}</td>
           <td>{{ banner.isActive === 1 ? 'Hoạt động' : 'Ngừng' }}</td>
           <td>

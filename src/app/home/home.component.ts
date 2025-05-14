@@ -148,7 +148,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     return new Promise((resolve) => {
       this.bannerService.getActiveBanners().subscribe({
         next: (banners: Banner[]) => {
-          console.log('Dữ liệu banner từ API:', banners);
+          
           if (banners && banners.length > 0) {
             this.slides = banners.map((banner) => ({
               banner: {
@@ -157,7 +157,7 @@ export class HomeComponent implements OnInit, OnDestroy {
               },
               loaded: false,
             }));
-            console.log('Slides sau khi xử lý:', this.slides);
+            
           } else {
             this.slides = [
               { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+1', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
@@ -170,7 +170,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           resolve();
         },
         error: (err) => {
-          console.error('[HomeComponent] Lỗi khi tải banner:', err);
+          
           this.slides = [
             { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+1', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
             { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+2', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },

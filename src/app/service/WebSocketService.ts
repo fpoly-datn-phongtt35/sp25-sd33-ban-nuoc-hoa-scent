@@ -161,7 +161,7 @@ export class WebSocketService {
       return;
     }
 
-    console.log(`[WebSocketService] Đang đăng ký subscription cho ${destination}`);
+    
     const subscription = this.stompClient.subscribe(destination, (message: IMessage) => {
      
       this.handleMessage(message, subject, type);
