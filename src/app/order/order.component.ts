@@ -495,7 +495,7 @@ private checkDiscountCode(code: string, sdt: string): void {
     didOpen: () => Swal.showLoading(),
   });
 
-  const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan).subscribe({
+  const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan, this.totalProductPrice).subscribe({
     next: (response: DiscountResponse) => {
       Swal.close();
 

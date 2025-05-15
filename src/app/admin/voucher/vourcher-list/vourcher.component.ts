@@ -1,16 +1,18 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AddVoucherComponent } from '../add-voucher/add-voucher.component';
 import { EditVoucherComponent } from '../edit-voucher/edit-voucher.component';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 import * as XLSX from 'xlsx';
 import * as FileSaver from 'file-saver';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-vourcher',
   standalone: true,
-  imports: [CommonModule, NgbModalModule],
+  imports: [CommonModule, NgbModalModule, FormsModule],
   templateUrl: './vourcher.component.html',
   styleUrls: ['./vourcher.component.scss']
 })
@@ -20,9 +22,16 @@ export class VourcherComponent {
   page: number = 0;
   size: number = 5;
   totalPages: number = 1;
-  filterType: string = 'all';
-  sortField: string = 'id';
+  filterType: string = 'online';
+  statusFilter: string = 'all';
+  sortField: string = '';
   sortDirection: string = 'asc';
+
+  searchParams: any = {
+    maGiamGia: '',
+    ngayBatDau: '',
+    ngayHetHan: ''
+  };
 
   constructor(
     private phieuGiamGiaService: PhieugiamgiaService,
@@ -45,9 +54,94 @@ export class VourcherComponent {
       },
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu:', error);
-        alert('Không thể tải dữ liệu phiếu giảm giá: ' + (error.message || 'Kiểm tra console!'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: 'Không thể tải dữ liệu phiếu giảm giá: ' + (error.message || 'Kiểm tra console!'),
+          confirmButtonText: 'Đóng'
+        });
       }
     });
+  }
+
+  onSearchInput(): void {
+    const params: any = {
+      page: this.page.toString(),
+      size: this.size.toString()
+    };
+
+    if (this.searchParams.maGiamGia) {
+      params.maGiamGia = this.searchParams.maGiamGia;
+    }
+    if (this.searchParams.ngayBatDau) {
+      params.ngayBatDau = new Date(this.searchParams.ngayBatDau).toISOString();
+    }
+    if (this.searchParams.ngayHetHan) {
+      params.ngayHetHan = new Date(this.searchParams.ngayHetHan).toISOString();
+    }
+
+    this.phieuGiamGiaService.searchVouchers(params).subscribe({
+      next: (response) => {
+        if (response.status === 'success') {
+          this.phieuGiamGias = response.data || [];
+          this.totalPages = response.totalPages || 1;
+          this.page = response.currentPage || 0;
+          this.applyFilter();
+          if (this.phieuGiamGias.length > 0) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Thành công!',
+              text: 'Đã tìm thấy ' + this.phieuGiamGias.length + ' kết quả.',
+              confirmButtonText: 'OK',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          } else {
+            Swal.fire({
+              icon: 'info',
+              title: 'Không tìm thấy!',
+              text: response.message || 'Không có kết quả phù hợp.',
+              confirmButtonText: 'Đóng',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          }
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: 'Không tìm thấy!',
+            text: response.message || 'Không có kết quả phù hợp.',
+            confirmButtonText: 'Đóng',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        }
+      },
+      error: (error) => {
+        console.error('❌ Lỗi khi tìm kiếm:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: error.message || 'Có lỗi xảy ra khi tìm kiếm.',
+          confirmButtonText: 'Đóng'
+        });
+      }
+    });
+  }
+
+  clearField(field: string): void {
+    this.searchParams[field] = '';
+    this.onSearchInput();
+  }
+
+  resetSearch(): void {
+    this.searchParams = {
+      maGiamGia: '',
+      ngayBatDau: '',
+      ngayHetHan: ''
+    };
+    this.page = 0;
+    this.loadAllPhieuGiamGia();
   }
 
   filterVouchers(type: string): void {
@@ -56,35 +150,57 @@ export class VourcherComponent {
     this.applyFilter();
   }
 
+  filterByStatus(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.statusFilter = select.value;
+    this.page = 0;
+    this.applyFilter();
+  }
+
   applyFilter(): void {
     console.log('📌 Dữ liệu trước khi lọc:', this.phieuGiamGias);
     let filtered = [...this.phieuGiamGias];
+
     if (this.filterType === 'online') {
       filtered = filtered.filter(item => item.dieuKienapDung !== 0);
     } else if (this.filterType === 'offline') {
       filtered = filtered.filter(item => item.dieuKienapDung === 0);
     }
+
+    if (this.statusFilter === 'active') {
+      filtered = filtered.filter(item => item.trangThai === 1);
+    } else if (this.statusFilter === 'inactive') {
+      filtered = filtered.filter(item => item.trangThai === 0);
+    }
+
     this.filteredPhieuGiamGias = this.sortData(filtered);
     console.log('📌 Dữ liệu sau khi lọc:', this.filteredPhieuGiamGias);
     this.cdr.detectChanges();
   }
 
-  sortVouchers(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.sortField = select.value;
-    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+  sortBy(field: string, direction: string): void {
+    this.sortField = field;
+    this.sortDirection = direction;
     this.applyFilter();
   }
 
   sortData(data: any[]): any[] {
     return data.sort((a, b) => {
-      const fieldA = a[this.sortField];
-      const fieldB = b[this.sortField];
+      let valueA = a[this.sortField];
+      let valueB = b[this.sortField];
+
+      if (this.sortField === 'ngayBatDau' || this.sortField === 'ngayHetHan') {
+        valueA = new Date(valueA).getTime();
+        valueB = new Date(valueB).getTime();
+      }
+
       let comparison = 0;
-      if (typeof fieldA === 'string') {
-        comparison = fieldA.localeCompare(fieldB);
+      if (typeof valueA === 'string') {
+        comparison = valueA.localeCompare(valueB);
+      } else if (typeof valueA === 'number' || !isNaN(valueA)) {
+        comparison = valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
       } else {
-        comparison = fieldA > fieldB ? 1 : fieldA < fieldB ? -1 : 0;
+        comparison = 0;
       }
       return this.sortDirection === 'asc' ? comparison : -comparison;
     });
@@ -93,21 +209,33 @@ export class VourcherComponent {
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       this.page = p;
-      this.loadAllPhieuGiamGia();
+      if (Object.values(this.searchParams).some(value => value)) {
+        this.onSearchInput();
+      } else {
+        this.loadAllPhieuGiamGia();
+      }
     }
   }
 
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      this.loadAllPhieuGiamGia();
+      if (Object.values(this.searchParams).some(value => value)) {
+        this.onSearchInput();
+      } else {
+        this.loadAllPhieuGiamGia();
+      }
     }
   }
 
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-      this.loadAllPhieuGiamGia();
+      if (Object.values(this.searchParams).some(value => value)) {
+        this.onSearchInput();
+      } else {
+        this.loadAllPhieuGiamGia();
+      }
     }
   }
 
@@ -177,16 +305,38 @@ export class VourcherComponent {
   toggleStatus(voucher: any): void {
     console.log('📌 Thay đổi trạng thái voucher:', voucher.id, 'trangThai hiện tại:', voucher.trangThai);
     const newStatus = voucher.trangThai === 1 ? 0 : 1;
+
     this.phieuGiamGiaService.updateStatus(voucher.id, newStatus).subscribe({
       next: (response) => {
         console.log('✅ Cập nhật trạng thái thành công:', response);
-        voucher.trangThai = newStatus;
-        this.applyFilter();
-        alert(`Voucher đã được ${newStatus === 1 ? 'kích hoạt' : 'dừng hoạt động'} thành công!`);
+        if (response.status === 'success') {
+          voucher.trangThai = newStatus;
+          this.applyFilter();
+          Swal.fire({
+            icon: 'success',
+            title: 'Thành công!',
+            text: `Voucher "${voucher.maGiamGia}" đã được ${newStatus === 1 ? 'kích hoạt' : 'dừng hoạt động'} thành công!`,
+            confirmButtonText: 'OK'
+          });
+        } else {
+          console.error('❌ Phản hồi không thành công:', response.message);
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi!',
+            text: response.message,
+            confirmButtonText: 'Đóng'
+          });
+        }
       },
       error: (error) => {
         console.error('❌ Lỗi khi cập nhật trạng thái:', error);
-        alert('Lỗi khi cập nhật trạng thái: ' + (error.message || 'Kiểm tra console để biết chi tiết!'));
+        const errorMessage = error.message || 'Kiểm tra console để biết chi tiết!';
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: errorMessage,
+          confirmButtonText: 'Đóng'
+        });
       }
     });
   }
@@ -208,20 +358,18 @@ export class VourcherComponent {
 
   shouldShowToggleButton(item: any): boolean {
     const show = item.trangThai === 1 && this.isNotExpired(item.ngayHetHan);
-    console.log('📌 Kiểm tra hiển thị nút Dừng hoạt động cho voucher:', item.id, 'trangThai:', item.trangThai, 'ngayHetHan:', item.ngayHetHan, 'kết quả:', show);
     return show;
   }
 
   shouldShowActivateButton(item: any): boolean {
     const show = item.trangThai === 0 && this.isNotExpired(item.ngayHetHan);
-    console.log('📌 Kiểm tra hiển thị nút Kích hoạt cho voucher:', item.id, 'trangThai:', item.trangThai, 'ngayHetHan:', item.ngayHetHan, 'kết quả:', show);
     return show;
   }
 
   exportToExcel(): void {
     const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.filteredPhieuGiamGias.map(item => ({
       ID: item.id,
-      'Mã giảm giá': item.maGiamGia,
+      [this.filterType === 'offline' ? 'Phiếu giảm giá' : 'Mã giảm giá']: item.maGiamGia,
       'Giá trị': item.giaTriGiam,
       'Ngày bắt đầu': new Date(item.ngayBatDau).toLocaleDateString(),
       'Giờ bắt đầu': new Date(item.ngayBatDau).toLocaleTimeString(),
@@ -235,7 +383,7 @@ export class VourcherComponent {
 
     const colWidths = [
       { wch: 5 },  // ID
-      { wch: 15 }, // Mã giảm giá
+      { wch: 15 }, // Mã giảm giá / Phiếu giảm giá
       { wch: 10 }, // Giá trị
       { wch: 15 }, // Ngày bắt đầu
       { wch: 15 }, // Giờ bắt đầu

@@ -1,89 +1,66 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse,HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+
 interface DiscountResponse {
-  message: any;
-  giaTriGiam: number; // Percentage discount (e.g., 0.1 for 10%)
-  giaTriToiDa?: number; // Maximum discount amount (optional)
+  message?: any;
+  giaTriGiam: number;
+  giaTriToiDa?: number;
   ngayBatDau: string;
   ngayHetHan: string;
-  soLuong: number; // Remaining usage count
+  soLuong: number;
+  giaTriDonToiThieu?: number;
 }
-interface SpringErrorResponse {
-  timestamp?: string;
-  status?: number;
-  error?: string;
-  message?: string;
-  path?: string;
+
+interface SearchResponse {
+  status: string;
+  message: string;
+  data: any[];
+  totalPages: number;
+  totalElements: number;
+  currentPage: number;
 }
 
 interface ErrorResponse {
   status: number;
   message: string;
 }
+
 @Injectable({
   providedIn: 'root',
 })
-
 export class PhieugiamgiaService {
   private apiUrl = 'http://localhost:8080/rest/phieu-giam-gia';
 
   constructor(private http: HttpClient) {}
 
-  // phieugiamgia.service.ts
-  // getDiscountCodeDetails(code: string, sdt: string, id: number | null): Observable<any> {
-  //   const params: any = { code };
-  //   if (id) params.idTaiKhoan = id;
-  //   if (sdt) params.sdt = sdt;
-  //   return this.http.get(`${this.apiUrl}/check`,{ params });
-  // }
-getDiscountCodeDetails(code: string, sdt: string, id: number | null): Observable<DiscountResponse> {
-    const params: { [key: string]: string | number | null } = { code };
+  // Phương thức tìm kiếm với phân trang
+  searchVouchers(params: any): Observable<SearchResponse> {
+    return this.http.get<SearchResponse>(`${this.apiUrl}/search`, { params }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getDiscountCodeDetails(code: string, sdt: string, id: number | null, tongGiaTriDonHang: number): Observable<DiscountResponse> {
+    const params: { [key: string]: string | number | null } = { code, tongGiaTriDonHang };
     if (id) params['idTaiKhoan'] = id;
     if (sdt) params['sdt'] = sdt;
 
     return this.http.get<DiscountResponse>(`${this.apiUrl}/check`, { params }).pipe(
       map(response => {
-        // Kiểm tra nếu response có message lỗi
         if (response.message && response.message.startsWith('⚠️')) {
           throw new Error(response.message);
         }
         return { ...response, success: true };
       }),
-      catchError((error: HttpErrorResponse) => {
-        let errorMessage = '⚠️ Mã giảm giá không hợp lệ!';
-        if (error.error) {
-          if (typeof error.error === 'object') {
-            const errorResponse = error.error as ErrorResponse;
-            errorMessage = errorResponse.message || errorMessage;
-          } else if (typeof error.error === 'string') {
-            errorMessage = error.error.includes('⚠️') ? error.error : `⚠️ ${error.error}`;
-          }
-        }
-        return throwError(() => new Error(errorMessage));
-      })
+      catchError(this.handleError)
     );
   }
-private handleError(error: HttpErrorResponse) {
-  let errorMessage = 'Có lỗi xảy ra khi xử lý yêu cầu.';
-  if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Lỗi: ${error.error.message}`;
-  } else {
-      // Server-side error
-      if (error.status === 400 && error.error && error.error.message) {
-          errorMessage = error.error.message;
-      } else {
-          errorMessage = `Mã lỗi: ${error.status} - ${error.statusText}\nThông báo: ${error.message}`;
-      }
-  }
-  return throwError(() => new Error(errorMessage));
-}
 
   getAllPhieuGiamGia(page: number, size: number): Observable<any> {
-    let params = `/page?page=${page}&size=${size}`;
-    return this.http.get(`${this.apiUrl}${params}`).pipe(
+    const params = { page: page.toString(), size: size.toString() };
+    return this.http.get(`${this.apiUrl}/page`, { params }).pipe(
       catchError(this.handleError)
     );
   }
@@ -105,8 +82,32 @@ private handleError(error: HttpErrorResponse) {
       catchError(this.handleError)
     );
   }
+
   updateStatus(id: number, trangThai: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/update-status/${id}?trangThai=${trangThai}`, {});
+    return this.http
+      .put(`${this.apiUrl}/update-status/${id}?trangThai=${trangThai}`, {})
+      .pipe(
+        catchError((error) => {
+          const errorMessage = error.error?.message || 'Lỗi không xác định. Kiểm tra console!';
+          console.error('❌ Lỗi khi gọi API updateStatus:', error);
+          return throwError(() => new Error(errorMessage));
+        })
+      );
   }
 
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'Có lỗi xảy ra khi xử lý yêu cầu.';
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Lỗi: ${error.error.message}`;
+    } else {
+      if (error.status === 400 && error.error && error.error.message) {
+        errorMessage = error.error.message;
+      } else if (error.status === 0) {
+        errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+      } else {
+        errorMessage = `Mã lỗi: ${error.status} - ${error.statusText}\nThông báo: ${error.message}`;
+      }
+    }
+    return throwError(() => new Error(errorMessage));
+  }
 }

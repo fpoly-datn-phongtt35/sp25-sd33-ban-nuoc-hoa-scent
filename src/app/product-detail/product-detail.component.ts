@@ -79,7 +79,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     if (userId) {
       this.webSocketService.connect(userId);
     } else {
-      console.warn('Không có userId để kết nối WebSocket');
+      
     }
 
     this.spctSubscription = this.webSocketService.getSpctUpdates().subscribe({
@@ -182,7 +182,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           next: (data: any) => {
             if (data && data.length > 0) {
               this.product = { ...data[0] };
-               console.log('Chi tiết sản phẩm:', data);
+               
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }
@@ -194,7 +194,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             this.isLoading = false;
-            console.error('Lỗi khi tải sản phẩm:', err);
+           
             Swal.fire('Lỗi khi tải sản phẩm', '', 'error');
           },
         });
@@ -283,7 +283,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       const sub = this.detailService.getRecommendedProducts1(this.product).subscribe({
         next: (data: any[]) => {
           this.recommendedProducts = data;
-           console.log('Sản phẩm gợi ý:', this.recommendedProducts);
+           
         },
         error: (err) => console.error('Lỗi khi tải sản phẩm gợi ý:', err),
       });
@@ -413,7 +413,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }
 
     if (!this.product || !this.product.idSanPham) {
-      console.error('❌ Lỗi: Thông tin sản phẩm bị thiếu!', this.product);
+      
       return false;
     }
 

@@ -10,29 +10,68 @@
       <button class="btn btn-primary" aria-label="Add new voucher" (click)="openAddVoucherModal()">+ Thêm mới</button>
       <button class="btn btn-outline-secondary" aria-label="Export data" (click)="exportToExcel()">Xuất Excel</button>
     </div>
-    <div class="d-flex gap-2 align-items-center">
-      <select class="form-control sort-dropdown" aria-label="Sort vouchers" (change)="sortVouchers($event)">
-        <option value="id" selected>Sắp xếp theo: ID</option>
-        <option value="maGiamGia">Mã giảm giá</option>
-        <option value="giaTriGiam">Giá trị</option>
-        <option value="trangThai">Trạng thái</option>
-      </select>
-    </div>
+  </div>
+
+  <!-- Search Form -->
+  <div class="search-form mb-3">
+    <form (ngSubmit)="onSearchInput()" class="d-flex gap-3 align-items-end">
+      <div class="form-group">
+        <label for="searchName">Tìm theo mã giảm giá</label>
+        <input
+          type="text"
+          id="searchName"
+          class="form-control"
+          placeholder="Nhập mã giảm giá..."
+          [(ngModel)]="searchParams.maGiamGia"
+          name="maGiamGia"
+        />
+      </div>
+      <div class="form-group">
+        <label for="startDate">Ngày bắt đầu</label>
+        <input
+          type="datetime-local"
+          id="startDate"
+          class="form-control"
+          [(ngModel)]="searchParams.ngayBatDau"
+          name="ngayBatDau"
+        />
+      </div>
+      <div class="form-group">
+        <label for="endDate">Ngày kết thúc</label>
+        <input
+          type="datetime-local"
+          id="endDate"
+          class="form-control"
+          [(ngModel)]="searchParams.ngayHetHan"
+          name="ngayHetHan"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+      <button type="button" class="btn btn-secondary" (click)="resetSearch()">Xóa bộ lọc</button>
+    </form>
   </div>
 
   <!-- Filter Tabs -->
   <div class="filter-tabs mb-3">
     <ul class="nav nav-tabs">
       <li class="nav-item">
-        <button class="nav-link" [class.active]="filterType === 'all'" (click)="filterVouchers('all')">Tất cả</button>
+        <button class="nav-link" [class.active]="filterType === 'online'" (click)="filterVouchers('online')">Mã giảm giá</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" [class.active]="filterType === 'online'" (click)="filterVouchers('online')">Online</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" [class.active]="filterType === 'offline'" (click)="filterVouchers('offline')">Offline</button>
+        <button class="nav-link" [class.active]="filterType === 'offline'" (click)="filterVouchers('offline')">Phiếu giảm giá</button>
       </li>
     </ul>
+  </div>
+
+  <!-- Status Filter -->
+  <div class="status-filter mb-3">
+    <div class="d-flex gap-2 align-items-center">
+      <select class="form-control status-dropdown" aria-label="Filter by status" (change)="filterByStatus($event)">
+        <option value="all" selected>Lọc theo trạng thái: Tất cả</option>
+        <option value="active">Hoạt động</option>
+        <option value="inactive">Ngưng</option>
+      </select>
+    </div>
   </div>
 
   <!-- Table -->
@@ -40,16 +79,58 @@
     <table class="table table-hover">
       <thead class="table-header">
         <tr>
-          <th>ID</th>
-          <th>Mã giảm giá</th>
-          <th>Giá trị</th>
-          <th>Ngày bắt đầu</th>
+          <th>
+            ID
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('id', 'asc')" [class.active]="sortField === 'id' && sortDirection === 'asc'" title="Tăng dần">↑</span>
+              <span class="arrow-down" (click)="sortBy('id', 'desc')" [class.active]="sortField === 'id' && sortDirection === 'desc'" title="Giảm dần">↓</span>
+            </span>
+          </th>
+          <th>{{ filterType === 'offline' ? 'Phiếu giảm giá' : 'Mã giảm giá' }}</th>
+          <th>
+            Giá trị
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('giaTriGiam', 'asc')" [class.active]="sortField === 'giaTriGiam' && sortDirection === 'asc'" title="Tăng dần">↑</span>
+              <span class="arrow-down" (click)="sortBy('giaTriGiam', 'desc')" [class.active]="sortField === 'giaTriGiam' && sortDirection === 'desc'" title="Giảm dần">↓</span>
+            </span>
+          </th>
+          <th>
+            Ngày bắt đầu
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('ngayBatDau', 'asc')" [class.active]="sortField === 'ngayBatDau' && sortDirection === 'asc'" title="Ngày gần nhất">↑</span>
+              <span class="arrow-down" (click)="sortBy('ngayBatDau', 'desc')" [class.active]="sortField === 'ngayBatDau' && sortDirection === 'desc'" title="Ngày xa nhất">↓</span>
+            </span>
+          </th>
           <th>Giờ bắt đầu</th>
-          <th>Ngày hết hạn</th>
+          <th>
+            Ngày hết hạn
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('ngayHetHan', 'asc')" [class.active]="sortField === 'ngayHetHan' && sortDirection === 'asc'" title="Ngày gần nhất">↑</span>
+              <span class="arrow-down" (click)="sortBy('ngayHetHan', 'desc')" [class.active]="sortField === 'ngayHetHan' && sortDirection === 'desc'" title="Ngày xa nhất">↓</span>
+            </span>
+          </th>
           <th>Giờ hết hạn</th>
-          <th>Số lượng</th>
-          <th>Luồng</th>
-          <th>Giá trị tối đa</th>
+          <th>
+            Số lượng
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('soLuong', 'asc')" [class.active]="sortField === 'soLuong' && sortDirection === 'asc'" title="Tăng dần">↑</span>
+              <span class="arrow-down" (click)="sortBy('soLuong', 'desc')" [class.active]="sortField === 'soLuong' && sortDirection === 'desc'" title="Giảm dần">↓</span>
+            </span>
+          </th>
+          <th>
+            Giá trị tối đa được giảm
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('gia_tri_toi_da', 'asc')" [class.active]="sortField === 'gia_tri_toi_da' && sortDirection === 'asc'" title="Tăng dần">↑</span>
+              <span class="arrow-down" (click)="sortBy('gia_tri_toi_da', 'desc')" [class.active]="sortField === 'gia_tri_toi_da' && sortDirection === 'desc'" title="Giảm dần">↓</span>
+            </span>
+          </th>
+          <th>
+            Giá trị tối thiểu được áp dụng
+            <span class="sort-arrows">
+              <span class="arrow-up" (click)="sortBy('giaTriDonToiThieu', 'asc')" [class.active]="sortField === 'giaTriDonToiThieu' && sortDirection === 'asc'" title="Tăng dần">↑</span>
+              <span class="arrow-down" (click)="sortBy('giaTriDonToiThieu', 'desc')" [class.active]="sortField === 'giaTriDonToiThieu' && sortDirection === 'desc'" title="Giảm dần">↓</span>
+            </span>
+          </th>
           <th>Trạng thái</th>
           <th>Chức năng</th>
         </tr>
@@ -64,8 +145,8 @@
           <td>{{ item.ngayHetHan | date: 'dd/MM/yyyy' }}</td>
           <td>{{ item.ngayHetHan | date: 'HH:mm:ss' }}</td>
           <td>{{ item.soLuong }}</td>
-          <td>{{ item.dieuKienapDung === 0 ? 'Offline' : 'Online' }}</td>
           <td>{{ item.gia_tri_toi_da }}</td>
+          <td>{{ item.giaTriDonToiThieu }}</td>
           <td>
             <span [class]="item.trangThai === 1 ? 'badge bg-success' : 'badge bg-danger'">
               {{ item.trangThai === 1 ? 'Hoạt động' : 'Ngưng' }}

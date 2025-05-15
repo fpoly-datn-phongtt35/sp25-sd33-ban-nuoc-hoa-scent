@@ -51,6 +51,9 @@
 /* Form group */
 .form-group {
     margin-bottom: 15px;
+    display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .form-label {
@@ -111,7 +114,9 @@ select.form-control {
     background-size: 16px;
     padding-right: 30px;
 }
-
+.form-section {
+    display: block !important;
+  }
 /* Modal footer */
 .modal-footer {
     border-top: 1px solid #dee2e6;

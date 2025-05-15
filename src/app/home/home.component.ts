@@ -192,7 +192,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.quocGias = Array.from(new Set(data.map((item: any) => item.quocGia)));
         }
       },
-      error: (err: any) => console.error('[HomeComponent] Lỗi khi lấy thương hiệu:', err),
+     
     });
 
     this.nhomHuongService.getNhomHuong().subscribe({
@@ -201,7 +201,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.tenNhomHuongs = Array.from(new Set(data.map((item: any) => item.tenNhomHuong)));
         }
       },
-      error: (err: any) => console.error('[HomeComponent] Lỗi khi lấy nhóm hương:', err),
+      
     });
 
     const queryParams = {
@@ -221,7 +221,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         this.categories = Array.from(new Set(data.content.map((item: any) => item.tenDanhMuc)));
       },
-      error: (err: any) => console.error('[HomeComponent] Lỗi khi lấy danh mục:', err),
+      
     });
   }
 
@@ -413,20 +413,20 @@ export class HomeComponent implements OnInit, OnDestroy {
       }
       let loadedCount = 0;
       this.slides.forEach((slide, index) => {
-        console.log(`Đang tải ảnh: ${slide.banner.imageUrl}`);
+        
         const img = new Image();
         img.src = slide.banner.imageUrl;
         img.onload = () => {
           slide.loaded = true;
           loadedCount++;
-          console.log(`Ảnh ${index} tải thành công`);
+         
           this.cdr.detectChanges();
           if (loadedCount === this.slides.length) {
             resolve();
           }
         };
         img.onerror = () => {
-          console.error(`Lỗi tải ảnh ${index} từ ${slide.banner.imageUrl}`);
+         
           slide.banner.imageUrl = `https://placehold.co/1200x360?text=Banner+${index + 1}`;
           slide.loaded = true;
           loadedCount++;

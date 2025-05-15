@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
+
 @Component({
   selector: 'app-edit-voucher',
   standalone: true,
@@ -11,8 +12,7 @@ import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
   styleUrl: './edit-voucher.component.scss',
   providers: [NgbActiveModal]
 })
-export class EditVoucherComponent {
-
+export class EditVoucherComponent implements OnInit {
   @Input() voucher: any;
   @Output() voucherUpdated = new EventEmitter<any>();
   voucherForm: FormGroup;
@@ -23,54 +23,68 @@ export class EditVoucherComponent {
     private phieuGiamGiaService: PhieugiamgiaService,
     private cdr: ChangeDetectorRef
   ) {
-    // Khởi tạo form trống ban đầu
     this.voucherForm = this.fb.group({});
   }
 
   ngOnInit() {
     console.log('🔍 Dữ liệu nhận vào:', this.voucher);
-    console.log('📌 Form giá trị sau khi gán:', this.voucherForm.value);
 
     // Khởi tạo form với dữ liệu từ voucher
     this.voucherForm = this.fb.group({
       id: [this.voucher?.id],
       maGiamGia: [this.voucher?.maGiamGia, [Validators.required, Validators.maxLength(50)]],
-      giaTriGiam: [this.voucher?.giaTriGiam, [Validators.required, Validators.min(0.01), Validators.max(9999.99)]],
+      giaTriGiam: [this.voucher?.giaTriGiam, [Validators.required, Validators.min(0.1), Validators.max(0.8)]], // Giữ nguyên validate giống AddVoucherComponent
       ngayBatDau: [this.extractDate(this.voucher?.ngayBatDau), Validators.required],
       gioPhutBatDau: [this.extractTime(this.voucher?.ngayBatDau), Validators.required],
       ngayHetHan: [this.extractDate(this.voucher?.ngayHetHan), Validators.required],
       gioPhutHetHan: [this.extractTime(this.voucher?.ngayHetHan), Validators.required],
       soLuong: [this.voucher?.soLuong || 0, [Validators.required, Validators.min(1)]],
       gia_tri_toi_da: [this.voucher?.gia_tri_toi_da || null, [Validators.min(0)]],
-      dieuKienapDung: [this.voucher?.dieuKienapDung || 0, [Validators.required, Validators.min(0)]]
+      dieuKienapDung: [this.voucher?.dieuKienapDung || 0, [Validators.required]], // Chỉ cần required, không cần min(0) vì dùng dropdown
+      giaTriDonToiThieu: [this.voucher?.giaTriDonToiThieu || 0.01, [Validators.required, Validators.min(0.01)]] // Thêm trường giá trị đơn tối thiểu
     });
+
+    console.log('📌 Form giá trị sau khi gán:', this.voucherForm.value);
+    this.cdr.detectChanges(); // Đảm bảo giao diện được render
   }
 
   updateVoucher() {
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value };
 
-      // ✅ Gộp ngày & giờ đúng định dạng
+      // Kết hợp ngày và giờ
+      const start = new Date(this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau));
+      const end = new Date(this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan));
+
+      // Kiểm tra ngày bắt đầu và kết thúc
+      if (start >= end) {
+        alert('❌ Ngày và giờ bắt đầu phải trước ngày và giờ kết thúc.');
+        return;
+      }
+
       formData.ngayBatDau = this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau);
       formData.ngayHetHan = this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan);
 
-      // 🚀 Xóa dữ liệu thừa trước khi gửi API
+      // Xóa các trường không cần thiết
       delete formData.gioPhutBatDau;
       delete formData.gioPhutHetHan;
+
       console.log("📤 Dữ liệu gửi đi:", formData);
 
       this.phieuGiamGiaService.updateVoucher(formData).subscribe(
         (response: any) => {
           alert('Cập nhật voucher thành công!');
           this.voucherUpdated.emit(response);
-          this.closeModal(); // Đóng modal và gửi dữ liệu mới
+          this.closeModal();
         },
         (error: any) => {
           console.error('❌ Lỗi khi cập nhật voucher:', error);
+          alert(`Lỗi: ${error.message || 'Không thể cập nhật voucher. Vui lòng thử lại!'}`);
         }
       );
     } else {
-      console.warn('⚠️ Form không hợp lệ');
+      console.warn('⚠️ Form không hợp lệ:', this.voucherForm.errors);
+      alert('Vui lòng điền đầy đủ và đúng định dạng các trường bắt buộc.');
     }
   }
 

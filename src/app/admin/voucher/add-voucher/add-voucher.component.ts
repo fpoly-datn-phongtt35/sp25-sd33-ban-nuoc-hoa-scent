@@ -29,35 +29,37 @@ export class AddVoucherComponent {
       gioPhutBatDau: ['', Validators.required],
       ngayHetHan: ['', Validators.required],
       gioPhutHetHan: ['', Validators.required],
-      soLuong: [0, [Validators.required, Validators.min(1)]], // Thêm trường số lượng
-      gia_tri_toi_da: [null, [Validators.min(0)]], // Thêm trường giá trị tối đa
-      dieuKienapDung: [0, [Validators.required, Validators.min(0)]] // Thêm trường điều kiện áp dụng
+      soLuong: [0, [Validators.required, Validators.min(1)]],
+      gia_tri_toi_da: [null, [Validators.min(0)]],
+      dieuKienapDung: [0, [Validators.required, Validators.min(0)]],
+      giaTriDonToiThieu: [0.01, [Validators.required, Validators.min(0.01)]] // Thêm trường giá trị đơn tối thiểu
     });
+    console.log('✅ voucherForm khởi tạo:', this.voucherForm.value);
   }
 
   saveVoucher() {
     console.log('📌 Dữ liệu trong form:', this.voucherForm.value);
-  
+
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value };
-  
-      // ✅ Kết hợp ngày + giờ thành Date object để so sánh
+
+      // Kết hợp ngày + giờ thành Date object để so sánh
       const start = new Date(this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau));
       const end = new Date(this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan));
-  
-      // ❗ Nếu ngày bắt đầu > ngày kết thúc → cảnh báo và return
+
+      // Kiểm tra nếu ngày bắt đầu >= ngày kết thúc
       if (start >= end) {
         alert('❌ Ngày và giờ bắt đầu phải trước ngày và giờ kết thúc.');
         return;
       }
-  
-      // Gộp ngày giờ lại như cũ
+
+      // Gộp ngày giờ lại
       formData.ngayBatDau = this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau);
       formData.ngayHetHan = this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan);
-  
+
       delete formData.gioPhutBatDau;
       delete formData.gioPhutHetHan;
-  
+
       this.phieuGiamGiaService.addVoucher(formData).subscribe(
         (response: any) => {
           alert('Thêm voucher thành công!');
@@ -66,13 +68,14 @@ export class AddVoucherComponent {
         },
         (error: any) => {
           console.error('❌ Lỗi khi thêm voucher:', error);
+          alert(`Lỗi: ${error.message || 'Không thể thêm voucher. Vui lòng thử lại!'}`);
         }
       );
     } else {
       console.warn('⚠️ Form không hợp lệ, kiểm tra lại:', this.voucherForm.errors);
+      alert('Vui lòng điền đầy đủ và đúng định dạng các trường bắt buộc.');
     }
   }
-  
 
   closeModal() {
     console.log('🛑 Attempting to close modal...', this.activeModal);

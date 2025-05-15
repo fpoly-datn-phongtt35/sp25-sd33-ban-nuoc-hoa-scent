@@ -922,19 +922,20 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.orderStateService.updateState({ discountMessage: 'Vui lòng nhập mã giảm giá!' });
       return;
     }
-
+  
     if (this.totalBeforeDiscount <= 0) {
       this.orderStateService.updateState({ discountMessage: 'Giỏ hàng trống, không thể áp dụng mã giảm giá!' });
       return;
     }
-
+  
     this.orderStateService.updateState({ isLoading: true, discountMessage: null });
-
+  
     this.orderoffservice.getDiscountCodeDetails(this.discountCodeInput).subscribe(
       (response) => {
         this.orderStateService.updateState({ isLoading: false });
         console.log('Chi tiết mã giảm giá:', response);
-
+  
+        // Kiểm tra điều kiện áp dụng (online/offline)
         if (response.dieuKienapDung !== 0) {
           this.currentOrder.maGiamGia = null;
           this.orderStateService.updateState({
@@ -947,12 +948,27 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
           return;
         }
-
+  
+        // Kiểm tra giá trị tối thiểu của đơn hàng
+        if (response.giaTriDonToiThieu && this.totalBeforeDiscount < response.giaTriDonToiThieu) {
+          this.currentOrder.maGiamGia = null;
+          this.orderStateService.updateState({
+            discountDetails: null,
+            totalAfterDiscount: undefined,
+            discountAmount: 0,
+            discountMessage: `Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này! Cần tối thiểu: ${response.giaTriDonToiThieu.toLocaleString()} VNĐ`,
+            orders: this.orders,
+          });
+          this.cdr.detectChanges();
+          return;
+        }
+  
+        // Nếu mã giảm giá hợp lệ và đủ điều kiện, tiến hành áp dụng
         this.discountDetails = response;
         this.currentOrder.maGiamGia = this.discountCodeInput;
-
+  
         this.applyDiscountLogic(response);
-
+  
         this.orderStateService.updateState({
           discountDetails: this.discountDetails,
           discountMessage: `Áp dụng mã giảm giá thành công! Số tiền giảm: ${this.discountAmount.toLocaleString()} VNĐ`,
