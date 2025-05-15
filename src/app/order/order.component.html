@@ -96,19 +96,19 @@
       <div class="form-group">
         <div class="form-row">
           <div class="form-col">
-            <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
-            <div class="input-group">
-              <input type="text" id="maGiamGia" class="form-control" [(ngModel)]="orderData.maGiamGia" name="maGiamGia" [disabled]="isDiscountApplied">
-              <button class="btn btn-primary" type="button" (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')" [disabled]="!orderData.maGiamGia || isDiscountApplied">
-                Áp dụng
-              </button>
-            </div>
-            <div *ngIf="discountErrorMessage" class="text-danger">{{ discountErrorMessage }}</div>
-            <div *ngIf="discountAmount > 0" class="text-success">
-              <span>✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!</span>
-              <button class="btn btn-danger btn-sm" (click)="cancelDiscount()">Hủy</button>
-            </div>
-          </div>
+  <label for="maGiamGia" class="form-label">Mã Giảm Giá:</label>
+  <div class="input-group">
+    <input type="text" id="maGiamGia" class="form-control" [(ngModel)]="orderData.maGiamGia" name="maGiamGia" [disabled]="isDiscountApplied">
+    <button class="btn btn-primary" type="button" (click)="onDiscountCodeEntered(orderData.maGiamGia ?? '')" [disabled]="!orderData.maGiamGia || isDiscountApplied">
+      Áp dụng
+    </button>
+  </div>
+  <div *ngIf="discountErrorMessage" class="text-danger">{{ discountErrorMessage }}</div>
+  <div *ngIf="discountAmount > 0" class="text-success">
+    <span>✅ Đã áp dụng mã. Bạn được giảm {{ discountAmount | number }} đ!</span>
+    <button class="btn btn-danger btn-sm" (click)="cancelDiscount()">Hủy</button>
+  </div>
+</div>
           <div class="form-col">
             <label for="ghichu" class="form-label">Ghi chú:</label>
             <input type="text" id="ghichu" class="form-control" [(ngModel)]="orderData.ghichu" name="ghichu">

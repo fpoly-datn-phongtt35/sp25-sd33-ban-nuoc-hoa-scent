@@ -435,163 +435,127 @@ export class OrderComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  onDiscountCodeEntered(code: string): void {
-    this.discountErrorMessage = '';
-    this.isDiscountApplied = false;
+onDiscountCodeEntered(code: string): void {
+  this.discountErrorMessage = '';
+  this.isDiscountApplied = false;
 
-    // Nếu không có mã giảm giá, reset và thông báo
-    if (!code) {
-      this.resetDiscount();
-      Swal.fire({
-        title: 'Thông báo',
-        text: 'Vui lòng nhập mã giảm giá!',
-        icon: 'info',
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      return;
-    }
-
-    // Kiểm tra xem có idTaiKhoan hay không
-    if (this.orderData.idTaiKhoan) {
-      // Gọi API để lấy thông tin tài khoản
-      const sub = this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`).subscribe({
-        next: (account) => {
-          const registeredSdt = account?.sdt;
-
-          // Kiểm tra xem tài khoản có số điện thoại không
-          if (!registeredSdt) {
-            this.discountErrorMessage = '⚠️ Tài khoản không có số điện thoại đăng ký!';
-            this.resetDiscount();
-            Swal.fire({
-              title: 'Lỗi',
-              text: this.discountErrorMessage,
-              icon: 'warning',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-            return;
-          }
-
-          // Nếu có số điện thoại, kiểm tra mã giảm giá
-          this.checkDiscountCode(code, registeredSdt);
-        },
-        error: (err) => {
-          this.discountErrorMessage = '⚠️ Không thể lấy thông tin tài khoản!';
-          this.resetDiscount();
-          Swal.fire({
-            title: 'Lỗi',
-            text: this.discountErrorMessage,
-            icon: 'warning',
-            timer: 1500,
-            showConfirmButton: false,
-          });
-        },
-      });
-      this.subscriptions.push(sub);
-    } else {
-      // Nếu không có idTaiKhoan, sử dụng sdtNguoiNhan
-      const sdtNguoiNhan = this.orderData.sdtNguoiNhan;
-
-      // Kiểm tra xem sdtNguoiNhan có tồn tại không
-      if (!sdtNguoiNhan) {
-        this.discountErrorMessage = '⚠️ Vui lòng nhập số điện thoại để áp dụng mã giảm giá!';
-        this.resetDiscount();
-        Swal.fire({
-          title: 'Lỗi',
-          text: this.discountErrorMessage,
-          icon: 'warning',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        return;
-      }
-
-      // Nếu có sdtNguoiNhan, kiểm tra mã giảm giá
-      this.checkDiscountCode(code, sdtNguoiNhan);
-    }
-  }
-
-  private checkDiscountCode(code: string, sdt: string): void {
-    // Kiểm tra số điện thoại hợp lệ (10 số, bắt đầu bằng 0)
-    if (!sdt || !/^0[0-9]{9}$/.test(sdt)) {
-        this.discountErrorMessage = '⚠️ Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)!';
-        this.resetDiscount();
-        Swal.fire({
-            title: 'Lỗi',
-            text: this.discountErrorMessage.replace('⚠️', '').trim(),
-            icon: 'warning',
-            timer: 1500,
-            showConfirmButton: false,
-        });
-        return;
-    }
-
-    // Hiển thị thông báo loading
-    Swal.fire({
-        title: 'Đang kiểm tra mã...',
-        text: 'Vui lòng chờ!',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-    });
-
-    // Gọi API để kiểm tra mã giảm giá
-    const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan).subscribe({
-        next: (response: DiscountResponse) => {
-            Swal.close();
-            const now = new Date();
-            const startDate = new Date(response.ngayBatDau);
-            const endDate = new Date(response.ngayHetHan);
-
-            // Kiểm tra thời gian hiệu lực của mã giảm giá
-            if (now < startDate || now > endDate) {
-                this.handleDiscountError('⚠️ Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!');
-            } else if (response.soLuong <= 0) {
-                this.handleDiscountError('⚠️ Đã hết mã giảm giá!');
-            } else {
-                // Tính giá trị giảm giá
-                this.discountAmount = this.totalProductPrice * response.giaTriGiam;
-                if (response.giaTriToiDa && this.discountAmount > response.giaTriToiDa) {
-                    this.discountAmount = response.giaTriToiDa;
-                }
-                this.discount = this.discountAmount;
-                this.orderData.maGiamGia = code;
-                this.isDiscountApplied = true;
-                this.calculateTotals();
-
-                // Hiển thị thông báo thành công
-                Swal.fire({
-                    title: 'Thành công!',
-                    text: `Đã áp dụng mã. Bạn được giảm ${this.discountAmount.toLocaleString()} đ!`,
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false,
-                });
-            }
-        },
-        error: (err: Error) => {
-            Swal.close();
-            // Lấy thông báo lỗi từ err.message (đã được định nghĩa trong catchError)
-            const errorMessage = err.message || '⚠️ Mã giảm giá không hợp lệ!';
-            this.handleDiscountError(errorMessage);
-        },
-    });
-
-    this.subscriptions.push(sub);
-}
-
-  private handleDiscountError(message: string) {
-    this.discountErrorMessage = message;
+  // Kiểm tra nếu không có mã giảm giá
+  if (!code.trim()) {
     this.resetDiscount();
     Swal.fire({
-      title: 'Lỗi',
-      text: message,
-      icon: 'warning',
+      title: 'Thông báo',
+      text: 'Vui lòng nhập mã giảm giá!',
+      icon: 'info',
       timer: 1500,
       showConfirmButton: false,
     });
+    return;
   }
 
+  // Kiểm tra nếu có idTaiKhoan
+  if (this.orderData.idTaiKhoan) {
+    const sub = this.http.get<any>(`http://localhost:8080/rest/tai-khoan/${this.orderData.idTaiKhoan}`).subscribe({
+      next: (account) => {
+        const registeredSdt = account?.sdt;
+        if (!registeredSdt) {
+          this.handleDiscountError('Tài khoản không có số điện thoại đăng ký!');
+          return;
+        }
+        this.checkDiscountCode(code, registeredSdt);
+      },
+      error: (err) => {
+        console.error('Lỗi khi lấy thông tin tài khoản:', err);
+        this.handleDiscountError('Không thể lấy thông tin tài khoản!');
+      },
+    });
+    this.subscriptions.push(sub);
+  } else {
+    // Nếu không có idTaiKhoan, dùng sdtNguoiNhan
+    const sdtNguoiNhan = this.orderData.sdtNguoiNhan?.trim();
+    if (!sdtNguoiNhan) {
+      this.handleDiscountError('Vui lòng nhập số điện thoại để áp dụng mã giảm giá!');
+      return;
+    }
+    this.checkDiscountCode(code, sdtNguoiNhan);
+  }
+}
+
+// Trong OrderComponent
+
+private checkDiscountCode(code: string, sdt: string): void {
+  if (!sdt || !/^0[0-9]{9}$/.test(sdt)) {
+    this.handleDiscountError('Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)!');
+    return;
+  }
+
+  Swal.fire({
+    title: 'Đang kiểm tra mã...',
+    text: 'Vui lòng chờ!',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  const sub = this.phieugiamgiaService.getDiscountCodeDetails(code, sdt, this.orderData.idTaiKhoan).subscribe({
+    next: (response: DiscountResponse) => {
+      Swal.close();
+
+      const now = new Date();
+      const startDate = new Date(response.ngayBatDau);
+      const endDate = new Date(response.ngayHetHan);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.error('Định dạng ngày không hợp lệ:', {
+          ngayBatDau: response.ngayBatDau,
+          ngayHetHan: response.ngayHetHan,
+        });
+        this.handleDiscountError('Lỗi định dạng ngày từ server!');
+        return;
+      }
+
+      if (now < startDate || now > endDate) {
+        this.handleDiscountError('Mã giảm giá đã hết hạn hoặc chưa có hiệu lực!');
+      } else if (response.soLuong <= 0) {
+        this.handleDiscountError('Đã hết mã giảm giá!');
+      } else {
+        this.discountAmount = this.totalProductPrice * response.giaTriGiam;
+        if (response.giaTriToiDa && this.discountAmount > response.giaTriToiDa) {
+          this.discountAmount = response.giaTriToiDa;
+        }
+        this.discount = this.discountAmount;
+        this.orderData.maGiamGia = code;
+        this.isDiscountApplied = true;
+        this.calculateTotals();
+
+        Swal.fire({
+          title: 'Thành công!',
+          text: `Đã áp dụng mã. Bạn được giảm ${this.discountAmount.toLocaleString()} đ!`,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    },
+    error: (err: any) => {
+      Swal.close();
+      console.error('Lỗi từ API kiểm tra mã giảm giá:', err);
+      this.handleDiscountError(err.message); // Lấy message từ Error (đã được service throw)
+    },
+  });
+
+  this.subscriptions.push(sub);
+}
+
+private handleDiscountError(message: string) {
+  this.discountErrorMessage = message; // Hiển thị message từ backend
+  this.resetDiscount();
+  Swal.fire({
+    title: 'Lỗi',
+    text: this.discountErrorMessage,
+    icon: 'warning',
+    timer: 1500,
+    showConfirmButton: false,
+  });
+}
   private resetDiscount() {
     this.discount = 0;
     this.discountAmount = 0;
