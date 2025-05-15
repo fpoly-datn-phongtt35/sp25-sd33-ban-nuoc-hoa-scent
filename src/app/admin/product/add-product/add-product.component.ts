@@ -8,48 +8,20 @@ import { SanPhamService } from '../../../service/product.service';
 import { ThuongHieuService } from '../../../service/thuonghieu.service';
 import { DanhMucService } from '../../../service/danhmuc.service';
 import { NhomHuongService } from '../../../service/nhomhuong.service';
-
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgSelectModule, NgSelectComponent } from '@ng-select/ng-select';
 import { ToastrService } from 'ngx-toastr';
 import { NongDoService } from '../../../service/nongdo.service';
 
-// Shared model files (create these in src/app/models/)
-export interface MuiHuong {
-  id: number;
-  tenMuiHuong: string;
-}
+// Shared model interfaces
+export interface MuiHuong { id: number; tenMuiHuong: string; }
+export interface NhomHuong { id: number; tenNhomHuong: string; }
+export interface DanhMuc { id: number; tenDanhMuc: string; }
+export interface NongDo { id: number; tenNongDo: string; }
+export interface NotHuong { id: number; tenNotHuong: string; }
+export interface PhongCach { id: number; tenPhongCach: string; }
+export interface ThuongHieu { id: number; tenThuongHieu: string; quocGia: string; moTa: string; }
 
-export interface NhomHuong {
-  id: number;
-  tenNhomHuong: string;
-}
-
-export interface DanhMuc {
-  id: number;
-  tenDanhMuc: string;
-}
-
-export interface NongDo {
-  id: number;
-  tenNongDo: string;
-}
-
-export interface NotHuong {
-  id: number;
-  tenNotHuong: string;
-}
-
-export interface PhongCach {
-  id: number;
-  tenPhongCach: string;
-}
-export interface ThuongHieu {
-  id: number; // Optional for creating new brands
-  tenThuongHieu: string;
-  quocGia: string;
-  moTa: string;
-}
 @Component({
   selector: 'app-add-product',
   standalone: true,
@@ -117,14 +89,11 @@ export class AddProductComponent implements OnInit {
 
   customSearchFn(term: string, item: any): boolean {
     if (!term || !item) return false;
-
     const searchTerm = this.removeVietnameseTones(term.toLowerCase());
     const itemName = this.removeVietnameseTones(
       (item.tenThuongHieu || item.tenNhomHuong || item.tenDanhMuc || item.tenNongDo || item.tenMuiHuong || item.tenNotHuong || item.tenPhongCach || '').toLowerCase()
     );
-
     if (item.id === -1) return true;
-
     this.searchSubject.next(term);
     return itemName.includes(searchTerm);
   }
@@ -463,7 +432,7 @@ export class AddProductComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  cancelProminenceModal() {
+cancelProminenceModal() {
     if (this.tempMuiHuongId !== null) {
       this.productForm.get('muiHuongIds')?.setValue(
         (this.productForm.get('muiHuongIds')?.value || []).filter((id: number) => id !== this.tempMuiHuongId)
@@ -472,7 +441,6 @@ export class AddProductComponent implements OnInit {
     this.prominenceForm.get('prominenceLevel')?.setValue(0.5);
     this.closeProminenceModal();
   }
-
   closeProminenceModal() {
     this.showProminenceModal = false;
     this.tempMuiHuongId = null;
@@ -511,124 +479,172 @@ export class AddProductComponent implements OnInit {
     return this.muiHuongSelections.some((s) => s.id === id);
   }
 
-  async addProduct() {
-    if (this.productForm.invalid) {
-      this.productForm.markAllAsTouched();
-      this.toastr.warning('Vui lòng điền đầy đủ thông tin hợp lệ!', 'Cảnh báo');
-      return;
-    }
-
-    if (this.muiHuongSelections.length === 0) {
-      this.toastr.warning('Vui lòng chọn ít nhất một mùi hương và nhập độ nổi hương!', 'Cảnh báo');
-      return;
-    }
-
-    if (this.selectedFiles.length === 0) {
-      this.toastr.warning('Vui lòng chọn ít nhất một hình ảnh!', 'Cảnh báo');
-      return;
-    }
-
-    const formValues = this.productForm.value;
-    const idThuongHieu = Number(formValues.idThuongHieu);
-    const idDanhMuc = Number(formValues.idDanhMuc);
-    const idNhomHuong = Number(formValues.idNhomHuong);
-    const idNongDo = Number(formValues.idNongDo);
-
-    if (!this.thuongHieuList.some((th) => th.id === idThuongHieu)) {
-      this.toastr.warning('Thương hiệu không hợp lệ!', 'Cảnh báo');
-      return;
-    }
-    if (!this.danhMucList.some((dm) => dm.id === idDanhMuc)) {
-      this.toastr.warning('Danh mục không hợp lệ!', 'Cảnh báo');
-      return;
-    }
-    if (!this.nhomHuongList.some((nh) => nh.id === idNhomHuong)) {
-      this.toastr.warning('Nhóm hương không hợp lệ!', 'Cảnh báo');
-      return;
-    }
-    if (!this.nongDoList.some((nd) => nd.id === idNongDo)) {
-      this.toastr.warning('Nồng độ không hợp lệ!', 'Cảnh báo');
-      return;
-    }
-
-    const validateNotHuong = (ids: number[], type: string) => {
-      if (!ids || ids.length === 0) {
-        this.toastr.warning(`Vui lòng chọn ít nhất một nốt ${type}!`, 'Cảnh báo');
-        return false;
-      }
-      return ids.every((id: number) => this.notHuongList.some((nh) => nh.id === id));
-    };
-
-    if (!validateNotHuong(formValues.notHuongDauIds, 'hương đầu')) return;
-    if (!validateNotHuong(formValues.notHuongGiuaIds, 'hương giữa')) return;
-    if (!validateNotHuong(formValues.notHuongCuoiIds, 'hương cuối')) return;
-
-    if (!formValues.phongCachIds || formValues.phongCachIds.length === 0) {
-      this.toastr.warning('Vui lòng chọn ít nhất một phong cách!', 'Cảnh báo');
-      return;
-    }
-
-    const invalidPhongCach = formValues.phongCachIds.some(
-      (id: number) => !this.phongCachList.some((pc) => pc.id === id)
-    );
-    if (invalidPhongCach) {
-      this.toastr.warning('Một số phong cách không hợp lệ!', 'Cảnh báo');
-      return;
-    }
-
-    const invalidMuiHuong = this.muiHuongSelections.some(
-      (selection) => !this.muiHuongList.some((mh) => mh.id === selection.id)
-    );
-    if (invalidMuiHuong) {
-      this.toastr.warning('Một số mùi hương không hợp lệ!', 'Cảnh báo');
-      return;
-    }
-
-    this.isSubmitting = true;
-    const formData = new FormData();
-
-    formData.append('ten', formValues.ten || '');
-    formData.append('moTa', formValues.moTa || '');
-    formData.append('idThuongHieu', String(idThuongHieu));
-    formData.append('idDanhMuc', String(idDanhMuc));
-    formData.append('idNhomHuong', String(idNhomHuong));
-    formData.append('idNongDo', String(idNongDo));
-
-    formValues.notHuongDauIds.forEach((id: number) => formData.append('notHuongDauIds', String(id)));
-    formValues.notHuongGiuaIds.forEach((id: number) => formData.append('notHuongGiuaIds', String(id)));
-    formValues.notHuongCuoiIds.forEach((id: number) => formData.append('notHuongCuoiIds', String(id)));
-    formValues.phongCachIds.forEach((id: number) => formData.append('phongCachIds', String(id)));
-
-    const muiHuongSelectionsForBackend = this.muiHuongSelections.map(selection => ({
-      id: selection.id,
-      prominenceLevel: selection.prominenceLevel
-    }));
-    formData.append('muiHuongSelections', JSON.stringify(muiHuongSelectionsForBackend));
-
-    this.selectedFiles.forEach((file) => formData.append('images', file));
-
-    try {
-      const response = await firstValueFrom(this.sanPhamService.addProductOnAdmin(formData));
-      this.toastr.success('Thêm sản phẩm thành công!', 'Thành công');
-      this.productAdd.emit(response);
-      this.closeModal();
-    } catch (err: any) {
-      console.error('Lỗi khi thêm sản phẩm:', err);
-      let errorMessage = 'Thêm sản phẩm thất bại!';
-      if (err.status === 400) {
-        errorMessage += ' Dữ liệu không hợp lệ.';
-      } else if (err.status === 500) {
-        errorMessage += ' Lỗi server.';
-      }
-      if (err.error?.message) {
-        errorMessage += ` Chi tiết: ${err.error.message}`;
-      }
-      this.toastr.error(errorMessage, 'Lỗi');
-    } finally {
-      this.isSubmitting = false;
-      this.cdr.detectChanges();
-    }
+ async addProduct() {
+  if (this.productForm.invalid) {
+    this.productForm.markAllAsTouched();
+    this.toastr.warning('Vui lòng điền đầy đủ thông tin hợp lệ!', 'Cảnh báo');
+    return;
   }
+
+  if (this.muiHuongSelections.length === 0) {
+    this.toastr.warning('Vui lòng chọn ít nhất một mùi hương và nhập độ nổi hương!', 'Cảnh báo');
+    return;
+  }
+
+  if (this.selectedFiles.length === 0) {
+    this.toastr.warning('Vui lòng chọn ít nhất một hình ảnh!', 'Cảnh báo');
+    return;
+  }
+
+  const formValues = this.productForm.value;
+  const idThuongHieu = Number(formValues.idThuongHieu);
+  const idDanhMuc = Number(formValues.idDanhMuc);
+  const idNhomHuong = Number(formValues.idNhomHuong);
+  const idNongDo = Number(formValues.idNongDo);
+
+  // Validate selections
+  if (!this.thuongHieuList.some((th) => th.id === idThuongHieu)) {
+    this.toastr.warning('Thương hiệu không hợp lệ!', 'Cảnh báo');
+    return;
+  }
+  if (!this.danhMucList.some((dm) => dm.id === idDanhMuc)) {
+    this.toastr.warning('Danh mục không hợp lệ!', 'Cảnh báo');
+    return;
+  }
+  if (!this.nhomHuongList.some((nh) => nh.id === idNhomHuong)) {
+    this.toastr.warning('Nhóm hương không hợp lệ!', 'Cảnh báo');
+    return;
+  }
+  if (!this.nongDoList.some((nd) => nd.id === idNongDo)) {
+    this.toastr.warning('Nồng độ không hợp lệ!', 'Cảnh báo');
+    return;
+  }
+
+  const validateNotHuong = (ids: number[], type: string) => {
+    if (!ids || ids.length === 0) {
+      this.toastr.warning(`Vui lòng chọn ít nhất một nốt ${type}!`, 'Cảnh báo');
+      return false;
+    }
+    return ids.every((id: number) => this.notHuongList.some((nh) => nh.id === id));
+  };
+
+  if (!validateNotHuong(formValues.notHuongDauIds, 'hương đầu')) return;
+  if (!validateNotHuong(formValues.notHuongGiuaIds, 'hương giữa')) return;
+  if (!validateNotHuong(formValues.notHuongCuoiIds, 'hương cuối')) return;
+
+  if (!formValues.phongCachIds || formValues.phongCachIds.length === 0) {
+    this.toastr.warning('Vui lòng chọn ít nhất một phong cách!', 'Cảnh báo');
+    return;
+  }
+
+  const invalidPhongCach = formValues.phongCachIds.some(
+    (id: number) => !this.phongCachList.some((pc) => pc.id === id)
+  );
+  if (invalidPhongCach) {
+    this.toastr.warning('Một số phong cách không hợp lệ!', 'Cảnh báo');
+    return;
+  }
+
+  const invalidMuiHuong = this.muiHuongSelections.some(
+    (selection) => !this.muiHuongList.some((mh) => mh.id === selection.id)
+  );
+  if (invalidMuiHuong) {
+    this.toastr.warning('Một số mùi hương không hợp lệ!', 'Cảnh báo');
+    return;
+  }
+
+  this.isSubmitting = true;
+  const formData = new FormData();
+
+  formData.append('ten', formValues.ten || '');
+  formData.append('moTa', formValues.moTa || '');
+  formData.append('idThuongHieu', String(idThuongHieu));
+  formData.append('idDanhMuc', String(idDanhMuc));
+  formData.append('idNhomHuong', String(idNhomHuong));
+  formData.append('idNongDo', String(idNongDo));
+
+  formValues.notHuongDauIds.forEach((id: number) => formData.append('notHuongDauIds', String(id)));
+  formValues.notHuongGiuaIds.forEach((id: number) => formData.append('notHuongGiuaIds', String(id)));
+  formValues.notHuongCuoiIds.forEach((id: number) => formData.append('notHuongCuoiIds', String(id)));
+  formValues.phongCachIds.forEach((id: number) => formData.append('phongCachIds', String(id)));
+
+  const muiHuongSelectionsForBackend = this.muiHuongSelections.map(selection => ({
+    id: selection.id,
+    prominenceLevel: selection.prominenceLevel
+  }));
+  formData.append('muiHuongSelections', JSON.stringify(muiHuongSelectionsForBackend));
+
+  this.selectedFiles.forEach((file) => formData.append('images', file));
+
+  try {
+    const response = await firstValueFrom(this.sanPhamService.addProductOnAdmin(formData));
+    // Construct complete product object
+    const completeProduct = {
+      idSanPham: response.idSanPham,
+      tenSanPham: formValues.ten,
+      moTa: formValues.moTa || '',
+      tenThuongHieu: this.thuongHieuList.find(th => th.id === idThuongHieu)?.tenThuongHieu || 'Không xác định',
+      tenDanhMuc: this.danhMucList.find(dm => dm.id === idDanhMuc)?.tenDanhMuc || 'Không xác định',
+      tenNhomHuong: this.nhomHuongList.find(nh => nh.id === idNhomHuong)?.tenNhomHuong || 'Không xác định',
+      tenNongDo: this.nongDoList.find(nd => nd.id === idNongDo)?.tenNongDo || 'Không xác định',
+      huongDau: formValues.notHuongDauIds.map((id: number) => ({
+        id,
+        tenNotHuong: this.notHuongList.find(nh => nh.id === id)?.tenNotHuong || 'Không xác định'
+      })),
+      huongGiua: formValues.notHuongGiuaIds.map((id: number) => ({
+        id,
+        tenNotHuong: this.notHuongList.find(nh => nh.id === id)?.tenNotHuong || 'Không xác định'
+      })),
+      huongCuoi: formValues.notHuongCuoiIds.map((id: number) => ({
+        id,
+        tenNotHuong: this.notHuongList.find(nh => nh.id === id)?.tenNotHuong || 'Không xác định'
+      })),
+      phongCach: formValues.phongCachIds.map((id: number) => ({
+        id,
+        tenPhongCach: this.phongCachList.find(pc => pc.id === id)?.tenPhongCach || 'Không xác định'
+      })),
+      muiHuongSelections: this.muiHuongSelections.map(selection => ({
+        id: selection.id,
+        tenMuiHuong: this.muiHuongList.find(mh => mh.id === selection.id)?.tenMuiHuong || 'Không xác định',
+        prominenceLevel: selection.prominenceLevel
+      })),
+      huongDauString: formValues.notHuongDauIds
+        .map((id: number) => this.notHuongList.find(nh => nh.id === id)?.tenNotHuong || 'Không xác định')
+        .join(', '),
+      huongGiuaString: formValues.notHuongGiuaIds
+        .map((id: number) => this.notHuongList.find(nh => nh.id === id)?.tenNotHuong || 'Không xác định')
+        .join(', '),
+      huongCuoiString: formValues.notHuongCuoiIds
+        .map((id: number) => this.notHuongList.find(nh => nh.id === id)?.tenNotHuong || 'Không xác định')
+        .join(', '),
+      phongCachString: formValues.phongCachIds
+        .map((id: number) => this.phongCachList.find(pc => pc.id === id)?.tenPhongCach || 'Không xác định')
+        .join(', '),
+      tongSoLuong: 0, // Initially 0 as no SPCT yet
+      trangThai: 1, // Assume active
+      imageURL: response.imageURL || this.previewUrls[0] || '', // Use backend URL or first preview
+      isNew: true // Flag for new product
+    };
+    this.toastr.success('Thêm sản phẩm thành công!', 'Thành công');
+    this.productAdd.emit(completeProduct);
+    this.closeModal();
+  } catch (err: any) {
+    console.error('Lỗi khi thêm sản phẩm:', err);
+    let errorMessage = 'Thêm sản phẩm thất bại!';
+    if (err.status === 400) {
+      errorMessage += ' Dữ liệu không hợp lệ.';
+    } else if (err.status === 500) {
+      errorMessage += ' Lỗi server.';
+    }
+    if (err.error?.message) {
+      errorMessage += ` Chi tiết: ${err.error.message}`;
+    }
+    this.toastr.error(errorMessage, 'Lỗi');
+  } finally {
+    this.isSubmitting = false;
+    this.cdr.detectChanges();
+  }
+}
 
   onFileChange(event: any) {
     const files = event.target.files;
@@ -653,15 +669,10 @@ export class AddProductComponent implements OnInit {
   }
 
   closeModal() {
-    console.log('🛑 Attempting to close modal...', this.activeModal);
-
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
-      console.log('✅ Dismiss method called');
-    } else {
-      console.error('❌ ActiveModal is not available');
     }
-
+    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {
@@ -672,18 +683,11 @@ export class AddProductComponent implements OnInit {
         backdrop.remove();
       }
       document.body.classList.remove('modal-open');
-      console.log('✅ Forced modal removal executed');
-
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '';
       this.cdr.detectChanges();
     }, 100);
   }
 
-  private finalizeModalClose() {
-    document.body.classList.remove('modal-open');
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => backdrop.remove());
-    document.body.style.overflow = 'auto';
-    document.body.style.paddingRight = '';
-    this.cdr.detectChanges();
-  }
+  // Removed finalizeModalClose as closeModal handles cleanup
 }

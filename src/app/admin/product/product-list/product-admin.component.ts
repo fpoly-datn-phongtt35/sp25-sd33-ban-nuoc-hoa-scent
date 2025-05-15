@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
@@ -9,18 +9,13 @@ import { SpctComponent } from '../product-detail/spct-list/spct.component';
 import { SanPhamService } from '../../../service/product.service';
 import { SpctService } from '../../../service/spct.service';
 import { TokenService } from '../../../service/token.service';
-import { ChangeDetectorRef } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-product-admin',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    SpctComponent
-  ],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SpctComponent],
   templateUrl: './product-admin.component.html',
   styleUrls: ['./product-admin.component.scss'],
   providers: [NgbActiveModal]
@@ -28,14 +23,10 @@ import * as XLSX from 'xlsx';
 export class ProductAdminComponent implements OnInit {
   userRole: string | null = null;
   products: any[] = [];
-  searchQuery: string = '';
-  selectedCategory: string = '';
-  minPrice: number = 0;
-  maxPrice: number = 10000000;
+  searchTerm: string = '';
   page: number = 0;
   size: number = 5;
   totalPages: number = 0;
-  searchTerm: string = '';
   selectedProductId: number | null = null;
   selectedProduct: any = null;
 
@@ -45,7 +36,8 @@ export class ProductAdminComponent implements OnInit {
     private router: Router,
     private modalService: NgbModal,
     private tokenService: TokenService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
@@ -55,61 +47,38 @@ export class ProductAdminComponent implements OnInit {
   }
 
   getNotesString(notes: any[]): string {
-    if (!notes || !Array.isArray(notes)) {
-      return 'Không xác định';
-    }
+    if (!notes || !Array.isArray(notes)) return 'Không xác định';
     return notes.map(note => note.tenNotHuong).join(', ') || 'Không xác định';
   }
 
   getPhongCachString(phongCach: any[]): string {
-    if (!phongCach || !Array.isArray(phongCach)) {
-      return 'Không có phong cách';
-    }
+    if (!phongCach || !Array.isArray(phongCach)) return 'Không có phong cách';
     return phongCach.map(style => style.tenPhongCach).join(', ');
   }
 
-  loadProducts(): void {
-    console.log('📌 Gọi API với:', this.page, this.size);
-    this.sanPhamService.getSanPhamDetailonAdmin(this.searchTerm, this.page, this.size).subscribe({
-      next: (response) => {
-        this.products = (response.content || []).map((product: any) => ({
-          ...product,
-          huongDauString: this.getNotesString(product.huongDau),
-          huongGiuaString: this.getNotesString(product.huongGiua),
-          huongCuoiString: this.getNotesString(product.huongCuoi),
-          phongCachString: this.getPhongCachString(product.phongCach)
-        }));
-        this.totalPages = response.page?.totalPages || 1;
-        console.log('✅ Sản phẩm response:', response);
-      },
-      error: (error) => {
-        console.error('❌ Lỗi khi lấy dữ liệu sản phẩm:', error);
-      }
+  loadProducts(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('📌 Gọi API với:', this.page, this.size);
+      this.sanPhamService.getSanPhamDetailonAdmin(this.searchTerm, this.page, this.size).subscribe({
+        next: (response) => {
+          this.products = (response.content || []).map((product: any) => ({
+            ...product,
+            huongDauString: this.getNotesString(product.huongDau),
+            huongGiuaString: this.getNotesString(product.huongGiua),
+            huongCuoiString: this.getNotesString(product.huongCuoi),
+            phongCachString: this.getPhongCachString(product.phongCach)
+          }));
+          this.totalPages = response.page?.totalPages || 1;
+          console.log('✅ Sản phẩm response:', response);
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Lỗi khi lấy dữ liệu sản phẩm:', error);
+          this.toastr.error('Không thể tải danh sách sản phẩm.', 'Lỗi');
+          reject(error);
+        }
+      });
     });
-  }
-
-  formatScent(huongDau: string, huongGiua: string, huongCuoi: string): string {
-    const parts = [
-      huongDau || 'N/A',
-      huongGiua || 'N/A',
-      huongCuoi || 'N/A'
-    ].filter(part => part !== 'N/A');
-    return parts.join(' / ') || 'Không xác định';
-  }
-
-  getMuiChonString(selections: any[]): string {
-    if (!selections?.length) return 'Không xác định';
-    return selections
-      .map(scent => `${scent.tenMuiHuong || 'N/A'} (${scent.prominenceLevel || 0})`)
-      .join(', ');
-  }
-
-  getMuiHuongTitle(product: any): string {
-    return `Đầu: ${product.huongDauString}\nGiữa: ${product.huongGiuaString}\nCuối: ${product.huongCuoiString}`;
-  }
-
-  getMuiChonTitle(muiHuongSelections: any[]): string {
-    return muiHuongSelections?.map(scent => `${scent.tenMuiHuong} (${scent.prominenceLevel})`).join(', ') || '';
   }
 
   openAddModal(): void {
@@ -121,7 +90,12 @@ export class ProductAdminComponent implements OnInit {
 
     modalRef.componentInstance.productAdd.subscribe((newProduct: any) => {
       console.log('Sản phẩm mới:', newProduct);
-      this.refreshProductList();
+      newProduct.isNew = true; // Mark as new product
+      this.loadProducts().then(() => {
+        if (newProduct && newProduct.idSanPham) {
+          this.viewProductDetails(newProduct);
+        }
+      });
     });
 
     modalRef.result
@@ -151,7 +125,7 @@ export class ProductAdminComponent implements OnInit {
 
     modalRef.componentInstance.productUpdate.subscribe((updatedProduct: any) => {
       console.log('Sản phẩm cập nhật:', updatedProduct);
-      this.refreshProductList();
+      this.loadProducts();
     });
 
     modalRef.result
@@ -180,10 +154,11 @@ export class ProductAdminComponent implements OnInit {
         next: (response) => {
           console.log('✅ Cập nhật trạng thái SanPham:', response);
           this.loadProducts();
+          this.toastr.success(`Đã ${action} sản phẩm.`, 'Thành công');
         },
         error: (error) => {
           console.error('❌ Lỗi khi cập nhật trạng thái:', error);
-          alert('Cập nhật trạng thái thất bại!');
+          this.toastr.error('Cập nhật trạng thái thất bại.', 'Lỗi');
         }
       });
     }
@@ -193,12 +168,13 @@ export class ProductAdminComponent implements OnInit {
     this.selectedProductId = product.idSanPham;
     this.selectedProduct = product;
     console.log(`🔎 Đang xem chi tiết sản phẩm ID: ${this.selectedProductId}`);
+    this.cdr.detectChanges();
   }
 
   closeProductDetail(): void {
     this.selectedProductId = null;
     this.selectedProduct = null;
-    console.log("🔄 Đã đóng chi tiết sản phẩm.");
+    console.log('🔄 Đã đóng chi tiết sản phẩm.');
     this.restorePageState();
   }
 
@@ -218,15 +194,8 @@ export class ProductAdminComponent implements OnInit {
     });
     document.body.style.overflow = 'auto';
     document.body.style.paddingRight = '';
-    this.selectedProductId = null;
-    this.selectedProduct = null;
-    this.refreshProductList();
     this.cdr.detectChanges();
     console.log('✅ Đã khôi phục trạng thái trang');
-  }
-
-  private refreshProductList(): void {
-    this.loadProducts();
   }
 
   onSearch(): void {
@@ -267,7 +236,6 @@ export class ProductAdminComponent implements OnInit {
       }
     } else {
       range.push({ page: 0, isEllipsis: false });
-
       let start = Math.max(1, this.page - 1);
       let end = Math.min(this.totalPages - 2, this.page + 1);
 
@@ -304,7 +272,6 @@ export class ProductAdminComponent implements OnInit {
     let allProducts: any[] = [];
 
     try {
-      // Fetch the first page to get totalPages
       const firstResponse = await this.sanPhamService.getSanPhamDetailonAdmin('', 0, 100).toPromise();
       const totalPages = firstResponse.page?.totalPages || 1;
       allProducts = (firstResponse.content || []).map((product: any) => ({
@@ -315,7 +282,6 @@ export class ProductAdminComponent implements OnInit {
         phongCachString: this.getPhongCachString(product.phongCach)
       }));
 
-      // Fetch remaining pages if totalPages > 1
       if (totalPages > 1) {
         for (let page = 1; page < totalPages; page++) {
           const response = await this.sanPhamService.getSanPhamDetailonAdmin('', page, 100).toPromise();
@@ -336,7 +302,6 @@ export class ProductAdminComponent implements OnInit {
           const spctList = spctResponse?.content || spctResponse || [];
 
           if (spctList.length === 0) {
-            // Add a row for the product with no SPCT
             exportData.push({
               'STT': ++index,
               'Tên Sản Phẩm': product.tenSanPham || 'Không xác định',
@@ -353,7 +318,6 @@ export class ProductAdminComponent implements OnInit {
               'Dung Tích': 'Không có dung tích'
             });
           } else {
-            // Add a row for each SPCT
             for (const spct of spctList) {
               exportData.push({
                 'STT': ++index,
@@ -391,43 +355,42 @@ export class ProductAdminComponent implements OnInit {
           });
         }
       }
-    } catch (error) {
-      console.error('❌ Lỗi khi lấy toàn bộ sản phẩm:', error);
-      return;
-    }
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh Sách Sản Phẩm');
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh Sách Sản Phẩm');
 
-    // Auto-size columns
-    const colWidths = exportData.reduce((widths, row) => {
-      Object.keys(row).forEach((key, i) => {
-        const value = row[key] ? row[key].toString() : '';
-        widths[i] = Math.max(widths[i] || 10, Math.min(value.length, 50));
-      });
-      return widths;
-    }, []);
-    worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
+      const colWidths = exportData.reduce((widths, row) => {
+        Object.keys(row).forEach((key, i) => {
+          const value = row[key] ? row[key].toString() : '';
+          widths[i] = Math.max(widths[i] || 10, Math.min(value.length, 50));
+        });
+        return widths;
+      }, []);
+      worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
 
-    // Add headers styling
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
-      if (cell) {
-        cell.s = {
-          font: { bold: true },
-          alignment: { horizontal: 'center' },
-          border: {
-            top: { style: 'thin' },
-            bottom: { style: 'thin' },
-            left: { style: 'thin' },
-            right: { style: 'thin' }
-          }
-        };
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
+        if (cell) {
+          cell.s = {
+            font: { bold: true },
+            alignment: { horizontal: 'center' },
+            border: {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' }
+            }
+          };
+        }
       }
-    }
 
-    XLSX.writeFile(workbook, 'Danh_Sach_San_Pham.xlsx');
+      XLSX.writeFile(workbook, 'Danh_Sach_San_Pham.xlsx');
+      this.toastr.success('Xuất file Excel thành công!', 'Thành công');
+    } catch (error) {
+      console.error('❌ Lỗi khi xuất Excel:', error);
+      this.toastr.error('Xuất file Excel thất bại.', 'Lỗi');
+    }
   }
 }
