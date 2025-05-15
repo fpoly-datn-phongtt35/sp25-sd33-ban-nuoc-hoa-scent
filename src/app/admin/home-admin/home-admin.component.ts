@@ -27,6 +27,8 @@ import { MuiHuongComponent } from "../muihuong/mui-huong/mui-huong.component";
 import { NotHuongComponent } from "../nothuong/not-huong/not-huong.component";
 import { AdminTraHangComponent } from '../../admin-tra-hang/admin-tra-hang.component';
 import { TraHangNhaSanXuatComponent } from '../../tra-hang-nha-san-xuat/tra-hang-nha-san-xuat.component';
+import { BannerComponent } from '../../banner/banner.component';
+
 
 @Component({
   selector: 'app-home-admin',
@@ -48,7 +50,7 @@ import { TraHangNhaSanXuatComponent } from '../../tra-hang-nha-san-xuat/tra-hang
     PhongCachComponent,
     MuiHuongComponent,
     NotHuongComponent,
-    AdminTraHangComponent,TraHangNhaSanXuatComponent
+    AdminTraHangComponent,TraHangNhaSanXuatComponent,BannerComponent
   ],
   templateUrl: './home-admin.component.html',
   styleUrls: ['./home-admin.component.scss'],

@@ -207,6 +207,13 @@
             >
               Áp dụng
             </button>
+            <button
+      (click)="cancelDiscount()"
+      [disabled]="isLoading || !currentOrder.maGiamGia"
+      class="btn-cancel-discount"
+    >
+      Hủy
+    </button>
           </div>
         </div>
 

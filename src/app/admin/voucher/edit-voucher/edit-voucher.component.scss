@@ -1,0 +1,117 @@
+.voucher-form {
+    max-width: 100%;
+    padding: 10px;
+}
+
+/* Phân chia section */
+.form-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Form group */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.form-control {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+    font-style: italic;
+}
+
+/* Định dạng các trường nhập liệu theo hàng */
+.form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.half-width {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Định dạng thông báo lỗi */
+.text-danger {
+    font-size: 0.85rem;
+    color: #dc3545;
+}
+
+/* Đánh dấu các trường bắt buộc */
+.required {
+    color: #dc3545;
+    font-size: 0.9rem;
+}
+
+/* Modal footer */
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-primary:disabled {
+    background-color: #adb5bd;
+    cursor: not-allowed;
+}

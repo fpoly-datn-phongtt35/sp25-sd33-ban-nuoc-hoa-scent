@@ -18,13 +18,29 @@ export class PhieugiamgiaService {
   constructor(private http: HttpClient) {}
 
   // phieugiamgia.service.ts
-  getDiscountCodeDetails(code: string, sdt: string, id: number | null): Observable<any> {
+  // getDiscountCodeDetails(code: string, sdt: string, id: number | null): Observable<any> {
+  //   const params: any = { code };
+  //   if (id) params.idTaiKhoan = id;
+  //   if (sdt) params.sdt = sdt;
+  //   return this.http.get(`${this.apiUrl}/check`,{ params });
+  // }
+  getDiscountCodeDetails(code: string, sdt: string, id: number | null): Observable<DiscountResponse> {
     const params: any = { code };
     if (id) params.idTaiKhoan = id;
     if (sdt) params.sdt = sdt;
-    return this.http.get(`${this.apiUrl}/check`,{ params });
-  }
 
+    return this.http.get<DiscountResponse>(`${this.apiUrl}/check`, { params }).pipe(
+      catchError((error: HttpErrorResponse) => {
+        let errorMessage = '⚠️ Mã giảm giá không hợp lệ!';
+        if (error.error && typeof error.error === 'object' && error.error.message) {
+          errorMessage = error.error.message; // Lấy thông báo lỗi từ backend
+        } else if (error.error && typeof error.error === 'string') {
+          errorMessage = `⚠️ ${error.error}`;
+        }
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
 private handleError(error: HttpErrorResponse) {
   let errorMessage = 'Có lỗi xảy ra khi xử lý yêu cầu.';
   if (error.error instanceof ErrorEvent) {

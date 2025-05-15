@@ -33,12 +33,12 @@ export class WebSocketService {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       debug: (str) => {
-        console.log('[WebSocket Debug]:', str);
+        
       },
     });
 
     this.stompClient.onConnect = (frame) => {
-      console.log('[WebSocketService] Connected:', frame);
+      
       this.isConnected = true;
       this.reconnectAttempts = 0;
       this.setupSubscriptions();
@@ -50,19 +50,19 @@ export class WebSocketService {
 
   connectAdmin(): void {
     if (this.isConnected) {
-      console.log('[WebSocketService] Already connected, skipping connect for admin');
+      
       return;
     }
 
     this.isAdmin = true;
     this.userId = null;
     this.stompClient.activate();
-    console.log('[WebSocketService] Initiating connection for admin');
+   
   }
 
   connect(userId: number): void {
     if (this.isConnected) {
-      console.log('[WebSocketService] Đã kết nối, bỏ qua kết nối mới cho user:', userId);
+     
       this.setupSubscriptions();
       return;
     }
@@ -70,12 +70,12 @@ export class WebSocketService {
     this.userId = userId.toString();
     this.isAdmin = false;
     this.stompClient.activate();
-    console.log('[WebSocketService] Khởi tạo kết nối cho user:', userId);
+  
   }
 
   connectAdmin2(adminId: number): void {
     if (this.isConnected) {
-      console.log('[WebSocketService] Đã kết nối, bỏ qua kết nối mới cho admin:', adminId);
+     
       this.userId = adminId.toString();
       this.isAdmin = true;
       this.setupSubscriptions();
@@ -85,14 +85,14 @@ export class WebSocketService {
     this.userId = adminId.toString();
     this.isAdmin = true;
     this.stompClient.activate();
-    console.log('[WebSocketService] Khởi tạo kết nối cho admin với ID:', adminId);
+    
   }
 
   private setupSubscriptions(): void {
-    console.log('[WebSocketService] Thiết lập subscriptions với userId:', this.userId, 'isAdmin:', this.isAdmin);
+   
     this.subscriptions.forEach((sub, destination) => {
       sub.unsubscribe();
-      console.log(`[WebSocketService] Đã hủy subscription cũ cho ${destination}`);
+      
     });
     this.subscriptions.clear();
 
@@ -104,7 +104,7 @@ export class WebSocketService {
       if (this.userId) {
         this.subscribeToChatMessages();
       } else {
-        console.warn('[WebSocketService] Không thể đăng ký chat messages: userId là null');
+       
       }
     } else if (this.userId) {
       this.subscribeToUserOrders();
@@ -124,10 +124,10 @@ export class WebSocketService {
 
   private subscribeToChatMessages(): void {
     if (!this.userId) {
-      console.warn('[WebSocketService] Không thể đăng ký chat messages: userId là null');
+      
       return;
     }
-    console.log('[WebSocketService] Đăng ký subscription cho /topic/admin-messages hoặc /topic/messages với userId:', this.userId);
+  
     const destination = this.isAdmin ? `/topic/admin-messages/${this.userId}` : `/topic/messages/${this.userId}`;
     this.subscribe(destination, this.chatMessageSubject, 'chat message');
   }
@@ -151,41 +151,38 @@ export class WebSocketService {
 
   private subscribe(destination: string, subject: BehaviorSubject<any>, type: string): void {
     if (!this.stompClient.active) {
-      console.warn(`[WebSocketService] Không thể đăng ký ${destination}: WebSocket chưa kết nối`);
+      
       setTimeout(() => this.subscribe(destination, subject, type), 1000);
       return;
     }
 
     if (this.subscriptions.has(destination)) {
-      console.log(`[WebSocketService] Đã đăng ký subscription cho ${destination}, bỏ qua...`);
+      
       return;
     }
 
-    console.log(`[WebSocketService] Đang đăng ký subscription cho ${destination}`);
+    
     const subscription = this.stompClient.subscribe(destination, (message: IMessage) => {
-      console.log(`[WebSocketService] Nhận tin nhắn trên ${destination}:`, message.body);
+     
       this.handleMessage(message, subject, type);
     }, { id: `sub-${type}-${this.userId || 'admin'}` });
 
     this.subscriptions.set(destination, subscription);
-    console.log(`[WebSocketService] Subscription thành công cho ${destination}, subscription ID: ${subscription.id}`);
+    
   }
 
   private handleMessage(message: IMessage, subject: BehaviorSubject<any>, type: string): void {
     if (!message.body) {
-      console.warn(`[WebSocketService] Nhận được tin nhắn trống cho ${type}`);
-      // Không phát tin nhắn rỗng
+      
       return;
     }
 
     try {
       const update = JSON.parse(message.body);
-      console.log(`[WebSocketService] Đã phân tích ${type} update:`, update);
-
-      // Chuẩn hóa tin nhắn chat nếu là chat message
+     
       if (type === 'chat message') {
         if (!update || typeof update !== 'object') {
-          console.warn(`[WebSocketService] Tin nhắn chat không hợp lệ:`, update);
+         
           return;
         }
 
@@ -204,37 +201,36 @@ export class WebSocketService {
 
         // Kiểm tra các trường bắt buộc cho tin nhắn chat
         if (normalizedMessage.senderId === null || !normalizedMessage.content) {
-          console.warn(`[WebSocketService] Tin nhắn chat thiếu các trường bắt buộc:`, normalizedMessage);
+          
           return;
         }
 
-        console.log(`[WebSocketService] Tin nhắn chat chuẩn hóa:`, normalizedMessage);
+       
         subject.next(normalizedMessage);
       } else {
         // Các loại tin nhắn khác (order, inventory, product updates, v.v.)
         subject.next(update);
       }
     } catch (error) {
-      console.error(`[WebSocketService] Lỗi khi phân tích ${type} message:`, error, `Raw message:`, message.body);
-      // Không phát tin nhắn lỗi
+      
     }
   }
 
   private handleErrorsAndEvents(): void {
     this.stompClient.onStompError = (frame) => {
-      console.error('[WebSocketService] Lỗi STOMP:', frame);
+      
       this.isConnected = false;
       this.handleReconnect();
     };
 
     this.stompClient.onWebSocketClose = (event) => {
-      console.log('[WebSocketService] Kết nối WebSocket đã đóng:', event);
+     
       this.isConnected = false;
       this.handleReconnect();
     };
 
     this.stompClient.onWebSocketError = (error) => {
-      console.error('[WebSocketService] Lỗi WebSocket:', error);
+      
       this.isConnected = false;
       this.handleReconnect();
     };
@@ -243,14 +239,14 @@ export class WebSocketService {
   private handleReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`[WebSocketService] Đang thử kết nối lại (${this.reconnectAttempts}/${this.maxReconnectAttempts}) sau ${this.reconnectDelay}ms...`);
+      
       setTimeout(() => {
         if (!this.isConnected) {
           this.stompClient.activate();
         }
       }, this.reconnectDelay);
     } else {
-      console.error('[WebSocketService] Đã đạt tối đa số lần thử kết nối lại. Vui lòng làm mới trang để kết nối lại.');
+      
       // Instead of completing subjects, emit a special message
       this.chatMessageSubject.next({ type: 'error', message: 'Đã đạt tối đa số lần thử kết nối lại' });
     }
@@ -263,14 +259,14 @@ export class WebSocketService {
 
   private notifyComplete(): void {
     // Remove completion of subjects
-    console.log('[WebSocketService] Kết nối đã đóng, sẽ thử kết nối lại...');
+  
   }
 
   disconnect(): void {
     if (this.isConnected) {
       this.subscriptions.forEach((sub, destination) => {
         sub.unsubscribe();
-        console.log(`[WebSocketService] Đã hủy subscription cho ${destination}`);
+        
       });
       this.subscriptions.clear();
       this.stompClient.deactivate();
@@ -279,18 +275,18 @@ export class WebSocketService {
       this.userId = null;
       this.isAdmin = false;
       this.pendingMessages = [];
-      console.log('[WebSocketService] Đã ngắt kết nối');
+     
     }
   }
 
   sendChatMessage(senderId: number, receiverId: number | null, message: string): void {
     if (senderId < 1000) {
-      console.error('[WebSocketService] ID người gửi không hợp lệ:', senderId);
+      
       return;
     }
 
     if (receiverId !== null && receiverId < 1000) {
-      console.error('[WebSocketService] ID người nhận không hợp lệ:', receiverId);
+      
       return;
     }
 
@@ -305,23 +301,23 @@ export class WebSocketService {
       let destination: string;
       if (receiverId) {
         destination = `/app/admin-to-user/${senderId}/${receiverId}`;
-        console.log('[WebSocketService] Publishing message to destination:', destination, chatMessage);
+       
         this.stompClient.publish({
           destination: destination,
           body: JSON.stringify(chatMessage),
         });
-        console.log(`[WebSocketService] Đã gửi tin nhắn chat từ admin ${senderId} đến user ${receiverId}:`, chatMessage);
+       
       } else {
         destination = `/app/user-to-admin/${senderId}`;
-        console.log('[WebSocketService] Publishing message to destination:', destination, chatMessage);
+       
         this.stompClient.publish({
           destination: destination,
           body: JSON.stringify(chatMessage),
         });
-        console.log(`[WebSocketService] Đã gửi tin nhắn chat từ user ${senderId} đến tất cả admin/staff:`, chatMessage);
+        
       }
     } else {
-      console.error('[WebSocketService] Không thể gửi tin nhắn: WebSocket chưa kết nối');
+     
       if (isPlatformBrowser(this.platformId)) {
         this.pendingMessages.push({ senderId, receiverId, message });
         localStorage.setItem('pendingMessages', JSON.stringify(this.pendingMessages));
@@ -331,7 +327,7 @@ export class WebSocketService {
 
   private resendPendingMessages(): void {
     if (!isPlatformBrowser(this.platformId)) {
-      console.warn('Không thể gửi lại tin nhắn: Đang chạy trên server-side');
+     
       return;
     }
 

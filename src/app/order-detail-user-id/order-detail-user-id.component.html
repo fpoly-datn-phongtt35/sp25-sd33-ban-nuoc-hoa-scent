@@ -253,7 +253,7 @@
           <h3>Mã đơn hàng: {{ (selectedOrder?.ngayTao | date: 'yyyyMMdd':'UTC') + selectedOrder.maDonHang }}</h3>
           <p><strong>Tên người nhận:</strong> {{ selectedOrder?.tenNguoiNhanHang }}</p>
           <p><strong>SĐT người nhận:</strong> {{ selectedOrder?.sdtNguoiNhan }}</p>
-          <p><strong>Ngày tạo:</strong> {{ selectedOrder?.ngayTao | date: 'shortDate' }}</p>
+          <p><strong>Ngày tạo:</strong> {{ selectedOrder?.ngayTao | date:'dd/MM/yyyy HH:mm:ss'}}</p>
           <p><strong>Trạng thái:</strong> {{ selectedOrder?.statusLabel }}</p>
           <p><strong>Phương thức thanh toán:</strong> {{ selectedOrder?.phuongThucThanhToan === 'ck' ? 'Chuyển khoản' : 'Thanh toán khi nhận hàng' }}</p>
           <p><strong>Địa chỉ giao hàng:</strong> {{ selectedOrder?.diaChiGiaoHang }}</p>
@@ -274,7 +274,7 @@
               </div>
               <div class="product-info">
                 <h4>{{ item.tenSanPham }}</h4>
-                <p>Số lượng: {{ item.soLuong }}</p>
+                <p>Số lượng: {{ item.quantity}}</p>
                 <p>Giá: {{ item.donGia | number: '1.0-0' }} VNĐ</p>
               </div>
               <!-- Form gửi đánh giá (hiển thị nếu đơn hàng đã hoàn thành) -->
@@ -429,7 +429,7 @@
         <div class="order-payment">
           <h4>Thanh toán</h4>
           <div class="payment-detail">
-            <p><strong>Thành tiền:</strong> {{ selectedOrder?.tongTien | number: '1.0-0' }} VNĐ</p>
+            <p><strong>Thành tiền:</strong> {{ calculateProductTotal(selectedOrder.chiTietDonHangs) | number: '1.0-0' }} VNĐ</p>
             <p><strong>Số tiền giảm:</strong> - {{ selectedOrder?.soTienGiam | number: '1.0-0' }} VNĐ</p>
             <p><strong>Phí vận chuyển:</strong> {{ selectedOrder?.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
             <p><strong>Tổng tiền:</strong> {{ selectedOrder?.tongTien | number: '1.0-0' }} VNĐ</p>

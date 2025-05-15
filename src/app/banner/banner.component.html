@@ -1,0 +1,68 @@
+<div class="container">
+  <h2>Quản lý Banner</h2>
+
+  <!-- Form thêm/sửa banner -->
+  <div class="banner-form">
+    <h3>{{ isEditing ? 'Sửa Banner' : 'Thêm Banner Mới' }}</h3>
+    <form (ngSubmit)="isEditing ? updateBanner() : createBanner()">
+      <div class="form-group">
+        <label for="title">Tiêu đề:</label>
+        <input type="text" id="title" [(ngModel)]="formData.title" name="title" required>
+      </div>
+
+      <div class="form-group">
+        <label for="file">Hình ảnh:</label>
+        <input type="file" id="file" (change)="onFileChange($event)" [required]="!isEditing">
+      </div>
+
+    
+
+      <div class="form-group">
+        <label for="position">Vị trí:</label>
+        <select id="position" [(ngModel)]="formData.position" name="position">
+          <option value="">Chọn vị trí</option>
+          <option value="top">Top</option>
+          <option value="sidebar">Sidebar</option>
+        </select>
+      </div>
+
+      <button type="submit">{{ isEditing ? 'Cập nhật' : 'Thêm' }}</button>
+      <button type="button" *ngIf="isEditing" (click)="resetForm()">Hủy</button>
+    </form>
+  </div>
+
+  <!-- Danh sách banner -->
+  <div class="banner-list">
+    <h3>Danh sách Banner</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tiêu đề</th>
+          <th>Hình ảnh</th>
+         
+          <th>Vị trí</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let banner of banners">
+          <td>{{ banner.id }}</td>
+          <td>{{ banner.title }}</td>
+          <td><img [src]="banner.imageUrl" alt="Banner" style="width: 100px;"></td>
+        
+          <td>{{ banner.position || 'Không có' }}</td>
+          <td>{{ banner.isActive === 1 ? 'Hoạt động' : 'Ngừng' }}</td>
+          <td>
+            <button (click)="startEditing(banner)">Sửa</button>
+            <button (click)="deleteBanner(banner.id)">Xóa</button>
+            <button (click)="toggleStatus(banner.id)">
+              {{ banner.isActive === 1 ? 'Tắt' : 'Bật' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

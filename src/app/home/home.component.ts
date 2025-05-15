@@ -11,11 +11,19 @@ import { ThuongHieuService } from '../service/thuonghieu.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { WebSocketService } from '../service/WebSocketService';
+import { BannerService, Banner } from '../service/BannerService'; // Import Banner từ BannerService
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [HeaderComponent, FooterComponent, CommonModule, FormsModule, MatSliderModule, ReactiveFormsModule],
+  imports: [
+    HeaderComponent,
+    FooterComponent,
+    CommonModule,
+    FormsModule,
+    MatSliderModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
 })
@@ -55,15 +63,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   private webSocketSubscription: Subscription | undefined;
 
   // Banner Slider
-  slides = [
-    { image: '/banner.jpg', loaded: false },
-    { image: '/banner1.jpg', loaded: false },
-    { image: '/banner2.jpg', loaded: false },
-    { image: '/banner3.jpg', loaded: false }
-  ];
+  slides: { banner: Banner; loaded: boolean }[] = [];
   currentSlide: number = 0;
   slideInterval: any;
   isTransitioning: boolean = false;
+  private baseUrl: string = 'http://localhost:8080';
 
   constructor(
     private sanPhamService: SanPhamService,
@@ -71,30 +75,31 @@ export class HomeComponent implements OnInit, OnDestroy {
     private nhomHuongService: NhomHuongService,
     private thuongHieuService: ThuongHieuService,
     private webSocketService: WebSocketService,
+    private bannerService: BannerService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    console.log('[HomeComponent] Đang khởi tạo component');
     this.fetchFilters();
     this.loadProducts();
     this.loadBestSellingProducts();
+    this.loadBanners();
 
     const userId = 0;
-    console.log(`[HomeComponent] Kết nối WebSocket cho userId: ${userId}`);
     this.webSocketService.connect(userId);
 
     this.webSocketSubscription = this.webSocketService.getProductUpdates().subscribe({
       next: (update: any) => {
-        console.log('[HomeComponent] Nhận cập nhật sản phẩm:', update);
         if (update && typeof update === 'object' && update.id != null && update.trangThai != null) {
           const productId = update.id;
           const trangThai = update.trangThai;
 
           if (trangThai === 0) {
             const oldLength = this.sanPhams.length;
-            this.sanPhams = this.sanPhams.filter(product => String(product.idSanPham) !== String(productId));
-            this.bestSellingProducts = this.bestSellingProducts.filter(product => String(product.idSanPham) !== String(productId));
+            this.sanPhams = this.sanPhams.filter((product) => String(product.idSanPham) !== String(productId));
+            this.bestSellingProducts = this.bestSellingProducts.filter(
+              (product) => String(product.idSanPham) !== String(productId)
+            );
             if (this.sanPhams.length < oldLength && this.sanPhams.length === 0 && this.page > 0) {
               this.page--;
               this.loadProducts();
@@ -102,13 +107,14 @@ export class HomeComponent implements OnInit, OnDestroy {
               this.updateVisiblePages();
             }
           } else if (trangThai === 1) {
-            const productExists = this.sanPhams.some(product => String(product.idSanPham) === String(productId));
+            const productExists = this.sanPhams.some(
+              (product) => String(product.idSanPham) === String(productId)
+            );
             if (!productExists) {
               this.loadProducts();
             } else {
-              this.sanPhams = this.sanPhams.map(product => {
+              this.sanPhams = this.sanPhams.map((product) => {
                 if (String(product.idSanPham) === String(productId)) {
-                  console.log(`[HomeComponent] Cập nhật sản phẩm với ID ${productId} thành trangThai = 1`);
                   return { ...product, trangThai: 1 };
                 }
                 return product;
@@ -116,15 +122,16 @@ export class HomeComponent implements OnInit, OnDestroy {
             }
             this.loadBestSellingProducts();
           }
-        } else {
-          console.warn('[HomeComponent] Dữ liệu WebSocket không hợp lệ:', update);
         }
       },
       error: (err) => console.error('[HomeComponent] Lỗi WebSocket:', err),
     });
 
-    this.preloadSlides().then(() => {
-      this.startAutoSlide();
+    // Tải banner trước, sau đó khởi động auto slide
+    this.loadBanners().then(() => {
+      this.preloadSlides().then(() => {
+        this.startAutoSlide();
+      });
     });
   }
 
@@ -133,8 +140,48 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.webSocketSubscription.unsubscribe();
     }
     this.webSocketService.disconnect();
-    console.log('[HomeComponent] Ngắt kết nối WebSocket và hủy đăng ký');
     this.stopAutoSlide();
+  }
+
+  // Tải banner từ API
+  loadBanners(): Promise<void> {
+    return new Promise((resolve) => {
+      this.bannerService.getActiveBanners().subscribe({
+        next: (banners: Banner[]) => {
+          
+          if (banners && banners.length > 0) {
+            this.slides = banners.map((banner) => ({
+              banner: {
+                ...banner,
+                imageUrl: banner.imageUrl.startsWith('http') ? banner.imageUrl : `${this.baseUrl}${banner.imageUrl}`,
+              },
+              loaded: false,
+            }));
+            
+          } else {
+            this.slides = [
+              { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+1', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+              { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+2', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+              { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+3', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+              { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+4', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+            ];
+          }
+          this.cdr.detectChanges();
+          resolve();
+        },
+        error: (err) => {
+          
+          this.slides = [
+            { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+1', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+            { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+2', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+            { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+3', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+            { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+4', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
+          ];
+          this.cdr.detectChanges();
+          resolve();
+        },
+      });
+    });
   }
 
   fetchFilters(): void {
@@ -195,14 +242,12 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
       next: (data: any) => {
-        console.log('[HomeComponent] Sản phẩm đã được tải:', data);
         this.sanPhams = data.content || [];
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
         this.isLoading = false;
       },
       error: (err: any) => {
-        console.error('[HomeComponent] Lỗi khi tải sản phẩm:', err);
         this.sanPhams = [];
         this.totalPages = 1;
         this.visiblePages = [];
@@ -224,11 +269,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.sanPhamService.getBestSellingProducts(5).subscribe({
       next: (data: any) => {
         this.bestSellingProducts = data || [];
-        console.log('[HomeComponent] Sản phẩm bán chạy đã được tải:', this.bestSellingProducts);
         this.isBestSellingLoading = false;
       },
       error: (err: any) => {
-        console.error('[HomeComponent] Lỗi khi tải sản phẩm bán chạy:', err);
         this.bestSellingProducts = [];
         this.isBestSellingLoading = false;
       },
@@ -236,7 +279,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   sortProducts(sortOption: string): void {
-    console.log('[HomeComponent] Sắp xếp sản phẩm với tùy chọn:', sortOption);
     this.selectedFilters.sort = sortOption;
     this.page = 0;
     this.loadProducts();
@@ -247,15 +289,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     const startPage = Math.max(0, this.page - Math.floor(pagesToShow / 2));
     const endPage = Math.min(this.totalPages - 1, startPage + pagesToShow - 1);
     this.visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-    console.log('[HomeComponent] Cập nhật các trang hiển thị:', this.visiblePages);
   }
 
   viewProductDetail(productId: number): void {
     if (productId) {
-      console.log('[HomeComponent] Điều hướng đến chi tiết sản phẩm:', productId);
       this.router.navigate([`/detail/${productId}`]);
-    } else {
-      console.warn('[HomeComponent] ID sản phẩm không hợp lệ cho điều hướng');
     }
   }
 
@@ -265,7 +303,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadProducts();
   }
 
-  // Xử lý sự kiện queryChange từ HeaderComponent
   onQueryChange(newQuery: string): void {
     this.query = newQuery;
     this.onSearch();
@@ -286,7 +323,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       this.page = p;
-      console.log('[HomeComponent] Điều hướng đến trang:', this.page);
       this.loadProducts();
     }
   }
@@ -294,7 +330,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      console.log('[HomeComponent] Điều hướng đến trang trước:', this.page);
       this.loadProducts();
     }
   }
@@ -302,7 +337,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-      console.log('[HomeComponent] Điều hướng đến trang tiếp theo:', this.page);
       this.loadProducts();
     }
   }
@@ -312,19 +346,19 @@ export class HomeComponent implements OnInit, OnDestroy {
     const pagesToShow = 5;
     const start = Math.max(0, this.page - Math.floor(pagesToShow / 2));
     const end = Math.min(this.totalPages, start + pagesToShow);
-
     for (let i = start; i < end; i++) {
       range.push(i);
     }
-    console.log('[HomeComponent] Phạm vi phân trang:', range);
     return range;
   }
 
   // Phương thức cho Slider Banner
   startAutoSlide(): void {
-    this.slideInterval = setInterval(() => {
-      this.nextSlide();
-    }, 5000);
+    if (this.slides.length > 1) {
+      this.slideInterval = setInterval(() => {
+        this.nextSlide();
+      }, 5000);
+    }
   }
 
   stopAutoSlide(): void {
@@ -334,11 +368,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   nextSlide(): void {
+    if (this.slides.length === 0) return;
     this.isTransitioning = true;
     const nextIndex = (this.currentSlide + 1) % this.slides.length;
     this.ensureSlideLoaded(nextIndex).then(() => {
       this.currentSlide = nextIndex;
-      console.log(`[HomeComponent] Chuyển đến slide ${this.currentSlide + 1}: ${this.slides[this.currentSlide].image}`);
       this.cdr.detectChanges();
       this.isTransitioning = false;
       this.stopAutoSlide();
@@ -347,11 +381,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   prevSlide(): void {
+    if (this.slides.length === 0) return;
     this.isTransitioning = true;
     const prevIndex = (this.currentSlide - 1 + this.slides.length) % this.slides.length;
     this.ensureSlideLoaded(prevIndex).then(() => {
       this.currentSlide = prevIndex;
-      console.log(`[HomeComponent] Chuyển đến slide ${this.currentSlide + 1}: ${this.slides[this.currentSlide].image}`);
       this.cdr.detectChanges();
       this.isTransitioning = false;
       this.stopAutoSlide();
@@ -360,10 +394,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   goToSlide(index: number): void {
+    if (this.slides.length === 0) return;
     this.isTransitioning = true;
     this.ensureSlideLoaded(index).then(() => {
       this.currentSlide = index;
-      console.log(`[HomeComponent] Chuyển đến slide ${this.currentSlide + 1}: ${this.slides[this.currentSlide].image}`);
       this.cdr.detectChanges();
       this.isTransitioning = false;
       this.stopAutoSlide();
@@ -373,22 +407,27 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   preloadSlides(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.slides.length === 0) {
+        resolve();
+        return;
+      }
       let loadedCount = 0;
       this.slides.forEach((slide, index) => {
+        console.log(`Đang tải ảnh: ${slide.banner.imageUrl}`);
         const img = new Image();
-        img.src = slide.image;
+        img.src = slide.banner.imageUrl;
         img.onload = () => {
           slide.loaded = true;
           loadedCount++;
-          console.log(`[HomeComponent] Đã tải trước slide ${index + 1}: ${slide.image}`);
+          console.log(`Ảnh ${index} tải thành công`);
           this.cdr.detectChanges();
           if (loadedCount === this.slides.length) {
             resolve();
           }
         };
         img.onerror = () => {
-          console.error(`[HomeComponent] Lỗi khi tải trước slide ${index + 1}: ${slide.image}`);
-          slide.image = `https://placehold.co/1200x360?text=Slide+${index + 1}`;
+          console.error(`Lỗi tải ảnh ${index} từ ${slide.banner.imageUrl}`);
+          slide.banner.imageUrl = `https://placehold.co/1200x360?text=Banner+${index + 1}`;
           slide.loaded = true;
           loadedCount++;
           this.cdr.detectChanges();
@@ -408,16 +447,14 @@ export class HomeComponent implements OnInit, OnDestroy {
         return;
       }
       const img = new Image();
-      img.src = slide.image;
+      img.src = slide.banner.imageUrl;
       img.onload = () => {
         slide.loaded = true;
-        console.log(`[HomeComponent] Đã tải slide ${index + 1}: ${slide.image}`);
         this.cdr.detectChanges();
         resolve();
       };
       img.onerror = () => {
-        console.error(`[HomeComponent] Lỗi khi tải slide ${index + 1}: ${slide.image}`);
-        slide.image = `https://placehold.co/1200x360?text=Slide+${index + 1}`;
+        slide.banner.imageUrl = `https://placehold.co/1200x360?text=Banner+${index + 1}`;
         slide.loaded = true;
         this.cdr.detectChanges();
         resolve();
@@ -427,7 +464,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   onImageError(index: number): void {
     const slide = this.slides[index];
-    slide.image = `https://placehold.co/1200x360?text=Slide+${index + 1}`;
+    slide.banner.imageUrl = `https://placehold.co/1200x360?text=Banner+${index + 1}`;
     slide.loaded = true;
     this.cdr.detectChanges();
   }

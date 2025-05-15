@@ -1,0 +1,101 @@
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  h2, h3 {
+    text-align: center;
+    color: #333;
+  }
+  
+  .banner-form {
+    margin-bottom: 40px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button[type="submit"] {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  button[type="button"] {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .banner-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .banner-list th,
+  .banner-list td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  
+  .banner-list th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  .banner-list button {
+    padding: 5px 10px;
+    margin: 0 5px;
+  }
+  .checkbox-group {
+    display: flex;
+    gap: 20px;
+  
+    label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+  
+    input[type="checkbox"] {
+      cursor: pointer;
+    }
+  }
+  .banner-list button:first-child {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .banner-list button:last-child {
+    background-color: #dc3545;
+    color: white;
+  }
