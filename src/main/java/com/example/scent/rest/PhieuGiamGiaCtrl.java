@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -81,13 +82,24 @@ public class PhieuGiamGiaCtrl {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
     @GetMapping("/check")
-    public ResponseEntity<PhieuGiamGia> getDiscountCodeDetails(
+    public ResponseEntity<?> getDiscountCodeDetails(
             @RequestParam("code") String code,
             @RequestParam(value = "sdt", required = false) String sdt,
             @RequestParam(value = "idTaiKhoan", required = false) Integer id) {
-        PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id);
-        return ResponseEntity.ok(phieuGiamGia);
-    }
+        try {
+            PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id);
+            return ResponseEntity.ok(phieuGiamGia);
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode()).body(Map.of(
+                    "status", ex.getStatusCode().value(),
+                    "message", ex.getReason()
+            ));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "message", "Lỗi máy chủ nội bộ, vui lòng thử lại sau!"
+            ));
+        }}
     @PutMapping("/update-status/{id}")
     public ResponseEntity<Map<String, Object>> updateStatus(
             @PathVariable Integer id,
