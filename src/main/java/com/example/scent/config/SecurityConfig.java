@@ -216,7 +216,7 @@ public class SecurityConfig {
                 "/api/cart/remove-multiple/**", "/api/danhgia/user/**", "/api/danhgia/**", "/api/danhgia/sanpham/**",
                 "/rest/san-pham/statuse/**", "/rest/tai-khoan/**", "/rest/spct/status/multiple", "/rest/spct/status/**",
                 "/rest/tai-khoan/search-by-sdt/**", "/rest/san-pham/recommended", "/rest/don-hang/latest/**",
-                "/rest/phieu-giam-gia/check/**", "/ws/**", "api/danhgia", "api/danhgia/sanpham/**",
+                "/rest/phieu-giam-gia/check/**","/rest/phieu-giam-gia/search/**", "/ws/**", "api/danhgia", "api/danhgia/sanpham/**",
                 "/rest/don-hang/diachi/**", "/rest/don-hang/update-address/**")
             .permitAll()
             .requestMatchers("/api/chat/messages/user/{adminId}/{userId}").permitAll()

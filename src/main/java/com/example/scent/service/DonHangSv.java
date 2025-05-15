@@ -287,14 +287,21 @@ public class DonHangSv {
                 phieuGiamGia = phieuGiamGiaInterface.findByMaGiamGia(orderRequest.getMaGiamGia())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                 "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
-
+                if (phieuGiamGia.getDieuKienapDung() != 1) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng online!");
+                }
                 LocalDateTime now = LocalDateTime.now();
                 if (phieuGiamGia.getTrangThai() != 1) {
                     logger.error("Mã giảm giá không hoạt động: {}", orderRequest.getMaGiamGia());
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "⚠️ Mã giảm giá không hoạt động!");
                 }
-
+//                if (phieuGiamGia.getGiaTriDonToiThieu().compareTo(thanhTienGoc) > 0) {
+//                    logger.error("Tổng giá trị đơn hàng {} không đạt giá trị tối thiểu {} để áp dụng mã giảm giá: {}",
+//                            thanhTienGoc, phieuGiamGia.getGiaTriDonToiThieu(), orderRequest.getMaGiamGia());
+//                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+//                            "⚠️ Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này! Cần tối thiểu: " + phieuGiamGia.getGiaTriDonToiThieu());
+//                }
                 if (phieuGiamGia.getNgayBatDau().isAfter(now) || phieuGiamGia.getNgayHetHan().isBefore(now)) {
                     logger.error("Mã giảm giá đã hết hạn: {}", orderRequest.getMaGiamGia());
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -1075,12 +1082,26 @@ donHangDTO.setLuongBan(donHang.getLuongBan());
             if (phieuGiamGia.getDieuKienapDung() != 0) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng online!");
             }
-
-            // Không kiểm tra thời gian hiệu lực và số lượng vì đây là phiếu offline do nhân viên phát
+            if (phieuGiamGia.getGiaTriDonToiThieu().compareTo(thanhTienGoc) > 0) {
+                logger.error("Tổng giá trị đơn hàng {} không đạt giá trị tối thiểu {} để áp dụng mã giảm giá: {}",
+                        thanhTienGoc, phieuGiamGia.getGiaTriDonToiThieu(), orderRequest.getMaGiamGia());
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "⚠️ Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này! Cần tối thiểu: " + phieuGiamGia.getGiaTriDonToiThieu());
+            }
+            if (phieuGiamGia.getTrangThai() != 1) {
+                logger.error("Mã giảm giá không hoạt động: {}", orderRequest.getMaGiamGia());
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "⚠️ Mã giảm giá không hoạt động!");
+            }
+            // Kiểm tra số lượng phiếu giảm giá
+            if (phieuGiamGia.getSoLuong() <= 0) {
+                logger.error("Phiếu giảm giá đã hết: {}", orderRequest.getMaGiamGia());
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "⚠️ Phiếu giảm giá đã hết số lượng!");
+            }
 
             // Kiểm tra xem tài khoản đã sử dụng mã giảm giá này chưa (tùy bạn có muốn giữ điều kiện này hay không)
             List<DonHang> donHangs = dhi.findByTaiKhoanAndPhieuGiamGia(taiKhoan, phieuGiamGia);
-
 
             // Tính toán số tiền giảm
             BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
@@ -1113,7 +1134,10 @@ donHangDTO.setLuongBan(donHang.getLuongBan());
 
         if (phieuGiamGia != null) {
             newOrder.setPhieuGiamGia(phieuGiamGia);
-            // Không giảm số lượng phiếu giảm giá cho đơn offline
+            // Trừ số lượng phiếu giảm giá đi 1
+            phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1);
+            // Cập nhật phiếu giảm giá vào cơ sở dữ liệu
+            phieuGiamGiaInterface.save(phieuGiamGia);
         }
 
         // Save the order
@@ -1132,7 +1156,6 @@ donHangDTO.setLuongBan(donHang.getLuongBan());
 
         return savedOrder;
     }
-
     public DonHang updateOrderStatus(Integer orderId, UpdateOrderStatusRequest statusRequest) throws Exception {
         DonHang order = dhi.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại với ID: " + orderId));

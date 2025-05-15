@@ -47,7 +47,10 @@ public class PhieuGiamGia {
     @Column(name = "dieu_kien_ap_dung")
     private Integer dieuKienapDung;
 
-
+    @NotNull(message = "Giá trị đơn tối thiểu không được để trống")
+    @DecimalMin(value = "0.01", message = "Giá trị đơn tối thiểu phải lớn hơn 0")
+    @Column(name = "gia_tri_don_toi_thieu")
+    private BigDecimal giaTriDonToiThieu;
 
     @Column(name = "ngay_het_han")
     private LocalDateTime ngayHetHan;
@@ -116,7 +119,7 @@ public class PhieuGiamGia {
     public PhieuGiamGia() {
     }
 
-    public PhieuGiamGia(Integer id, String maGiamGia, BigDecimal giaTriGiam, LocalDateTime ngayBatDau, BigDecimal gia_tri_toi_da, Integer soLuong, Integer dieuKienapDung, LocalDateTime ngayHetHan, List<DonHang> donHang) {
+    public PhieuGiamGia(Integer id, String maGiamGia, BigDecimal giaTriGiam, LocalDateTime ngayBatDau, BigDecimal gia_tri_toi_da, Integer soLuong, Integer dieuKienapDung, BigDecimal giaTriDonToiThieu, LocalDateTime ngayHetHan, Integer trangThai, List<DonHang> donHang) {
         this.id = id;
         this.maGiamGia = maGiamGia;
         this.giaTriGiam = giaTriGiam;
@@ -124,8 +127,18 @@ public class PhieuGiamGia {
         this.gia_tri_toi_da = gia_tri_toi_da;
         this.soLuong = soLuong;
         this.dieuKienapDung = dieuKienapDung;
+        this.giaTriDonToiThieu = giaTriDonToiThieu;
         this.ngayHetHan = ngayHetHan;
+        this.trangThai = trangThai;
         this.donHang = donHang;
+    }
+
+    public BigDecimal getGiaTriDonToiThieu() {
+        return giaTriDonToiThieu;
+    }
+
+    public void setGiaTriDonToiThieu(BigDecimal giaTriDonToiThieu) {
+        this.giaTriDonToiThieu = giaTriDonToiThieu;
     }
 
     public BigDecimal getGia_tri_toi_da() {

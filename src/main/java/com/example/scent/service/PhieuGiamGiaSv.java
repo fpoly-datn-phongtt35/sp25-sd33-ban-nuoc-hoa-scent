@@ -20,7 +20,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,17 +120,15 @@ public class PhieuGiamGiaSv {
         return pggi.findByMaGiamGiaContainingAndGiaTriGiam(maGiamGia, giaTriGiam, pageable);
     }
 
+
     @Transactional(readOnly = true)
+    public PhieuGiamGia getDiscountCodeDetails(String code, String sdt, Integer id, BigDecimal tongGiaTriDonHang) {
+        logger.info("Checking discount code: code={}, idTaiKhoan={}, sdt={}, tongGiaTriDonHang={}", code, id, sdt, tongGiaTriDonHang);
 
-    public PhieuGiamGia getDiscountCodeDetails(String code, String sdt, Integer id) {
-        logger.info("Checking discount code: code={}, idTaiKhoan={}, sdt={}", code, id, sdt);
-
-        // Kiểm tra mã giảm giá có tồn tại không
         PhieuGiamGia phieuGiamGia = pggi.findByMaGiamGia(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
 
-        // Kiểm tra ngày hiệu lực
         LocalDateTime now = LocalDateTime.now();
         if (phieuGiamGia.getNgayBatDau() != null && now.isBefore(phieuGiamGia.getNgayBatDau())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -138,30 +139,28 @@ public class PhieuGiamGiaSv {
                     "⚠️ Mã giảm giá đã hết hạn!");
         }
 
-        // Kiểm tra số lượt sử dụng còn lại
         if (phieuGiamGia.getSoLuong() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "⚠️ Đã hết mã giảm giá!");
         }
 
-        // Xác định số điện thoại để kiểm tra
-        String phoneNumberToCheck;
+        // Kiểm tra giá trị đơn tối thiểu
+        if (tongGiaTriDonHang == null || phieuGiamGia.getGiaTriDonToiThieu().compareTo(tongGiaTriDonHang) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "⚠️ Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này!");
+        }
 
-        // Trường hợp đăng nhập (online)
+        String phoneNumberToCheck;
         if (id != null) {
-            // Lấy thông tin tài khoản
             TaiKhoan taiKhoan = taiKhoanInterface.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "⚠️ Tài khoản không tồn tại!"));
-
-            // Lấy số điện thoại đăng ký của tài khoản
             phoneNumberToCheck = taiKhoan.getSdt();
             if (phoneNumberToCheck == null || phoneNumberToCheck.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "⚠️ Tài khoản không có số điện thoại đăng ký!");
             }
         } else {
-            // Trường hợp không đăng nhập (offline)
             if (sdt == null || sdt.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "⚠️ Vui lòng cung cấp số điện thoại để sử dụng mã giảm giá!");
@@ -169,13 +168,15 @@ public class PhieuGiamGiaSv {
             phoneNumberToCheck = sdt;
         }
 
-        // Validate phone number format
         if (!phoneNumberToCheck.matches("^0[0-9]{9}$")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "⚠️ Số điện thoại không hợp lệ! Phải có 10 chữ số và bắt đầu bằng 0.");
         }
+        if (tongGiaTriDonHang == null || phieuGiamGia.getGiaTriDonToiThieu().compareTo(tongGiaTriDonHang) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "⚠️ Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này!");
+        }
 
-        // Kiểm tra xem số điện thoại đã sử dụng mã giảm giá này chưa
         logger.info("Checking discount code usage for phone number: {}", phoneNumberToCheck);
         Optional<SuDungPhieuGiamGia> usageOpt = suDungPhieuGiamGiaInterface
                 .findByPhieuGiamGiaIdAndSdt(phieuGiamGia.getId(), phoneNumberToCheck);
@@ -186,9 +187,38 @@ public class PhieuGiamGiaSv {
 
         return phieuGiamGia;
     }
-
     @Transactional
-    public void updateExpiredVouchersStatus() {
+
+    public void updateVoucherStatuses() {
+        logger.info("Bắt đầu cập nhật trạng thái phiếu giảm giá");
+
+        // Lấy thời gian hiện tại (múi giờ +07)
+        LocalDateTime currentTime = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+        // Kiểm tra và kích hoạt các voucher đã đến thời gian bắt đầu (trangThai = 0, ngayBatDau <= currentTime)
+        List<PhieuGiamGia> pendingVouchers = pggi.findAllByTrangThaiAndNgayBatDauBeforeOrNgayBatDauEquals(0, currentTime, currentTime);
+        int activatedCount = 0;
+        for (PhieuGiamGia voucher : pendingVouchers) {
+            if (currentTime.isBefore(voucher.getNgayHetHan())) { // Đảm bảo chưa hết hạn
+                voucher.setTrangThai(1); // Chuyển thành Hoạt động
+                pggi.save(voucher);
+                activatedCount++;
+                logger.info("Tự động kích hoạt voucher: {}", voucher.getMaGiamGia());
+            }
+        }
+
+        // Kiểm tra và ngưng các voucher hết hạn (trangThai = 1, ngayHetHan < currentTime)
+        List<PhieuGiamGia> expiredVouchers = pggi.findAllByTrangThaiAndNgayHetHanBefore(1, currentTime);
+        int expiredUpdatedCount = 0;
+        for (PhieuGiamGia voucher : expiredVouchers) {
+            voucher.setTrangThai(0); // Chuyển thành Ngưng
+            pggi.save(voucher);
+            expiredUpdatedCount++;
+        }
+
+        logger.info("Đã kích hoạt {} phiếu giảm giá", activatedCount);
+        logger.info("Đã cập nhật {} phiếu hết hạn thành trạng thái Ngưng", expiredUpdatedCount);
+    }public void updateExpiredVouchersStatus(){
         logger.info("Bắt đầu cập nhật trạng thái phiếu giảm giá");
 
         // Lấy phiếu đang hoạt động (trangThai = 1) và đã hết hạn (ngayHetHan trước hiện tại)
@@ -214,5 +244,53 @@ public class PhieuGiamGiaSv {
         logger.info("Đã cập nhật {} phiếu hết hạn thành trạng thái Ngưng", expiredUpdatedCount);
         logger.info("Đã cập nhật {} phiếu chưa hết hạn thành trạng thái Hoạt động", notExpiredUpdatedCount);
     }
+    public Map<String, Object> searchVouchers(
+            String maGiamGia,
+            Double giaTri,
+            LocalDateTime ngayBatDau,
+            LocalDateTime ngayHetHan,
+            Integer soLuong,
+            Integer giaTriToiDa,
+            Integer giaTriToiThieu,
+            Integer trangThai,
+            int page,
+            int size) {
 
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PhieuGiamGia> vouchersPage = pggi.searchVouchers(
+                    maGiamGia,
+                    giaTri,
+                    ngayBatDau,
+                    ngayHetHan,
+                    soLuong,
+                    giaTriToiDa,
+                    giaTriToiThieu,
+                    trangThai,
+                    pageable
+            );
+
+            if (vouchersPage.isEmpty()) {
+                response.put("status", "success");
+                response.put("message", "Không tìm thấy phiếu giảm giá nào!");
+                response.put("data", vouchersPage.getContent());
+                response.put("totalPages", vouchersPage.getTotalPages());
+                response.put("totalElements", vouchersPage.getTotalElements());
+                response.put("currentPage", vouchersPage.getNumber());
+            } else {
+                response.put("status", "success");
+                response.put("message", "Tìm kiếm thành công!");
+                response.put("data", vouchersPage.getContent());
+                response.put("totalPages", vouchersPage.getTotalPages());
+                response.put("totalElements", vouchersPage.getTotalElements());
+                response.put("currentPage", vouchersPage.getNumber());
+            }
+            return response;
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Lỗi khi tìm kiếm: " + e.getMessage());
+            return response;
+        }
+    }
 }

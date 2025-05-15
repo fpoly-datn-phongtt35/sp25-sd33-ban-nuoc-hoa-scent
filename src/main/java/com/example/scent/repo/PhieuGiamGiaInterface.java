@@ -28,4 +28,28 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
     Optional<PhieuGiamGia> findByMaGiamGia(String maGiamGia);
     List<PhieuGiamGia> findAllByTrangThaiAndNgayHetHanBefore(int trangThai, LocalDateTime dateTime);
     List<PhieuGiamGia> findAllByTrangThaiAndNgayHetHanAfter(int trangThai, LocalDateTime dateTime);
+    List<PhieuGiamGia> findAllByTrangThaiAndNgayBatDauBeforeOrNgayBatDauEquals(
+            int trangThai,
+            LocalDateTime ngayBatDauBefore,
+            LocalDateTime ngayBatDauEquals
+    );
+    @Query("SELECT p FROM PhieuGiamGia p WHERE (:maGiamGia IS NULL OR p.maGiamGia LIKE %:maGiamGia%) " +
+            "AND (:giaTri IS NULL OR p.giaTriGiam = :giaTri) " +
+            "AND (:ngayBatDau IS NULL OR p.ngayBatDau >= :ngayBatDau) " +
+            "AND (:ngayHetHan IS NULL OR p.ngayHetHan <= :ngayHetHan) " +
+            "AND (:soLuong IS NULL OR p.soLuong = :soLuong) " +
+            "AND (:giaTriToiDa IS NULL OR p.gia_tri_toi_da = :giaTriToiDa) " +
+            "AND (:giaTriToiThieu IS NULL OR p.giaTriDonToiThieu = :giaTriToiThieu) " +
+            "AND (:trangThai IS NULL OR p.trangThai = :trangThai)")
+    Page<PhieuGiamGia> searchVouchers(
+            @Param("maGiamGia") String maGiamGia,
+            @Param("giaTri") Double giaTri,
+            @Param("ngayBatDau") LocalDateTime ngayBatDau,
+            @Param("ngayHetHan") LocalDateTime ngayHetHan,
+            @Param("soLuong") Integer soLuong,
+            @Param("giaTriToiDa") Integer giaTriToiDa,
+            @Param("giaTriToiThieu") Integer giaTriToiThieu,
+            @Param("trangThai") Integer trangThai,
+            Pageable pageable
+    );
 }

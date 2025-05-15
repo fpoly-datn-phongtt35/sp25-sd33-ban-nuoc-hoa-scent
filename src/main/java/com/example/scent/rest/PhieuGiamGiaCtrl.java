@@ -13,6 +13,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,9 +87,10 @@ public class PhieuGiamGiaCtrl {
     public ResponseEntity<?> getDiscountCodeDetails(
             @RequestParam("code") String code,
             @RequestParam(value = "sdt", required = false) String sdt,
-            @RequestParam(value = "idTaiKhoan", required = false) Integer id) {
+            @RequestParam(value = "idTaiKhoan", required = false) Integer id,
+            @RequestParam(value = "tongGiaTriDonHang", required = false) BigDecimal tongGiaTriDonHang) {
         try {
-            PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id);
+            PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id, tongGiaTriDonHang);
             return ResponseEntity.ok(phieuGiamGia);
         } catch (ResponseStatusException ex) {
             return ResponseEntity.status(ex.getStatusCode()).body(Map.of(
@@ -99,7 +102,8 @@ public class PhieuGiamGiaCtrl {
                     "status", HttpStatus.INTERNAL_SERVER_ERROR.value(),
                     "message", "Lỗi máy chủ nội bộ, vui lòng thử lại sau!"
             ));
-        }}
+        }
+    }
     @PutMapping("/update-status/{id}")
     public ResponseEntity<Map<String, Object>> updateStatus(
             @PathVariable Integer id,
@@ -122,6 +126,27 @@ public class PhieuGiamGiaCtrl {
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
 
+            // Lấy thời gian hiện tại
+            LocalDateTime currentTime = LocalDateTime.now();
+            LocalDateTime startTime = phieuGiamGia.getNgayBatDau();
+            LocalDateTime endTime = phieuGiamGia.getNgayHetHan();
+
+            // Kiểm tra nếu đang cố gắng kích hoạt voucher (trangThai = 1)
+            if (trangThai == 1) {
+                // Nếu thời gian hiện tại nhỏ hơn thời gian bắt đầu
+                if (currentTime.isBefore(startTime)) {
+                    response.put("status", "error");
+                    response.put("message", "Chưa đến thời gian bắt đầu của phiếu giảm giá!");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+                // Nếu thời gian hiện tại lớn hơn thời gian hết hạn
+                if (currentTime.isAfter(endTime)) {
+                    response.put("status", "error");
+                    response.put("message", "Phiếu giảm giá đã hết hạn!");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+            }
+
             // Cập nhật trạng thái
             phieuGiamGia.setTrangThai(trangThai);
             pggs.update(phieuGiamGia);
@@ -134,6 +159,38 @@ public class PhieuGiamGiaCtrl {
             response.put("message", "Lỗi khi cập nhật trạng thái: " + e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchVouchers(
+            @RequestParam(required = false) String maGiamGia,
+            @RequestParam(required = false) Double giaTri,
+            @RequestParam(required = false) String ngayBatDau,
+            @RequestParam(required = false) String ngayHetHan,
+            @RequestParam(required = false) Integer soLuong,
+            @RequestParam(required = false) Integer giaTriToiDa,
+            @RequestParam(required = false) Integer giaTriToiThieu,
+            @RequestParam(required = false) Integer trangThai,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        LocalDateTime startDate = ngayBatDau != null ? LocalDateTime.parse(ngayBatDau) : null;
+        LocalDateTime endDate = ngayHetHan != null ? LocalDateTime.parse(ngayHetHan) : null;
+
+        Map<String, Object> response = pggs.searchVouchers(
+                maGiamGia,
+                giaTri,
+                startDate,
+                endDate,
+                soLuong,
+                giaTriToiDa,
+                giaTriToiThieu,
+                trangThai,
+                page,
+                size
+        );
+
+        return ResponseEntity.ok(response);
     }
 }
 
