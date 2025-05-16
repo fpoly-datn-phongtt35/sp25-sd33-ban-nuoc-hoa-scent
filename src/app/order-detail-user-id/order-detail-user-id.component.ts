@@ -553,48 +553,61 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     this.router.navigate(['/app-order-id']);
   }
 
-  cancelOrder(orderId: number): void {
-    Swal.fire({
+  async cancelOrder(orderId: number): Promise<void> {
+    const result = await Swal.fire({
       title: 'Xác nhận hủy đơn hàng',
       text: 'Bạn có chắc chắn muốn hủy đơn hàng này?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Hủy đơn hàng',
       cancelButtonText: 'Không',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.donhangService.cancelOrder(orderId).subscribe({
-          next: (response: { status: string; message: any }) => {
-            if (response.status === 'success') {
-              this.loadOrders();
-              Swal.fire({
-                title: 'Thành công',
-                text: 'Đơn hàng đã được hủy.',
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false,
-              });
-            } else {
-              Swal.fire({
-                title: 'Lỗi',
-                text: response.message,
-                icon: 'error',
-                confirmButtonText: 'OK',
-              });
-            }
-          },
-          error: (error) => {
-            Swal.fire({
-              title: 'Lỗi',
-              text: 'Không thể hủy đơn hàng. Vui lòng thử lại sau.',
-              icon: 'error',
-              confirmButtonText: 'OK',
-            });
-            console.error('Error cancelling order:', error);
-          },
-        });
-      }
     });
+
+    if (result.isConfirmed) {
+      try {
+        const response: { status: string; message: any } = await this.donhangService.cancelOrder(orderId).toPromise();
+        if (response.status === 'success') {
+          const orderToUpdate = this.orders.find(order => order.maDonHang === orderId);
+          if (orderToUpdate) {
+            orderToUpdate.trangThai = 5;
+            orderToUpdate.statusLabel = this.getStatusLabel(5);
+            orderToUpdate.lyDoHuy = "Khách hàng hủy đơn hàng";
+            this.filteredOrders = [...this.orders];
+
+            if (this.selectedOrder && this.selectedOrder.maDonHang === orderId) {
+              this.selectedOrder.trangThai = 5;
+              this.selectedOrder.statusLabel = this.getStatusLabel(5);
+              this.selectedOrder.lyDoHuy = "Khách hàng hủy đơn hàng";
+            }
+          }
+
+          await this.loadOrders(); // Đồng bộ với server
+          this.cdRef.detectChanges();
+          Swal.fire({
+            title: 'Thành công',
+            text: 'Đơn hàng đã được hủy.',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+        } else {
+          Swal.fire({
+            title: 'Lỗi',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+        }
+      } catch (error: any) {
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Không thể hủy đơn hàng. Vui lòng thử lại sau.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+        });
+        console.error('Error cancelling order:', error);
+      }
+    }
   }
 
   filterOrders(status: string): void {

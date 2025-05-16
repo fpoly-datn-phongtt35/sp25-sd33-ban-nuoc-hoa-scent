@@ -49,7 +49,7 @@
       [ngClass]="{'active': selectedStatus === 5}"
       (click)="filterOrders('cancelled')"
     >
-      ❌ Hủy
+      ❌ Đơn hàng không hoàn thành
     </button>
   </div>
   <!-- Hiển thị đơn hàng -->
@@ -75,6 +75,7 @@
           <div class="product-info">
             <h4>{{ item.tenSanPham }}</h4>
             <p>Số lượng: {{ item.quantity }}</p>
+            <p>Dung tích: {{item.dungTich}}</p>
             <p>Giá: {{ item.donGia | number: '1.0-0' }} VNĐ</p>
           </div>
         </div>
@@ -182,7 +183,7 @@
                   class="status-step cancelled"
                 >
                   <span class="status-icon material-icons">cancel</span>
-                  <span class="status-label">Đã hủy</span>
+                  <span class="status-label">Đơn hàng không hoàn thành</span>
                   <span class="status-time" *ngIf="selectedOrder.trangThai === 5">
                     {{ selectedOrder.ngayHuy | date: 'HH:mm dd-MM-yyyy' }}
                   </span>
@@ -275,6 +276,7 @@
               <div class="product-info">
                 <h4>{{ item.tenSanPham }}</h4>
                 <p>Số lượng: {{ item.quantity}}</p>
+                <p>Dung tích: {{item.dungTich}}</p>
                 <p>Giá: {{ item.donGia | number: '1.0-0' }} VNĐ</p>
               </div>
               <!-- Form gửi đánh giá (hiển thị nếu đơn hàng đã hoàn thành) -->
