@@ -208,7 +208,7 @@ public class SecurityConfig {
                 "/api/thong-ke/tong-quan/thang", "/api/thong-ke/tong-quan/nam", "/api/thong-ke/tong-quan/ngay",
                 "/api/thong-ke/best-selling/ngay", "/api/thong-ke/best-selling/tuan",
                 "/api/thong-ke/best-selling/thang", "/api/thong-ke/best-selling/nam",
-                "rest/tai-khoan/setTrangThaiByIdTaiKhoan/**")
+                "rest/tai-khoan/setTrangThaiByIdTaiKhoan/**","/api/thong-ke/best-selling-products/filter/**","/api/thong-ke/best-selling-products/sort/**")
             .permitAll()
             // // // // // // // // // // // // // // // // // // // // //
             .requestMatchers("/rest/tai-khoan/users", "/api/chat/create-guest", "/api/chat/users-with-messages/**",

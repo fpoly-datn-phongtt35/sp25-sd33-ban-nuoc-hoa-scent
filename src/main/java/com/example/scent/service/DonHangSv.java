@@ -651,7 +651,7 @@ donHangDTO.setLuongBan(donHang.getLuongBan());
                 itemDTO.setThanhTien(donGia.multiply(BigDecimal.valueOf(chiTiet.getSoLuong())));
                 itemDTO.setTenSanPham(spct.getSanPham().getTenSanPham());
                 itemDTO.setIdSanPham(spct.getSanPham().getIdSanPham());
-
+itemDTO.setDungTich(spct.getDungTich());
                 // Lấy danh sách hình ảnh từ HinhAnhRepository
                 List<String> productImages = hinhAnhInterface.findHinhAnhBySanPhamId(spct.getSanPham().getIdSanPham())
                         .stream()
@@ -830,19 +830,22 @@ donHangDTO.setLuongBan(donHang.getLuongBan());
 
     public boolean updateOrderStatusToCancelled(Integer orderId) {
         Optional<DonHang> orderOpt = dhi.findById(orderId);
-
         if (orderOpt.isPresent()) {
             DonHang order = orderOpt.get();
-
-            // Kiểm tra trạng thái hiện tại của đơn hàng
-            if (order.getTrangThai() == 1) {  // Trạng thái "Chờ xác nhận"
-                order.setTrangThai(5);  // Cập nhật trạng thái thành "Đã huỷ"
-                dhi.save(order);  // Lưu lại thay đổi
+            if (order.getTrangThai() == 1) {
+                order.setTrangThai(5);
+                order.setLyDoHuy("Khách hàng hủy đơn hàng");
+                log.info("Before saving: Order ID {}, lyDoHuy: {}", orderId, order.getLyDoHuy());
+                dhi.save(order);
+                log.info("After saving: Order ID {}, lyDoHuy: {}", orderId, order.getLyDoHuy());
                 return true;
+            } else {
+                log.warn("Order ID {} has invalid status for cancellation: {}", orderId, order.getTrangThai());
             }
+        } else {
+            log.warn("Order ID {} not found.", orderId);
         }
-
-        return false;  // Trả về false nếu không thể cập nhật trạng thái
+        return false;
     }
 
     private String getStatusName(Integer status) {

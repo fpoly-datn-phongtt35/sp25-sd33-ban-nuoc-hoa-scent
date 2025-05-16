@@ -48,6 +48,10 @@ public class Spct {
     @JsonIgnore
     @OneToMany(mappedBy = "spct",cascade = CascadeType.ALL)
     private List<ChiTietDonHang> ctdh;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "spct",cascade = CascadeType.ALL)
+    private List<YeuCauTraHang> ycth;
     @ManyToOne
     @JoinColumn(name = "id_san_pham")
     private SanPham sanPham;

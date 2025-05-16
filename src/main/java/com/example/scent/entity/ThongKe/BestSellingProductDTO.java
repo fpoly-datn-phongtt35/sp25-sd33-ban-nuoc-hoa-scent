@@ -21,6 +21,9 @@ public class BestSellingProductDTO {
     private boolean stockWarning; // True if soLuongTonKho < 7
     private Long soLuotTraHang;
 
+    public BestSellingProductDTO() {
+    }
+
     public Long getSoLuotTraHang() {
         return soLuotTraHang;
     }

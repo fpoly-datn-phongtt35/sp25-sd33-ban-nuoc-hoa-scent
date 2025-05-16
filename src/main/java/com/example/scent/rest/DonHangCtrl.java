@@ -238,12 +238,13 @@ public class DonHangCtrl {
     }
 
     @PutMapping(value = "/huy/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional // Đảm bảo transaction được quản lý
     public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable Integer orderId) {
         Map<String, Object> response = new HashMap<>();
         try {
             boolean isUpdated = dhs.updateOrderStatusToCancelled(orderId);
             if (isUpdated) {
-                DonHang donHang = dhs.detail(orderId);
+                DonHang donHang = dhs.detail(orderId); // Lấy dữ liệu sau khi transaction commit
                 sendWebSocketNotification(donHang);
                 response.put("status", "success");
                 response.put("message", "Đơn hàng đã được huỷ.");
@@ -260,7 +261,6 @@ public class DonHangCtrl {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
     @PutMapping(value = "/capnhat-trangthai/{maDonHang}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> capNhatTrangThai(
             @PathVariable Integer maDonHang,
