@@ -105,7 +105,7 @@
           <th>
             Ngày hết hạn
             <span class="sort-arrows">
-              <span class="arrow-up" (click)="sortBy('ngayHetHan', 'asc')" [class.active]="sortField === 'ngayHetHan' && sortDirection === 'asc'" title="Ngày gần nhất">↑</span>
+              <span class="arrow-up" (click)="sortBy('ngayHetHan', 'asc')" [class.active]="sortField === 'ngayHetHan' && sortDirection === 'asc'" title="Ngày NSF sớm nhất">↑</span>
               <span class="arrow-down" (click)="sortBy('ngayHetHan', 'desc')" [class.active]="sortField === 'ngayHetHan' && sortDirection === 'desc'" title="Ngày xa nhất">↓</span>
             </span>
           </th>
@@ -161,6 +161,7 @@
               <button *ngIf="shouldShowActivateButton(item)" class="btn btn-sm btn-success" (click)="toggleStatus(item)">
                 Kích hoạt
               </button>
+              <button class="btn btn-sm btn-primary" (click)="openSendCouponModal(item)">📧 Gửi</button>
             </div>
           </td>
         </tr>
@@ -189,4 +190,48 @@
       </li>
     </ul>
   </nav>
+
+  <!-- Modal hiển thị danh sách khách hàng -->
+  <ng-template #sendCouponModal let-modal>
+    <div class="modal-header">
+      <h5 class="modal-title">Gửi mã giảm giá: {{ selectedVoucher?.maGiamGia }}</h5>
+      <button type="button" class="btn-close" (click)="modal.dismiss('Cross click')" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <div class="table-responsive" *ngIf="users && users.length > 0">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Họ tên</th>
+              <th>Email</th>
+              <th>Số điện thoại</th>
+              <th>Chọn</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>{{ user.id }}</td>
+              <td>{{ user.hoTen }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.sdt }}</td>
+              <td>
+                <input type="radio" name="selectedUser" [value]="user.id" [(ngModel)]="selectedUserId" (change)="onUserSelect(user.id)">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="users && users.length === 0" class="text-center">
+        <p>Không có khách hàng nào để hiển thị.</p>
+      </div>
+      <div *ngIf="!users" class="text-center">
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Cancel click')">Đóng</button>
+      <button type="button" class="btn btn-primary" (click)="sendCoupon()" [disabled]="!selectedUserId">Gửi mã</button>
+    </div>
+  </ng-template>
 </div>

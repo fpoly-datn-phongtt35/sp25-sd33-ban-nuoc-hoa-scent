@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
@@ -26,6 +26,13 @@ export class VourcherComponent {
   statusFilter: string = 'all';
   sortField: string = 'id';
   sortDirection: string = 'desc';
+
+  // Biến để quản lý modal gửi mã giảm giá
+  users: any[] = [];
+  selectedVoucher: any = null;
+  selectedUserId: number | null = null;
+
+  @ViewChild('sendCouponModal') sendCouponModal!: TemplateRef<any>; // Khai báo tham chiếu đến ng-template
 
   searchParams: any = {
     maGiamGia: '',
@@ -308,7 +315,6 @@ export class VourcherComponent {
       this.loadAllPhieuGiamGia();
       this.scrollToTop();
     });
-    // Khôi phục cuộn khi modal đóng
     modalRef.result.finally(() => {
       document.body.classList.remove('modal-open');
       document.body.style.overflow = '';
@@ -331,7 +337,6 @@ export class VourcherComponent {
         this.cdr.detectChanges();
       }
     });
-    // Khôi phục cuộn khi modal đóng
     modalRef.result.finally(() => {
       document.body.classList.remove('modal-open');
       document.body.style.overflow = '';
@@ -443,5 +448,87 @@ export class VourcherComponent {
   saveAsExcelFile(buffer: any, fileName: string): void {
     const data: Blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
     FileSaver.saveAs(data, fileName + '_export_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  }
+
+  openSendCouponModal(voucher: any): void {
+    this.selectedVoucher = voucher;
+    this.selectedUserId = null;
+  
+    // Gọi API để lấy danh sách khách hàng
+    this.phieuGiamGiaService.getUsers().subscribe({
+      next: (users) => {
+        this.users = users;
+        console.log('Danh sách users:', this.users);
+        const modalRef = this.modalService.open(this.sendCouponModal, { 
+          backdrop: 'static', 
+          keyboard: false, 
+          size: 'xl' // Tăng kích thước modal
+        });
+        modalRef.result.finally(() => {
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+          this.cdr.detectChanges();
+          this.scrollToTop();
+        });
+      },
+      error: (error) => {
+        console.error('Lỗi khi tải danh sách khách hàng:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: 'Không thể tải danh sách khách hàng: ' + (error.message || 'Kiểm tra console!'),
+          confirmButtonText: 'Đóng'
+        });
+      }
+    });
+  }
+
+  onUserSelect(userId: number): void {
+    this.selectedUserId = userId;
+  }
+
+  sendCoupon(): void {
+    if (!this.selectedUserId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo!',
+        text: 'Vui lòng chọn một khách hàng để gửi mã giảm giá!',
+        confirmButtonText: 'Đóng'
+      });
+      return;
+    }
+
+    this.phieuGiamGiaService.sendCoupon(this.selectedVoucher.id, this.selectedUserId).subscribe({
+      next: (response) => {
+        if (response.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Thành công!',
+            text: response.message,
+            confirmButtonText: 'OK',
+            timer: 1500,
+            showConfirmButton: false
+          });
+          this.modalService.dismissAll();
+          this.loadAllPhieuGiamGia();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi!',
+            text: response.message,
+            confirmButtonText: 'Đóng'
+          });
+        }
+      },
+      error: (error) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: error.message || 'Có lỗi xảy ra khi gửi mã giảm giá.',
+          confirmButtonText: 'Đóng'
+        });
+      }
+    });
   }
 }

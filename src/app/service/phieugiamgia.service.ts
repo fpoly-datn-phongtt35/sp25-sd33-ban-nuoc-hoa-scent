@@ -41,6 +41,19 @@ export class PhieugiamgiaService {
       catchError(this.handleError)
     );
   }
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // Gửi mã giảm giá qua email
+  sendCoupon(couponId: number, userId: number): Observable<any> {
+    const params = { couponId, userId };
+    return this.http.post<any>(`${this.apiUrl}/send-coupon`, null, { params }).pipe(
+      catchError(this.handleError)
+    );
+  }
 
   getDiscountCodeDetails(code: string, sdt: string, id: number | null, tongGiaTriDonHang: number): Observable<DiscountResponse> {
     const params: { [key: string]: string | number | null } = { code, tongGiaTriDonHang };
