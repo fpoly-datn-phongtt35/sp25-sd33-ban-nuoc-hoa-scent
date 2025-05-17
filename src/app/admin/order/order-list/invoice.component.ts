@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -12,11 +11,12 @@ import { HoadonComponent } from '../../../hoadon/hoadon.component';
 import { TokenService } from '../../../service/token.service';
 import { Subscription } from 'rxjs';
 import { WebSocketService } from '../../../service/WebSocketService';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-invoice',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, OrderDetaiComponent],
+  imports: [CommonModule, ReactiveFormsModule, OrderDetaiComponent],
   templateUrl: './invoice.component.html',
   styleUrls: ['./invoice.component.scss'],
   providers: [NgbActiveModal],
@@ -25,7 +25,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   selectedStatus: number | null = null;
   orderId: number | null = null;
-  searchKeyword: string = '';
+  searchControl = new FormControl<string>('');
   filteredDonhang: any[] = [];
   page: number = 0;
   size: number = 15;
@@ -54,6 +54,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   };
 
   private webSocketSubscription: Subscription | undefined;
+  private searchSubscription: Subscription | undefined;
 
   constructor(
     private http: HttpClient,
@@ -73,9 +74,9 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       console.log('UserID:', this.userID);
       console.log('tenDangNhap:', this.tenDangNhap);
 
-      // Load orders first, then connect to WebSocket for admin
       this.loadCustomers().then(() => {
-        this.webSocketService.connectAdmin(); // Connect to admin WebSocket
+        this.setupSearch();
+        this.webSocketService.connectAdmin();
         this.webSocketSubscription = this.webSocketService.getAdminMessages().subscribe({
           next: (update: any) => this.handleWebSocketUpdate(update),
           error: (error) => console.error('WebSocket subscription error:', error),
@@ -96,6 +97,9 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     if (this.webSocketSubscription) {
       this.webSocketSubscription.unsubscribe();
     }
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
     this.webSocketService.disconnect();
   }
 
@@ -109,11 +113,9 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     const { idDonHang, trangThai, isNewOrder } = update;
 
     if (isNewOrder) {
-      // Handle new order
       console.log(`New order received: ${idDonHang}`);
       this.fetchOrderDetails(idDonHang);
     } else {
-      // Handle status update
       console.log(`Cập nhật trạng thái đơn hàng ${idDonHang}: ${trangThai}`);
       const orderToUpdate = this.orders.find((order) => order.id === idDonHang);
       if (orderToUpdate) {
@@ -140,6 +142,15 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     }
   }
 
+  private setupSearch(): void {
+    this.searchSubscription = this.searchControl.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe((keyword) => {
+      this.applySearch(keyword ?? '');
+    });
+  }
+
   private fetchOrderDetails(orderId: number): void {
     this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`).subscribe({
       next: (orderDetails: any) => {
@@ -148,8 +159,8 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           ...orderDetails,
           selectedStatus: orderDetails.trangThai,
         };
-        this.orders.unshift(newOrder); // Add the new order to the top of the list
-        this.orders.sort((a, b) => b.id - a.id); // Re-sort by ID (newest first)
+        this.orders.unshift(newOrder);
+        this.orders.sort((a, b) => b.id - a.id);
         this.applySearch();
 
         this.cdRef.detectChanges();
@@ -200,7 +211,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   switchTab(tab: string): void {
     this.selectedTab = tab;
-    this.applySearch();
+    this.applySearch(this.searchControl.value || '');
   }
 
   onRowClick(order: any) {
@@ -211,26 +222,31 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.selectedOrder = null;
   }
 
-  applySearch(): void {
-    const keyword = this.searchKeyword.toLowerCase().trim();
+  private applySearch(keyword: string | null = ''): void {
+    const searchTerm = (keyword ?? '').toLowerCase().trim();
     const statusCode = this.selectedStatus;
     const allowedStatuses = this.allowedStatuses[this.selectedTab] || [];
 
     this.filteredDonhang = this.orders.filter((order) => {
-      const matchesKeyword =
-        keyword === '' ||
-        order.id?.toString().includes(keyword) ||
-        order.tenNguoiNhanHang?.toLowerCase().includes(keyword) ||
-        order.sdtNguoiNhan?.toLowerCase().includes(keyword) ||
-        order.diaChiGiaoHang?.toLowerCase().includes(keyword) ||
-        order.ghiChu?.toLowerCase().includes(keyword) ||
-        order.phuongThucThanhToan?.toLowerCase().includes(keyword) ||
-        order.taiKhoan?.tenDangNhap?.toLowerCase().includes(keyword);
+      const searchableText = [
+        order.id?.toString(),
+        order.tenNguoiNhanHang,
+        order.sdtNguoiNhan,
+        order.diaChiGiaoHang,
+        order.ghiChu,
+        order.phuongThucThanhToan,
+        order.taiKhoan?.tenDangNhap,
+      ]
+        .filter((field) => field != null)
+        .map((field) => field.toString().toLowerCase())
+        .join(' ');
 
+      const matchesKeyword = searchTerm === '' || searchableText.includes(searchTerm);
       const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
       const isOnline = order.luongBan === 1;
       const matchesTab = this.selectedTab === 'online' ? isOnline : !isOnline;
-      const matchesAllowedStatus = allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
+      const matchesAllowedStatus =
+        allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
 
       return matchesKeyword && matchesStatus && matchesTab && matchesAllowedStatus;
     });
@@ -391,7 +407,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         console.error('Error updating status:', error);
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       },
-    });
+  });
   }
 
   showErrorMessage(message: string): void {
@@ -430,7 +446,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? null;
     this.selectedStatus = statusCode;
-    this.applySearch();
+    this.applySearch(this.searchControl.value || '');
   }
 
   getFilterKey(status: number): string {
