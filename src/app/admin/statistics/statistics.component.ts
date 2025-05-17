@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
@@ -14,7 +14,7 @@ import { debounceTime, Subject } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-// Giao diện dữ liệu giữ nguyên như trong mã gốc
+// Giao diện dữ liệu
 interface ThongKeDonHangDTO {
   tongDoanhThu: number;
   doanhThuOnline: number;
@@ -95,7 +95,6 @@ interface Page<T> {
   styleUrls: ['./statistics.component.scss']
 })
 export class StatisticsComponent implements OnInit {
-  // Các thuộc tính giữ nguyên như trong mã gốc
   thongKeTongQuan: ThongKeDonHangDTO | null = null;
   thongKeTongQuanFiltered: ThongKeDonHangDTO | null = null;
   bestSellingProducts: BestSellingProductDTO[] = [];
@@ -104,6 +103,10 @@ export class StatisticsComponent implements OnInit {
   pageSize: number = 10;
   errorMessage: string | null = null;
 
+  searchQuery: string = '';
+  sortField: string = 'totalQuantitySold';
+  sortDirection: string = 'desc';
+  isLoading: boolean = false;
   doanhThuData: ThongKeTheoThoiGianDTO[] = [];
   soLuongDonData: SoLuongDonHangDTO[] = [];
   compareDoanhThuData: ThongKeTheoThoiGianDTO[] = [];
@@ -149,14 +152,17 @@ export class StatisticsComponent implements OnInit {
   };
   soLuongDonType: ChartType = 'bar';
 
-  private filterChange = new Subject<void>();
+  public filterChange = new Subject<void>();
+  public searchChange = new Subject<void>();
 
-  // Thêm thuộc tính expandedCells để theo dõi trạng thái mở rộng
   expandedCells: boolean[][] = [];
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {
     this.filterChange.pipe(debounceTime(300)).subscribe(() => {
       this.onFilterChange();
+    });
+    this.searchChange.pipe(debounceTime(500)).subscribe(() => {
+      this.onSearchChange();
     });
   }
 
@@ -174,21 +180,16 @@ export class StatisticsComponent implements OnInit {
     this.updateChartTypes();
     this.updateChartLabels();
     this.loadDataForSelectedTimeType();
-
-    // Khởi tạo expandedCells khi component khởi tạo
     this.initializeExpandedCells();
   }
 
-  // Phương thức khởi tạo mảng expandedCells
   private initializeExpandedCells(): void {
-    this.expandedCells = this.bestSellingProducts.map(() => new Array(11).fill(false));
+    this.expandedCells = this.bestSellingProducts.map(() => new Array(12).fill(false));
   }
 
-  // Phương thức toggle hiển thị nội dung đầy đủ
   toggleFullContent(rowIndex: number, colIndex: number): void {
-    // Đảm bảo chỉ một ô trong cùng hàng được mở rộng cùng lúc
     this.expandedCells[rowIndex] = this.expandedCells[rowIndex].map((_, i) => i === colIndex ? !this.expandedCells[rowIndex][i] : false);
-    this.cdr.detectChanges(); // Cập nhật giao diện thủ công
+    this.cdr.detectChanges();
   }
 
   private formatDate(date: Date | string): string {
@@ -201,23 +202,26 @@ export class StatisticsComponent implements OnInit {
     this.selectedTab = tab;
     if (tab === 'san-pham') {
       this.loadBestSellingProducts(this.currentPage);
-      this.initializeExpandedCells(); // Cập nhật lại expandedCells khi chuyển tab
+      this.initializeExpandedCells();
     }
   }
 
   onTimeTypeChange(): void {
     this.resetFilters();
+    this.searchQuery = '';
+    this.sortField = 'totalQuantitySold';
+    this.sortDirection = 'desc';
     this.updateChartTypes();
     this.updateChartLabels();
     this.filterChange.next();
   }
 
   onFilterChange(): void {
-    if (this.validateFilters()) {
+    if (this.validateFilters() || !this.isTimeFilterApplied()) {
       this.errorMessage = null;
       this.currentPage = 0;
       this.loadDataForSelectedTimeType();
-      this.initializeExpandedCells(); // Cập nhật lại expandedCells khi thay đổi bộ lọc
+      this.initializeExpandedCells();
     } else {
       this.errorMessage = 'Vui lòng nhập đầy đủ và đúng thông tin bộ lọc (ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc).';
       this.bestSellingProducts = [];
@@ -226,24 +230,60 @@ export class StatisticsComponent implements OnInit {
     }
   }
 
+  onSearchChange(): void {
+    this.currentPage = 0;
+    this.loadBestSellingProducts(this.currentPage);
+  }
+
+  onSortChange(): void {
+    this.currentPage = 0;
+    this.loadBestSellingProducts(this.currentPage);
+  }
+
   validateFilters(): boolean {
     const today = new Date();
     if (this.selectedTimeType === 'ngay') {
-      if (!this.startDate || !this.endDate) return false;
-      const start = new Date(this.startDate);
-      const end = new Date(this.endDate);
-      return start <= end && start <= today && end <= today;
+      if (this.startDate && this.endDate) {
+        const start = new Date(this.startDate);
+        const end = new Date(this.endDate);
+        return start <= end && start <= today && end <= today;
+      }
+      return true;
     }
     if (this.selectedTimeType === 'tuan') {
-      return !!this.selectedYear && !!this.selectedWeek && parseInt(this.selectedWeek) >= 1 && parseInt(this.selectedWeek) <= 52;
+      if (this.selectedYear && this.selectedWeek) {
+        return parseInt(this.selectedWeek) >= 1 && parseInt(this.selectedWeek) <= 52;
+      }
+      return true;
     }
     if (this.selectedTimeType === 'thang') {
-      return !!this.selectedYear && !!this.selectedMonth && parseInt(this.selectedMonth) >= 1 && parseInt(this.selectedMonth) <= 12;
+      if (this.selectedYear && this.selectedMonth) {
+        return parseInt(this.selectedMonth) >= 1 && parseInt(this.selectedMonth) <= 12;
+      }
+      return true;
     }
     if (this.selectedTimeType === 'nam') {
-      return !!this.selectedYear && parseInt(this.selectedYear) <= today.getFullYear();
+      if (this.selectedYear) {
+        return parseInt(this.selectedYear) <= today.getFullYear();
+      }
+      return true;
     }
     return false;
+  }
+
+  isTimeFilterApplied(): boolean {
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        return !!(this.startDate && this.endDate);
+      case 'tuan':
+        return !!(this.selectedYear && this.selectedWeek);
+      case 'thang':
+        return !!(this.selectedYear && this.selectedMonth);
+      case 'nam':
+        return !!this.selectedYear;
+      default:
+        return false;
+    }
   }
 
   getTimeLabel(): string {
@@ -257,16 +297,11 @@ export class StatisticsComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.selectedMonth = (new Date().getMonth() + 1).toString();
-    this.selectedYear = new Date().getFullYear().toString();
-    const today = new Date();
-    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
-    const pastDaysOfYear = Math.floor((today.getTime() - firstDayOfYear.getTime()) / (1000 * 60 * 60 * 24));
-    this.selectedWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7).toString();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    this.startDate = this.formatDate(yesterday);
-    this.endDate = this.formatDate(today);
+    this.selectedMonth = '';
+    this.selectedYear = '';
+    this.selectedWeek = '';
+    this.startDate = '';
+    this.endDate = '';
     this.compareYear = null;
     this.compareDoanhThuData = [];
   }
@@ -302,7 +337,7 @@ export class StatisticsComponent implements OnInit {
 
   loadThongKeTongQuanFiltered(): void {
     if (!this.validateFilters()) {
-      this.errorMessage = 'Bộ lọc không hợp lệ cho tổng quan.';
+      this.thongKeTongQuanFiltered = null;
       this.cdr.detectChanges();
       return;
     }
@@ -310,17 +345,23 @@ export class StatisticsComponent implements OnInit {
     let url = '';
     switch (this.selectedTimeType) {
       case 'ngay':
+        if (!this.startDate || !this.endDate) return;
         url = `http://localhost:8080/api/thong-ke/tong-quan/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
         break;
       case 'tuan':
+        if (!this.selectedYear || !this.selectedWeek) return;
         url = `http://localhost:8080/api/thong-ke/tong-quan/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}`;
         break;
       case 'thang':
+        if (!this.selectedYear || !this.selectedMonth) return;
         url = `http://localhost:8080/api/thong-ke/tong-quan/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}`;
         break;
       case 'nam':
+        if (!this.selectedYear) return;
         url = `http://localhost:8080/api/thong-ke/tong-quan/nam?year=${this.selectedYear}`;
         break;
+      default:
+        return;
     }
 
     this.http.get<ThongKeDonHangDTO>(url).subscribe({
@@ -329,53 +370,77 @@ export class StatisticsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = 'Không thể tải tổng quan theo bộ lọc.';
+        this.thongKeTongQuanFiltered = null;
         this.cdr.detectChanges();
       }
     });
   }
 
   loadBestSellingProducts(page: number = 0): void {
-    if (!this.validateFilters()) {
-      this.errorMessage = 'Bộ lọc không hợp lệ cho sản phẩm bán chạy.';
-      this.bestSellingProducts = [];
-      this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
-      this.cdr.detectChanges();
-      return;
-    }
-
     this.currentPage = page;
     let url = '';
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', this.pageSize.toString())
+      .set('searchQuery', this.searchQuery || '')
+      .set('sortField', this.sortField)
+      .set('sortDirection', this.sortDirection);
+  
     switch (this.selectedTimeType) {
       case 'ngay':
-        url = `http://localhost:8080/api/thong-ke/best-selling/ngay?startDate=${this.formatDate(this.startDate)}&endDate=${this.formatDate(this.endDate)}&page=${page}&size=${this.pageSize}`;
+        url = `http://localhost:8080/api/thong-ke/best-selling/ngay`;
+        if (this.startDate && this.endDate) {
+          params = params
+            .set('startDate', this.startDate)
+            .set('endDate', this.endDate);
+        }
         break;
       case 'tuan':
-        url = `http://localhost:8080/api/thong-ke/best-selling/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}&page=${page}&size=${this.pageSize}`;
+        url = `http://localhost:8080/api/thong-ke/best-selling/tuan`;
+        if (this.selectedYear && this.selectedWeek) {
+          params = params
+            .set('year', this.selectedYear)
+            .set('week', this.selectedWeek);
+        }
         break;
       case 'thang':
-        url = `http://localhost:8080/api/thong-ke/best-selling/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}&page=${page}&size=${this.pageSize}`;
+        url = `http://localhost:8080/api/thong-ke/best-selling/thang`;
+        if (this.selectedYear && this.selectedMonth) {
+          params = params
+            .set('year', this.selectedYear)
+            .set('month', this.selectedMonth);
+        }
         break;
       case 'nam':
-        url = `http://localhost:8080/api/thong-ke/best-selling/nam?year=${this.selectedYear}&page=${page}&size=${this.pageSize}`;
+        url = `http://localhost:8080/api/thong-ke/best-selling/nam`;
+        if (this.selectedYear) {
+          params = params.set('year', this.selectedYear);
+        }
         break;
     }
-
-    console.log('Gửi request API:', url);
-
-    this.http.get<Page<BestSellingProductDTO>>(url).subscribe({
+  
+    console.log('Calling API with params:', params.toString());
+    this.http.get<Page<BestSellingProductDTO>>(url, { params }).subscribe({
       next: (data) => {
-        console.log('Dữ liệu sản phẩm bán chạy:', data);
+        console.log('API response:', data);
         this.bestSellingProductsPage = data;
         this.bestSellingProducts = data.content || [];
         this.currentPage = data.page.number;
-        this.errorMessage = this.bestSellingProducts.length === 0 ? 'Không có sản phẩm bán chạy trong khoảng thời gian này.' : null;
-        this.initializeExpandedCells(); // Cập nhật lại expandedCells khi tải dữ liệu mới
+        if (this.bestSellingProducts.length === 0) {
+          if (this.isTimeFilterApplied()) {
+            this.errorMessage = 'Không có sản phẩm nào trong khoảng thời gian này.';
+          } else {
+            this.errorMessage = 'Không có sản phẩm nào trong cửa hàng.';
+          }
+        } else {
+          this.errorMessage = null;
+        }
+        this.initializeExpandedCells();
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Lỗi khi tải sản phẩm bán chạy:', err);
-        this.errorMessage = err.status === 400 ? 'Dữ liệu bộ lọc không hợp lệ. Vui lòng kiểm tra lại.' : 'Lỗi khi tải dữ liệu sản phẩm bán chạy.';
+        console.error('API error:', err);
+        this.errorMessage = err.status === 400 ? 'Dữ liệu bộ lọc không hợp lệ. Vui lòng kiểm tra lại.' : 'Lỗi khi tải dữ liệu sản phẩm.';
         this.bestSellingProducts = [];
         this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
         this.cdr.detectChanges();
@@ -385,72 +450,83 @@ export class StatisticsComponent implements OnInit {
 
   loadAllBestSellingProducts(): Promise<BestSellingProductDTO[]> {
     return new Promise((resolve, reject) => {
-      if (!this.validateFilters()) {
-        this.errorMessage = 'Bộ lọc không hợp lệ cho xuất sản phẩm.';
-        this.cdr.detectChanges();
-        reject('Bộ lọc không hợp lệ');
-        return;
-      }
-
       const allProducts: BestSellingProductDTO[] = [];
       let currentPage = 0;
-      const pageSize = 10000; // Sử dụng pageSize hợp lý (100) để tối ưu hóa
+      const pageSize = 10000;
 
       const fetchPage = (page: number) => {
         let url = '';
+        let params = new HttpParams()
+          .set('page', page.toString())
+          .set('size', pageSize.toString())
+          .set('searchQuery', this.searchQuery || '')
+          .set('sortField', this.sortField)
+          .set('sortDirection', this.sortDirection);
+
         switch (this.selectedTimeType) {
           case 'ngay':
-            url = `http://localhost:8080/api/thong-ke/best-selling/ngay?startDate=${this.formatDate(this.startDate)}&endDate=${this.formatDate(this.endDate)}&page=${page}&size=${pageSize}`;
+            url = `http://localhost:8080/api/thong-ke/best-selling/ngay`;
+            if (this.startDate && this.endDate) {
+              params = params
+                .set('startDate', this.startDate)
+                .set('endDate', this.endDate);
+            }
             break;
           case 'tuan':
-            url = `http://localhost:8080/api/thong-ke/best-selling/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}&page=${page}&size=${pageSize}`;
+            url = `http://localhost:8080/api/thong-ke/best-selling/tuan`;
+            if (this.selectedYear && this.selectedWeek) {
+              params = params
+                .set('year', this.selectedYear)
+                .set('week', this.selectedWeek);
+            }
             break;
           case 'thang':
-            url = `http://localhost:8080/api/thong-ke/best-selling/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}&page=${page}&size=${pageSize}`;
+            url = `http://localhost:8080/api/thong-ke/best-selling/thang`;
+            if (this.selectedYear && this.selectedMonth) {
+              params = params
+                .set('year', this.selectedYear)
+                .set('month', this.selectedMonth);
+            }
             break;
           case 'nam':
-            url = `http://localhost:8080/api/thong-ke/best-selling/nam?year=${this.selectedYear}&page=${page}&size=${pageSize}`;
+            url = `http://localhost:8080/api/thong-ke/best-selling/nam`;
+            if (this.selectedYear) {
+              params = params.set('year', this.selectedYear);
+            }
             break;
         }
 
-        this.http.get<Page<BestSellingProductDTO>>(url).subscribe({
+        this.http.get<Page<BestSellingProductDTO>>(url, { params }).subscribe({
           next: (data) => {
             if (data && data.content) {
               allProducts.push(...data.content);
               if (page + 1 < data.page.totalPages) {
-                fetchPage(page + 1); // Tiếp tục lấy trang tiếp theo
+                fetchPage(page + 1);
               } else {
-                resolve(allProducts); // Hoàn thành khi lấy hết các trang
+                resolve(allProducts);
               }
             } else {
-              resolve(allProducts); // Nếu không có dữ liệu, trả về mảng rỗng
+              resolve(allProducts);
             }
           },
           error: (err) => {
-            console.error('Lỗi khi tải tất cả sản phẩm bán chạy:', err);
-            this.errorMessage = 'Lỗi khi tải dữ liệu tất cả sản phẩm bán chạy. Vui lòng kiểm tra kết nối hoặc liên hệ admin.';
+            this.errorMessage = 'Lỗi khi tải dữ liệu tất cả sản phẩm.';
             this.cdr.detectChanges();
             reject(err);
           }
         });
       };
 
-      fetchPage(currentPage); // Bắt đầu lấy từ trang 0
+      fetchPage(currentPage);
     });
   }
 
   loadDataForSelectedTimeType(): void {
-    if (!this.validateFilters()) {
-      this.errorMessage = 'Bộ lọc không hợp lệ, vui lòng kiểm tra lại.';
-      this.bestSellingProducts = [];
-      this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
-      this.cdr.detectChanges();
-      return;
-    }
-
     this.currentPage = 0;
     this.loadThongKeTongQuan();
-    this.loadBestSellingProducts(this.currentPage);
+    if (this.selectedTab === 'san-pham') {
+      this.loadBestSellingProducts(this.currentPage);
+    }
     this.loadDoanhThu();
     this.loadSoLuongDon();
     if (this.compareYear) {
@@ -460,7 +536,8 @@ export class StatisticsComponent implements OnInit {
 
   loadDoanhThu(): void {
     if (!this.validateFilters()) {
-      this.errorMessage = 'Bộ lọc không hợp lệ cho doanh thu.';
+      this.doanhThuData = [];
+      this.updateDoanhThuChart();
       this.cdr.detectChanges();
       return;
     }
@@ -468,17 +545,23 @@ export class StatisticsComponent implements OnInit {
     let url = '';
     switch (this.selectedTimeType) {
       case 'ngay':
+        if (!this.startDate || !this.endDate) return;
         url = `http://localhost:8080/api/thong-ke/doanh-thu/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
         break;
       case 'tuan':
+        if (!this.selectedYear || !this.selectedWeek) return;
         url = `http://localhost:8080/api/thong-ke/doanh-thu/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}`;
         break;
       case 'thang':
+        if (!this.selectedYear || !this.selectedMonth) return;
         url = `http://localhost:8080/api/thong-ke/doanh-thu/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}`;
         break;
       case 'nam':
+        if (!this.selectedYear) return;
         url = `http://localhost:8080/api/thong-ke/doanh-thu/nam?year=${this.selectedYear}`;
         break;
+      default:
+        return;
     }
 
     this.http.get<ThongKeTheoThoiGianDTO[]>(url).subscribe({
@@ -487,8 +570,9 @@ export class StatisticsComponent implements OnInit {
         this.updateDoanhThuChart();
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.errorMessage = 'Không thể tải dữ liệu doanh thu.';
+      error: () => {
+        this.doanhThuData = [];
+        this.updateDoanhThuChart();
         this.cdr.detectChanges();
       }
     });
@@ -539,9 +623,9 @@ export class StatisticsComponent implements OnInit {
   updateDoanhThuChart(): void {
     const labels = this.doanhThuData.map(item => item.thoiGian);
     const datasets = [
-      { data: this.doanhThuData.map(item => item.tongDoanhThu), label: `Tổng doanh thu (${this.selectedYear})`, backgroundColor: '#FF6384', borderColor: '#FF6384', fill: false },
-      { data: this.doanhThuData.map(item => item.doanhThuOnline), label: `Doanh thu online (${this.selectedYear})`, backgroundColor: '#36A2EB', borderColor: '#36A2EB', fill: false },
-      { data: this.doanhThuData.map(item => item.doanhThuOffline), label: `Doanh thu offline (${this.selectedYear})`, backgroundColor: '#FFCE56', borderColor: '#FFCE56', fill: false }
+      { data: this.doanhThuData.map(item => item.tongDoanhThu), label: `Tổng doanh thu (${this.selectedYear || 'Tất cả'})`, backgroundColor: '#FF6384', borderColor: '#FF6384', fill: false },
+      { data: this.doanhThuData.map(item => item.doanhThuOnline), label: `Doanh thu online (${this.selectedYear || 'Tất cả'})`, backgroundColor: '#36A2EB', borderColor: '#36A2EB', fill: false },
+      { data: this.doanhThuData.map(item => item.doanhThuOffline), label: `Doanh thu offline (${this.selectedYear || 'Tất cả'})`, backgroundColor: '#FFCE56', borderColor: '#FFCE56', fill: false }
     ];
 
     if (this.compareDoanhThuData.length > 0) {
@@ -558,7 +642,8 @@ export class StatisticsComponent implements OnInit {
 
   loadSoLuongDon(): void {
     if (!this.validateFilters()) {
-      this.errorMessage = 'Bộ lọc không hợp lệ cho số lượng đơn.';
+      this.soLuongDonData = [];
+      this.soLuongDonConfig = { labels: [], datasets: [] };
       this.cdr.detectChanges();
       return;
     }
@@ -566,17 +651,23 @@ export class StatisticsComponent implements OnInit {
     let url = '';
     switch (this.selectedTimeType) {
       case 'ngay':
+        if (!this.startDate || !this.endDate) return;
         url = `http://localhost:8080/api/thong-ke/so-luong-don/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
         break;
       case 'tuan':
+        if (!this.selectedYear || !this.selectedWeek) return;
         url = `http://localhost:8080/api/thong-ke/so-luong-don/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}`;
         break;
       case 'thang':
+        if (!this.selectedYear || !this.selectedMonth) return;
         url = `http://localhost:8080/api/thong-ke/so-luong-don/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}`;
         break;
       case 'nam':
+        if (!this.selectedYear) return;
         url = `http://localhost:8080/api/thong-ke/so-luong-don/nam?year=${this.selectedYear}`;
         break;
+      default:
+        return;
     }
 
     this.http.get<SoLuongDonHangDTO[]>(url).subscribe({
@@ -591,7 +682,8 @@ export class StatisticsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        this.errorMessage = 'Không thể tải dữ liệu số lượng đơn.';
+        this.soLuongDonData = [];
+        this.soLuongDonConfig = { labels: [], datasets: [] };
         this.cdr.detectChanges();
       }
     });
@@ -624,45 +716,16 @@ export class StatisticsComponent implements OnInit {
       return [];
     }
     const totalPages = this.bestSellingProductsPage.page.totalPages;
-    const maxButtons = 5;
     const range: { page: number; isEllipsis: boolean }[] = [];
-    const halfMaxButtons = Math.floor(maxButtons / 2);
-
-    if (totalPages <= maxButtons) {
-      for (let i = 0; i < totalPages; i++) {
-        range.push({ page: i, isEllipsis: false });
-      }
-    } else {
-      let startPage = Math.max(0, this.currentPage - halfMaxButtons);
-      let endPage = Math.min(totalPages, startPage + maxButtons);
-
-      if (endPage - startPage < maxButtons) {
-        startPage = Math.max(0, endPage - maxButtons);
-      }
-
-      if (startPage > 0) {
-        range.push({ page: 0, isEllipsis: false });
-        if (startPage > 1) {
-          range.push({ page: -1, isEllipsis: true });
-        }
-      }
-
-      for (let i = startPage; i < endPage; i++) {
-        range.push({ page: i, isEllipsis: false });
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          range.push({ page: -1, isEllipsis: true });
-        }
-        range.push({ page: totalPages - 1, isEllipsis: false });
-      }
+  
+    // Hiển thị tất cả các trang
+    for (let i = 0; i < totalPages; i++) {
+      range.push({ page: i, isEllipsis: false });
     }
-
+  
     return range;
   }
 
-  // Hàm xuất Excel cho tab Đơn hàng - Doanh thu
   exportToExcelDonHangDoanhThu(): void {
     if (!this.thongKeTongQuan || !this.thongKeTongQuanFiltered || !this.doanhThuData || !this.soLuongDonData) {
       this.errorMessage = 'Không có dữ liệu để xuất Excel.';
@@ -672,7 +735,6 @@ export class StatisticsComponent implements OnInit {
 
     const workbook = XLSX.utils.book_new();
 
-    // 1. Tổng quan cố định
     const tongQuanData = [
       ['Tổng quan cố định'],
       ['Tổng doanh thu', this.thongKeTongQuan.tongDoanhThu],
@@ -688,23 +750,21 @@ export class StatisticsComponent implements OnInit {
       [],
     ];
 
-    // 2. Tổng quan theo bộ lọc
     const tongQuanFilteredData = [
       ['Tổng quan theo bộ lọc'],
-      ['Tổng doanh thu', this.thongKeTongQuanFiltered.tongDoanhThu],
-      ['Doanh thu online', this.thongKeTongQuanFiltered.doanhThuOnline],
-      ['Doanh thu offline', this.thongKeTongQuanFiltered.doanhThuOffline],
-      ['Tổng số lượng đơn', this.thongKeTongQuanFiltered.soLuongDon],
-      ['Số lượng đơn online', this.thongKeTongQuanFiltered.soLuongDonOnline],
-      ['Số lượng đơn offline', this.thongKeTongQuanFiltered.soLuongDonOffline],
-      ['Online hoàn thành', this.thongKeTongQuanFiltered.onlineHoanThanh],
-      ['Online không hoàn thành', this.thongKeTongQuanFiltered.onlineHuy],
-      ['Offline hoàn thành', this.thongKeTongQuanFiltered.offlineHoanThanh],
-      ['Offline hủy', this.thongKeTongQuanFiltered.offlineHuy],
+      ['Tổng doanh thu', this.thongKeTongQuanFiltered?.tongDoanhThu || 0],
+      ['Doanh thu online', this.thongKeTongQuanFiltered?.doanhThuOnline || 0],
+      ['Doanh thu offline', this.thongKeTongQuanFiltered?.doanhThuOffline || 0],
+      ['Tổng số lượng đơn', this.thongKeTongQuanFiltered?.soLuongDon || 0],
+      ['Số lượng đơn online', this.thongKeTongQuanFiltered?.soLuongDonOnline || 0],
+      ['Số lượng đơn offline', this.thongKeTongQuanFiltered?.soLuongDonOffline || 0],
+      ['Online hoàn thành', this.thongKeTongQuanFiltered?.onlineHoanThanh || 0],
+      ['Online không hoàn thành', this.thongKeTongQuanFiltered?.onlineHuy || 0],
+      ['Offline hoàn thành', this.thongKeTongQuanFiltered?.offlineHoanThanh || 0],
+      ['Offline hủy', this.thongKeTongQuanFiltered?.offlineHuy || 0],
       [],
     ];
 
-    // 3. Chi tiết doanh thu
     const chiTietDoanhThuData = [
       ['Chi tiết doanh thu'],
       ['Thời gian', 'Tổng doanh thu', 'Doanh thu online', 'Doanh thu offline', 'Tỉ lệ tăng trưởng (%)'],
@@ -718,14 +778,12 @@ export class StatisticsComponent implements OnInit {
       [],
     ];
 
-    // 4. Số lượng đơn
     const soLuongDonData = [
       ['Số lượng đơn'],
       ['Thời gian', 'Số lượng đơn'],
       ...this.soLuongDonData.map(item => [item.thoiGian, item.soLuongDon]),
     ];
 
-    // Gộp dữ liệu vào một sheet
     const sheetData = [
       ...tongQuanData,
       ...tongQuanFilteredData,
@@ -735,7 +793,6 @@ export class StatisticsComponent implements OnInit {
 
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
-    // Tự động điều chỉnh kích thước cột dựa trên nội dung
     const colWidths = [];
     const minWidth = 15;
     const maxWidth = 60;
@@ -766,16 +823,24 @@ export class StatisticsComponent implements OnInit {
     let fileName = 'don_hang_doanh_thu';
     switch (this.selectedTimeType) {
       case 'ngay':
-        fileName += `_${this.startDate}_den_${this.endDate}`;
+        if (this.startDate && this.endDate) {
+          fileName += `_${this.startDate}_den_${this.endDate}`;
+        }
         break;
       case 'tuan':
-        fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+        if (this.selectedYear && this.selectedWeek) {
+          fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+        }
         break;
       case 'thang':
-        fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+        if (this.selectedYear && this.selectedMonth) {
+          fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+        }
         break;
       case 'nam':
-        fileName += `_${this.selectedYear}`;
+        if (this.selectedYear) {
+          fileName += `_${this.selectedYear}`;
+        }
         break;
     }
 
@@ -783,8 +848,18 @@ export class StatisticsComponent implements OnInit {
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `${fileName}.xlsx`);
   }
-
-  // Hàm xuất Excel cho tab Sản phẩm
+  sortColumn(field: string, direction: string): void {
+    if (this.sortField !== field) {
+      this.sortField = field;
+      this.sortDirection = direction;
+    } else if (this.sortDirection === direction) {
+      this.sortDirection = direction === 'asc' ? 'desc' : 'asc'; // Đảo chiều nếu cùng hướng
+    } else {
+      this.sortDirection = direction;
+    }
+    this.currentPage = 0;
+    this.loadBestSellingProducts(this.currentPage);
+  }
   async exportToExcelSanPham(): Promise<void> {
     try {
       const products = await this.loadAllBestSellingProducts();
@@ -795,11 +870,15 @@ export class StatisticsComponent implements OnInit {
       }
 
       const productData = [
-        ['Sản phẩm bán chạy'],
+        ['Sản phẩm'],
         [
           'Tên sản phẩm',
           'Thương hiệu',
           'Danh mục',
+          'Nhóm hương',
+          'Hương đầu',
+          'Hương giữa',
+          'Hương cuối',
           'Dung tích (ml)',
           'Số lượng bán',
           'Số lượt trả hàng',
@@ -810,11 +889,15 @@ export class StatisticsComponent implements OnInit {
           product.tenSanPham || 'N/A',
           product.thuongHieu || 'N/A',
           product.danhMuc || 'N/A',
+          product.nhomHuong || 'N/A',
+          product.huongDau || 'N/A',
+          product.huongGiua || 'N/A',
+          product.huongCuoi || 'N/A',
           product.dungTich || 0,
           product.totalQuantitySold || 0,
           product.soLuotTraHang || 0,
           product.soLuongTonKho || 0,
-          product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 10 ? 'Sắp hết hàng' : 'Còn hàng')
+          product.stockStatus || (product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng'))
         ])
       ];
 
@@ -851,16 +934,24 @@ export class StatisticsComponent implements OnInit {
       let fileName = 'thong_ke_san_pham';
       switch (this.selectedTimeType) {
         case 'ngay':
-          fileName += `_${this.startDate}_den_${this.endDate}`;
+          if (this.startDate && this.endDate) {
+            fileName += `_${this.startDate}_den_${this.endDate}`;
+          }
           break;
         case 'tuan':
-          fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+          if (this.selectedYear && this.selectedWeek) {
+            fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+          }
           break;
         case 'thang':
-          fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+          if (this.selectedYear && this.selectedMonth) {
+            fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+          }
           break;
         case 'nam':
-          fileName += `_${this.selectedYear}`;
+          if (this.selectedYear) {
+            fileName += `_${this.selectedYear}`;
+          }
           break;
       }
 
@@ -868,8 +959,7 @@ export class StatisticsComponent implements OnInit {
       const blob = new Blob([wbout], { type: 'application/octet-stream' });
       saveAs(blob, `${fileName}.xlsx`);
     } catch (error) {
-      console.error('Lỗi khi xuất Excel:', error);
-      this.errorMessage = 'Lỗi khi xuất dữ liệu sản phẩm ra Excel. Vui lòng kiểm tra kết nối hoặc liên hệ admin.';
+      this.errorMessage = 'Lỗi khi xuất dữ liệu sản phẩm ra Excel.';
       this.cdr.detectChanges();
     }
   }

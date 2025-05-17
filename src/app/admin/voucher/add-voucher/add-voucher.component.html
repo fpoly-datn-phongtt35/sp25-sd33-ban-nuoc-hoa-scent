@@ -1,162 +1,220 @@
 <div class="modal-header">
-    <h5 class="modal-title">Thêm Voucher</h5>
-    <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+  <h5 class="modal-title">{{ voucher ? 'Cập nhật Voucher' : 'Thêm Voucher' }}</h5>
+  <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <!-- Hiển thị thông báo lỗi chung -->
+  <div class="alert alert-danger" *ngIf="errorMessage && !fieldErrors['maGiamGia'] && !isCodeExists">
+    {{ errorMessage }}
   </div>
-  
-  <div class="modal-body">
-    <form [formGroup]="voucherForm" class="voucher-form">
-      <!-- Mã giảm giá và Giá trị giảm -->
-      <div class="form-section">
-        <h6 class="section-title">Thông tin cơ bản</h6>
-        <div class="form-group">
-          <label class="form-label">Mã giảm giá <span class="required">*</span></label>
-          <input
-            type="text"
-            class="form-control"
-            formControlName="maGiamGia"
-            placeholder="Nhập mã giảm giá (ví dụ: SALE2025)"
-          />
-          <div
-            class="text-danger mt-1"
-            *ngIf="voucherForm.get('maGiamGia')?.touched && voucherForm.get('maGiamGia')?.invalid"
-          >
-            <div *ngIf="voucherForm.get('maGiamGia')?.errors?.['required']">
-              Vui lòng nhập mã giảm giá.
-            </div>
-            <div *ngIf="voucherForm.get('maGiamGia')?.errors?.['maxlength']">
-              Mã giảm giá không được vượt quá 50 ký tự.
-            </div>
+
+  <form [formGroup]="voucherForm" class="voucher-form">
+    <!-- Thông tin cơ bản -->
+    <div class="form-section">
+      <h6 class="section-title">Thông tin cơ bản</h6>
+      <div class="form-group">
+        <label class="form-label">Mã giảm giá <span class="required">*</span></label>
+        <input
+          type="text"
+          class="form-control"
+          formControlName="maGiamGia"
+          placeholder="Nhập mã giảm giá (ví dụ: SALE2025)"
+        />
+        <div
+          class="text-danger mt-1"
+          *ngIf="voucherForm.get('maGiamGia')?.touched && voucherForm.get('maGiamGia')?.invalid"
+        >
+          <div *ngIf="voucherForm.get('maGiamGia')?.errors?.['required']">
+            Vui lòng nhập mã giảm giá.
+          </div>
+          <div *ngIf="voucherForm.get('maGiamGia')?.errors?.['maxlength']">
+            Mã giảm giá không được vượt quá 50 ký tự.
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Giá trị giảm (%) <span class="required">*</span></label>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="giaTriGiam"
-            step="0.01"
-            min="0.1"
-            max="0.8"
-            placeholder="Nhập từ 0.1 đến 0.8 (10% - 80%)"
-          />
-          <div
-            class="text-danger mt-1"
-            *ngIf="voucherForm.get('giaTriGiam')?.touched && voucherForm.get('giaTriGiam')?.invalid"
-          >
-            <div *ngIf="voucherForm.get('giaTriGiam')?.errors?.['required']">
-              Vui lòng nhập giá trị giảm.
-            </div>
-            <div *ngIf="voucherForm.get('giaTriGiam')?.errors?.['min'] || voucherForm.get('giaTriGiam')?.errors?.['max']">
-              Giá trị giảm phải từ 0.1 đến 0.8 (10% đến 80%).
-            </div>
+        <div class="text-danger mt-1" *ngIf="isCodeExists">
+          Mã giảm giá đã tồn tại. Vui lòng chọn mã khác!
+        </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['maGiamGia']">
+          {{ fieldErrors['maGiamGia'] }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Giá trị giảm (%) <span class="required">*</span></label>
+        <input
+          type="number"
+          class="form-control"
+          formControlName="giaTriGiam"
+          step="0.01"
+          min="0.1"
+          max="0.8"
+          placeholder="Nhập từ 0.1 đến 0.8 (10% - 80%)"
+        />
+        <div
+          class="text-danger mt-1"
+          *ngIf="voucherForm.get('giaTriGiam')?.touched && voucherForm.get('giaTriGiam')?.invalid"
+        >
+          <div *ngIf="voucherForm.get('giaTriGiam')?.errors?.['required']">
+            Vui lòng nhập giá trị giảm.
+          </div>
+          <div *ngIf="voucherForm.get('giaTriGiam')?.errors?.['min'] || voucherForm.get('giaTriGiam')?.errors?.['max']">
+            Giá trị giảm phải từ 0.1 đến 0.8 (10% đến 80%).
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Giá trị tối đa (VNĐ)</label>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="gia_tri_toi_da"
-            step="1000"
-            min="0"
-            placeholder="Nhập giá trị tối đa (ví dụ: 500000)"
-          />
-          <div
-            class="text-danger mt-1"
-            *ngIf="voucherForm.get('gia_tri_toi_da')?.touched && voucherForm.get('gia_tri_toi_da')?.invalid"
-          >
-            <div *ngIf="voucherForm.get('gia_tri_toi_da')?.errors?.['min']">
-              Giá trị tối đa phải lớn hơn hoặc bằng 0.
-            </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['giaTriGiam']">
+          {{ fieldErrors['giaTriGiam'] }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Giá trị tối đa (VNĐ)</label>
+        <input
+          type="number"
+          class="form-control"
+          formControlName="gia_tri_toi_da"
+          step="1000"
+          min="0"
+          placeholder="Nhập giá trị tối đa (ví dụ: 500000)"
+        />
+        <div
+          class="text-danger mt-1"
+          *ngIf="voucherForm.get('gia_tri_toi_da')?.touched && voucherForm.get('gia_tri_toi_da')?.invalid"
+        >
+          <div *ngIf="voucherForm.get('gia_tri_toi_da')?.errors?.['min']">
+            Giá trị tối đa phải lớn hơn hoặc bằng 0.
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Giá trị đơn tối thiểu (VNĐ) <span class="required">*</span></label>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="giaTriDonToiThieu"
-            step="1000"
-            min="0.01"
-            placeholder="Nhập giá trị đơn tối thiểu (ví dụ: 100000)"
-          />
+        <div class="text-danger mt-1" *ngIf="fieldErrors['gia_tri_toi_da']">
+          {{ fieldErrors['gia_tri_toi_da'] }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Giá trị đơn tối thiểu (VNĐ) <span class="required">*</span></label>
+        <input
+          type="number"
+          class="form-control"
+          formControlName="giaTriDonToiThieu"
+          step="1000"
+          min="0.01"
+          placeholder="Nhập giá trị đơn tối thiểu (ví dụ: 100000)"
+        />
+        <div
+          class="text-danger mt-1"
+          *ngIf="voucherForm.get('giaTriDonToiThieu')?.touched && voucherForm.get('giaTriDonToiThieu')?.invalid"
+        >
+          <div *ngIf="voucherForm.get('giaTriDonToiThieu')?.errors?.['required']">
+            Vui lòng nhập giá trị đơn tối thiểu.
+          </div>
+          <div *ngIf="voucherForm.get('giaTriDonToiThieu')?.errors?.['min']">
+            Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0.01.
+          </div>
+        </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['giaTriDonToiThieu']">
+          {{ fieldErrors['giaTriDonToiThieu'] }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Thời gian áp dụng -->
+    <div class="form-section">
+      <h6 class="section-title">Thời gian áp dụng</h6>
+      <div class="form-row">
+        <div class="form-group half-width">
+          <label class="form-label">Ngày bắt đầu <span class="required">*</span></label>
+          <input type="date" class="form-control" formControlName="ngayBatDau" />
           <div
             class="text-danger mt-1"
-            *ngIf="voucherForm.get('giaTriDonToiThieu')?.touched && voucherForm.get('giaTriDonToiThieu')?.invalid"
+            *ngIf="voucherForm.get('ngayBatDau')?.touched && voucherForm.get('ngayBatDau')?.invalid"
           >
-            <div *ngIf="voucherForm.get('giaTriDonToiThieu')?.errors?.['required']">
-              Vui lòng nhập giá trị đơn tối thiểu.
-            </div>
-            <div *ngIf="voucherForm.get('giaTriDonToiThieu')?.errors?.['min']">
-              Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0.01.
-            </div>
+            Vui lòng chọn ngày bắt đầu.
+          </div>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['ngayBatDau']">
+            {{ fieldErrors['ngayBatDau'] }}
+          </div>
+        </div>
+        <div class="form-group half-width">
+          <label class="form-label">Thời gian bắt đầu <span class="required">*</span></label>
+          <input type="time" class="form-control" formControlName="gioPhutBatDau" min="00:00" max="23:59" />
+          <div
+            class="text-danger mt-1"
+            *ngIf="voucherForm.get('gioPhutBatDau')?.touched && voucherForm.get('gioPhutBatDau')?.invalid"
+          >
+            Vui lòng chọn thời gian bắt đầu.
           </div>
         </div>
       </div>
-  
-      <!-- Thời gian áp dụng -->
-      <div class="form-section">
-        <h6 class="section-title">Thời gian áp dụng</h6>
-        <div class="form-row">
-          <div class="form-group half-width">
-            <label class="form-label">Ngày bắt đầu <span class="required">*</span></label>
-            <input type="date" class="form-control" formControlName="ngayBatDau" />
+      <div class="form-row">
+        <div class="form-group half-width">
+          <label class="form-label">Ngày hết hạn <span class="required">*</span></label>
+          <input type="date" class="form-control" formControlName="ngayHetHan" />
+          <div
+            class="text-danger mt-1"
+            *ngIf="voucherForm.get('ngayHetHan')?.touched && voucherForm.get('ngayHetHan')?.invalid"
+          >
+            Vui lòng chọn ngày hết hạn.
           </div>
-          <div class="form-group half-width">
-            <label class="form-label">Thời gian bắt đầu <span class="required">*</span></label>
-            <input type="time" class="form-control" formControlName="gioPhutBatDau" min="00:00" max="23:59" />
+          <div class="text-danger mt-1" *ngIf="fieldErrors['ngayHetHan']">
+            {{ fieldErrors['ngayHetHan'] }}
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group half-width">
-            <label class="form-label">Ngày hết hạn <span class="required">*</span></label>
-            <input type="date" class="form-control" formControlName="ngayHetHan" />
-          </div>
-          <div class="form-group half-width">
-            <label class="form-label">Thời gian hết hạn <span class="required">*</span></label>
-            <input type="time" class="form-control" formControlName="gioPhutHetHan" min="00:00" max="23:59" />
+        <div class="form-group half-width">
+          <label class="form-label">Thời gian hết hạn <span class="required">*</span></label>
+          <input type="time" class="form-control" formControlName="gioPhutHetHan" min="00:00" max="23:59" />
+          <div
+            class="text-danger mt-1"
+            *ngIf="voucherForm.get('gioPhutHetHan')?.touched && voucherForm.get('gioPhutHetHan')?.invalid"
+          >
+            Vui lòng chọn thời gian hết hạn.
           </div>
         </div>
       </div>
-  
-      <!-- Số lượng và Luồng áp dụng -->
-      <div class="form-section">
-        <h6 class="section-title">Cài đặt khác</h6>
-        <div class="form-row">
-          <div class="form-group half-width">
-            <label class="form-label">Số lượng <span class="required">*</span></label>
-            <input
-              type="number"
-              class="form-control"
-              formControlName="soLuong"
-              min="1"
-              placeholder="Nhập số lượng"
-            />
-            <div
-              class="text-danger mt-1"
-              *ngIf="voucherForm.get('soLuong')?.touched && voucherForm.get('soLuong')?.invalid"
-            >
-              <div *ngIf="voucherForm.get('soLuong')?.errors?.['required']">
-                Vui lòng nhập số lượng.
-              </div>
-              <div *ngIf="voucherForm.get('soLuong')?.errors?.['min']">
-                Số lượng phải lớn hơn hoặc bằng 1.
-              </div>
+    </div>
+
+    <!-- Số lượng và Luồng áp dụng -->
+    <div class="form-section">
+      <h6 class="section-title">Cài đặt khác</h6>
+      <div class="form-row">
+        <div class="form-group half-width">
+          <label class="form-label">Số lượng <span class="required">*</span></label>
+          <input
+            type="number"
+            class="form-control"
+            formControlName="soLuong"
+            min="1"
+            placeholder="Nhập số lượng"
+          />
+          <div
+            class="text-danger mt-1"
+            *ngIf="voucherForm.get('soLuong')?.touched && voucherForm.get('soLuong')?.invalid"
+          >
+            <div *ngIf="voucherForm.get('soLuong')?.errors?.['required']">
+              Vui lòng nhập số lượng.
+            </div>
+            <div *ngIf="voucherForm.get('soLuong')?.errors?.['min']">
+              Số lượng phải lớn hơn hoặc bằng 1.
             </div>
           </div>
-          <div class="form-group half-width">
-            <label class="form-label">Luồng áp dụng <span class="required">*</span></label>
-            <select class="form-control" formControlName="dieuKienapDung">
-              <option value="0">Phiếu giảm giá</option>
-              <option value="1">Mã giảm giá</option>
-            </select>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['soLuong']">
+            {{ fieldErrors['soLuong'] }}
+          </div>
+        </div>
+        <div class="form-group half-width">
+          <label class="form-label">Luồng áp dụng <span class="required">*</span></label>
+          <select class="form-control" formControlName="dieuKienapDung">
+            <option value="0">Phiếu giảm giá</option>
+            <option value="1">Mã giảm giá</option>
+          </select>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['dieuKienapDung']">
+            {{ fieldErrors['dieuKienapDung'] }}
           </div>
         </div>
       </div>
-    </form>
-  </div>
-  
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-    <button type="button" class="btn btn-primary" (click)="saveVoucher()" [disabled]="voucherForm.invalid">Lưu</button>
-  </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="button" class="btn btn-primary" (click)="saveVoucher()" [disabled]="voucherForm.invalid">
+    {{ voucher ? 'Cập nhật' : 'Lưu' }}
+  </button>
+</div>

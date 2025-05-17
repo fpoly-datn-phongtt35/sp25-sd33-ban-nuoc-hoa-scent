@@ -1,23 +1,23 @@
 <div class="statistics-container">
   <!-- Error Message -->
   <div *ngIf="errorMessage" class="error-message">
-    {{ errorMessage }}
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
   </div>
 
   <!-- Tab Navigation -->
   <div class="tab-navigation">
     <button [class.active]="selectedTab === 'don-hang-doanh-thu'" (click)="switchTab('don-hang-doanh-thu')">
-      Đơn hàng - Doanh thu
+      <i class="fas fa-chart-line"></i> Đơn hàng - Doanh thu
     </button>
     <button [class.active]="selectedTab === 'san-pham'" (click)="switchTab('san-pham')">
-      Sản phẩm
+      <i class="fas fa-box-open"></i> Sản phẩm
     </button>
   </div>
 
   <!-- Filters -->
   <div class="filters-container">
     <div class="filters">
-      <label for="timeTypeSelect">Chọn loại thống kê: </label>
+      <label for="timeTypeSelect"><i class="fas fa-filter"></i> Chọn loại thống kê:</label>
       <select id="timeTypeSelect" [(ngModel)]="selectedTimeType" (ngModelChange)="onTimeTypeChange()">
         <option value="ngay">Theo ngày</option>
         <option value="tuan">Theo tuần</option>
@@ -28,52 +28,83 @@
 
     <!-- Form chọn ngày -->
     <div *ngIf="selectedTimeType === 'ngay'" class="filters">
-      <label for="startDate">Ngày bắt đầu: </label>
-      <input type="date" id="startDate" [(ngModel)]="startDate" (ngModelChange)="onFilterChange()" />
-      <label for="endDate">Ngày kết thúc: </label>
-      <input type="date" id="endDate" [(ngModel)]="endDate" (ngModelChange)="onFilterChange()" />
+      <label for="startDate"><i class="fas fa-calendar-day"></i> Ngày bắt đầu:</label>
+      <input type="date" id="startDate" [(ngModel)]="startDate" (ngModelChange)="filterChange.next()" />
+      <label for="endDate"><i class="fas fa-calendar-day"></i> Ngày kết thúc:</label>
+      <input type="date" id="endDate" [(ngModel)]="endDate" (ngModelChange)="filterChange.next()" />
     </div>
 
     <!-- Form chọn tuần -->
     <div *ngIf="selectedTimeType === 'tuan'" class="filters">
-      <label for="weekSelect">Chọn tuần: </label>
-      <select id="weekSelect" [(ngModel)]="selectedWeek" (ngModelChange)="onFilterChange()">
+      <label for="weekSelect"><i class="fas fa-calendar-week"></i> Chọn tuần:</label>
+      <select id="weekSelect" [(ngModel)]="selectedWeek" (ngModelChange)="filterChange.next()">
+        <option value="">-- Chọn tuần --</option>
         <option *ngFor="let week of weeks" [value]="week">Tuần {{ week }}</option>
       </select>
-      <label for="yearSelectTuan">Chọn năm: </label>
-      <select id="yearSelectTuan" [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
+      <label for="yearSelectTuan"><i class="fas fa-calendar-alt"></i> Chọn năm:</label>
+      <select id="yearSelectTuan" [(ngModel)]="selectedYear" (ngModelChange)="filterChange.next()">
+        <option value="">-- Chọn năm --</option>
         <option *ngFor="let year of years" [value]="year">{{ year }}</option>
       </select>
     </div>
 
     <!-- Form chọn tháng -->
     <div *ngIf="selectedTimeType === 'thang'" class="filters">
-      <label for="monthSelect">Chọn tháng: </label>
-      <select id="monthSelect" [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()">
+      <label for="monthSelect"><i class="fas fa-calendar-month"></i> Chọn tháng:</label>
+      <select id="monthSelect" [(ngModel)]="selectedMonth" (ngModelChange)="filterChange.next()">
+        <option value="">-- Chọn tháng --</option>
         <option *ngFor="let month of months" [value]="month.value">{{ month.label }}</option>
       </select>
-      <label for="yearSelectThang">Chọn năm: </label>
-      <select id="yearSelectThang" [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
+      <label for="yearSelectThang"><i class="fas fa-calendar-alt"></i> Chọn năm:</label>
+      <select id="yearSelectThang" [(ngModel)]="selectedYear" (ngModelChange)="filterChange.next()">
+        <option value="">-- Chọn năm --</option>
         <option *ngFor="let year of years" [value]="year">{{ year }}</option>
       </select>
     </div>
 
     <!-- Form chọn năm -->
     <div *ngIf="selectedTimeType === 'nam'" class="filters">
-      <label for="yearSelectNam">Chọn năm: </label>
-      <select id="yearSelectNam" [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
+      <label for="yearSelectNam"><i class="fas fa-calendar-alt"></i> Chọn năm:</label>
+      <select id="yearSelectNam" [(ngModel)]="selectedYear" (ngModelChange)="filterChange.next()">
+        <option value="">-- Chọn năm --</option>
         <option *ngFor="let year of years" [value]="year">{{ year }}</option>
       </select>
     </div>
   </div>
 
+  <!-- Search and Sort for Sản phẩm tab -->
+  <div *ngIf="selectedTab === 'san-pham'" class="search-sort-container">
+    <div class="search-filters">
+      <label for="searchQuery"><i class="fas fa-search"></i> Tìm kiếm:</label>
+      <input
+        type="text"
+        id="searchQuery"
+        placeholder="Tên sản phẩm, ID, nhóm hương..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="searchChange.next()"
+      />
+    </div>
+    <div class="sort-filters">
+      <label for="sortField"><i class="fas fa-sort"></i> Sắp xếp theo:</label>
+      <select id="sortField" [(ngModel)]="sortField" (ngModelChange)="onSortChange()">
+        <option value="totalQuantitySold">Số lượng bán</option>
+        <option value="soLuongTonKho">Số lượng tồn kho</option>
+        <option value="soLuotTraHang">Số lượt trả hàng</option>
+      </select>
+      <label for="sortDirection"><i class="fas fa-arrows-alt-v"></i> Hướng:</label>
+      <select id="sortDirection" [(ngModel)]="sortDirection" (ngModelChange)="onSortChange()">
+        <option value="asc">Tăng dần</option>
+        <option value="desc">Giảm dần</option>
+      </select>
+    </div>
+  </div>
+
   <!-- Export Button -->
-  <div class="export-button-container" *ngIf="validateFilters()">
+  <div class="export-button-container">
     <button
       mat-raised-button
       class="export-button"
       (click)="selectedTab === 'don-hang-doanh-thu' ? exportToExcelDonHangDoanhThu() : exportToExcelSanPham()"
-      [disabled]="!validateFilters()"
     >
       <i class="fas fa-download"></i> Xuất Excel
     </button>
@@ -85,22 +116,22 @@
     <div *ngIf="selectedTab === 'don-hang-doanh-thu'">
       <!-- Tổng quan (Cố định) -->
       <div *ngIf="thongKeTongQuan" class="overview">
-        <h2>Doanh thu-Đơn hàng</h2>
+        <h2><i class="fas fa-chart-bar"></i> Doanh thu - Đơn hàng</h2>
         <div class="overview-grid">
           <div class="overview-section">
-            <h3>Doanh thu</h3>
+            <h3><i class="fas fa-money-bill-wave"></i> Doanh thu</h3>
             <p><span class="label">Tổng doanh thu:</span> {{ thongKeTongQuan.tongDoanhThu | currency:'VND' }}</p>
             <p><span class="label">Doanh thu online:</span> {{ thongKeTongQuan.doanhThuOnline | currency:'VND' }}</p>
             <p><span class="label">Doanh thu offline:</span> {{ thongKeTongQuan.doanhThuOffline | currency:'VND' }}</p>
           </div>
           <div class="overview-section">
-            <h3>Số lượng đơn</h3>
+            <h3><i class="fas fa-shopping-cart"></i> Số lượng đơn</h3>
             <p><span class="label">Tổng số lượng đơn:</span> {{ thongKeTongQuan.soLuongDon }}</p>
             <p><span class="label">Số lượng đơn online:</span> {{ thongKeTongQuan.soLuongDonOnline }}</p>
             <p><span class="label">Số lượng đơn offline:</span> {{ thongKeTongQuan.soLuongDonOffline }}</p>
           </div>
           <div class="overview-section">
-            <h3>Trạng thái đơn</h3>
+            <h3><i class="fas fa-check-circle"></i> Trạng thái đơn</h3>
             <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuan.onlineHoanThanh }}</p>
             <p><span class="label">Online không hoàn thành:</span> {{ thongKeTongQuan.onlineHuy }}</p>
             <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuan.offlineHoanThanh }}</p>
@@ -109,23 +140,23 @@
       </div>
 
       <!-- Tổng quan (Theo bộ lọc) -->
-      <div *ngIf="thongKeTongQuanFiltered" class="overview">
-        <h2>Tổng quan (Theo bộ lọc)</h2>
+      <div *ngIf="thongKeTongQuanFiltered && isTimeFilterApplied()" class="overview">
+        <h2><i class="fas fa-filter"></i> Tổng quan (Theo bộ lọc)</h2>
         <div class="overview-grid">
           <div class="overview-section">
-            <h3>Doanh thu</h3>
+            <h3><i class="fas fa-money-bill-wave"></i> Doanh thu</h3>
             <p><span class="label">Tổng doanh thu:</span> {{ thongKeTongQuanFiltered.tongDoanhThu | currency:'VND' }}</p>
             <p><span class="label">Doanh thu online:</span> {{ thongKeTongQuanFiltered.doanhThuOnline | currency:'VND' }}</p>
             <p><span class="label">Doanh thu offline:</span> {{ thongKeTongQuanFiltered.doanhThuOffline | currency:'VND' }}</p>
           </div>
           <div class="overview-section">
-            <h3>Số lượng đơn</h3>
+            <h3><i class="fas fa-shopping-cart"></i> Số lượng đơn</h3>
             <p><span class="label">Tổng số lượng đơn:</span> {{ thongKeTongQuanFiltered.soLuongDon }}</p>
             <p><span class="label">Số lượng đơn online:</span> {{ thongKeTongQuanFiltered.soLuongDonOnline }}</p>
             <p><span class="label">Số lượng đơn offline:</span> {{ thongKeTongQuanFiltered.soLuongDonOffline }}</p>
           </div>
           <div class="overview-section">
-            <h3>Trạng thái đơn</h3>
+            <h3><i class="fas fa-check-circle"></i> Trạng thái đơn</h3>
             <p><span class="label">Online hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHoanThanh }}</p>
             <p><span class="label">Online không hoàn thành:</span> {{ thongKeTongQuanFiltered.onlineHuy }}</p>
             <p><span class="label">Offline hoàn thành:</span> {{ thongKeTongQuanFiltered.offlineHoanThanh }}</p>
@@ -135,10 +166,10 @@
 
       <!-- Biểu đồ doanh thu -->
       <div class="chart-container">
-        <h2>Doanh thu</h2>
+        <h2><i class="fas fa-chart-line"></i> Doanh thu</h2>
         <canvas baseChart [data]="doanhThuConfig" [options]="doanhThuOptions" [type]="doanhThuType"></canvas>
         <div class="data-table" *ngIf="doanhThuData.length > 0">
-          <h3>Chi tiết doanh thu</h3>
+          <h3><i class="fas fa-table"></i> Chi tiết doanh thu</h3>
           <table>
             <thead>
               <tr>
@@ -146,7 +177,6 @@
                 <th>Tổng doanh thu</th>
                 <th>Doanh thu online</th>
                 <th>Doanh thu offline</th>
-                <th>Tỉ lệ tăng trưởng (%)</th>
               </tr>
             </thead>
             <tbody>
@@ -155,7 +185,6 @@
                 <td>{{ item.tongDoanhThu | currency:'VND' }}</td>
                 <td>{{ item.doanhThuOnline | currency:'VND' }}</td>
                 <td>{{ item.doanhThuOffline | currency:'VND' }}</td>
-                <td>{{ item.tiLeTangTruongDoanhThu !== null ? (item.tiLeTangTruongDoanhThu | number:'1.2-2') + '%' : 'N/A' }}</td>
               </tr>
             </tbody>
           </table>
@@ -164,7 +193,7 @@
 
       <!-- Biểu đồ số lượng đơn -->
       <div class="chart-container">
-        <h2>Số lượng đơn</h2>
+        <h2><i class="fas fa-chart-bar"></i> Số lượng đơn</h2>
         <canvas baseChart [data]="soLuongDonConfig" [options]="soLuongDonOptions" [type]="soLuongDonType"></canvas>
       </div>
     </div>
@@ -172,21 +201,22 @@
     <!-- Tab 2: Sản phẩm -->
     <div *ngIf="selectedTab === 'san-pham'">
       <!-- Filter Info -->
-      <div class="filter-info" *ngIf="validateFilters()">
+      <div class="filter-info">
         <p>
-          Dữ liệu sản phẩm bán chạy cho:
-          <span *ngIf="selectedTimeType === 'ngay'">từ {{ startDate }} đến {{ endDate }}</span>
-          <span *ngIf="selectedTimeType === 'tuan'">tuần {{ selectedWeek }} năm {{ selectedYear }}</span>
-          <span *ngIf="selectedTimeType === 'thang'">tháng {{ selectedMonth }} năm {{ selectedYear }}</span>
-          <span *ngIf="selectedTimeType === 'nam'">năm {{ selectedYear }}</span>
+          <i class="fas fa-info-circle"></i> Dữ liệu sản phẩm:
+          <span *ngIf="selectedTimeType === 'ngay' && startDate && endDate">từ {{ startDate }} đến {{ endDate }}</span>
+          <span *ngIf="selectedTimeType === 'tuan' && selectedWeek && selectedYear">tuần {{ selectedWeek }} năm {{ selectedYear }}</span>
+          <span *ngIf="selectedTimeType === 'thang' && selectedMonth && selectedYear">tháng {{ selectedMonth }} năm {{ selectedYear }}</span>
+          <span *ngIf="selectedTimeType === 'nam' && selectedYear">năm {{ selectedYear }}</span>
+          <span *ngIf="!isTimeFilterApplied()">tất cả thời gian</span>
         </p>
       </div>
 
       <!-- Best-Selling Products -->
       <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0; else noProducts">
-        <h2>Sản phẩm bán chạy nhất</h2>
+        <h2><i class="fas fa-boxes"></i> Danh sách sản phẩm</h2>
         <div class="table-container">
-          <table>
+          <table class="product-table">
             <thead class="sticky-header">
               <tr>
                 <th>Tên sản phẩm</th>
@@ -197,9 +227,63 @@
                 <th>Hương giữa</th>
                 <th>Hương cuối</th>
                 <th>Dung tích (ml)</th>
-                <th>Số lượng bán</th>
-                <th>Số lượt trả hàng</th>
-                <th>Số lượng tồn kho</th>
+                <th>
+                  Số lượng bán
+                  <span class="sort-icons">
+                    <i
+                      class="fas fa-arrow-up"
+                      [class.active]="sortField === 'totalQuantitySold' && sortDirection === 'asc'"
+                      (click)="sortColumn('totalQuantitySold', 'asc')"
+                      title="Tăng dần"
+                      data-tooltip
+                    ></i>
+                    <i
+                      class="fas fa-arrow-down"
+                      [class.active]="sortField === 'totalQuantitySold' && sortDirection === 'desc'"
+                      (click)="sortColumn('totalQuantitySold', 'desc')"
+                      title="Giảm dần"
+                      data-tooltip
+                    ></i>
+                  </span>
+                </th>
+                <th>
+                  Số lượt trả hàng
+                  <span class="sort-icons">
+                    <i
+                      class="fas fa-arrow-up"
+                      [class.active]="sortField === 'soLuotTraHang' && sortDirection === 'asc'"
+                      (click)="sortColumn('soLuotTraHang', 'asc')"
+                      title="Tăng dần"
+                      data-tooltip
+                    ></i>
+                    <i
+                      class="fas fa-arrow-down"
+                      [class.active]="sortField === 'soLuotTraHang' && sortDirection === 'desc'"
+                      (click)="sortColumn('soLuotTraHang', 'desc')"
+                      title="Giảm dần"
+                      data-tooltip
+                    ></i>
+                  </span>
+                </th>
+                <th>
+                  Số lượng tồn kho
+                  <span class="sort-icons">
+                    <i
+                      class="fas fa-arrow-up"
+                      [class.active]="sortField === 'soLuongTonKho' && sortDirection === 'asc'"
+                      (click)="sortColumn('soLuongTonKho', 'asc')"
+                      title="Tăng dần"
+                      data-tooltip
+                    ></i>
+                    <i
+                      class="fas fa-arrow-down"
+                      [class.active]="sortField === 'soLuongTonKho' && sortDirection === 'desc'"
+                      (click)="sortColumn('soLuongTonKho', 'desc')"
+                      title="Giảm dần"
+                      data-tooltip
+                    ></i>
+                  </span>
+                </th>
                 <th>Trạng thái tồn kho</th>
               </tr>
             </thead>
@@ -208,33 +292,33 @@
                 <td class="truncate" (click)="toggleFullContent(i, 0)" [class.expanded]="expandedCells[i]?.[0]">
                   {{ expandedCells[i]?.[0] ? product.tenSanPham : (product.tenSanPham.length > 20 ? product.tenSanPham.slice(0, 20) + '...' : product.tenSanPham) }}
                 </td>
-                <td>{{ product.thuongHieu }}</td>
-                <td>{{ product.danhMuc }}</td>
+                <td>{{ product.thuongHieu || 'N/A' }}</td>
+                <td>{{ product.danhMuc || 'N/A' }}</td>
                 <td class="truncate" (click)="toggleFullContent(i, 3)" [class.expanded]="expandedCells[i]?.[3]">
-                  {{ expandedCells[i]?.[3] ? product.nhomHuong : (product.nhomHuong.length > 15 ? product.nhomHuong.slice(0, 15) + '...' : product.nhomHuong) }}
+                  {{ expandedCells[i]?.[3] ? product.nhomHuong : (product.nhomHuong?.length > 15 ? product.nhomHuong.slice(0, 15) + '...' : product.nhomHuong || 'N/A') }}
                 </td>
                 <td class="truncate" (click)="toggleFullContent(i, 4)" [class.expanded]="expandedCells[i]?.[4]">
-                  {{ expandedCells[i]?.[4] ? product.huongDau : (product.huongDau.length > 15 ? product.huongDau.slice(0, 15) + '...' : product.huongDau) }}
+                  {{ expandedCells[i]?.[4] ? product.huongDau : (product.huongDau?.length > 15 ? product.huongDau.slice(0, 15) + '...' : product.huongDau || 'N/A') }}
                 </td>
                 <td class="truncate" (click)="toggleFullContent(i, 5)" [class.expanded]="expandedCells[i]?.[5]">
-                  {{ expandedCells[i]?.[5] ? product.huongGiua : (product.huongGiua.length > 15 ? product.huongGiua.slice(0, 15) + '...' : product.huongGiua) }}
+                  {{ expandedCells[i]?.[5] ? product.huongGiua : (product.huongGiua?.length > 15 ? product.huongGiua.slice(0, 15) + '...' : product.huongGiua || 'N/A') }}
                 </td>
                 <td class="truncate" (click)="toggleFullContent(i, 6)" [class.expanded]="expandedCells[i]?.[6]">
-                  {{ expandedCells[i]?.[6] ? product.huongCuoi : (product.huongCuoi.length > 15 ? product.huongCuoi.slice(0, 15) + '...' : product.huongCuoi) }}
+                  {{ expandedCells[i]?.[6] ? product.huongCuoi : (product.huongCuoi?.length > 15 ? product.huongCuoi.slice(0, 15) + '...' : product.huongCuoi || 'N/A') }}
                 </td>
-                <td>{{ product.dungTich }}</td>
-                <td>{{ product.totalQuantitySold }}</td>
-                <td>{{ product.soLuotTraHang }}</td>
-                <td>{{ product.soLuongTonKho }}</td>
-                <td [ngClass]="{'warning': product.soLuongTonKho === 0 || product.soLuongTonKho < 10}">
-                  {{ product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng') }}
+                <td>{{ product.dungTich || 0 }}</td>
+                <td>{{ product.totalQuantitySold || 0 }}</td>
+                <td>{{ product.soLuotTraHang || 0 }}</td>
+                <td>{{ product.soLuongTonKho || 0 }}</td>
+                <td [ngClass]="{'warning': (product.soLuongTonKho || 0) === 0 || (product.soLuongTonKho || 0) < 5}">
+                  {{ product.stockStatus || (product.soLuongTonKho === 0 ? 'Hết hàng' : product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng') }}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <!-- Pagination Controls -->
-        <div class="pagination" *ngIf="bestSellingProductsPage?.page.totalPages > 1">
+        <div class="pagination" *ngIf="bestSellingProductsPage && bestSellingProductsPage.page.totalPages > 1">
           <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center flex gap-2">
               <li class="page-item" [class.disabled]="currentPage === 0">
@@ -247,10 +331,10 @@
                 <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
                 <span *ngIf="p.isEllipsis" class="page-link">...</span>
               </li>
-              <li class="page-item" [class.disabled]="bestSellingProductsPage && currentPage >= bestSellingProductsPage.page.totalPages - 1">
+              <li class="page-item" [class.disabled]="currentPage === bestSellingProductsPage.page.totalPages - 1">
                 <button class="page-link" (click)="nextPage()">›</button>
               </li>
-              <li class="page-item" [class.disabled]="bestSellingProductsPage && currentPage >= bestSellingProductsPage.page.totalPages - 1">
+              <li class="page-item" [class.disabled]="currentPage === bestSellingProductsPage.page.totalPages - 1">
                 <button class="page-link" (click)="goToPage(bestSellingProductsPage.page.totalPages - 1)">»</button>
               </li>
             </ul>
@@ -262,7 +346,9 @@
       </div>
       <ng-template #noProducts>
         <div class="no-data">
-          Không có dữ liệu sản phẩm cho khoảng thời gian này.
+          <i class="fas fa-exclamation-triangle"></i>
+          <span *ngIf="isTimeFilterApplied()">Không có dữ liệu sản phẩm cho khoảng thời gian này.</span>
+          <span *ngIf="!isTimeFilterApplied()">Không có sản phẩm nào trong cửa hàng.</span>
         </div>
       </ng-template>
     </div>

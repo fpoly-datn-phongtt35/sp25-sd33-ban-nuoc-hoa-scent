@@ -24,8 +24,8 @@ export class VourcherComponent {
   totalPages: number = 1;
   filterType: string = 'online';
   statusFilter: string = 'all';
-  sortField: string = '';
-  sortDirection: string = 'asc';
+  sortField: string = 'id';
+  sortDirection: string = 'desc';
 
   searchParams: any = {
     maGiamGia: '',
@@ -41,6 +41,20 @@ export class VourcherComponent {
 
   ngOnInit(): void {
     this.loadAllPhieuGiamGia();
+    window.addEventListener('reloadTableAndGoToFirstPage', () => {
+      this.page = 0;
+      this.loadAllPhieuGiamGia();
+      this.scrollToTop();
+    });
+    window.addEventListener('reloadTable', () => {
+      this.loadAllPhieuGiamGia();
+      this.scrollToTop();
+    });
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('reloadTableAndGoToFirstPage', () => {});
+    window.removeEventListener('reloadTable', () => {});
   }
 
   loadAllPhieuGiamGia(): void {
@@ -51,6 +65,7 @@ export class VourcherComponent {
         this.phieuGiamGias = response.content || [];
         this.totalPages = response.page?.totalPages || 1;
         this.applyFilter();
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu:', error);
@@ -62,6 +77,10 @@ export class VourcherComponent {
         });
       }
     });
+  }
+
+  private scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   onSearchInput(): void {
@@ -214,6 +233,7 @@ export class VourcherComponent {
       } else {
         this.loadAllPhieuGiamGia();
       }
+      this.scrollToTop();
     }
   }
 
@@ -225,6 +245,7 @@ export class VourcherComponent {
       } else {
         this.loadAllPhieuGiamGia();
       }
+      this.scrollToTop();
     }
   }
 
@@ -236,6 +257,7 @@ export class VourcherComponent {
       } else {
         this.loadAllPhieuGiamGia();
       }
+      this.scrollToTop();
     }
   }
 
@@ -282,8 +304,17 @@ export class VourcherComponent {
   openAddVoucherModal(): void {
     const modalRef = this.modalService.open(AddVoucherComponent, { backdrop: 'static', keyboard: false });
     modalRef.componentInstance.voucherAdded.subscribe((newVoucher: any) => {
-      this.phieuGiamGias.push(newVoucher);
-      this.applyFilter();
+      this.page = 0;
+      this.loadAllPhieuGiamGia();
+      this.scrollToTop();
+    });
+    // Khôi phục cuộn khi modal đóng
+    modalRef.result.finally(() => {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      this.cdr.detectChanges();
+      this.scrollToTop();
     });
   }
 
@@ -299,6 +330,14 @@ export class VourcherComponent {
         }
         this.cdr.detectChanges();
       }
+    });
+    // Khôi phục cuộn khi modal đóng
+    modalRef.result.finally(() => {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      this.cdr.detectChanges();
+      this.scrollToTop();
     });
   }
 

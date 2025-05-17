@@ -3,19 +3,23 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-edit-voucher',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './edit-voucher.component.html',
-  styleUrl: './edit-voucher.component.scss',
+  styleUrls: ['./edit-voucher.component.scss'],
   providers: [NgbActiveModal]
 })
 export class EditVoucherComponent implements OnInit {
   @Input() voucher: any;
   @Output() voucherUpdated = new EventEmitter<any>();
   voucherForm: FormGroup;
+  errorMessage: string | null = null;
+  isCodeExists: boolean = false;
+  fieldErrors: { [key: string]: string } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -23,109 +27,134 @@ export class EditVoucherComponent implements OnInit {
     private phieuGiamGiaService: PhieugiamgiaService,
     private cdr: ChangeDetectorRef
   ) {
-    this.voucherForm = this.fb.group({});
+    this.voucherForm = this.fb.group({
+      id: [null],
+      maGiamGia: ['', [Validators.required, Validators.maxLength(50)]],
+      giaTriGiam: [0, [Validators.required, Validators.min(0.1), Validators.max(0.8)]],
+      ngayBatDau: ['', Validators.required],
+      gioPhutBatDau: ['', Validators.required],
+      ngayHetHan: ['', Validators.required],
+      gioPhutHetHan: ['', Validators.required],
+      soLuong: [0, [Validators.required, Validators.min(1)]],
+      gia_tri_toi_da: [null, [Validators.min(0)]],
+      dieuKienapDung: [0, [Validators.required]],
+      giaTriDonToiThieu: [0.01, [Validators.required, Validators.min(0.01)]]
+    });
   }
 
   ngOnInit() {
     console.log('🔍 Dữ liệu nhận vào:', this.voucher);
+    if (this.voucher) {
+      this.populateForm();
+    }
+  }
 
-    // Khởi tạo form với dữ liệu từ voucher
-    this.voucherForm = this.fb.group({
-      id: [this.voucher?.id],
-      maGiamGia: [this.voucher?.maGiamGia, [Validators.required, Validators.maxLength(50)]],
-      giaTriGiam: [this.voucher?.giaTriGiam, [Validators.required, Validators.min(0.1), Validators.max(0.8)]], // Giữ nguyên validate giống AddVoucherComponent
-      ngayBatDau: [this.extractDate(this.voucher?.ngayBatDau), Validators.required],
-      gioPhutBatDau: [this.extractTime(this.voucher?.ngayBatDau), Validators.required],
-      ngayHetHan: [this.extractDate(this.voucher?.ngayHetHan), Validators.required],
-      gioPhutHetHan: [this.extractTime(this.voucher?.ngayHetHan), Validators.required],
-      soLuong: [this.voucher?.soLuong || 0, [Validators.required, Validators.min(1)]],
-      gia_tri_toi_da: [this.voucher?.gia_tri_toi_da || null, [Validators.min(0)]],
-      dieuKienapDung: [this.voucher?.dieuKienapDung || 0, [Validators.required]], // Chỉ cần required, không cần min(0) vì dùng dropdown
-      giaTriDonToiThieu: [this.voucher?.giaTriDonToiThieu || 0.01, [Validators.required, Validators.min(0.01)]] // Thêm trường giá trị đơn tối thiểu
+  populateForm() {
+    const startDateTime = new Date(this.voucher.ngayBatDau);
+    const endDateTime = new Date(this.voucher.ngayHetHan);
+
+    this.voucherForm.patchValue({
+      id: this.voucher.id,
+      maGiamGia: this.voucher.maGiamGia,
+      giaTriGiam: this.voucher.giaTriGiam,
+      ngayBatDau: this.formatDate(startDateTime),
+      gioPhutBatDau: this.formatTime(startDateTime),
+      ngayHetHan: this.formatDate(endDateTime),
+      gioPhutHetHan: this.formatTime(endDateTime),
+      soLuong: this.voucher.soLuong,
+      gia_tri_toi_da: this.voucher.gia_tri_toi_da,
+      dieuKienapDung: this.voucher.dieuKienapDung,
+      giaTriDonToiThieu: this.voucher.giaTriDonToiThieu
     });
 
     console.log('📌 Form giá trị sau khi gán:', this.voucherForm.value);
-    this.cdr.detectChanges(); // Đảm bảo giao diện được render
+    this.cdr.detectChanges();
   }
 
   updateVoucher() {
+    this.errorMessage = null;
+    this.isCodeExists = false;
+    this.fieldErrors = {};
+  
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value };
-
+  
       // Kết hợp ngày và giờ
       const start = new Date(this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau));
       const end = new Date(this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan));
-
-      // Kiểm tra ngày bắt đầu và kết thúc
+  
       if (start >= end) {
-        alert('❌ Ngày và giờ bắt đầu phải trước ngày và giờ kết thúc.');
+        this.errorMessage = 'Ngày và giờ bắt đầu phải trước ngày và giờ kết thúc.';
+        this.cdr.detectChanges();
         return;
       }
-
+  
       formData.ngayBatDau = this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau);
       formData.ngayHetHan = this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan);
-
-      // Xóa các trường không cần thiết
       delete formData.gioPhutBatDau;
       delete formData.gioPhutHetHan;
-
-      console.log("📤 Dữ liệu gửi đi:", formData);
-
-      this.phieuGiamGiaService.updateVoucher(formData).subscribe(
+  
+      console.log('📤 Dữ liệu gửi đi:', formData);
+  
+      this.phieuGiamGiaService.updateVoucher(formData.id, formData).subscribe(
         (response: any) => {
-          alert('Cập nhật voucher thành công!');
+          this.errorMessage = null;
           this.voucherUpdated.emit(response);
           this.closeModal();
+          this.reloadTable();
         },
-        (error: any) => {
+        (error: HttpErrorResponse) => {
           console.error('❌ Lỗi khi cập nhật voucher:', error);
-          alert(`Lỗi: ${error.message || 'Không thể cập nhật voucher. Vui lòng thử lại!'}`);
+          this.errorMessage = error.message || 'Đã xảy ra lỗi. Vui lòng thử lại!';
+          if (error.status === 400 && this.errorMessage.includes(': ')) {
+            this.parseFieldErrors(this.errorMessage);
+          } else if (this.errorMessage.includes('Mã giảm giá đã tồn tại')) {
+            this.isCodeExists = true;
+          }
+          this.cdr.detectChanges();
         }
       );
     } else {
-      console.warn('⚠️ Form không hợp lệ:', this.voucherForm.errors);
-      alert('Vui lòng điền đầy đủ và đúng định dạng các trường bắt buộc.');
+      this.errorMessage = 'Vui lòng điền đầy đủ và đúng định dạng các trường bắt buộc.';
+      this.cdr.detectChanges();
     }
+  }
+
+  private parseFieldErrors(errorMessage: string) {
+    const errors = errorMessage.split('; ').filter(e => e.includes(': '));
+    errors.forEach(error => {
+      const [field, message] = error.split(': ');
+      this.fieldErrors[field] = message;
+    });
   }
 
   combineDateTime(date: string, time: string): string {
     if (!date || !time) return '';
-    return `${date}T${time}:00`; // Format `YYYY-MM-DDTHH:mm:ss`
+    return `${date}T${time}:00`;
   }
 
-  extractDate(datetime: string | null): string {
-    if (!datetime) return '';
-    return datetime.split('T')[0]; // Lấy phần YYYY-MM-DD
+  formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
   }
 
-  extractTime(datetime: string | null): string {
-    if (!datetime) return '';
-    return datetime.split('T')[1]?.slice(0, 5) || ''; // Lấy HH:mm
+  formatTime(date: Date): string {
+    return date.toTimeString().slice(0, 5);
   }
 
   closeModal() {
-    console.log('🛑 Attempting to close modal...', this.activeModal);
-
-    if (this.activeModal) {
-      this.activeModal.dismiss('cancel');
-      console.log('✅ Dismiss method called');
-    } else {
-      console.error('❌ ActiveModal is not available');
-    }
-
+    this.activeModal.dismiss('cancel');
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
-      if (modalElement) {
-        modalElement.remove();
-      }
+      if (modalElement) modalElement.remove();
       const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-      }
+      if (backdrop) backdrop.remove();
       document.body.classList.remove('modal-open');
-      console.log('✅ Forced modal removal executed');
-
       this.cdr.detectChanges();
     }, 100);
+  }
+
+  reloadTable() {
+    const event = new CustomEvent('reloadTable');
+    window.dispatchEvent(event);
   }
 }

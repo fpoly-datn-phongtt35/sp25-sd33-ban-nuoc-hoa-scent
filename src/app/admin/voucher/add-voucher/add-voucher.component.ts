@@ -1,20 +1,26 @@
-import { Component, EventEmitter, Output, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectorRef } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-add-voucher',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './add-voucher.component.html',
-  styleUrl: './add-voucher.component.scss',
+  styleUrls: ['./add-voucher.component.scss'],
   providers: [NgbActiveModal]
 })
 export class AddVoucherComponent {
+  @Input() voucher: any = null;
   @Output() voucherAdded = new EventEmitter<any>();
+  @Output() voucherUpdated = new EventEmitter<any>();
   voucherForm: FormGroup;
+  errorMessage: string | null = null;
+  isCodeExists: boolean = false;
+  fieldErrors: { [key: string]: string } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -32,61 +38,104 @@ export class AddVoucherComponent {
       soLuong: [0, [Validators.required, Validators.min(1)]],
       gia_tri_toi_da: [null, [Validators.min(0)]],
       dieuKienapDung: [0, [Validators.required, Validators.min(0)]],
-      giaTriDonToiThieu: [0.01, [Validators.required, Validators.min(0.01)]] // Thêm trường giá trị đơn tối thiểu
+      giaTriDonToiThieu: [0.01, [Validators.required, Validators.min(0.01)]]
     });
-    console.log('✅ voucherForm khởi tạo:', this.voucherForm.value);
+
+    if (this.voucher) {
+      this.populateForm();
+    }
+  }
+
+  populateForm() {
+    const startDateTime = new Date(this.voucher.ngayBatDau);
+    const endDateTime = new Date(this.voucher.ngayHetHan);
+
+    this.voucherForm.patchValue({
+      maGiamGia: this.voucher.maGiamGia,
+      giaTriGiam: this.voucher.giaTriGiam,
+      ngayBatDau: this.formatDate(startDateTime),
+      gioPhutBatDau: this.formatTime(startDateTime),
+      ngayHetHan: this.formatDate(endDateTime),
+      gioPhutHetHan: this.formatTime(endDateTime),
+      soLuong: this.voucher.soLuong,
+      gia_tri_toi_da: this.voucher.gia_tri_toi_da,
+      dieuKienapDung: this.voucher.dieuKienapDung,
+      giaTriDonToiThieu: this.voucher.giaTriDonToiThieu
+    });
   }
 
   saveVoucher() {
-    console.log('📌 Dữ liệu trong form:', this.voucherForm.value);
+    this.errorMessage = null;
+    this.isCodeExists = false;
+    this.fieldErrors = {};
 
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value };
 
-      // Kết hợp ngày + giờ thành Date object để so sánh
       const start = new Date(this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau));
       const end = new Date(this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan));
 
-      // Kiểm tra nếu ngày bắt đầu >= ngày kết thúc
       if (start >= end) {
-        alert('❌ Ngày và giờ bắt đầu phải trước ngày và giờ kết thúc.');
+        this.errorMessage = 'Ngày và giờ bắt đầu phải trước ngày và giờ kết thúc.';
+        this.cdr.detectChanges();
         return;
       }
 
-      // Gộp ngày giờ lại
       formData.ngayBatDau = this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau);
       formData.ngayHetHan = this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan);
-
       delete formData.gioPhutBatDau;
       delete formData.gioPhutHetHan;
 
-      this.phieuGiamGiaService.addVoucher(formData).subscribe(
+      const action = this.voucher
+        ? this.phieuGiamGiaService.updateVoucher(this.voucher.id, formData)
+        : this.phieuGiamGiaService.addVoucher(formData);
+
+      action.subscribe(
         (response: any) => {
-          alert('Thêm voucher thành công!');
-          this.voucherAdded.emit(response);
+          this.errorMessage = null;
+          if (this.voucher) {
+            this.voucherUpdated.emit(response);
+          } else {
+            this.voucherAdded.emit(response);
+            this.reloadTableAndGoToFirstPage();
+          }
           this.closeModal();
         },
-        (error: any) => {
-          console.error('❌ Lỗi khi thêm voucher:', error);
-          alert(`Lỗi: ${error.message || 'Không thể thêm voucher. Vui lòng thử lại!'}`);
+        (error: HttpErrorResponse) => {
+          console.error('Lỗi khi lưu voucher:', error);
+          this.errorMessage = error.message || 'Đã xảy ra lỗi. Vui lòng thử lại!';
+          if (error.status === 400 && this.errorMessage.includes(': ')) {
+            this.parseFieldErrors(this.errorMessage);
+          } else if (this.errorMessage.includes('Mã giảm giá đã tồn tại')) {
+            this.isCodeExists = true;
+          }
+          this.cdr.detectChanges();
         }
       );
     } else {
-      console.warn('⚠️ Form không hợp lệ, kiểm tra lại:', this.voucherForm.errors);
-      alert('Vui lòng điền đầy đủ và đúng định dạng các trường bắt buộc.');
+      this.errorMessage = 'Vui lòng điền đầy đủ và đúng định dạng các trường bắt buộc.';
+      this.cdr.detectChanges();
     }
   }
 
-  closeModal() {
-    console.log('🛑 Attempting to close modal...', this.activeModal);
+  private reloadTableAndGoToFirstPage() {
+    const reloadEvent = new CustomEvent('reloadTableAndGoToFirstPage', { detail: { page: 1 } });
+    window.dispatchEvent(reloadEvent);
+  }
 
+  private parseFieldErrors(errorMessage: string) {
+    const errors = errorMessage.split('; ').filter(e => e.includes(': '));
+    errors.forEach(error => {
+      const [field, message] = error.split(': ');
+      this.fieldErrors[field] = message;
+    });
+  }
+
+  closeModal() {
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
-      console.log('✅ Dismiss method called');
-    } else {
-      console.error('❌ ActiveModal is not available');
     }
-
+    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {
@@ -97,15 +146,23 @@ export class AddVoucherComponent {
         backdrop.remove();
       }
       document.body.classList.remove('modal-open');
-      console.log('✅ Forced modal removal executed');
-
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '';
       this.cdr.detectChanges();
     }, 100);
   }
 
   combineDateTime(date: string, time: string): string {
     if (!date || !time) return '';
-    return `${date}T${time}:00`; // Format `YYYY-MM-DDTHH:mm:ss`
+    return `${date}T${time}:00`;
+  }
+
+  formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+
+  formatTime(date: Date): string {
+    return date.toTimeString().slice(0, 5);
   }
 
   reloadTable() {

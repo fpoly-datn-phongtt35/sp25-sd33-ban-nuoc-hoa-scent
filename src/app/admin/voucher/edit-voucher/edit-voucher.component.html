@@ -1,12 +1,18 @@
-<form [formGroup]="voucherForm" class="voucher-form">
+<div class="modal-header">
+  <h5 class="modal-title">Chỉnh sửa Voucher</h5>
+  <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <!-- Hiển thị thông báo lỗi chung -->
+  <div class="alert alert-danger" *ngIf="errorMessage && !fieldErrors['maGiamGia'] && !isCodeExists">
+    {{ errorMessage }}
+  </div>
+
+  <form [formGroup]="voucherForm" class="voucher-form">
     <input type="hidden" formControlName="id">
-  
+
     <!-- Thông tin cơ bản -->
-    <div class="modal-header">
-      <h5 class="modal-title">Chỉnh sửa Voucher</h5>
-      <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
-    </div>
-    <div class="modal-body">
     <div class="form-section">
       <h6 class="section-title">Thông tin cơ bản</h6>
       <div class="form-group">
@@ -27,6 +33,12 @@
           <div *ngIf="voucherForm.get('maGiamGia')?.errors?.['maxlength']">
             Mã giảm giá không được vượt quá 50 ký tự.
           </div>
+        </div>
+        <div class="text-danger mt-1" *ngIf="isCodeExists">
+          Mã giảm giá đã tồn tại. Vui lòng chọn mã khác!
+        </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['maGiamGia']">
+          {{ fieldErrors['maGiamGia'] }}
         </div>
       </div>
       <div class="form-group">
@@ -51,6 +63,9 @@
             Giá trị giảm phải từ 0.1 đến 0.8 (10% đến 80%).
           </div>
         </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['giaTriGiam']">
+          {{ fieldErrors['giaTriGiam'] }}
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Giá trị tối đa (VNĐ)</label>
@@ -69,6 +84,9 @@
           <div *ngIf="voucherForm.get('gia_tri_toi_da')?.errors?.['min']">
             Giá trị tối đa phải lớn hơn hoặc bằng 0.
           </div>
+        </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['gia_tri_toi_da']">
+          {{ fieldErrors['gia_tri_toi_da'] }}
         </div>
       </div>
       <div class="form-group">
@@ -92,9 +110,12 @@
             Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0.01.
           </div>
         </div>
+        <div class="text-danger mt-1" *ngIf="fieldErrors['giaTriDonToiThieu']">
+          {{ fieldErrors['giaTriDonToiThieu'] }}
+        </div>
       </div>
     </div>
-  
+
     <!-- Thời gian áp dụng -->
     <div class="form-section">
       <h6 class="section-title">Thời gian áp dụng</h6>
@@ -106,9 +127,10 @@
             class="text-danger mt-1"
             *ngIf="voucherForm.get('ngayBatDau')?.touched && voucherForm.get('ngayBatDau')?.invalid"
           >
-            <div *ngIf="voucherForm.get('ngayBatDau')?.errors?.['required']">
-              Vui lòng chọn ngày bắt đầu.
-            </div>
+            Vui lòng chọn ngày bắt đầu.
+          </div>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['ngayBatDau']">
+            {{ fieldErrors['ngayBatDau'] }}
           </div>
         </div>
         <div class="form-group half-width">
@@ -118,9 +140,7 @@
             class="text-danger mt-1"
             *ngIf="voucherForm.get('gioPhutBatDau')?.touched && voucherForm.get('gioPhutBatDau')?.invalid"
           >
-            <div *ngIf="voucherForm.get('gioPhutBatDau')?.errors?.['required']">
-              Vui lòng chọn thời gian bắt đầu.
-            </div>
+            Vui lòng chọn thời gian bắt đầu.
           </div>
         </div>
       </div>
@@ -132,9 +152,10 @@
             class="text-danger mt-1"
             *ngIf="voucherForm.get('ngayHetHan')?.touched && voucherForm.get('ngayHetHan')?.invalid"
           >
-            <div *ngIf="voucherForm.get('ngayHetHan')?.errors?.['required']">
-              Vui lòng chọn ngày hết hạn.
-            </div>
+            Vui lòng chọn ngày hết hạn.
+          </div>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['ngayHetHan']">
+            {{ fieldErrors['ngayHetHan'] }}
           </div>
         </div>
         <div class="form-group half-width">
@@ -144,14 +165,12 @@
             class="text-danger mt-1"
             *ngIf="voucherForm.get('gioPhutHetHan')?.touched && voucherForm.get('gioPhutHetHan')?.invalid"
           >
-            <div *ngIf="voucherForm.get('gioPhutHetHan')?.errors?.['required']">
-              Vui lòng chọn thời gian hết hạn.
-            </div>
+            Vui lòng chọn thời gian hết hạn.
           </div>
         </div>
       </div>
     </div>
-  
+
     <!-- Cài đặt khác -->
     <div class="form-section">
       <h6 class="section-title">Cài đặt khác</h6>
@@ -176,6 +195,9 @@
               Số lượng phải lớn hơn hoặc bằng 1.
             </div>
           </div>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['soLuong']">
+            {{ fieldErrors['soLuong'] }}
+          </div>
         </div>
         <div class="form-group half-width">
           <label class="form-label">Luồng áp dụng <span class="required">*</span></label>
@@ -187,17 +209,18 @@
             class="text-danger mt-1"
             *ngIf="voucherForm.get('dieuKienapDung')?.touched && voucherForm.get('dieuKienapDung')?.invalid"
           >
-            <div *ngIf="voucherForm.get('dieuKienapDung')?.errors?.['required']">
-              Vui lòng chọn luồng áp dụng.
-            </div>
+            Vui lòng chọn luồng áp dụng.
+          </div>
+          <div class="text-danger mt-1" *ngIf="fieldErrors['dieuKienapDung']">
+            {{ fieldErrors['dieuKienapDung'] }}
           </div>
         </div>
       </div>
     </div>
-  </div>
-    <!-- Modal footer -->
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-      <button type="button" class="btn btn-primary" (click)="updateVoucher()" [disabled]="voucherForm.invalid">Lưu</button>
-    </div>
   </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+  <button type="button" class="btn btn-primary" (click)="updateVoucher()" [disabled]="voucherForm.invalid">Lưu</button>
+</div>

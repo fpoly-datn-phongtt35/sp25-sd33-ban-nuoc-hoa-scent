@@ -67,7 +67,13 @@ export class PhieugiamgiaService {
 
   addVoucher(voucher: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/add`, voucher).pipe(
-      catchError(this.handleError)
+      catchError(this.handleError1)
+    );
+  }
+
+  updateVoucher(id: number, voucher: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update/${id}`, voucher).pipe(
+      catchError(this.handleError1)
     );
   }
 
@@ -77,11 +83,7 @@ export class PhieugiamgiaService {
     );
   }
 
-  updateVoucher(voucher: any): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/update`, voucher).pipe(
-      catchError(this.handleError)
-    );
-  }
+  
 
   updateStatus(id: number, trangThai: number): Observable<any> {
     return this.http
@@ -94,7 +96,34 @@ export class PhieugiamgiaService {
         })
       );
   }
+  private handleError1(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'Có lỗi xảy ra khi xử lý yêu cầu.';
 
+    if (error.error instanceof ErrorEvent) {
+      // Lỗi phía client (ví dụ: lỗi mạng)
+      errorMessage = `Lỗi: ${error.error.message}`;
+    } else {
+      // Lỗi từ server
+      if (error.status === 400) {
+        if (typeof error.error === 'string') {
+          // Backend trả về lỗi dạng văn bản thuần
+          errorMessage = error.error.trim(); // Loại bỏ khoảng trắng thừa
+        } else {
+          // Nếu backend trả về JSON (trong trường hợp cấu trúc thay đổi)
+          errorMessage = error.error?.message || `Lỗi từ server: ${error.status}`;
+        }
+      } else if (error.status === 404) {
+        errorMessage = 'Không tìm thấy tài nguyên.';
+      } else if (error.status === 0) {
+        errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+      } else {
+        errorMessage = `Mã lỗi: ${error.status} - ${error.statusText}`;
+      }
+    }
+
+    console.error('❌ Lỗi chi tiết:', error);
+    return throwError(() => new Error(errorMessage));
+  }
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'Có lỗi xảy ra khi xử lý yêu cầu.';
     if (error.error instanceof ErrorEvent) {
