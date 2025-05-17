@@ -3,6 +3,7 @@ package com.example.scent.rest;
 import com.example.scent.entity.PhieuGiamGia;
 
 import com.example.scent.entity.SanPham;
+import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.PhieuGiamGiaInterface;
 import com.example.scent.service.PhieuGiamGiaSv;
 import jakarta.validation.Valid;
@@ -35,7 +36,16 @@ private PhieuGiamGiaInterface pggi;
     public PhieuGiamGiaCtrl(PhieuGiamGiaSv pggs) {
         this.pggs = pggs;
     }
+    @GetMapping("/users")
+    public List<TaiKhoan> getUsers() {
+        return pggs.getUsersByRole();
+    }
 
+    // Gửi mã giảm giá qua email
+    @PostMapping("/send-coupon")
+    public Map<String, Object> sendCouponToUser(@RequestParam Integer couponId, @RequestParam Integer userId) {
+        return pggs.sendCouponToUser(couponId, userId);
+    }
     @GetMapping("/getAll")
     public List<PhieuGiamGia> getAll() {
         return pggs.getAll();

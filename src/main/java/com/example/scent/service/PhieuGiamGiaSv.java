@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -39,7 +40,84 @@ public class PhieuGiamGiaSv {
     DonHangInterface donHangInterface;
     @Autowired
     SuDungPhieuGiamGiaInterface suDungPhieuGiamGiaInterface;
+    @Autowired
+    private EmailService emailService;
+    public List<TaiKhoan> getUsersByRole() {
+        return taiKhoanInterface.findByVaiTro("user");
+    }
 
+    // Thêm phương thức gửi mã giảm giá qua email
+    @Transactional
+    public Map<String, Object> sendCouponToUser(Integer couponId, Integer userId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Kiểm tra phiếu giảm giá
+            PhieuGiamGia phieuGiamGia = pggi.findById(couponId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Phiếu giảm giá không tồn tại!"));
+
+            // Kiểm tra khách hàng
+            TaiKhoan taiKhoan = taiKhoanInterface.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Tài khoản không tồn tại!"));
+
+            if (!"user".equalsIgnoreCase(taiKhoan.getVaiTro())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản không phải là khách hàng!");
+            }
+
+            if (taiKhoan.getEmail() == null || taiKhoan.getEmail().trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Tài khoản không có email!");
+            }
+
+            // Kiểm tra trạng thái phiếu giảm giá
+            LocalDateTime now = LocalDateTime.now();
+            if (phieuGiamGia.getNgayHetHan() != null && now.isAfter(phieuGiamGia.getNgayHetHan())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Phiếu giảm giá đã hết hạn!");
+            }
+            if (phieuGiamGia.getSoLuong() != null && phieuGiamGia.getSoLuong() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Phiếu giảm giá đã hết số lượng!");
+            }
+            if (phieuGiamGia.getTrangThai() != null && phieuGiamGia.getTrangThai() == 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Phiếu giảm giá đã bị ngưng!");
+            }
+
+            // Kiểm tra ngày bắt đầu và ngày hết hạn
+            if (phieuGiamGia.getNgayBatDau() == null || phieuGiamGia.getNgayHetHan() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Phiếu giảm giá thiếu ngày bắt đầu hoặc ngày hết hạn!");
+            }
+
+            // Gửi email với thời gian bắt đầu và kết thúc
+            LocalDate startDate = phieuGiamGia.getNgayBatDau().toLocalDate();
+            LocalDate endDate = phieuGiamGia.getNgayHetHan().toLocalDate();
+            emailService.sendCouponEmail(
+                    taiKhoan.getEmail(),
+                    phieuGiamGia.getMaGiamGia(),
+                    phieuGiamGia.getGiaTriGiam(),
+                    startDate,
+                    endDate
+            );
+
+            // Giảm số lượng phiếu (nếu có)
+            if (phieuGiamGia.getSoLuong() != null) {
+                phieuGiamGia.setSoLuong(phieuGiamGia.getSoLuong() - 1);
+                pggi.save(phieuGiamGia);
+            }
+
+            response.put("status", "success");
+            response.put("message", "Gửi mã giảm giá thành công tới email: " + taiKhoan.getEmail());
+            return response;
+
+        } catch (ResponseStatusException e) {
+            logger.error("Lỗi khi gửi mã giảm giá cho userId {} với couponId {}: {}", userId, couponId, e.getMessage());
+            response.put("status", "error");
+            response.put("message", e.getReason());
+            return response;
+        } catch (Exception e) {
+            logger.error("Lỗi không xác định khi gửi mã giảm giá cho userId {} với couponId {}: {}", userId, couponId, e.getMessage(), e);
+            response.put("status", "error");
+            response.put("message", "Lỗi: " + e.getMessage());
+            return response;
+        }
+    }
     public List<PhieuGiamGia> getAll() {
         return pggi.findAll();
     }

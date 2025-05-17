@@ -84,7 +84,7 @@ public class SecurityConfig {
             .requestMatchers("rest/phieu-giam-gia/getAll",
                 "rest/phieu-giam-gia/add", "rest/phieu-giam-gia/del/**",
                 "rest/phieu-giam-gia/update",
-                "rest/phieu-giam-gia/page")
+                "rest/phieu-giam-gia/page","/rest/phieu-giam-gia/send-coupon/**","/rest/phieu-giam-gia/users")
             .permitAll()
             .requestMatchers("rest/tai-khoan/change-password",
                 "rest/tai-khoan/forgot-password/reset-admin-staff",

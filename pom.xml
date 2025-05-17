@@ -168,6 +168,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version> <!-- Sử dụng phiên bản mới nhất, kiểm tra tại https://mvnrepository.com/artifact/com.sun.mail/javax.mail -->
+        </dependency>
+
+        <!-- Spring Boot Starter Mail (đã bao gồm JavaMail) -->
+
     </dependencies>
 
     <build>
