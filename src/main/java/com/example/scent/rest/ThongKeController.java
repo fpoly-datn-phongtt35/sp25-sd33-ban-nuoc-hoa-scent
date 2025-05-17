@@ -134,50 +134,66 @@ public class ThongKeController {
     public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByDateRange(
             @RequestParam(value = "startDate") String startDate,
             @RequestParam(value = "endDate") String endDate,
+            @RequestParam(value = "searchQuery", required = false) String searchQuery,
+            @RequestParam(value = "sortField", defaultValue = "totalQuantitySold") String sortField,
+            @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
         if (startDate == null || endDate == null || startDate.isEmpty() || endDate.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(thongKeService.getBestSellingProductsByDateRange(startDate, endDate, pageable));
+        Sort sort = Sort.by(sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByDateRange(startDate, endDate, searchQuery, pageable));
     }
 
     @GetMapping("/best-selling/tuan")
     public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByWeek(
             @RequestParam(value = "year") Integer year,
             @RequestParam(value = "week") Integer week,
+            @RequestParam(value = "searchQuery", required = false) String searchQuery,
+            @RequestParam(value = "sortField", defaultValue = "totalQuantitySold") String sortField,
+            @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
         if (year == null || week == null || week < 1 || week > 52) {
             return ResponseEntity.badRequest().build();
         }
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(thongKeService.getBestSellingProductsByWeek(year, week, pageable));
+        Sort sort = Sort.by(sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByWeek(year, week, searchQuery, pageable));
     }
 
     @GetMapping("/best-selling/thang")
     public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByMonth(
             @RequestParam(value = "year") Integer year,
             @RequestParam(value = "month") Integer month,
+            @RequestParam(value = "searchQuery", required = false) String searchQuery,
+            @RequestParam(value = "sortField", defaultValue = "totalQuantitySold") String sortField,
+            @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
         if (year == null || month == null || month < 1 || month > 12) {
             return ResponseEntity.badRequest().build();
         }
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(thongKeService.getBestSellingProductsByMonth(year, month, pageable));
+        Sort sort = Sort.by(sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByMonth(year, month, searchQuery, pageable));
     }
 
     @GetMapping("/best-selling/nam")
     public ResponseEntity<Page<BestSellingProductDTO>> getBestSellingProductsByYear(
             @RequestParam(value = "year") Integer year,
+            @RequestParam(value = "searchQuery", required = false) String searchQuery,
+            @RequestParam(value = "sortField", defaultValue = "totalQuantitySold") String sortField,
+            @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
         if (year == null) {
             return ResponseEntity.badRequest().build();
         }
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(thongKeService.getBestSellingProductsByYear(year, pageable));
+        Sort sort = Sort.by(sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(thongKeService.getBestSellingProductsByYear(year, searchQuery, pageable));
     }
 }

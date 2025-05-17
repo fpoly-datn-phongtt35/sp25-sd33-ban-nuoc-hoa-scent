@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +70,10 @@ public class PhieuGiamGiaSv {
             logger.error("Phiếu giảm giá với ID {} không tồn tại!", phieuGiamGia.getId());
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Mã giảm giá không tồn tại!");
         }
-
+        if (pggi.existsByMaGiamGia(phieuGiamGia.getMaGiamGia())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "⚠️ Mã giảm giá đã tồn tại!");
+        }
         // Kiểm tra ngày bắt đầu và ngày kết thúc
         if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
             if (phieuGiamGia.getNgayBatDau().isAfter(phieuGiamGia.getNgayHetHan())) {
@@ -113,7 +117,8 @@ public class PhieuGiamGiaSv {
         return pggi.findById(id).get();
     }
     public Page<PhieuGiamGia> getPagePhieuGiamGia(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        // Thêm Sort theo id giảm dần
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return pggi.findAll(pageable);
     }
     public Page<PhieuGiamGia> searchByMaGiamGiaAndGiaTriGiam(String maGiamGia, BigDecimal giaTriGiam, Pageable pageable) {

@@ -3,11 +3,14 @@ package com.example.scent.rest;
 import com.example.scent.entity.PhieuGiamGia;
 
 import com.example.scent.entity.SanPham;
+import com.example.scent.repo.PhieuGiamGiaInterface;
 import com.example.scent.service.PhieuGiamGiaSv;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +29,9 @@ import java.util.Optional;
 public class PhieuGiamGiaCtrl {
     final
     PhieuGiamGiaSv pggs;
-
+@Autowired
+private PhieuGiamGiaInterface pggi;
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PhieuGiamGiaCtrl.class);
     public PhieuGiamGiaCtrl(PhieuGiamGiaSv pggs) {
         this.pggs = pggs;
     }
@@ -37,35 +42,88 @@ public class PhieuGiamGiaCtrl {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> create(@Valid @RequestBody PhieuGiamGia pgg, BindingResult result) {
+    public ResponseEntity<?> create(@Valid @RequestBody PhieuGiamGia phieuGiamGia, BindingResult result) {
+        // Kiểm tra lỗi validation từ @Valid
         if (result.hasErrors()) {
-
-            Map<String, String> errorsMap = new HashMap<>();
-
+            StringBuilder errorMessage = new StringBuilder();
             for (FieldError error : result.getFieldErrors()) {
-                errorsMap.put(error.getField(), error.getDefaultMessage());
+                errorMessage.append(error.getField()).append(": ").append(error.getDefaultMessage()).append("; ");
             }
-            return ResponseEntity.badRequest().body(errorsMap);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage.toString());
         }
 
-        pggs.add(pgg);
-        return ResponseEntity.ok(pgg);
+        // Kiểm tra ngày bắt đầu và ngày kết thúc
+        if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
+            if (phieuGiamGia.getNgayBatDau().isAfter(phieuGiamGia.getNgayHetHan())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Ngày bắt đầu không được sau ngày kết thúc!");
+            }
+        }
+
+        // Kiểm tra mã giảm giá trùng
+        if (pggi.existsByMaGiamGia(phieuGiamGia.getMaGiamGia())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Mã giảm giá đã tồn tại!");
+        }
+
+        PhieuGiamGia savedVoucher = pggi.save(phieuGiamGia);
+        logger.info("Thêm thành công phiếu giảm giá với mã: {}", savedVoucher.getMaGiamGia());
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedVoucher);
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody PhieuGiamGia pgg,BindingResult result) {
+    @PutMapping("/update/{id}")
+    @Transactional
+    public ResponseEntity<?> update(@PathVariable Integer id, @Valid @RequestBody PhieuGiamGia phieuGiamGia, BindingResult result) {
+        logger.info("Cập nhật phiếu giảm giá với ID: {}", id);
+
+        // Kiểm tra lỗi validation từ @Valid
         if (result.hasErrors()) {
-
-            Map<String, String> errorsMap = new HashMap<>();
-
+            StringBuilder errorMessage = new StringBuilder();
             for (FieldError error : result.getFieldErrors()) {
-                errorsMap.put(error.getField(), error.getDefaultMessage());
+                errorMessage.append(error.getField()).append(": ").append(error.getDefaultMessage()).append("; ");
             }
-            return ResponseEntity.badRequest().body(errorsMap);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage.toString());
         }
 
-        pggs.update(pgg);
-        return ResponseEntity.ok(pgg);
+        // Kiểm tra phiếu giảm giá tồn tại
+        if (!pggi.existsById(id)) {
+            logger.error("Phiếu giảm giá với ID {} không tồn tại!", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Mã giảm giá không tồn tại!");
+        }
+
+        // Kiểm tra mã giảm giá trùng, bỏ qua mã của chính voucher đang cập nhật
+        if (pggi.existsByMaGiamGiaAndIdNot(phieuGiamGia.getMaGiamGia(), id)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Mã giảm giá đã tồn tại!");
+        }
+
+        // Kiểm tra ngày bắt đầu và ngày kết thúc
+        if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
+            if (phieuGiamGia.getNgayBatDau().isAfter(phieuGiamGia.getNgayHetHan())) {
+                logger.error("Ngày bắt đầu {} không được sau ngày kết thúc {}!",
+                        phieuGiamGia.getNgayBatDau(), phieuGiamGia.getNgayHetHan());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Ngày bắt đầu không được sau ngày kết thúc!");
+            }
+        }
+
+        // Cập nhật trạng thái dựa trên ngày hết hạn
+        if (phieuGiamGia.getNgayHetHan() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            phieuGiamGia.setTrangThai(phieuGiamGia.getNgayHetHan().isBefore(now) ? 0 : 1);
+            logger.info("Phiếu giảm giá ID: {} trạng thái: {}", id, phieuGiamGia.getTrangThai());
+        } else {
+            logger.warn("Ngày hết hạn của phiếu giảm giá ID: {} là null, không cập nhật trạng thái", id);
+            phieuGiamGia.setTrangThai(0); // Mặc định ngưng nếu không có ngày hết hạn
+        }
+
+        // Đặt ID để đảm bảo cập nhật đúng bản ghi
+        phieuGiamGia.setId(id);
+        PhieuGiamGia updatedVoucher = pggi.save(phieuGiamGia);
+        logger.info("Cập nhật thành công phiếu giảm giá với ID: {}, trạng thái: {}",
+                updatedVoucher.getId(), updatedVoucher.getTrangThai());
+        return ResponseEntity.ok(updatedVoucher);
     }
     @DeleteMapping("/del/{id}")
     public void delete(@PathVariable Integer id) { pggs.delete(id);

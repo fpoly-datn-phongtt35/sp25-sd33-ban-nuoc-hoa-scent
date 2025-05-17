@@ -19,21 +19,24 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
 
     List<ChiTietDonHang> findBySpctSanPhamIdSanPham(Integer idSanPham);
 
-    @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+    @Query(value = "WITH ProductStats AS ( " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
-            "(:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate) AND " +
-            "(:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
+            "(:startDate IS NOT NULL OR :endDate IS NOT NULL) AND " +
+            "(CONVERT(DATE, dh.ngay_tao) >= :startDate OR :startDate IS NULL) AND " +
+            "(CONVERT(DATE, dh.ngay_tao) <= :endDate OR :endDate IS NULL) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_quantity_sold, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status, " +
-            "COALESCE(SUM(CASE WHEN " +
-            "(:startDate IS NULL OR CONVERT(DATE, ctth.ngay_duyet) >= :startDate) AND " +
-            "(:endDate IS NULL OR CONVERT(DATE, ctth.ngay_duyet) <= :endDate) " +
+            "COALESCE(SUM(CASE WHEN ctth.trangThai = 3 AND " +
+            "(:startDate IS NOT NULL OR :endDate IS NOT NULL) AND " +
+            "(CONVERT(DATE, ctth.ngay_duyet) >= :startDate OR :startDate IS NULL) AND " +
+            "(CONVERT(DATE, ctth.ngay_duyet) <= :endDate OR :endDate IS NULL) " +
             "THEN ctth.so_luong ELSE 0 END), 0) AS so_luot_tra_hang " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -46,38 +49,77 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
-            "ORDER BY total_quantity_sold DESC " +
+            ") " +
+            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
+            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "FROM ProductStats " +
+            "ORDER BY " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'desc' THEN total_quantity_sold END DESC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'asc' THEN so_luong_ton_kho END ASC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'desc' THEN so_luong_ton_kho END DESC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'asc' THEN so_luot_tra_hang END ASC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'desc' THEN so_luot_tra_hang END DESC " +
             "OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY", nativeQuery = true)
-    List<Object[]> findBestSellingProductsByDateRange(
+    List<Object[]> findBestSellingProductsByDateRangeWithSearch(
             @Param("startDate") String startDate,
             @Param("endDate") String endDate,
+            @Param("searchQuery") String searchQuery,
+            @Param("sortField") String sortField,
+            @Param("sortDirection") String sortDirection,
             @Param("offset") Long offset,
             @Param("pageSize") Integer pageSize);
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
-    Long countBestSellingProductsByDateRange(
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
+            "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
+            "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
+            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
+            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
+            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+    Long countBestSellingProductsByDateRangeWithSearch(
             @Param("startDate") String startDate,
-            @Param("endDate") String endDate);
-
-    @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+            @Param("endDate") String endDate,
+            @Param("searchQuery") String searchQuery);
+    @Query(value = "WITH ProductStats AS ( " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
-            "(:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) AND " +
-            "(:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
+            "(:year IS NOT NULL OR :week IS NOT NULL) AND " +
+            "(DATEPART(YEAR, dh.ngay_tao) = :year OR :year IS NULL) AND " +
+            "(DATEPART(WEEK, dh.ngay_tao) = :week OR :week IS NULL) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_quantity_sold, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status, " +
-            "COALESCE(SUM(CASE WHEN " +
-            "(:year IS NULL OR DATEPART(YEAR, ctth.ngay_duyet) = :year) AND " +
-            "(:week IS NULL OR DATEPART(WEEK, ctth.ngay_duyet) = :week) " +
+            "COALESCE(SUM(CASE WHEN ctth.trangThai = 3 AND " +
+            "(:year IS NOT NULL OR :week IS NOT NULL) AND " +
+            "(DATEPART(YEAR, ctth.ngay_duyet) = :year OR :year IS NULL) AND " +
+            "(DATEPART(WEEK, ctth.ngay_duyet) = :week OR :week IS NULL) " +
             "THEN ctth.so_luong ELSE 0 END), 0) AS so_luot_tra_hang " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -90,38 +132,78 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
-            "ORDER BY total_quantity_sold DESC " +
+            ") " +
+            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
+            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "FROM ProductStats " +
+            "ORDER BY " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'desc' THEN total_quantity_sold END DESC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'asc' THEN so_luong_ton_kho END ASC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'desc' THEN so_luong_ton_kho END DESC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'asc' THEN so_luot_tra_hang END ASC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'desc' THEN so_luot_tra_hang END DESC " +
             "OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY", nativeQuery = true)
-    List<Object[]> findBestSellingProductsByWeek(
+    List<Object[]> findBestSellingProductsByWeekWithSearch(
             @Param("year") Integer year,
             @Param("week") Integer week,
+            @Param("searchQuery") String searchQuery,
+            @Param("sortField") String sortField,
+            @Param("sortDirection") String sortDirection,
             @Param("offset") Long offset,
             @Param("pageSize") Integer pageSize);
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
-    Long countBestSellingProductsByWeek(
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
+            "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
+            "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
+            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
+            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
+            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+    Long countBestSellingProductsByWeekWithSearch(
             @Param("year") Integer year,
-            @Param("week") Integer week);
+            @Param("week") Integer week,
+            @Param("searchQuery") String searchQuery);
 
-    @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+    @Query(value = "WITH ProductStats AS ( " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
-            "(:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) AND " +
-            "(:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
+            "(:year IS NOT NULL OR :month IS NOT NULL) AND " +
+            "(DATEPART(YEAR, dh.ngay_tao) = :year OR :year IS NULL) AND " +
+            "(DATEPART(MONTH, dh.ngay_tao) = :month OR :month IS NULL) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_quantity_sold, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status, " +
-            "COALESCE(SUM(CASE WHEN " +
-            "(:year IS NULL OR DATEPART(YEAR, ctth.ngay_duyet) = :year) AND " +
-            "(:month IS NULL OR DATEPART(MONTH, ctth.ngay_duyet) = :month) " +
+            "COALESCE(SUM(CASE WHEN ctth.trangThai = 3 AND " +
+            "(:year IS NOT NULL OR :month IS NOT NULL) AND " +
+            "(DATEPART(YEAR, ctth.ngay_duyet) = :year OR :year IS NULL) AND " +
+            "(DATEPART(MONTH, ctth.ngay_duyet) = :month OR :month IS NULL) " +
             "THEN ctth.so_luong ELSE 0 END), 0) AS so_luot_tra_hang " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -134,36 +216,76 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
-            "ORDER BY total_quantity_sold DESC " +
+            ") " +
+            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
+            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "FROM ProductStats " +
+            "ORDER BY " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'desc' THEN total_quantity_sold END DESC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'asc' THEN so_luong_ton_kho END ASC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'desc' THEN so_luong_ton_kho END DESC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'asc' THEN so_luot_tra_hang END ASC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'desc' THEN so_luot_tra_hang END DESC " +
             "OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY", nativeQuery = true)
-    List<Object[]> findBestSellingProductsByMonth(
+    List<Object[]> findBestSellingProductsByMonthWithSearch(
             @Param("year") Integer year,
             @Param("month") Integer month,
+            @Param("searchQuery") String searchQuery,
+            @Param("sortField") String sortField,
+            @Param("sortDirection") String sortDirection,
             @Param("offset") Long offset,
             @Param("pageSize") Integer pageSize);
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
-    Long countBestSellingProductsByMonth(
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
+            "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
+            "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
+            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
+            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
+            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+    Long countBestSellingProductsByMonthWithSearch(
             @Param("year") Integer year,
-            @Param("month") Integer month);
+            @Param("month") Integer month,
+            @Param("searchQuery") String searchQuery);
 
-    @Query(value = "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+    @Query(value = "WITH ProductStats AS ( " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
             "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
-            "(:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
+            "(:year IS NOT NULL) AND " +
+            "(DATEPART(YEAR, dh.ngay_tao) = :year) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_quantity_sold, " +
             "CASE " +
             "WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 10 THEN 'Sắp hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status, " +
-            "COALESCE(SUM(CASE WHEN " +
-            "(:year IS NULL OR DATEPART(YEAR, ctth.ngay_duyet) = :year) " +
+            "COALESCE(SUM(CASE WHEN ctth.trangThai = 3 AND " +
+            "(:year IS NOT NULL) AND " +
+            "(DATEPART(YEAR, ctth.ngay_duyet) = :year) " +
             "THEN ctth.so_luong ELSE 0 END), 0) AS so_luot_tra_hang " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -176,20 +298,57 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
             "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
             "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
-            "ORDER BY total_quantity_sold DESC " +
+            ") " +
+            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
+            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "FROM ProductStats " +
+            "ORDER BY " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
+            "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'desc' THEN total_quantity_sold END DESC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'asc' THEN so_luong_ton_kho END ASC, " +
+            "CASE WHEN :sortField = 'soLuongTonKho' AND :sortDirection = 'desc' THEN so_luong_ton_kho END DESC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'asc' THEN so_luot_tra_hang END ASC, " +
+            "CASE WHEN :sortField = 'soLuotTraHang' AND :sortDirection = 'desc' THEN so_luot_tra_hang END DESC " +
             "OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY", nativeQuery = true)
-    List<Object[]> findBestSellingProductsByYear(
+    List<Object[]> findBestSellingProductsByYearWithSearch(
             @Param("year") Integer year,
+            @Param("searchQuery") String searchQuery,
+            @Param("sortField") String sortField,
+            @Param("sortDirection") String sortDirection,
             @Param("offset") Long offset,
             @Param("pageSize") Integer pageSize);
 
     @Query(value = "SELECT COUNT(DISTINCT spct.id) " +
             "FROM san_pham sp " +
-            "JOIN spct spct ON sp.id = spct.id_san_pham", nativeQuery = true)
-    Long countBestSellingProductsByYear(@Param("year") Integer year);
-
+            "JOIN spct spct ON sp.id = spct.id_san_pham " +
+            "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
+            "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
+            "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
+            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
+            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
+            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
+            "WHERE (:searchQuery IS NULL OR " +
+            "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
+            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+    Long countBestSellingProductsByYearWithSearch(
+            @Param("year") Integer year,
+            @Param("searchQuery") String searchQuery);
     @Query("SELECT new com.example.scent.dto.BestSellingSanPhamInfoDTO(" +
             "sp.idSanPham, sp.tenSanPham, MIN(spct.donGia), " +
             "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = sp.idSanPham ORDER BY ha.id LIMIT 1), " +

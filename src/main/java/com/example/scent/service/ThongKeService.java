@@ -378,38 +378,54 @@ public class ThongKeService {
         }
         return dtos;
     }
-    public Page<BestSellingProductDTO> getBestSellingProductsByDateRange(String startDate, String endDate, Pageable pageable) {
+    public Page<BestSellingProductDTO> getBestSellingProductsByDateRange(String startDate, String endDate, String searchQuery, Pageable pageable) {
+        String sortField = pageable.getSort().isEmpty() ? "totalQuantitySold" : pageable.getSort().iterator().next().getProperty();
+        String sortDirection = pageable.getSort().isEmpty() ? "desc" : pageable.getSort().iterator().next().getDirection().name().toLowerCase();
         Long offset = pageable.getOffset();
         Integer pageSize = pageable.getPageSize();
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByDateRange(startDate, endDate, offset, pageSize);
-        Long total = chiTietDonHangRepository.countBestSellingProductsByDateRange(startDate, endDate);
+
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByDateRangeWithSearch(
+                startDate, endDate, searchQuery, sortField, sortDirection, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByDateRangeWithSearch(startDate, endDate, searchQuery);
         List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
         return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    public Page<BestSellingProductDTO> getBestSellingProductsByWeek(Integer year, Integer week, Pageable pageable) {
+    public Page<BestSellingProductDTO> getBestSellingProductsByWeek(Integer year, Integer week, String searchQuery, Pageable pageable) {
+        String sortField = pageable.getSort().isEmpty() ? "totalQuantitySold" : pageable.getSort().iterator().next().getProperty();
+        String sortDirection = pageable.getSort().isEmpty() ? "desc" : pageable.getSort().iterator().next().getDirection().name().toLowerCase();
         Long offset = pageable.getOffset();
         Integer pageSize = pageable.getPageSize();
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByWeek(year, week, offset, pageSize);
-        Long total = chiTietDonHangRepository.countBestSellingProductsByWeek(year, week);
+
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByWeekWithSearch(
+                year, week, searchQuery, sortField, sortDirection, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByWeekWithSearch(year, week, searchQuery);
         List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
         return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    public Page<BestSellingProductDTO> getBestSellingProductsByMonth(Integer year, Integer month, Pageable pageable) {
+    public Page<BestSellingProductDTO> getBestSellingProductsByMonth(Integer year, Integer month, String searchQuery, Pageable pageable) {
+        String sortField = pageable.getSort().isEmpty() ? "totalQuantitySold" : pageable.getSort().iterator().next().getProperty();
+        String sortDirection = pageable.getSort().isEmpty() ? "desc" : pageable.getSort().iterator().next().getDirection().name().toLowerCase();
         Long offset = pageable.getOffset();
         Integer pageSize = pageable.getPageSize();
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByMonth(year, month, offset, pageSize);
-        Long total = chiTietDonHangRepository.countBestSellingProductsByMonth(year, month);
+
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByMonthWithSearch(
+                year, month, searchQuery, sortField, sortDirection, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByMonthWithSearch(year, month, searchQuery);
         List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
         return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
 
-    public Page<BestSellingProductDTO> getBestSellingProductsByYear(Integer year, Pageable pageable) {
+    public Page<BestSellingProductDTO> getBestSellingProductsByYear(Integer year, String searchQuery, Pageable pageable) {
+        String sortField = pageable.getSort().isEmpty() ? "totalQuantitySold" : pageable.getSort().iterator().next().getProperty();
+        String sortDirection = pageable.getSort().isEmpty() ? "desc" : pageable.getSort().iterator().next().getDirection().name().toLowerCase();
         Long offset = pageable.getOffset();
         Integer pageSize = pageable.getPageSize();
-        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByYear(year, offset, pageSize);
-        Long total = chiTietDonHangRepository.countBestSellingProductsByYear(year);
+
+        List<Object[]> results = chiTietDonHangRepository.findBestSellingProductsByYearWithSearch(
+                year, searchQuery, sortField, sortDirection, offset, pageSize);
+        Long total = chiTietDonHangRepository.countBestSellingProductsByYearWithSearch(year, searchQuery);
         List<BestSellingProductDTO> dtos = mapToBestSellingProductDTO(results);
         return new PageImpl<>(dtos, pageable, total != null ? total : 0);
     }
@@ -417,7 +433,7 @@ public class ThongKeService {
     private List<BestSellingProductDTO> mapToBestSellingProductDTO(List<Object[]> results) {
         List<BestSellingProductDTO> dtos = new ArrayList<>();
         for (Object[] result : results) {
-            if (result.length < 15) { // Kiểm tra độ dài mảng (bây giờ là 15 cột)
+            if (result.length < 15) {
                 System.out.println("Invalid result length: " + result.length);
                 continue;
             }

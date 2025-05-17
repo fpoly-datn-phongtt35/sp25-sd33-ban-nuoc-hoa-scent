@@ -52,4 +52,5 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
             @Param("trangThai") Integer trangThai,
             Pageable pageable
     );
+    boolean existsByMaGiamGiaAndIdNot(String maGiamGia, Integer id);
 }
