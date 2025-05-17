@@ -7,6 +7,9 @@
         <div class="search-box">
           <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="🔍 Tìm kiếm" />
         </div>
+        <button class="sort-btn" (click)="toggleSortDirection()">
+          Sắp xếp theo số đơn hàng: {{ sortDirection === 'desc' ? 'Giảm dần ▼' : 'Tăng dần ▲' }}
+        </button>
         <button class="export-btn" (click)="exportToExcel()">Export Excel</button>
       </div>
     </div>
@@ -21,17 +24,19 @@
             <th>Email</th>
             <th>SDT</th>
             <th>Địa chỉ</th>
+            <th>Số lượng đơn hàng</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let account of accounts; let i = index">
-            <td>{{ i + 1 }}</td>
+          <tr *ngFor="let account of paginatedAccounts; let i = index">
+            <td>{{ i + 1 + page * size }}</td>
             <td>{{ account.hoTen }}</td>
             <td>{{ account.tenDangNhap }}</td>
             <td>{{ account.email }}</td>
             <td>{{ account.sdt }}</td>
             <td>{{ account.diaChi }}</td>
+            <td>{{ account.orderCount }}</td>
             <td>
               <button class="btn-action view" (click)="viewOrders(account.id)" title="Xem đơn hàng">
                 <i class="bi bi-eye"></i>

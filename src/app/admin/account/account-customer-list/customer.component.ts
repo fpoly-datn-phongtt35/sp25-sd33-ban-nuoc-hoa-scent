@@ -17,10 +17,11 @@ import * as XLSX from 'xlsx';
   styleUrls: ['./customer.component.scss']
 })
 export class CustomerComponent implements OnInit, OnDestroy {
-  accounts: any[] = [];
+  accounts: any[] = []; // Danh sách tất cả tài khoản
+  paginatedAccounts: any[] = []; // Danh sách tài khoản hiển thị theo trang
   page: number = 0;
-  size: number = 5;
-  totalPages: number = 10;
+  size: number = 5; // Số lượng tài khoản mỗi trang
+  totalPages: number = 1; // Tổng số trang
   searchTerm: string = '';
   selectedAccountId: number | null = null;
   orders: any[] = [];
@@ -32,6 +33,7 @@ export class CustomerComponent implements OnInit, OnDestroy {
   userID: number | null = null;
   tenDangNhap: string | null = null;
   private webSocketSubscription: Subscription | undefined;
+  sortDirection: 'asc' | 'desc' = 'desc'; // Hướng sắp xếp: asc (tăng dần), desc (giảm dần)
 
   keyToStatus: Record<string, number> = {
     pending: 1,
@@ -58,8 +60,8 @@ export class CustomerComponent implements OnInit, OnDestroy {
       console.log('UserID:', this.userID);
       console.log('tenDangNhap:', this.tenDangNhap);
 
-      // Load accounts and connect to WebSocket
-      this.loadAccounts().then(() => {
+      // Load tất cả tài khoản và kết nối WebSocket
+      this.loadAllAccounts().then(() => {
         this.webSocketService.connectAdmin();
         this.webSocketSubscription = this.webSocketService.getAdminMessages().subscribe({
           next: (update: any) => this.handleWebSocketUpdate(update),
@@ -71,6 +73,62 @@ export class CustomerComponent implements OnInit, OnDestroy {
       console.error('User not logged in or token invalid');
       this.showErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
     }
+  }
+
+  // Load tất cả tài khoản từ backend
+  async loadAllAccounts(): Promise<void> {
+    try {
+      let allAccounts: any[] = [];
+      let page = 0;
+      let response;
+
+      // Lấy tất cả tài khoản qua các trang
+      do {
+        response = await this.accountService.getUserAccounts(this.searchTerm, page, 100).toPromise();
+        allAccounts = allAccounts.concat(response.content || []);
+        page++;
+      } while (page < (response.page?.totalPages || 1));
+
+      // Lấy số lượng đơn hàng cho mỗi tài khoản
+      for (const account of allAccounts) {
+        try {
+          const orders = await this.accountService.getOrdersByTaiKhoanId(account.id).toPromise();
+          account.orderCount = orders.length; // Thêm thuộc tính orderCount
+        } catch (error) {
+          console.error(`Lỗi khi lấy đơn hàng cho tài khoản ${account.id}:`, error);
+          account.orderCount = 0;
+        }
+      }
+
+      // Sắp xếp theo số lượng đơn hàng
+      this.accounts = allAccounts.sort((a, b) => {
+        return this.sortDirection === 'desc' 
+          ? b.orderCount - a.orderCount 
+          : a.orderCount - b.orderCount;
+      });
+
+      // Cập nhật phân trang
+      this.updatePagination();
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách tài khoản:', error);
+      this.showErrorMessage('Không thể tải danh sách khách hàng.');
+    }
+  }
+
+  // Cập nhật dữ liệu phân trang
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.accounts.length / this.size) || 1;
+    this.page = Math.min(this.page, this.totalPages - 1); // Đảm bảo trang hợp lệ
+    const start = this.page * this.size;
+    this.paginatedAccounts = this.accounts.slice(start, start + this.size);
+    this.cdRef.detectChanges();
+  }
+
+  // Chuyển đổi hướng sắp xếp
+  toggleSortDirection(): void {
+    this.sortDirection = this.sortDirection === 'desc' ? 'asc' : 'desc';
+    this.page = 0; // Reset về trang đầu tiên khi thay đổi sắp xếp
+    this.loadAllAccounts(); // Tải lại dữ liệu với sắp xếp mới
   }
 
   ngOnDestroy(): void {
@@ -171,34 +229,39 @@ export class CustomerComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Tìm kiếm tài khoản
   onSearch(): void {
     console.log('Tìm kiếm với từ khóa:', this.searchTerm);
     this.page = 0;
-    this.loadAccounts();
+    this.loadAllAccounts();
   }
 
+  // Chuyển đến trang cụ thể
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
-      console.log('🔄 Chuyển đến trang:', p);
+      console.log('Chuyển đến trang:', p);
       this.page = p;
-      this.loadAccounts();
+      this.updatePagination();
     }
   }
 
+  // Trang trước
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      this.loadAccounts();
+      this.updatePagination();
     }
   }
 
+  // Trang sau
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-      this.loadAccounts();
+      this.updatePagination();
     }
   }
 
+  // Tạo dải phân trang
   getPaginationRange(): number[] {
     let range: number[] = [];
     let start = Math.max(0, this.page - 2);
@@ -206,10 +269,11 @@ export class CustomerComponent implements OnInit, OnDestroy {
     for (let i = start; i < end; i++) {
       range.push(i);
     }
-    console.log('📌 Pagination range:', range);
+    console.log('Phạm vi phân trang:', range);
     return range;
   }
 
+  // Xem danh sách đơn hàng của tài khoản
   viewOrders(id: number): void {
     this.selectedAccountId = id;
     this.showMainContent = false;
@@ -222,7 +286,7 @@ export class CustomerComponent implements OnInit, OnDestroy {
         this.applySearch();
       },
       error: (error) => {
-        console.error('❌ Lỗi khi lấy danh sách đơn hàng:', error);
+        console.error('Lỗi khi lấy danh sách đơn hàng:', error);
         this.orders = [];
         this.filteredDonhang = [];
         this.showErrorMessage('Không thể tải danh sách đơn hàng.');
