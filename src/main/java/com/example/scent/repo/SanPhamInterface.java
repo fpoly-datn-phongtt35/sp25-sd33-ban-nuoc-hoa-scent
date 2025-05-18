@@ -451,7 +451,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Query("SELECT new com.example.scent.dto.SPTQDTO(" +
             "sp.idSanPham, concat(sp.tenSanPham,' ', spct.dungTich, 'ml'), spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, sp.nhomHuong.id, nh.tenNhomHuong, th.quocGia, " +
-            "min(ha.link), spct.dungTich, spct.idSpct,sp.trangThai,spct.trangThai) " +
+            "min(ha.link), spct.dungTich, spct.idSpct,sp.trangThai,spct.trangThai,spct.soLuongTonKho) " +
             "FROM SanPham sp " +
             "LEFT JOIN Spct spct ON spct.sanPham.idSanPham = sp.idSanPham " +
             "LEFT JOIN sp.thuongHieu th " +
@@ -469,7 +469,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "GROUP BY sp.idSanPham, sp.tenSanPham, spct.dungTich, spct.donGia, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
             "sp.nhomHuong.id, nh.tenNhomHuong,sp.trangThai,spct.trangThai," +
-            " th.quocGia, spct.dungTich, spct.idSpct")
+            " th.quocGia, spct.dungTich, spct.idSpct,spct.soLuongTonKho ")
     List<SPTQDTO> getALLSPQT(@Param("keyword") String keyword);
     @Query("SELECT DISTINCT sp FROM SanPham sp " +
             "LEFT JOIN FETCH sp.thuongHieu th " +
