@@ -48,12 +48,18 @@ export class AddVoucherComponent {
     }
   }
 
-  updatePercent(value: string) {
-    // Chuyển giá trị phần trăm (10) thành thập phân (0.1)
+  updatePercent(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
     const numericValue = value ? parseFloat(value) : null;
     const decimalValue = numericValue ? numericValue / 100 : null;
-    this.voucherForm.get('giaTriGiam')?.setValue(decimalValue, { emitEvent: false });
-    this.cdr.detectChanges(); // Đảm bảo giao diện cập nhật
+    if (decimalValue !== null && (decimalValue < 0.1 || decimalValue > 0.9)) {
+      this.voucherForm.get('giaTriGiam')?.setErrors({ range: true });
+    } else {
+      this.voucherForm.get('giaTriGiam')?.setValue(decimalValue, { emitEvent: false });
+      this.voucherForm.get('giaTriGiam')?.markAsTouched();
+    }
+    this.cdr.detectChanges();
   }
 
   populateForm() {

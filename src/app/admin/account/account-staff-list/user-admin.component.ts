@@ -31,7 +31,7 @@ export class UserAdminComponent implements OnInit {
   accounts: any[] = [];
   page: number = 0;
   size: number = 5;
-  totalPages: number = 10;
+  totalPages: number = 15;
   searchTerm: string = '';
   userRole: string | null = null;
   selectedAccountId: number | null = null;

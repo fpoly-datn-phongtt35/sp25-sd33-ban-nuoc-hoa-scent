@@ -20,7 +20,7 @@ export class CustomerComponent implements OnInit, OnDestroy {
   accounts: any[] = []; // Danh sách tất cả tài khoản
   paginatedAccounts: any[] = []; // Danh sách tài khoản hiển thị theo trang
   page: number = 0;
-  size: number = 5; // Số lượng tài khoản mỗi trang
+  size: number = 15; // Số lượng tài khoản mỗi trang
   totalPages: number = 1; // Tổng số trang
   searchTerm: string = '';
   selectedAccountId: number | null = null;

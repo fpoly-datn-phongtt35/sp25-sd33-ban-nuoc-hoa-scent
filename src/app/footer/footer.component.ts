@@ -8,5 +8,5 @@ import { Router, RouterModule } from '@angular/router';
   styleUrl: './footer.component.scss'
 })
 export class FooterComponent {
-
+  userEmail: string = 'laivanquang986@gmail.com';
 }

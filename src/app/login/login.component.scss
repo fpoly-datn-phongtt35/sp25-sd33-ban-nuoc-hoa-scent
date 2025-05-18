@@ -1,171 +1,180 @@
-.login-container {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+// Biến màu sắc
+$primary-color: #007bff;
+$secondary-color: #6c757d;
+$danger-color: #dc3545;
+$background-color: #f8f9fa;
+$card-bg: #ffffff;
+$text-color: #333;
+$border-color: #e0e0e0;
 
-.login-form h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+// Reset và cài đặt chung
+* {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
-  font-size: 14px;
 }
 
-.form-group input.invalid {
-  border-color: #f44336;
-  background-color: #ffe6e6;
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: $background-color;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.form-group input:focus {
-  outline: none;
-  border-color: #4caf50;
-}
-
-.error {
-  font-size: 12px;
-  color: #f44336;
-  margin-top: 5px;
-  display: block;
-}
-
-.btn-login {
+.login-form {
+  background-color: $card-bg;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
   width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  color: #fff;
-  background-color: #007bff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.btn-login.disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.btn-login:hover:not(.disabled) {
-  background-color: #0056b3;
-}
-
-.options {
+  max-width: 400px;
   text-align: center;
-  margin-top: 15px;
+
+  h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 20px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-color;
+    }
+
+    input {
+      border-radius: 8px;
+      border: 1px solid $border-color;
+      padding: 10px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba($primary-color, 0.2);
+        outline: none;
+      }
+
+      &.invalid {
+        border-color: $danger-color;
+      }
+    }
+
+    .error {
+      font-size: 12px;
+      color: $danger-color;
+    }
+  }
+
+  // Style cho trường mật khẩu và icon mắt
+  .password-group {
+    position: relative;
+
+    .password-wrapper {
+      position: relative;
+
+      input {
+        width: 100%;
+        padding-right: 40px; // Tạo không gian cho icon mắt
+      }
+
+      .eye-icon {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: $secondary-color;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: $primary-color;
+        }
+
+        svg {
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+
+  .btn-login {
+    padding: 12px;
+    background-color: $primary-color;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: darken($primary-color, 10%);
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .options {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+
+    a {
+      font-size: 14px;
+      color: $primary-color;
+      text-decoration: none;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: darken($primary-color, 10%);
+        text-decoration: underline;
+      }
+    }
+  }
 }
 
-.options a {
-  color: #007bff;
-  text-decoration: none;
-  margin: 0 5px;
-}
-
-.options a:hover {
-  text-decoration: underline;
-}
-
-/* Remove old toast styles */
-.toast-bottom-right,
-.toast-success,
-.toast-error,
-.toast-warning,
-.toast-progress {
-  display: none;
-}
-
-/* Centered SweetAlert2 Notification */
-::ng-deep .swal2-container {
+// Style cho SweetAlert2 (nếu cần)
+.swal2-centered {
   display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 1050 !important;
-}
+  justify-content: center;
+  align-items: center;
 
-::ng-deep .swal2-centered {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  align-items: center !important;
-  padding: 20px !important;
-  width: 400px !important;
-  border-radius: 12px !important;
-  background-color: #fff !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
-}
+  .swal2-icon {
+    margin: 0 auto;
+  }
 
-::ng-deep .swal2-icon {
-  font-size: 40px !important;
-  margin-bottom: 15px !important;
-  color: #48bb78 !important; /* Green for success */
-}
+  .swal2-title {
+    font-size: 20px;
+    font-weight: 600;
+  }
 
-::ng-deep .swal2-icon.swal2-error {
-  color: #f44336 !important; /* Red for error */
-}
+  .swal2-content {
+    font-size: 16px;
+  }
 
-::ng-deep .swal2-title {
-  font-size: 18px !important;
-  font-weight: 600 !important;
-  color: #1a202c !important;
-  margin-bottom: 10px !important;
-  text-align: center !important;
-}
-
-::ng-deep .swal2-content {
-  font-size: 14px !important;
-  color: #718096 !important;
-  margin-bottom: 20px !important;
-  text-align: center !important;
-}
-
-::ng-deep .swal2-confirm {
-  padding: 8px 20px !important;
-  background-color: #6b7280 !important;
-  color: #ffffff !important;
-  border: none !important;
-  border-radius: 20px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  transition: background-color 0.3s ease, transform 0.3s ease !important;
-}
-
-::ng-deep .swal2-confirm:hover {
-  background-color: #5a6268 !important;
-  transform: scale(1.05) !important;
-}
-
-/* Responsive */
-@media (max-width: 576px) {
-  ::ng-deep .swal2-centered {
-    width: 90% !important;
+  .swal2-confirm {
+    background-color: $primary-color;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }

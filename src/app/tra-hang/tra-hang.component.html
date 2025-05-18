@@ -1,6 +1,9 @@
-<div class="tra-hang-form-modal">
-  <button type="button" class="close-button" (click)="closeModal()">✖</button>
-  <div class="tra-hang-form-container">
+<div class="tra-hang-modal">
+  <div class="tra-hang-container">
+    <div class="modal-header">
+      <h2>Yêu Cầu Trả Hàng</h2>
+      <button type="button" class="close-button" (click)="closeModal()">✖</button>
+    </div>
 
     <form [formGroup]="traHangForm" class="tra-hang-form">
       <div formArrayName="returnItems" class="return-items-container">
@@ -9,47 +12,48 @@
             <div class="product-info">
               <input type="checkbox" formControlName="selected" (change)="onSelectionChange($event, i)"
                      [disabled]="item.get('hasReturnRequest')?.value || item.get('trangThai')?.value === 2 || item.get('trangThai')?.value === 3">
-              <span>{{ item.get('tenSanPham')?.value }} (ID: {{ item.get('idSpct')?.value }})</span>
+              <span class="product-name">{{ item.get('tenSanPham')?.value }} (ID: {{ item.get('idSpct')?.value }})</span>
             </div>
             <div *ngIf="item.get('hasReturnRequest')?.value && item.get('trangThai')?.value !== 2 && item.get('trangThai')?.value !== 3" class="overlay-message">
-              <span class="text-red-500">Sản phẩm đang được phê duyệt trả hàng</span>
+              <span class="message warning">Sản phẩm đang được phê duyệt trả hàng</span>
             </div>
             <div *ngIf="item.get('trangThai')?.value === 2" class="overlay-message">
-              <span class="text-red-500">Yêu cầu trả hàng đã bị từ chối</span>
+              <span class="message error">Yêu cầu trả hàng đã bị từ chối</span>
             </div>
             <div *ngIf="item.get('trangThai')?.value === 3" class="overlay-message">
-              <span class="text-red-500">Sản phẩm đã trả hàng</span>
+              <span class="message error">Sản phẩm đã trả hàng</span>
             </div>
           </div>
+
           <div *ngIf="item.get('selected')?.value && !item.get('hasReturnRequest')?.value && item.get('trangThai')?.value !== 2 && item.get('trangThai')?.value !== 3" class="return-details">
             <div class="form-group">
               <label [for]="'soLuong-' + i">Số Lượng (Tối đa: {{ getMaxQuantity(item.get('idSpct')?.value) }})</label>
               <input type="number" [id]="'soLuong-' + i" formControlName="soLuong"
                      [max]="getMaxQuantity(item.get('idSpct')?.value)"
-                     [class.border-red-500]="item.get('soLuong')?.invalid && item.get('soLuong')?.touched"
+                     [class.error-border]="item.get('soLuong')?.invalid && item.get('soLuong')?.touched"
                      placeholder="Nhập số lượng">
-              <div *ngIf="item.get('soLuong')?.invalid && item.get('soLuong')?.touched" class="text-red-500">
+              <div *ngIf="item.get('soLuong')?.invalid && item.get('soLuong')?.touched" class="error-message">
                 Số lượng phải từ 1 đến {{ getMaxQuantity(item.get('idSpct')?.value) }}
               </div>
             </div>
             <div class="form-group">
               <label [for]="'lyDoTraHang-' + i">Lý Do Trả Hàng</label>
               <input type="text" [id]="'lyDoTraHang-' + i" formControlName="lyDoTraHang"
-                     [class.border-red-500]="item.get('lyDoTraHang')?.invalid && item.get('lyDoTraHang')?.touched"
+                     [class.error-border]="item.get('lyDoTraHang')?.invalid && item.get('lyDoTraHang')?.touched"
                      placeholder="Nhập lý do trả hàng">
-              <div *ngIf="item.get('lyDoTraHang')?.invalid && item.get('lyDoTraHang')?.touched" class="text-red-500">
+              <div *ngIf="item.get('lyDoTraHang')?.invalid && item.get('lyDoTraHang')?.touched" class="error-message">
                 Lý do trả hàng là bắt buộc
               </div>
             </div>
             <div class="form-group">
               <label [for]="'tinhTrangHang-' + i">Tình Trạng Hàng</label>
               <select [id]="'tinhTrangHang-' + i" formControlName="tinhTrangHang" (change)="onTinhTrangHangChange(i)"
-                      [class.border-red-500]="item.get('tinhTrangHang')?.invalid && item.get('tinhTrangHang')?.touched">
+                      [class.error-border]="item.get('tinhTrangHang')?.invalid && item.get('tinhTrangHang')?.touched">
                 <option value="" disabled>Chọn tình trạng</option>
                 <option value="NguyenVen">Nguyên Vẹn</option>
                 <option value="HuHong">Hỏng</option>
               </select>
-              <div *ngIf="item.get('tinhTrangHang')?.invalid && item.get('tinhTrangHang')?.touched" class="text-red-500">
+              <div *ngIf="item.get('tinhTrangHang')?.invalid && item.get('tinhTrangHang')?.touched" class="error-message">
                 Tình trạng hàng là bắt buộc
               </div>
             </div>
@@ -61,12 +65,12 @@
             <div class="form-group">
               <label [for]="'hinhThucTraHang-' + i">Hình Thức Trả Hàng</label>
               <select [id]="'hinhThucTraHang-' + i" formControlName="hinhThucTraHang"
-                      [class.border-red-500]="item.get('hinhThucTraHang')?.invalid && item.get('hinhThucTraHang')?.touched">
+                      [class.error-border]="item.get('hinhThucTraHang')?.invalid && item.get('hinhThucTraHang')?.touched">
                 <option value="" disabled>Chọn hình thức</option>
                 <option value="TaiCuaHang">Tại Cửa Hàng</option>
                 <option value="QuaVanChuyen">Qua Vận Chuyển</option>
               </select>
-              <div *ngIf="item.get('hinhThucTraHang')?.invalid && item.get('hinhThucTraHang')?.touched" class="text-red-500">
+              <div *ngIf="item.get('hinhThucTraHang')?.invalid && item.get('hinhThucTraHang')?.touched" class="error-message">
                 Hình thức trả hàng là bắt buộc
               </div>
             </div>
@@ -74,8 +78,8 @@
               <label [for]="'hinhAnh-' + i">Hình Ảnh Minh Chứng (Bắt Buộc, tối đa 2 ảnh)</label>
               <input type="file" [id]="'hinhAnh-' + i" multiple accept="image/jpeg,image/png"
                      (change)="onHinhAnhChange($event, i)"
-                     [class.border-red-500]="item.get('hinhAnhError')?.value">
-              <div *ngIf="item.get('hinhAnhError')?.value" class="text-red-500">
+                     [class.error-border]="item.get('hinhAnhError')?.value">
+              <div *ngIf="item.get('hinhAnhError')?.value" class="error-message">
                 Vui lòng tải lên ít nhất một hình ảnh minh chứng
               </div>
               <div *ngIf="item.get('hinhAnhFiles')?.value.length > 0" class="file-info">
@@ -86,8 +90,8 @@
               <label [for]="'video-' + i">Video Minh Chứng (Bắt Buộc)</label>
               <input type="file" [id]="'video-' + i" accept="video/mp4"
                      (change)="onVideoChange($event, i)"
-                     [class.border-red-500]="item.get('videoError')?.value">
-              <div *ngIf="item.get('videoError')?.value" class="text-red-500">
+                     [class.error-border]="item.get('videoError')?.value">
+              <div *ngIf="item.get('videoError')?.value" class="error-message">
                 Vui lòng tải lên một video minh chứng
               </div>
               <div *ngIf="item.get('videoFile')?.value" class="file-info">
@@ -97,9 +101,18 @@
           </div>
         </div>
       </div>
+
+      <!-- Phần lưu ý được làm nổi bật -->
+      <div class="notice-section">
+        <h3>Lưu Ý Quan Trọng:</h3>
+        <p>-Sản phẩm phải có video khi mở kiện hàng. </p>
+        <p>-Được trả hàng nếu có lỗi về phía cửa hàng hoặc vận chuyển.</p>
+        <p>-Trả hàng sau 7 ngày kể từ ngày đặt.</p>
+      </div>
+
       <div class="form-actions">
-        <button type="button" class="close-button" (click)="closeModal()">✖</button>
-        <button type="button" class="submit-button" (click)="onSubmit()" [disabled]="isSubmitDisabled()">Gửi Yêu Cầu Trả Hàng</button>
+        <button type="button" class="btn-cancel" (click)="closeModal()">Hủy</button>
+        <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="isSubmitDisabled()">Gửi Yêu Cầu Trả Hàng</button>
       </div>
     </form>
   </div>

@@ -195,10 +195,26 @@
   <ng-template #sendCouponModal let-modal>
     <div class="modal-header">
       <h5 class="modal-title">Gửi mã giảm giá: {{ selectedVoucher?.maGiamGia }}</h5>
-      <button type="button" class="btn-close" (click)="modal.dismiss('Cross click')" aria-label="Close"></button>
+      <button type="button" class="btn-close" (click)="modal.dismiss('Cross click')" aria-label="Đóng"></button>
     </div>
     <div class="modal-body">
-      <div class="table-responsive" *ngIf="users && users.length > 0">
+      <!-- Ô tìm kiếm tự động -->
+      <div class="search-form mb-3">
+        <div class="form-group">
+          <label for="userSearch">Tìm kiếm (ID, Tên, Email, Số điện thoại)</label>
+          <input
+            type="text"
+            id="userSearch"
+            class="form-control"
+            placeholder="Nhập từ khóa (VD: 'k')..."
+            [(ngModel)]="userSearchTerm"
+            (ngModelChange)="filterUsers()"
+            name="userSearch"
+          />
+        </div>
+      </div>
+  
+      <div class="table-responsive" *ngIf="filteredUsers && filteredUsers.length > 0">
         <table class="table table-hover">
           <thead>
             <tr>
@@ -210,7 +226,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of users">
+            <tr *ngFor="let user of filteredUsers">
               <td>{{ user.id }}</td>
               <td>{{ user.hoTen }}</td>
               <td>{{ user.email }}</td>
@@ -222,10 +238,10 @@
           </tbody>
         </table>
       </div>
-      <div *ngIf="users && users.length === 0" class="text-center">
-        <p>Không có khách hàng nào để hiển thị.</p>
+      <div *ngIf="filteredUsers && filteredUsers.length === 0" class="text-center">
+        <p>Không tìm thấy khách hàng nào.</p>
       </div>
-      <div *ngIf="!users" class="text-center">
+      <div *ngIf="!filteredUsers" class="text-center">
         <p>Đang tải dữ liệu...</p>
       </div>
     </div>

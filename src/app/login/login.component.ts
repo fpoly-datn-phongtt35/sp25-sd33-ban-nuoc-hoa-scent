@@ -16,6 +16,7 @@ import Swal from 'sweetalert2';
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
+  showPassword: boolean = false; // Biến điều khiển hiển thị/ẩn mật khẩu
 
   constructor(
     private fb: FormBuilder,
@@ -32,7 +33,6 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Lấy dữ liệu từ queryParams hoặc state
     const state = this.route.snapshot.queryParams['state'];
     if (state) {
       try {
@@ -46,6 +46,11 @@ export class LoginComponent implements OnInit {
         console.error('[LoginComponent] Lỗi khi parse state:', error);
       }
     }
+  }
+
+  // Hàm để bật/ẩn mật khẩu
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
   onSubmit(): void {

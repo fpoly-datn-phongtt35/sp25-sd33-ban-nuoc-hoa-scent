@@ -1,9 +1,12 @@
 <div class="container">
-  <h2 class="page-title">Bán hàng tại quầy</h2>
+  <!-- Tiêu đề -->
+  <div class="header-section">
+    <h2 class="page-title">Bán hàng tại quầy</h2>
+    <!-- Thông báo -->
+    <div *ngIf="errorMessage?.length" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="isLoading" class="alert alert-info text-center">Đang xử lý...</div>
+  </div>
 
-  <!-- Thông báo -->
-  <div *ngIf="errorMessage?.length" class="alert alert-danger">{{ errorMessage }}</div>
-  <div *ngIf="isLoading" class="alert alert-info text-center">Đang xử lý...</div>
   <!-- Tabs đơn hàng -->
   <div class="order-tabs">
     <div class="tab-container">
@@ -26,18 +29,19 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14m-7-7h14"/>
         </svg>
+        <span>Thêm đơn mới</span>
       </button>
     </div>
   </div>
 
   <!-- Nội dung chính -->
   <div class="main-content">
-    <!-- Cột trái: Tìm kiếm sản phẩm và giỏ hàng -->
+    <!-- Cột trái: Tìm kiếm sản phẩm và thông tin khách hàng -->
     <div class="left-column">
       <!-- Thông tin khách hàng -->
       <div class="card customer-card">
-        <h4>Thông tin khách hàng</h4>
-        <div class="row">
+        <h4 class="card-title">Thông tin khách hàng</h4>
+        <div class="row g-3">
           <div class="col-6">
             <input
               [(ngModel)]="currentOrder.donHang.tenNguoiNhanHang"
@@ -74,19 +78,19 @@
 
       <!-- Tìm kiếm sản phẩm -->
       <div class="card product-card">
-        <h4>Tìm kiếm sản phẩm</h4>
+        <h4 class="card-title">Tìm kiếm sản phẩm</h4>
         <div class="search-bar">
           <input
             [(ngModel)]="searchKeyword"
             (ngModelChange)="onSearchInput()"
-            placeholder="🔍 Tìm kiếm sản phẩm"
+            placeholder="🔍 Tìm kiếm sản phẩm..."
             class="form-control search-input"
             debounce="300"
           />
         </div>
         <!-- Bộ lọc -->
         <div class="filter-section mt-3">
-          <div class="row">
+          <div class="row g-3">
             <div class="col-4">
               <select
                 [(ngModel)]="filterTenNhomHuong"
@@ -121,7 +125,7 @@
         </div>
         <!-- Danh sách sản phẩm -->
         <div class="product-list" *ngIf="products.length > 0">
-          <div class="product-item-horizontal" *ngFor="let product of products; trackBy: trackByProduct" (click)="openQuantityModal(product)">
+          <div class="product-item" *ngFor="let product of products; trackBy: trackByProduct" (click)="openQuantityModal(product)">
             <img
               [src]="product.urlImage || 'assets/placeholder.png'"
               alt="{{ product.tenSanPham }}"
@@ -132,6 +136,7 @@
               <div class="product-details">
                 <span class="product-volume">{{ product.dungTich }}ml</span>
                 <span class="product-code">Mã: {{ product.idSpct }}</span>
+                <span class="product-code">SL: {{ product.soLuongtonkho }}</span>
               </div>
               <span class="product-price">{{ product.donGia | number }} VNĐ</span>
             </div>
@@ -145,49 +150,41 @@
     <div class="right-column">
       <!-- Giỏ hàng -->
       <div class="card cart-card">
-        <h4>Đơn hàng</h4>
+        <h4 class="card-title">Giỏ hàng</h4>
         <div class="cart-list" *ngIf="currentOrder.chiTietDonHangs.length > 0">
-          <table class="cart-table">
-            <thead>
-              <tr>
-                <th>Tên sản phẩm</th>
-                <th>Số lượng</th>
-                <th>Giá tiền</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of currentOrder.chiTietDonHangs; let i = index; trackBy: trackByCartItem">
-                <td class="cart-item-name">{{ item.tenSanPham }} ({{ item.dungTich }}ml)</td>
-                <td>
-                  <div class="quantity-control">
-                    <button (click)="decreaseQuantity(i)" [disabled]="item.soLuong <= 1">-</button>
-                    <span>{{ item.soLuong }}</span>
-                    <button (click)="increaseQuantity(i)">+</button>
-                  </div>
-                </td>
-                <td class="cart-item-price">{{ item.thanhTien | number }} VNĐ</td>
-                <td>
-                  <button class="btn-delete" (click)="removeProduct(i)">X</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="cart-item" *ngFor="let item of currentOrder.chiTietDonHangs; let i = index; trackBy: trackByCartItem">
+            <div class="cart-item-info">
+              <span class="cart-item-name">{{ item.tenSanPham }} ({{ item.dungTich }}ml)</span>
+              <span class="cart-item-price">{{ item.thanhTien | number }} VNĐ</span>
+            </div>
+            <div class="cart-item-actions">
+              <div class="quantity-control">
+                <button (click)="decreaseQuantity(i)" [disabled]="item.soLuong <= 1">-</button>
+                <span>{{ item.soLuong }}</span>
+                <button (click)="increaseQuantity(i)">+</button>
+              </div>
+              <button class="btn-delete" (click)="removeProduct(i)">X</button>
+            </div>
+          </div>
         </div>
         <div *ngIf="currentOrder.chiTietDonHangs.length === 0" class="no-result">Giỏ hàng trống</div>
       </div>
 
       <!-- Thanh toán -->
       <div class="card payment-card">
-        <h4>Thanh toán</h4>
-        <select
-          [(ngModel)]="currentOrder.phuongThucThanhToan"
-          (ngModelChange)="updatePaymentMethod($event)"
-          class="form-control"
-        >
-          <option value="tm">Tiền mặt</option>
-          <option value="ck">Chuyển khoản ngân hàng (VietQR)</option>
-        </select>
+        <h4 class="card-title">Thanh toán</h4>
+        <div class="payment-method">
+          <label for="phuongThucThanhToan">Phương thức thanh toán:</label>
+          <select
+            id="phuongThucThanhToan"
+            [(ngModel)]="currentOrder.phuongThucThanhToan"
+            (ngModelChange)="updatePaymentMethod($event)"
+            class="form-control"
+          >
+            <option value="tm">Tiền mặt</option>
+            <option value="ck">Chuyển khoản ngân hàng (VietQR)</option>
+          </select>
+        </div>
         <div class="discount-section">
           <label for="maGiamGia">Mã giảm giá:</label>
           <div class="discount-input-group">
@@ -196,7 +193,7 @@
               id="maGiamGia"
               [(ngModel)]="discountCodeInput"
               (ngModelChange)="onDiscountCodeChange($event)"
-              placeholder="Nhập mã giảm giá"
+              placeholder="Nhập mã giảm giá..."
               class="form-control"
               debounce="300"
             />
@@ -208,31 +205,35 @@
               Áp dụng
             </button>
             <button
-      (click)="cancelDiscount()"
-      [disabled]="isLoading || !currentOrder.maGiamGia"
-      class="btn-cancel-discount"
-    >
-      Hủy
-    </button>
+              (click)="cancelDiscount()"
+              [disabled]="isLoading || !currentOrder.maGiamGia"
+              class="btn-cancel-discount"
+            >
+              Hủy
+            </button>
+          </div>
+          <!-- Hiển thị thông báo về mã giảm giá -->
+          <div *ngIf="discountMessage" class="discount-message">
+            {{ discountMessage }}
           </div>
         </div>
 
-        <!-- Hiển thị thông báo về mã giảm giá -->
-        <div *ngIf="discountMessage" class="discount-message">
-          {{ discountMessage }}
-        </div>
-
         <div class="total-section">
-          <p class="total-price">Tổng trước giảm: <strong>{{ totalBeforeDiscount | number }} VNĐ</strong></p>
-          <p *ngIf="totalAfterDiscount !== undefined" class="discount-amount">
-            Số tiền giảm: <strong> - {{ (totalBeforeDiscount - totalAfterDiscount) | number }} VNĐ</strong>
-          </p>
-          <p *ngIf="totalAfterDiscount !== undefined" class="total-price-after">
-            Tổng sau giảm: <strong>{{ totalAfterDiscount | number }} VNĐ</strong>
-          </p>
+          <div class="total-row">
+            <span>Tổng trước giảm:</span>
+            <strong>{{ totalBeforeDiscount | number }} VNĐ</strong>
+          </div>
+          <div class="total-row" *ngIf="totalAfterDiscount !== undefined">
+            <span>Số tiền giảm:</span>
+            <strong>- {{ (totalBeforeDiscount - totalAfterDiscount) | number }} VNĐ</strong>
+          </div>
+          <div class="total-row" *ngIf="totalAfterDiscount !== undefined">
+            <span>Tổng sau giảm:</span>
+            <strong class="final-price">{{ totalAfterDiscount | number }} VNĐ</strong>
+          </div>
         </div>
 
-        <button class="btn-submit" (click)="submitOrder()" [disabled]="isLoading">Xác nhận</button>
+        <button class="btn-submit" (click)="submitOrder()" [disabled]="isLoading">Xác nhận đơn hàng</button>
       </div>
     </div>
   </div>
@@ -248,7 +249,7 @@
       />
       <input type="number" [(ngModel)]="selectedQuantity" min="1" class="form-control" />
       <div class="modal-actions">
-        <button class="btn btn-confirm" (click)="confirmAddProduct()">Thêm</button>
+        <button class="btn btn-confirm" (click)="confirmAddProduct()">Thêm vào giỏ</button>
         <button class="btn btn-cancel" (click)="closeQuantityModal()">Hủy</button>
       </div>
     </div>

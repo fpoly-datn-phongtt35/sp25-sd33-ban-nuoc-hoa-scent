@@ -22,7 +22,7 @@ export class VourcherComponent {
   phieuGiamGias: any[] = [];
   filteredPhieuGiamGias: any[] = [];
   page: number = 0;
-  size: number = 5;
+  size: number = 10;
   totalPages: number = 1;
   filterType: string = 'all'; // Đổi mặc định thành 'all' vì lọc sẽ ở backend
   statusFilter: string = 'all'; // Đổi mặc định thành 'all'
@@ -33,6 +33,12 @@ export class VourcherComponent {
   users: any[] = [];
   selectedVoucher: any = null;
   selectedUserId: number | null = null;
+
+  
+  filteredUsers: any[] = []; // Danh sách khách hàng đã lọc
+
+  userSearchTerm: string = ''; // Từ khóa tìm kiếm
+  private searchTimeout: any; // Biến để quản lý debounce
 
   @ViewChild('sendCouponModal') sendCouponModal!: TemplateRef<any>;
 
@@ -60,7 +66,63 @@ export class VourcherComponent {
       this.scrollToTop();
     });
   }
+  filterUsers(): void {
+    // Hủy timeout trước đó nếu người dùng nhập tiếp
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
 
+    // Thêm debounce 300ms
+    this.searchTimeout = setTimeout(() => {
+      const keyword = this.userSearchTerm.trim().toLowerCase();
+      if (!keyword) {
+        this.filteredUsers = [...this.users]; // Nếu không có từ khóa, hiển thị toàn bộ danh sách
+      } else {
+        this.filteredUsers = this.users.filter(user =>
+          user.id.toString().includes(keyword) ||
+          user.hoTen.toLowerCase().includes(keyword) ||
+          user.email.toLowerCase().includes(keyword) ||
+          user.sdt.toLowerCase().includes(keyword)
+        );
+      }
+      this.cdr.detectChanges(); // Cập nhật giao diện
+    }, 300);
+  }
+
+  openSendCouponModal(voucher: any): void {
+    this.selectedVoucher = voucher;
+    this.selectedUserId = null;
+    this.userSearchTerm = ''; // Reset từ khóa tìm kiếm
+
+    this.phieuGiamGiaService.getUsers().subscribe({
+      next: (users) => {
+        this.users = users;
+        this.filteredUsers = [...this.users]; // Khởi tạo danh sách đã lọc bằng danh sách gốc
+        console.log('Danh sách khách hàng:', this.users);
+        const modalRef = this.modalService.open(this.sendCouponModal, { 
+          backdrop: 'static', 
+          keyboard: false, 
+          size: 'xl' 
+        });
+        modalRef.result.finally(() => {
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+          this.cdr.detectChanges();
+          this.scrollToTop();
+        });
+      },
+      error: (error) => {
+        console.error('Lỗi khi tải danh sách khách hàng:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi!',
+          text: 'Không thể tải danh sách khách hàng: ' + (error.message || 'Kiểm tra console!'),
+          confirmButtonText: 'Đóng'
+        });
+      }
+    });
+  }
   ngOnDestroy(): void {
     window.removeEventListener('reloadTableAndGoToFirstPage', () => {});
     window.removeEventListener('reloadTable', () => {});
@@ -459,38 +521,38 @@ export class VourcherComponent {
     FileSaver.saveAs(data, fileName + '_export_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   }
 
-  openSendCouponModal(voucher: any): void {
-    this.selectedVoucher = voucher;
-    this.selectedUserId = null;
+  // openSendCouponModal(voucher: any): void {
+  //   this.selectedVoucher = voucher;
+  //   this.selectedUserId = null;
 
-    this.phieuGiamGiaService.getUsers().subscribe({
-      next: (users) => {
-        this.users = users;
-        console.log('Danh sách users:', this.users);
-        const modalRef = this.modalService.open(this.sendCouponModal, { 
-          backdrop: 'static', 
-          keyboard: false, 
-          size: 'xl' 
-        });
-        modalRef.result.finally(() => {
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = '';
-          document.body.style.paddingRight = '';
-          this.cdr.detectChanges();
-          this.scrollToTop();
-        });
-      },
-      error: (error) => {
-        console.error('Lỗi khi tải danh sách khách hàng:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi!',
-          text: 'Không thể tải danh sách khách hàng: ' + (error.message || 'Kiểm tra console!'),
-          confirmButtonText: 'Đóng'
-        });
-      }
-    });
-  }
+  //   this.phieuGiamGiaService.getUsers().subscribe({
+  //     next: (users) => {
+  //       this.users = users;
+  //       console.log('Danh sách users:', this.users);
+  //       const modalRef = this.modalService.open(this.sendCouponModal, { 
+  //         backdrop: 'static', 
+  //         keyboard: false, 
+  //         size: 'xl' 
+  //       });
+  //       modalRef.result.finally(() => {
+  //         document.body.classList.remove('modal-open');
+  //         document.body.style.overflow = '';
+  //         document.body.style.paddingRight = '';
+  //         this.cdr.detectChanges();
+  //         this.scrollToTop();
+  //       });
+  //     },
+  //     error: (error) => {
+  //       console.error('Lỗi khi tải danh sách khách hàng:', error);
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Lỗi!',
+  //         text: 'Không thể tải danh sách khách hàng: ' + (error.message || 'Kiểm tra console!'),
+  //         confirmButtonText: 'Đóng'
+  //       });
+  //     }
+  //   });
+  // }
 
   onUserSelect(userId: number): void {
     this.selectedUserId = userId;

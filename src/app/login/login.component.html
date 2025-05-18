@@ -18,15 +18,27 @@
       </div>
 
       <!-- Nhập mật khẩu -->
-      <div class="form-group">
+      <div class="form-group password-group">
         <label for="password">Mật khẩu</label>
-        <input
-          type="password"
-          id="password"
-          formControlName="password"
-          placeholder="Nhập mật khẩu"
-          [class.invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-        />
+        <div class="password-wrapper">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            placeholder="Nhập mật khẩu"
+            [class.invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          />
+          <span class="eye-icon" (click)="togglePasswordVisibility()">
+            <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </span>
+        </div>
         <span class="error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
           Mật khẩu không được để trống.
         </span>
@@ -45,7 +57,7 @@
       <!-- Các tùy chọn khác -->
       <div class="options">
         <a routerLink="/register">Đăng ký tài khoản mới</a>
-        <a routerLink="/forgot-password">Quên mật khẩu?</a> <!-- Cập nhật link -->
+        <a routerLink="/forgot-password">Quên mật khẩu?</a>
       </div>
     </form>
   </div>

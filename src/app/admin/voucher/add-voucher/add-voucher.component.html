@@ -46,7 +46,7 @@
             type="number"
             class="form-control"
             [value]="voucherForm.get('giaTriGiam')?.value | percentTransform:'display'"
-            (input)="updatePercent($event.target.value)"
+            (input)="updatePercent($event)"
             step="1"
             min="10"
             max="90"

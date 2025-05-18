@@ -25,7 +25,7 @@ export class ProductAdminComponent implements OnInit {
   products: any[] = [];
   searchTerm: string = '';
   page: number = 0;
-  size: number = 5;
+  size: number = 15;
   totalPages: number = 0;
   selectedProductId: number | null = null;
   selectedProduct: any = null;

@@ -1,101 +1,255 @@
+// Biến màu sắc
+$primary-color: #007bff;
+$secondary-color: #6c757d;
+$success-color: #28a745;
+$danger-color: #dc3545;
+$background-color: #f8f9fa;
+$card-bg: #ffffff;
+$text-color: #333;
+$border-color: #e0e0e0;
+
+// Reset và cài đặt chung
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Thanh cuộn cho cả trang
+.container-wrapper {
+  height: 100vh;
+  overflow-y: auto;
+  background-color: $background-color;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #ced4da;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: #f1f3f5;
+  }
+}
+
 .container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+// Tiêu đề chính
+.header-section {
+  margin-bottom: 20px;
+  text-align: center;
+
+  h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: $text-color;
+    letter-spacing: 0.5px;
   }
-  
-  h2, h3 {
-    text-align: center;
-    color: #333;
+}
+
+// Card chung
+.banner-form-card,
+.banner-list-card {
+  background-color: $card-bg;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid $border-color;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   }
-  
-  .banner-form {
-    margin-bottom: 40px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 20px;
+    border-bottom: 1px solid $border-color;
+    padding-bottom: 10px;
   }
-  
+}
+
+// Form thêm/sửa banner
+.banner-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
   .form-group {
-    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-color;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      border: 1px solid $border-color;
+      padding: 10px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 5px rgba($primary-color, 0.2);
+        outline: none;
+      }
+    }
   }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+
+    .btn-submit,
+    .btn-cancel {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-submit {
+      background-color: $primary-color;
+      color: white;
+
+      &:hover {
+        background-color: darken($primary-color, 10%);
+      }
+    }
+
+    .btn-cancel {
+      background-color: $secondary-color;
+      color: white;
+
+      &:hover {
+        background-color: darken($secondary-color, 10%);
+      }
+    }
   }
-  
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+}
+
+// Danh sách banner
+.banner-list-card {
+  .banner-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #ced4da;
+      border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: #f1f3f5;
+    }
   }
-  
-  button {
-    padding: 10px 20px;
-    margin-right: 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  button[type="submit"] {
-    background-color: #28a745;
-    color: white;
-  }
-  
-  button[type="button"] {
-    background-color: #dc3545;
-    color: white;
-  }
-  
-  .banner-list table {
+
+  table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  .banner-list th,
-  .banner-list td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    text-align: center;
-  }
-  
-  .banner-list th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-  }
-  
-  .banner-list button {
-    padding: 5px 10px;
-    margin: 0 5px;
-  }
-  .checkbox-group {
-    display: flex;
-    gap: 20px;
-  
-    label {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid $border-color;
     }
-  
-    input[type="checkbox"] {
-      cursor: pointer;
+
+    th {
+      background-color: #f1f3f5;
+      font-weight: 600;
+      color: $text-color;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    td {
+      color: $text-color;
+    }
+
+    .banner-image {
+      width: 100px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid $border-color;
+    }
+
+    .status-active {
+      color: $success-color;
+      font-weight: 500;
+    }
+
+    .status-inactive {
+      color: $danger-color;
+      font-weight: 500;
+    }
+
+    .btn-edit,
+    .btn-delete,
+    .btn-toggle {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-edit {
+      background-color: #ffc107;
+      color: white;
+
+      &:hover {
+        background-color: darken(#ffc107, 10%);
+      }
+    }
+
+    .btn-delete {
+      background-color: $danger-color;
+      color: white;
+
+      &:hover {
+        background-color: darken($danger-color, 10%);
+      }
+    }
+
+    .btn-toggle {
+      background-color: $success-color;
+      color: white;
+
+      &:hover {
+        background-color: darken($success-color, 10%);
+      }
+    }
+
+    tr:hover {
+      background-color: #f8f9fa;
     }
   }
-  .banner-list button:first-child {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .banner-list button:last-child {
-    background-color: #dc3545;
-    color: white;
-  }
+}

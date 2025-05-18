@@ -18,6 +18,8 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subscrip
 export class RegisterComponent implements OnInit, OnDestroy {
   registerForm: FormGroup;
   private subscriptions: Subscription[] = [];
+  showPassword: boolean = false; // Biến điều khiển hiển thị/ẩn mật khẩu
+  showConfirmPassword: boolean = false; // Biến điều khiển hiển thị/ẩn xác nhận mật khẩu
 
   constructor(
     private fb: FormBuilder,
@@ -95,6 +97,16 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
+  // Hàm để bật/ẩn mật khẩu
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  // Hàm để bật/ẩn xác nhận mật khẩu
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
   onSubmit() {
     if (this.registerForm.valid) {
       const emailControl = this.registerForm.get('email');
@@ -142,7 +154,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
             backdrop: true,
             allowOutsideClick: true,
           }).then(() => {
-            // Chỉ truyền username qua state
             this.router.navigate(['/login'], {
               state: {
                 username: this.registerForm.get('tenDangNhap')?.value
