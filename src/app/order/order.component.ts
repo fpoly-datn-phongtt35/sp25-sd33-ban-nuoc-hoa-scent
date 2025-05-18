@@ -517,10 +517,21 @@ private checkDiscountCode(code: string, sdt: string): void {
       } else if (response.soLuong <= 0) {
         this.handleDiscountError('Đã hết mã giảm giá!');
       } else {
+        // Tính số tiền giảm
         this.discountAmount = this.totalProductPrice * response.giaTriGiam;
-        if (response.giaTriToiDa && this.discountAmount > response.giaTriToiDa) {
-          this.discountAmount = response.giaTriToiDa;
+        
+        // Ép kiểu giaTriToiDa thành number và kiểm tra
+        const giaTriToiDa = response.giaTriToiDa ? Number(response.giaTriToiDa) : null;
+        if (giaTriToiDa != null && this.discountAmount > giaTriToiDa) {
+          this.discountAmount = giaTriToiDa;
         }
+        
+
+        // Đảm bảo discountAmount không âm
+        if (this.discountAmount < 0) {
+          this.discountAmount = 0;
+        }
+
         this.discount = this.discountAmount;
         this.orderData.maGiamGia = code;
         this.isDiscountApplied = true;
@@ -538,7 +549,7 @@ private checkDiscountCode(code: string, sdt: string): void {
     error: (err: any) => {
       Swal.close();
       console.error('Lỗi từ API kiểm tra mã giảm giá:', err);
-      this.handleDiscountError(err.message); // Lấy message từ Error (đã được service throw)
+      this.handleDiscountError(err.message);
     },
   });
 
