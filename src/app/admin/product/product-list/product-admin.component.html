@@ -30,7 +30,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let product of products; let i = index">
-            <td>{{ i + 1 + (page * 5) }}</td>
+            <td>{{ i + 1 + (page * 15) }}</td>
             <td>
               <img
                 *ngIf="product.imageURL; else noImage"

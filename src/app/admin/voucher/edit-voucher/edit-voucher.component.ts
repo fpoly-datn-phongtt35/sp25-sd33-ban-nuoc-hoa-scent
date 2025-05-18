@@ -157,14 +157,23 @@ export class EditVoucherComponent implements OnInit {
     return date.toTimeString().slice(0, 5);
   }
 
-  closeModal() {
-    this.activeModal.dismiss('cancel');
+closeModal() {
+    if (this.activeModal) {
+      this.activeModal.dismiss('cancel');
+    }
+    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
-      if (modalElement) modalElement.remove();
+      if (modalElement) {
+        modalElement.remove();
+      }
       const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) backdrop.remove();
+      if (backdrop) {
+        backdrop.remove();
+      }
       document.body.classList.remove('modal-open');
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '';
       this.cdr.detectChanges();
     }, 100);
   }

@@ -147,10 +147,11 @@ export class AddVoucherComponent {
     });
   }
 
-  closeModal() {
+closeModal() {
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
     }
+    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {
