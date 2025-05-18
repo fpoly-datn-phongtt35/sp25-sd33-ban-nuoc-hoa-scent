@@ -261,7 +261,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     const productDate = new Date(createDate);
     const timeDiff = today.getTime() - productDate.getTime();
     const daysDiff = timeDiff / (1000 * 3600 * 24);
-    return daysDiff <= 10;
+    return daysDiff <= 30;
   }
 
   loadBestSellingProducts(): void {
