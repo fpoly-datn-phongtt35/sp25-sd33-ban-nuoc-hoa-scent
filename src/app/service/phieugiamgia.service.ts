@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse,HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
@@ -37,7 +37,31 @@ export class PhieugiamgiaService {
 
   // Phương thức tìm kiếm với phân trang
   searchVouchers(params: any): Observable<SearchResponse> {
-    return this.http.get<SearchResponse>(`${this.apiUrl}/search`, { params }).pipe(
+    let httpParams = new HttpParams()
+      .set('page', params.page || '0')
+      .set('size', params.size || '5')
+      .set('sortField', params.sortField || 'id')
+      .set('sortDirection', params.sortDirection || 'desc');
+
+    if (params.maGiamGia) {
+      httpParams = httpParams.set('maGiamGia', params.maGiamGia);
+    }
+    if (params.ngayBatDau) {
+      httpParams = httpParams.set('ngayBatDau', params.ngayBatDau);
+    }
+    if (params.ngayHetHan) {
+      httpParams = httpParams.set('ngayHetHan', params.ngayHetHan);
+    }
+    // Chỉ gửi trangThai nếu nó là giá trị hợp lệ ('0' hoặc '1')
+    if (params.trangThai && params.trangThai !== null && params.trangThai !== undefined) {
+      httpParams = httpParams.set('trangThai', params.trangThai);
+    }
+    if (params.dieuKienapDung && params.dieuKienapDung !== null && params.dieuKienapDung !== undefined) {
+      httpParams = httpParams.set('dieuKienapDung', params.dieuKienapDung);
+    }
+
+    console.log('📌 URL gửi đi:', `${this.apiUrl}/search?` + httpParams.toString());
+    return this.http.get<SearchResponse>(`${this.apiUrl}/search`, { params: httpParams }).pipe(
       catchError(this.handleError)
     );
   }

@@ -139,7 +139,7 @@
         <tr *ngFor="let item of filteredPhieuGiamGias">
           <td>{{ item.id }}</td>
           <td>{{ item.maGiamGia }}</td>
-          <td>{{ item.giaTriGiam }}</td>
+          <td>{{ item.giaTriGiam | percentTransform:'display' }}%</td>
           <td>{{ item.ngayBatDau | date: 'dd/MM/yyyy' }}</td>
           <td>{{ item.ngayBatDau | date: 'HH:mm:ss' }}</td>
           <td>{{ item.ngayHetHan | date: 'dd/MM/yyyy' }}</td>

@@ -5,14 +5,16 @@ import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AddVoucherComponent } from '../add-voucher/add-voucher.component';
 import { EditVoucherComponent } from '../edit-voucher/edit-voucher.component';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
+
 import * as XLSX from 'xlsx';
 import * as FileSaver from 'file-saver';
 import Swal from 'sweetalert2';
+import { PercentTransformPipe } from '../../../service/PercentTransformPipe';
 
 @Component({
   selector: 'app-vourcher',
   standalone: true,
-  imports: [CommonModule, NgbModalModule, FormsModule],
+  imports: [CommonModule, NgbModalModule, FormsModule, PercentTransformPipe, AddVoucherComponent, EditVoucherComponent],
   templateUrl: './vourcher.component.html',
   styleUrls: ['./vourcher.component.scss']
 })
@@ -22,8 +24,8 @@ export class VourcherComponent {
   page: number = 0;
   size: number = 5;
   totalPages: number = 1;
-  filterType: string = 'online';
-  statusFilter: string = 'all';
+  filterType: string = 'all'; // Đổi mặc định thành 'all' vì lọc sẽ ở backend
+  statusFilter: string = 'all'; // Đổi mặc định thành 'all'
   sortField: string = 'id';
   sortDirection: string = 'desc';
 
@@ -32,7 +34,7 @@ export class VourcherComponent {
   selectedVoucher: any = null;
   selectedUserId: number | null = null;
 
-  @ViewChild('sendCouponModal') sendCouponModal!: TemplateRef<any>; // Khai báo tham chiếu đến ng-template
+  @ViewChild('sendCouponModal') sendCouponModal!: TemplateRef<any>;
 
   searchParams: any = {
     maGiamGia: '',
@@ -65,17 +67,54 @@ export class VourcherComponent {
   }
 
   loadAllPhieuGiamGia(): void {
-    console.log('📌 Gọi API với:', this.page, this.size);
-    this.phieuGiamGiaService.getAllPhieuGiamGia(this.page, this.size).subscribe({
+    console.log('📌 Gọi API với:', this.page, this.size, this.statusFilter, this.filterType);
+    const params: any = {
+      page: this.page.toString(),
+      size: this.size.toString(),
+      sortField: this.sortField,
+      sortDirection: this.sortDirection,
+      trangThai: this.statusFilter === 'active' ? '1' : this.statusFilter === 'inactive' ? '0' : null,
+      dieuKienapDung: this.filterType === 'online' ? '1' : this.filterType === 'offline' ? '0' : null
+    };
+
+    if (this.searchParams.maGiamGia) {
+      params.maGiamGia = this.searchParams.maGiamGia;
+    }
+    if (this.searchParams.ngayBatDau) {
+      params.ngayBatDau = new Date(this.searchParams.ngayBatDau).toISOString();
+    }
+    if (this.searchParams.ngayHetHan) {
+      params.ngayHetHan = new Date(this.searchParams.ngayHetHan).toISOString();
+    }
+
+    this.phieuGiamGiaService.searchVouchers(params).subscribe({
       next: (response) => {
         console.log('✅ API response:', response);
-        this.phieuGiamGias = response.content || [];
-        this.totalPages = response.page?.totalPages || 1;
-        this.applyFilter();
-        this.cdr.detectChanges();
+        if (response.status === 'success') {
+          this.phieuGiamGias = response.data || [];
+          this.totalPages = response.totalPages || 1;
+          this.page = response.currentPage || 0;
+          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias); // Chỉ sắp xếp
+          this.cdr.detectChanges();
+        } else {
+          this.phieuGiamGias = [];
+          this.totalPages = 1;
+          this.cdr.detectChanges();
+          Swal.fire({
+            icon: 'info',
+            title: 'Không tìm thấy!',
+            text: response.message || 'Không có kết quả phù hợp.',
+            confirmButtonText: 'Đóng',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        }
       },
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu:', error);
+        this.phieuGiamGias = [];
+        this.totalPages = 1;
+        this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
@@ -93,7 +132,11 @@ export class VourcherComponent {
   onSearchInput(): void {
     const params: any = {
       page: this.page.toString(),
-      size: this.size.toString()
+      size: this.size.toString(),
+      sortField: this.sortField,
+      sortDirection: this.sortDirection,
+      trangThai: this.statusFilter === 'active' ? '1' : this.statusFilter === 'inactive' ? '0' : null,
+      dieuKienapDung: this.filterType === 'online' ? '1' : this.filterType === 'offline' ? '0' : null
     };
 
     if (this.searchParams.maGiamGia) {
@@ -112,7 +155,9 @@ export class VourcherComponent {
           this.phieuGiamGias = response.data || [];
           this.totalPages = response.totalPages || 1;
           this.page = response.currentPage || 0;
-          this.applyFilter();
+          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias);
+          this.cdr.detectChanges();
+
           if (this.phieuGiamGias.length > 0) {
             Swal.fire({
               icon: 'success',
@@ -133,6 +178,9 @@ export class VourcherComponent {
             });
           }
         } else {
+          this.phieuGiamGias = [];
+          this.totalPages = 1;
+          this.cdr.detectChanges();
           Swal.fire({
             icon: 'info',
             title: 'Không tìm thấy!',
@@ -145,6 +193,9 @@ export class VourcherComponent {
       },
       error: (error) => {
         console.error('❌ Lỗi khi tìm kiếm:', error);
+        this.phieuGiamGias = [];
+        this.totalPages = 1;
+        this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
@@ -161,53 +212,30 @@ export class VourcherComponent {
   }
 
   resetSearch(): void {
-    this.searchParams = {
-      maGiamGia: '',
-      ngayBatDau: '',
-      ngayHetHan: ''
-    };
+    this.searchParams = { maGiamGia: '', ngayBatDau: '', ngayHetHan: '' };
     this.page = 0;
+    this.statusFilter = 'all';
+    this.filterType = 'all';
     this.loadAllPhieuGiamGia();
   }
 
   filterVouchers(type: string): void {
     this.filterType = type;
     this.page = 0;
-    this.applyFilter();
+    this.loadAllPhieuGiamGia();
   }
 
   filterByStatus(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.statusFilter = select.value;
     this.page = 0;
-    this.applyFilter();
-  }
-
-  applyFilter(): void {
-    console.log('📌 Dữ liệu trước khi lọc:', this.phieuGiamGias);
-    let filtered = [...this.phieuGiamGias];
-
-    if (this.filterType === 'online') {
-      filtered = filtered.filter(item => item.dieuKienapDung !== 0);
-    } else if (this.filterType === 'offline') {
-      filtered = filtered.filter(item => item.dieuKienapDung === 0);
-    }
-
-    if (this.statusFilter === 'active') {
-      filtered = filtered.filter(item => item.trangThai === 1);
-    } else if (this.statusFilter === 'inactive') {
-      filtered = filtered.filter(item => item.trangThai === 0);
-    }
-
-    this.filteredPhieuGiamGias = this.sortData(filtered);
-    console.log('📌 Dữ liệu sau khi lọc:', this.filteredPhieuGiamGias);
-    this.cdr.detectChanges();
+    this.loadAllPhieuGiamGia();
   }
 
   sortBy(field: string, direction: string): void {
     this.sortField = field;
     this.sortDirection = direction;
-    this.applyFilter();
+    this.loadAllPhieuGiamGia(); // Cập nhật lại dữ liệu với sắp xếp mới
   }
 
   sortData(data: any[]): any[] {
@@ -235,11 +263,7 @@ export class VourcherComponent {
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       this.page = p;
-      if (Object.values(this.searchParams).some(value => value)) {
-        this.onSearchInput();
-      } else {
-        this.loadAllPhieuGiamGia();
-      }
+      this.loadAllPhieuGiamGia();
       this.scrollToTop();
     }
   }
@@ -247,11 +271,7 @@ export class VourcherComponent {
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      if (Object.values(this.searchParams).some(value => value)) {
-        this.onSearchInput();
-      } else {
-        this.loadAllPhieuGiamGia();
-      }
+      this.loadAllPhieuGiamGia();
       this.scrollToTop();
     }
   }
@@ -259,11 +279,7 @@ export class VourcherComponent {
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-      if (Object.values(this.searchParams).some(value => value)) {
-        this.onSearchInput();
-      } else {
-        this.loadAllPhieuGiamGia();
-      }
+      this.loadAllPhieuGiamGia();
       this.scrollToTop();
     }
   }
@@ -332,7 +348,7 @@ export class VourcherComponent {
         const index = this.phieuGiamGias.findIndex((v) => v.id === updatedVoucher.id);
         if (index !== -1) {
           this.phieuGiamGias[index] = { ...updatedVoucher };
-          this.applyFilter();
+          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias); // Cập nhật danh sách đã sắp xếp
         }
         this.cdr.detectChanges();
       }
@@ -347,15 +363,13 @@ export class VourcherComponent {
   }
 
   toggleStatus(voucher: any): void {
-    console.log('📌 Thay đổi trạng thái voucher:', voucher.id, 'trangThai hiện tại:', voucher.trangThai);
     const newStatus = voucher.trangThai === 1 ? 0 : 1;
 
     this.phieuGiamGiaService.updateStatus(voucher.id, newStatus).subscribe({
       next: (response) => {
-        console.log('✅ Cập nhật trạng thái thành công:', response);
         if (response.status === 'success') {
           voucher.trangThai = newStatus;
-          this.applyFilter();
+          this.loadAllPhieuGiamGia(); // Tải lại dữ liệu để đồng bộ với backend
           Swal.fire({
             icon: 'success',
             title: 'Thành công!',
@@ -363,7 +377,6 @@ export class VourcherComponent {
             confirmButtonText: 'OK'
           });
         } else {
-          console.error('❌ Phản hồi không thành công:', response.message);
           Swal.fire({
             icon: 'error',
             title: 'Lỗi!',
@@ -373,7 +386,6 @@ export class VourcherComponent {
         }
       },
       error: (error) => {
-        console.error('❌ Lỗi khi cập nhật trạng thái:', error);
         const errorMessage = error.message || 'Kiểm tra console để biết chi tiết!';
         Swal.fire({
           icon: 'error',
@@ -387,16 +399,13 @@ export class VourcherComponent {
 
   isNotExpired(expiryDate: string): boolean {
     if (!expiryDate) {
-      console.log('📌 Ngày hết hạn không tồn tại hoặc rỗng:', expiryDate);
       return false;
     }
     const expiry = new Date(expiryDate).getTime();
     if (isNaN(expiry)) {
-      console.log('📌 Định dạng ngày hết hạn không hợp lệ:', expiryDate);
       return false;
     }
     const now = new Date().getTime();
-    console.log('📌 So sánh ngày hết hạn:', expiryDate, '=>', expiry, 'với hiện tại:', now, 'chưa hết hạn:', expiry > now);
     return expiry > now;
   }
 
@@ -411,10 +420,10 @@ export class VourcherComponent {
   }
 
   exportToExcel(): void {
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.filteredPhieuGiamGias.map(item => ({
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.phieuGiamGias.map(item => ({
       ID: item.id,
       [this.filterType === 'offline' ? 'Phiếu giảm giá' : 'Mã giảm giá']: item.maGiamGia,
-      'Giá trị': item.giaTriGiam,
+      'Giá trị': `${(item.giaTriGiam * 100)}%`, // Chuyển đổi giá trị thành phần trăm
       'Ngày bắt đầu': new Date(item.ngayBatDau).toLocaleDateString(),
       'Giờ bắt đầu': new Date(item.ngayBatDau).toLocaleTimeString(),
       'Ngày hết hạn': new Date(item.ngayHetHan).toLocaleDateString(),
@@ -453,8 +462,7 @@ export class VourcherComponent {
   openSendCouponModal(voucher: any): void {
     this.selectedVoucher = voucher;
     this.selectedUserId = null;
-  
-    // Gọi API để lấy danh sách khách hàng
+
     this.phieuGiamGiaService.getUsers().subscribe({
       next: (users) => {
         this.users = users;
@@ -462,7 +470,7 @@ export class VourcherComponent {
         const modalRef = this.modalService.open(this.sendCouponModal, { 
           backdrop: 'static', 
           keyboard: false, 
-          size: 'xl' // Tăng kích thước modal
+          size: 'xl' 
         });
         modalRef.result.finally(() => {
           document.body.classList.remove('modal-open');

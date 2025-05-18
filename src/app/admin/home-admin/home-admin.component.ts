@@ -492,7 +492,8 @@ export class HomeAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedChatUserId = userId;
     this.setLocalStorageSafely('selectedChatUserId', userId.toString());
     this.startTawkToChat(userId);
-    this.loadMessages(this.userID);
+    this.loadMessages(userId);
+    this.updateMessagesForDisplay();
     this.newMessageCount.set(userId, 0);
     this.updateTotalUnreadMessages();
     this.incomingMessages = this.incomingMessages.filter(msg => msg.customerId !== userId);

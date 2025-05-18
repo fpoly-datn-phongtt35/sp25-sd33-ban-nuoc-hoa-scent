@@ -4,11 +4,13 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { PercentTransformPipe } from '../../../service/PercentTransformPipe';
+
 
 @Component({
   selector: 'app-edit-voucher',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PercentTransformPipe],
   templateUrl: './edit-voucher.component.html',
   styleUrls: ['./edit-voucher.component.scss'],
   providers: [NgbActiveModal]
@@ -30,7 +32,7 @@ export class EditVoucherComponent implements OnInit {
     this.voucherForm = this.fb.group({
       id: [null],
       maGiamGia: ['', [Validators.required, Validators.maxLength(50)]],
-      giaTriGiam: [0, [Validators.required, Validators.min(0.1), Validators.max(0.8)]],
+      giaTriGiam: [0, [Validators.required, Validators.min(0.1), Validators.max(0.9)]], // Updated max to 0.9 (90%)
       ngayBatDau: ['', Validators.required],
       gioPhutBatDau: ['', Validators.required],
       ngayHetHan: ['', Validators.required],
@@ -56,7 +58,7 @@ export class EditVoucherComponent implements OnInit {
     this.voucherForm.patchValue({
       id: this.voucher.id,
       maGiamGia: this.voucher.maGiamGia,
-      giaTriGiam: this.voucher.giaTriGiam,
+      giaTriGiam: this.voucher.giaTriGiam, // Lưu giá trị thập phân (0.1)
       ngayBatDau: this.formatDate(startDateTime),
       gioPhutBatDau: this.formatTime(startDateTime),
       ngayHetHan: this.formatDate(endDateTime),
@@ -68,6 +70,20 @@ export class EditVoucherComponent implements OnInit {
     });
 
     console.log('📌 Form giá trị sau khi gán:', this.voucherForm.value);
+    this.cdr.detectChanges();
+  }
+
+  updatePercent(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const numericValue = value ? parseFloat(value) : null;
+    const decimalValue = numericValue ? numericValue / 100 : null;
+    if (decimalValue !== null && (decimalValue < 0.1 || decimalValue > 0.9)) {
+      this.voucherForm.get('giaTriGiam')?.setErrors({ range: true });
+    } else {
+      this.voucherForm.get('giaTriGiam')?.setValue(decimalValue, { emitEvent: false });
+      this.voucherForm.get('giaTriGiam')?.markAsTouched();
+    }
     this.cdr.detectChanges();
   }
 

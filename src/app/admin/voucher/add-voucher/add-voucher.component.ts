@@ -1,14 +1,16 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectorRef } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { PercentTransformPipe } from '../../../service/PercentTransformPipe';
+
 
 @Component({
   selector: 'app-add-voucher',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, NgbModule, PercentTransformPipe],
   templateUrl: './add-voucher.component.html',
   styleUrls: ['./add-voucher.component.scss'],
   providers: [NgbActiveModal]
@@ -30,20 +32,28 @@ export class AddVoucherComponent {
   ) {
     this.voucherForm = this.fb.group({
       maGiamGia: ['', [Validators.required, Validators.maxLength(50)]],
-      giaTriGiam: [0, [Validators.required, Validators.min(0.1), Validators.max(0.8)]],
+      giaTriGiam: [null, [Validators.required, Validators.min(0.1), Validators.max(0.9)]],
       ngayBatDau: ['', Validators.required],
       gioPhutBatDau: ['', Validators.required],
       ngayHetHan: ['', Validators.required],
       gioPhutHetHan: ['', Validators.required],
-      soLuong: [0, [Validators.required, Validators.min(1)]],
+      soLuong: [null, [Validators.required, Validators.min(1)]],
       gia_tri_toi_da: [null, [Validators.min(0)]],
       dieuKienapDung: [0, [Validators.required, Validators.min(0)]],
-      giaTriDonToiThieu: [0.01, [Validators.required, Validators.min(0.01)]]
+      giaTriDonToiThieu: [null, [Validators.required, Validators.min(0.01)]]
     });
 
     if (this.voucher) {
       this.populateForm();
     }
+  }
+
+  updatePercent(value: string) {
+    // Chuyển giá trị phần trăm (10) thành thập phân (0.1)
+    const numericValue = value ? parseFloat(value) : null;
+    const decimalValue = numericValue ? numericValue / 100 : null;
+    this.voucherForm.get('giaTriGiam')?.setValue(decimalValue, { emitEvent: false });
+    this.cdr.detectChanges(); // Đảm bảo giao diện cập nhật
   }
 
   populateForm() {
@@ -52,7 +62,7 @@ export class AddVoucherComponent {
 
     this.voucherForm.patchValue({
       maGiamGia: this.voucher.maGiamGia,
-      giaTriGiam: this.voucher.giaTriGiam,
+      giaTriGiam: this.voucher.giaTriGiam, // Giá trị từ DB là thập phân (0.1), pipe sẽ hiển thị 10
       ngayBatDau: this.formatDate(startDateTime),
       gioPhutBatDau: this.formatTime(startDateTime),
       ngayHetHan: this.formatDate(endDateTime),
@@ -135,7 +145,6 @@ export class AddVoucherComponent {
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
     }
-    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {
