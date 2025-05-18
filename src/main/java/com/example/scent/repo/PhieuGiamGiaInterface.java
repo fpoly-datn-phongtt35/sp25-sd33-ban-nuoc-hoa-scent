@@ -40,7 +40,8 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
             "AND (:soLuong IS NULL OR p.soLuong = :soLuong) " +
             "AND (:giaTriToiDa IS NULL OR p.gia_tri_toi_da = :giaTriToiDa) " +
             "AND (:giaTriToiThieu IS NULL OR p.giaTriDonToiThieu = :giaTriToiThieu) " +
-            "AND (:trangThai IS NULL OR p.trangThai = :trangThai)"+
+            "AND (:trangThai IS NULL OR p.trangThai = :trangThai) " +
+            "AND (:dieuKienapDung IS NULL OR p.dieuKienapDung = :dieuKienapDung) " + // Thêm điều kiện lọc dieuKienapDung
             "ORDER BY p.id DESC")
     Page<PhieuGiamGia> searchVouchers(
             @Param("maGiamGia") String maGiamGia,
@@ -51,6 +52,7 @@ public interface PhieuGiamGiaInterface extends JpaRepository<PhieuGiamGia, Integ
             @Param("giaTriToiDa") Integer giaTriToiDa,
             @Param("giaTriToiThieu") Integer giaTriToiThieu,
             @Param("trangThai") Integer trangThai,
+            @Param("dieuKienapDung") Integer dieuKienapDung, // Thêm tham số dieuKienapDung
             Pageable pageable
     );
     boolean existsByMaGiamGiaAndIdNot(String maGiamGia, Integer id);

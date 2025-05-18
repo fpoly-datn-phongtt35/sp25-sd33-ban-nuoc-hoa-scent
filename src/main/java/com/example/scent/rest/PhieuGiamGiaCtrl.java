@@ -324,6 +324,7 @@ private PhieuGiamGiaInterface pggi;
             @RequestParam(required = false) Integer giaTriToiDa,
             @RequestParam(required = false) Integer giaTriToiThieu,
             @RequestParam(required = false) Integer trangThai,
+            @RequestParam(required = false) Integer dieuKienapDung, // Thêm tham số dieuKienapDung
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
@@ -339,6 +340,8 @@ private PhieuGiamGiaInterface pggi;
                 giaTriToiDa,
                 giaTriToiThieu,
                 trangThai,
+                dieuKienapDung, // Truyền tham số dieuKienapDung vào service
+
                 page,
                 size
         );
