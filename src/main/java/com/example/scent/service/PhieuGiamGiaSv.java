@@ -250,6 +250,10 @@ public class PhieuGiamGiaSv {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "⚠️ Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này!");
         }
+        if (phieuGiamGia.getGia_tri_toi_da().compareTo(tongGiaTriDonHang) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "⚠️ Tổng giá trị đơn hàng vượt quá điều kiện để áp dụng mã giảm giá này!");
+        }
 
         String phoneNumberToCheck;
         if (id != null) {

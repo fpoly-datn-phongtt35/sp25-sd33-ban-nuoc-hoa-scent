@@ -413,7 +413,6 @@ public class DonHangCtrl {
             return BigDecimal.ZERO;
         }
     }
-
     private Integer determineNewStatus(DonHang donHang, Integer trangThai, String lyDoHuy) {
         if (trangThai != null) {
             log.info("Using provided status: {}", trangThai);
