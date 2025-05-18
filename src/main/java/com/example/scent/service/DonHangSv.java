@@ -324,6 +324,7 @@ public class DonHangSv {
                 }
 
                 // Tính số tiền giảm
+                // Tính số tiền giảm
                 BigDecimal phanTramGiam = phieuGiamGia.getGiaTriGiam();
                 soTienGiam = thanhTienGoc.multiply(phanTramGiam);
                 if (phieuGiamGia.getGia_tri_toi_da() != null && soTienGiam.compareTo(phieuGiamGia.getGia_tri_toi_da()) > 0) {

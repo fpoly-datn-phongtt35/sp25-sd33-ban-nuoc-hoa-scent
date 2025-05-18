@@ -203,7 +203,6 @@ public class PhieuGiamGiaSv {
         return pggi.findByMaGiamGiaContainingAndGiaTriGiam(maGiamGia, giaTriGiam, pageable);
     }
 
-
     @Transactional(readOnly = true)
     public PhieuGiamGia getDiscountCodeDetails(String code, String sdt, Integer id, BigDecimal tongGiaTriDonHang) {
         logger.info("Checking discount code: code={}, idTaiKhoan={}, sdt={}, tongGiaTriDonHang={}", code, id, sdt, tongGiaTriDonHang);
@@ -254,10 +253,6 @@ public class PhieuGiamGiaSv {
         if (!phoneNumberToCheck.matches("^0[0-9]{9}$")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "⚠️ Số điện thoại không hợp lệ! Phải có 10 chữ số và bắt đầu bằng 0.");
-        }
-        if (tongGiaTriDonHang == null || phieuGiamGia.getGiaTriDonToiThieu().compareTo(tongGiaTriDonHang) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "⚠️ Tổng giá trị đơn hàng không đủ để áp dụng mã giảm giá này!");
         }
 
         logger.info("Checking discount code usage for phone number: {}", phoneNumberToCheck);

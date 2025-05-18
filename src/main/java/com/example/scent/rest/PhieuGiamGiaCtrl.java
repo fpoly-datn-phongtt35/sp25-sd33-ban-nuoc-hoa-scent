@@ -151,6 +151,56 @@ private PhieuGiamGiaInterface pggi;
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    public class DiscountResponse {
+        private Double giaTriGiam;
+        private Double giaTriToiDa;
+        private String ngayBatDau;
+        private String ngayHetHan;
+        private Integer soLuong;
+
+        // Getters và Setters
+        public Double getGiaTriGiam() {
+            return giaTriGiam;
+        }
+
+        public void setGiaTriGiam(Double giaTriGiam) {
+            this.giaTriGiam = giaTriGiam;
+        }
+
+        public Double getGiaTriToiDa() {
+            return giaTriToiDa;
+        }
+
+        public void setGiaTriToiDa(Double giaTriToiDa) {
+            this.giaTriToiDa = giaTriToiDa;
+        }
+
+        public String getNgayBatDau() {
+            return ngayBatDau;
+        }
+
+        public void setNgayBatDau(String ngayBatDau) {
+            this.ngayBatDau = ngayBatDau;
+        }
+
+        public String getNgayHetHan() {
+            return ngayHetHan;
+        }
+
+        public void setNgayHetHan(String ngayHetHan) {
+            this.ngayHetHan = ngayHetHan;
+        }
+
+        public Integer getSoLuong() {
+            return soLuong;
+        }
+
+        public void setSoLuong(Integer soLuong) {
+            this.soLuong = soLuong;
+        }
+    }
+
+    // Sửa phương thức API
     @GetMapping("/check")
     public ResponseEntity<?> getDiscountCodeDetails(
             @RequestParam("code") String code,
@@ -159,7 +209,16 @@ private PhieuGiamGiaInterface pggi;
             @RequestParam(value = "tongGiaTriDonHang", required = false) BigDecimal tongGiaTriDonHang) {
         try {
             PhieuGiamGia phieuGiamGia = pggs.getDiscountCodeDetails(code, sdt, id, tongGiaTriDonHang);
-            return ResponseEntity.ok(phieuGiamGia);
+
+            // Chuyển đổi PhieuGiamGia thành DiscountResponse
+            DiscountResponse response = new DiscountResponse();
+            response.setGiaTriGiam(phieuGiamGia.getGiaTriGiam() != null ? phieuGiamGia.getGiaTriGiam().doubleValue() : null);
+            response.setGiaTriToiDa(phieuGiamGia.getGia_tri_toi_da() != null ? phieuGiamGia.getGia_tri_toi_da().doubleValue() : null);
+            response.setNgayBatDau(phieuGiamGia.getNgayBatDau() != null ? phieuGiamGia.getNgayBatDau().toString() : null);
+            response.setNgayHetHan(phieuGiamGia.getNgayHetHan() != null ? phieuGiamGia.getNgayHetHan().toString() : null);
+            response.setSoLuong(phieuGiamGia.getSoLuong());
+
+            return ResponseEntity.ok(response);
         } catch (ResponseStatusException ex) {
             return ResponseEntity.status(ex.getStatusCode()).body(Map.of(
                     "status", ex.getStatusCode().value(),
