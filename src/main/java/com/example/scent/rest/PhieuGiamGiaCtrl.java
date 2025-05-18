@@ -75,7 +75,22 @@ private PhieuGiamGiaInterface pggi;
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Mã giảm giá đã tồn tại!");
         }
+        LocalDateTime now = LocalDateTime.now(); // Thời gian hiện tại: 18/05/2025, 16:22
 
+        // Xác định trạng thái dựa trên thời gian
+        if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
+            if (now.isAfter(phieuGiamGia.getNgayBatDau().minusSeconds(1)) &&
+                    now.isBefore(phieuGiamGia.getNgayHetHan().plusSeconds(1))) {
+                // Nếu thời gian hiện tại nằm trong khoảng [ngayBatDau, ngayHetHan]
+                phieuGiamGia.setTrangThai(1); // Hoạt động
+            } else {
+                // Nếu thời gian hiện tại nằm ngoài khoảng
+                phieuGiamGia.setTrangThai(0); // Ngừng
+            }
+        } else {
+            // Nếu không có ngày bắt đầu hoặc ngày kết thúc, mặc định trạng thái là Ngừng
+            phieuGiamGia.setTrangThai(0);
+        }
         PhieuGiamGia savedVoucher = pggi.save(phieuGiamGia);
         logger.info("Thêm thành công phiếu giảm giá với mã: {}", savedVoucher.getMaGiamGia());
         return ResponseEntity.status(HttpStatus.CREATED).body(savedVoucher);
@@ -118,15 +133,26 @@ private PhieuGiamGiaInterface pggi;
             }
         }
 
-        // Cập nhật trạng thái dựa trên ngày hết hạn
-        if (phieuGiamGia.getNgayHetHan() != null) {
-            LocalDateTime now = LocalDateTime.now();
+        // Cập nhật trạng thái dựa trên thời gian hiện tại
+        LocalDateTime now = LocalDateTime.now(); // Hiện tại: 18/05/2025 16:32 +07
+        if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
+            if (now.isAfter(phieuGiamGia.getNgayBatDau().minusSeconds(1)) &&
+                    now.isBefore(phieuGiamGia.getNgayHetHan().plusSeconds(1))) {
+                // Nếu thời gian hiện tại nằm trong khoảng [ngayBatDau, ngayHetHan]
+                phieuGiamGia.setTrangThai(1); // Hoạt động
+            } else {
+                // Nếu thời gian hiện tại nằm ngoài khoảng
+                phieuGiamGia.setTrangThai(0); // Ngừng
+            }
+        } else if (phieuGiamGia.getNgayHetHan() != null) {
+            // Nếu chỉ có ngày hết hạn, kiểm tra chỉ với ngày hết hạn
             phieuGiamGia.setTrangThai(phieuGiamGia.getNgayHetHan().isBefore(now) ? 0 : 1);
-            logger.info("Phiếu giảm giá ID: {} trạng thái: {}", id, phieuGiamGia.getTrangThai());
         } else {
-            logger.warn("Ngày hết hạn của phiếu giảm giá ID: {} là null, không cập nhật trạng thái", id);
-            phieuGiamGia.setTrangThai(0); // Mặc định ngưng nếu không có ngày hết hạn
+            // Nếu không có ngày bắt đầu hoặc ngày kết thúc, mặc định trạng thái là Ngừng
+            logger.warn("Ngày bắt đầu và ngày hết hạn của phiếu giảm giá ID: {} là null, đặt trạng thái Ngừng", id);
+            phieuGiamGia.setTrangThai(0);
         }
+        logger.info("Phiếu giảm giá ID: {} trạng thái được đặt là: {}", id, phieuGiamGia.getTrangThai());
 
         // Đặt ID để đảm bảo cập nhật đúng bản ghi
         phieuGiamGia.setId(id);

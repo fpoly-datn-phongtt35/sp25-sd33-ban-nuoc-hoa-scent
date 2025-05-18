@@ -121,8 +121,8 @@ public class PhieuGiamGiaSv {
     public List<PhieuGiamGia> getAll() {
         return pggi.findAll();
     }
-
     public PhieuGiamGia add(PhieuGiamGia phieuGiamGia) {
+        // Kiểm tra ngày bắt đầu và ngày kết thúc
         if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
             if (phieuGiamGia.getNgayBatDau().isAfter(phieuGiamGia.getNgayHetHan())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -130,14 +130,33 @@ public class PhieuGiamGiaSv {
             }
         }
 
-        // Kiểm tra các điều kiện khác nếu cần (ví dụ: mã giảm giá không được trùng)
+        // Kiểm tra mã giảm giá đã tồn tại chưa
         if (pggi.existsByMaGiamGia(phieuGiamGia.getMaGiamGia())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "⚠️ Mã giảm giá đã tồn tại!");
         }
+
+        // Lấy thời gian hiện tại
+        LocalDateTime now = LocalDateTime.now(); // Thời gian hiện tại: 18/05/2025, 16:22
+
+        // Xác định trạng thái dựa trên thời gian
+        if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
+            if (now.isAfter(phieuGiamGia.getNgayBatDau().minusSeconds(1)) &&
+                    now.isBefore(phieuGiamGia.getNgayHetHan().plusSeconds(1))) {
+                // Nếu thời gian hiện tại nằm trong khoảng [ngayBatDau, ngayHetHan]
+                phieuGiamGia.setTrangThai(1); // Hoạt động
+            } else {
+                // Nếu thời gian hiện tại nằm ngoài khoảng
+                phieuGiamGia.setTrangThai(0); // Ngừng
+            }
+        } else {
+            // Nếu không có ngày bắt đầu hoặc ngày kết thúc, mặc định trạng thái là Ngừng
+            phieuGiamGia.setTrangThai(0);
+        }
+
+        // Lưu voucher vào DB
         return pggi.save(phieuGiamGia);
     }
-
 
     @Transactional
     public PhieuGiamGia update(PhieuGiamGia phieuGiamGia) {
