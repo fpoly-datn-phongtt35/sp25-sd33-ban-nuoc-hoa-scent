@@ -104,23 +104,122 @@
   align-items: center;
 }
 
+.order-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .order-actions p {
   font-size: 14px;
   margin: 5px 0;
 }
 
-.order-actions .contact-seller {
+.order-actions .action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.order-actions .retry-payment {
   background-color: #007bff;
   color: #fff;
   border: none;
   padding: 8px 16px;
   border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  flex: 1;
+  min-width: 0;
 }
 
-.order-actions .contact-seller:hover {
-  background-color: #0056b3;
+.order-actions .retry-payment:hover {
+  background-color: #9ea7b0;
+  transform: translateY(-1px);
+}
+
+.order-actions .retry-payment:active {
+  transform: translateY(0);
+}
+
+.order-actions .retry-payment:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.order-actions .cancel-order {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  flex: 1;
+  min-width: 0;
+}
+
+.order-actions .cancel-order:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.order-actions .cancel-order:active {
+  transform: translateY(0);
+}
+
+/* Nút "Trả hàng" chung */
+.return-order-button {
+  background-color: #f39c12; /* Màu cam để phân biệt */
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.return-order-button:hover {
+  background-color: #e08e0b; /* Màu cam đậm hơn khi hover */
+  transform: translateY(-1px);
+}
+
+.return-order-button:active {
+  transform: translateY(0);
+}
+
+/* Căn chỉnh nút "Trả hàng" trong các ngữ cảnh cụ thể */
+.order-actions .return-order-button {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-header .return-order-button {
+  flex: none;
+  min-width: auto;
+  margin-left: 10px;
+}
+
+.order-payment .return-order-button {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-address-form .return-order-button {
+  background-color: #6c757d; /* Màu xám để phân biệt nút "Hủy" trong form */
+  flex: 1;
+  min-width: 0;
+}
+
+.update-address-form .return-order-button:hover {
+  background-color: #5a6268;
 }
 
 /* Order detail page */
@@ -214,7 +313,7 @@
 .status-wrapper {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Căn giữa các bước theo chiều dọc */
+  align-items: center;
   position: relative;
   width: 100%;
 }
@@ -223,13 +322,13 @@
 .status-wrapper::before {
   content: '';
   position: absolute;
-  top: 50%; /* Đặt đường timeline ở giữa icon */
-  transform: translateY(-50%); /* Căn giữa chính xác */
-  left: 0; /* Bắt đầu từ icon đầu tiên */
-  right: 0; /* Kết thúc ở icon cuối cùng */
-  height: 2px; /* Đường mỏng */
-  background: #d3d3d3; /* Màu xám nhạt */
-  z-index: 1; /* Đường timeline ở dưới icon */
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #d3d3d3;
+  z-index: 1;
 }
 
 /* Đường timeline cho các bước đã hoàn thành */
@@ -241,23 +340,23 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #28a745; /* Màu xanh lá cho các bước đã hoàn thành */
+  background: #28a745;
   z-index: 1;
   transition: width 0.5s ease;
 }
 
 /* Điều chỉnh độ dài đường timeline màu xanh dựa trên trạng thái */
 .status-wrapper:has(.status-step:nth-child(1).active)::after {
-  width: 25%; /* Đến giữa icon 1 và 2 */
+  width: 25%;
 }
 .status-wrapper:has(.status-step:nth-child(2).active)::after {
-  width: 50%; /* Đến giữa icon 2 và 3 */
+  width: 50%;
 }
 .status-wrapper:has(.status-step:nth-child(3).active)::after {
-  width: 75%; /* Đến giữa icon 3 và 4 */
+  width: 75%;
 }
 .status-wrapper:has(.status-step:nth-child(4).active)::after {
-  width: 100%; /* Đến icon cuối */
+  width: 100%;
 }
 
 /* Các bước trạng thái */
@@ -266,18 +365,18 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  width: 20%; /* Chia đều cho 5 bước */
+  width: 20%;
   position: relative;
-  z-index: 2; /* Icon ở trên đường timeline */
+  z-index: 2;
 }
 
 .status-step .status-icon {
-  font-size: 28px; /* Kích thước icon */
-  color: #666; /* Màu icon xám mặc định */
-  background: #fff; /* Nền trắng để không bị đè lên đường timeline */
+  font-size: 28px;
+  color: #666;
+  background: #fff;
   border-radius: 50%;
   padding: 8px;
-  border: 2px solid #d3d3d3; /* Viền xám nhạt mặc định */
+  border: 2px solid #d3d3d3;
   transition: all 0.3s ease;
 }
 
@@ -286,7 +385,7 @@
   color: #666;
   margin-top: 10px;
   font-weight: 500;
-  font-family: 'Roboto', sans-serif; /* Font chữ hiện đại */
+  font-family: 'Roboto', sans-serif;
   transition: color 0.3s ease;
 }
 
@@ -300,8 +399,8 @@
 
 /* Các bước đã hoàn thành */
 .status-step.active .status-icon {
-  border-color: #28a745; /* Viền xanh lá cho bước đã hoàn thành */
-  color: #28a745; /* Icon màu xanh lá */
+  border-color: #28a745;
+  color: #28a745;
 }
 
 .status-step.active .status-label {
@@ -315,8 +414,8 @@
 
 /* Bước hiện tại */
 .status-step.current .status-icon {
-  border-color: #28a745; /* Viền xanh lá */
-  color: #28a745; /* Icon màu xanh lá */
+  border-color: #28a745;
+  color: #28a745;
 }
 
 .status-step.current .status-label {
@@ -330,8 +429,8 @@
 
 /* Trạng thái Đã hủy */
 .status-step.cancelled .status-icon {
-  border-color: #dc3545; /* Viền đỏ cho trạng thái hủy */
-  color: #dc3545; /* Icon màu đỏ */
+  border-color: #dc3545;
+  color: #dc3545;
 }
 
 .status-step.cancelled .status-label {
@@ -344,7 +443,7 @@
 }
 
 .status-step.cancelled ~ .status-step.active::before {
-  background: #dc3545 !important; /* Đường timeline màu đỏ nếu hủy */
+  background: #dc3545 !important;
 }
 
 /* Right column (payment and update form) */
@@ -370,6 +469,10 @@
   margin: 0 0 15px;
 }
 
+.payment-detail {
+  margin-bottom: 15px;
+}
+
 .payment-detail p {
   font-size: 15px;
   margin: 8px 0;
@@ -380,20 +483,56 @@
   color: #000;
 }
 
-.cancel-order {
+.order-payment .action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.order-payment .retry-payment {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  flex: 1;
+  min-width: 0;
+}
+
+.order-payment .retry-payment:hover {
+  background-color: #9ea7b0;
+  transform: translateY(-1px);
+}
+
+.order-payment .retry-payment:active {
+  transform: translateY(0);
+}
+
+.order-payment .cancel-order {
   background-color: #dc3545;
   color: #fff;
   border: none;
-  padding: 10px;
+  padding: 8px 16px;
   border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  width: 100%;
-  margin-top: 15px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  flex: 1;
+  min-width: 0;
 }
 
-.cancel-order:hover {
+.order-payment .cancel-order:hover {
   background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.order-payment .cancel-order:active {
+  transform: translateY(0);
 }
 
 /* Update address form */
@@ -552,6 +691,57 @@
   background-color: #0056b3;
 }
 
+/* Form buttons (for rating form) */
+.form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.form-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.form-buttons button:first-child {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.form-buttons button:first-child:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.form-buttons button:first-child:active {
+  transform: translateY(0);
+}
+
+.form-buttons .delete-button {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.form-buttons .delete-button:hover {
+  background-color: #b02a37;
+  transform: translateY(-1px);
+}
+
+.form-buttons .delete-button:active {
+  transform: translateY(0);
+}
+
+.form-buttons button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .order-detail-content {
@@ -585,9 +775,9 @@
 
   .status-wrapper::before {
     width: 2px;
-    height: calc(100% - 40px); /* Điều chỉnh chiều cao timeline */
+    height: calc(100% - 40px);
     top: 20px;
-    left: 14px; /* Căn đường timeline bên trái */
+    left: 14px;
     background: #d3d3d3;
   }
 
@@ -635,56 +825,33 @@
     font-size: 11px;
     margin-left: 10px;
   }
-}
-.form-buttons {
-  display: flex;
-  gap: 10px; /* Space between buttons */
-  margin-top: 10px; /* Space above the buttons */
-}
 
-.form-buttons button {
-  padding: 8px 16px; /* Padding for a comfortable click area */
-  border: none; /* Remove default border */
-  border-radius: 4px; /* Rounded corners */
-  font-size: 14px; /* Readable font size */
-  font-weight: 500; /* Slightly bold text */
-  cursor: pointer; /* Pointer cursor on hover */
-  transition: background-color 0.3s ease, transform 0.1s ease; /* Smooth transitions */
-}
+  .order-actions .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
 
-/* Style for the "Cập nhật đánh giá" or "Gửi đánh giá" button */
-.form-buttons button:first-child {
-  background-color: #007bff; /* Primary blue color */
-  color: #fff; /* White text */
-}
+  .order-actions .retry-payment,
+  .order-actions .cancel-order,
+  .order-actions .return-order-button {
+    width: 100%;
+    text-align: center;
+  }
 
-.form-buttons button:first-child:hover {
-  background-color: #0056b3; /* Darker blue on hover */
-  transform: translateY(-1px); /* Slight lift effect */
-}
+  .order-payment .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
 
-.form-buttons button:first-child:active {
-  transform: translateY(0); /* Reset lift on click */
-}
+  .order-payment .retry-payment,
+  .order-payment .cancel-order,
+  .order-payment .return-order-button {
+    width: 100%;
+  }
 
-/* Style for the "Xóa đánh giá" button */
-.form-buttons .delete-button {
-  background-color: #dc3545; /* Danger red color */
-  color: #fff; /* White text */
-}
-
-.form-buttons .delete-button:hover {
-  background-color: #b02a37; /* Darker red on hover */
-  transform: translateY(-1px); /* Slight lift effect */
-}
-
-.form-buttons .delete-button:active {
-  transform: translateY(0); /* Reset lift on click */
-}
-
-/* Optional: Add a disabled state if needed */
-.form-buttons button:disabled {
-  background-color: #cccccc; /* Gray background */
-  cursor: not-allowed; /* Disabled cursor */
-  opacity: 0.6; /* Slightly faded */
+  .order-header .return-order-button {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
 }

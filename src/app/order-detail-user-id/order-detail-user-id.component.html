@@ -83,11 +83,33 @@
 
       <div class="order-price">
         <div></div>
-        <div class="order-actions">
-          <p><strong>Giảm giá:</strong> - {{ order.soTienGiam | number: '1.0-0' }} VNĐ</p>
-          <p><strong>Thành tiền:</strong> {{ order.tongTien | number: '1.0-0' }} VNĐ</p>
-          <button class="contact-seller">Liên Hệ Người Bán</button>
-        </div>
+     <div class="order-actions">
+  <p><strong>Giảm giá:</strong> - {{ order.soTienGiam | number: '1.0-0' }} VNĐ</p>
+  <p><strong>Thành tiền:</strong> {{ order.tongTien | number: '1.0-0' }} VNĐ</p>
+  <div class="action-buttons">
+    <button
+      *ngIf="order.trangThai === 1 && order.phuongThucThanhToan === 'ck' && !order.paymentConfirmed"
+      class="retry-payment"
+      (click)="retryPayment(order)"
+    >
+      Thanh toán
+    </button>
+    <button
+      *ngIf="order.trangThai === 1"
+      class="cancel-order"
+      (click)="cancelOrder(order.maDonHang)"
+    >
+      Hủy
+    </button>
+    <button
+      *ngIf="order.trangThai === 4"
+      class="return-order-button"
+      (click)="openReturnModal(order)"
+    >
+      Trả hàng
+    </button>
+  </div>
+</div>
       </div>
     </div>
   </div>
@@ -109,13 +131,13 @@
           >
             <i class="fa fa-pencil-alt"></i> Cập nhật địa chỉ
           </button>
-          <button
-            *ngIf="selectedOrder.trangThai === 4"
-            class="return-order-button"
-            (click)="openReturnModal()"
-          >
-            Trả Hàng
-          </button>
+         <button
+      *ngIf="selectedOrder?.trangThai === 4"
+      class="return-order-button"
+      (click)="openReturnModal(selectedOrder)"
+    >
+      Trả hàng
+    </button>
         </div>
         <div class="order-info">
           <div class="order-status">
@@ -420,7 +442,7 @@
               </button>
               <button
                 type="button"
-                class="btn btn-secondary"
+                class="return-order-button"
                 (click)="toggleUpdateAddressForm()"
               >
                 Hủy
@@ -428,22 +450,27 @@
             </div>
           </form>
         </div>
-        <div class="order-payment">
-          <h4>Thanh toán</h4>
-          <div class="payment-detail">
-            <p><strong>Thành tiền:</strong> {{ calculateProductTotal(selectedOrder.chiTietDonHangs) | number: '1.0-0' }} VNĐ</p>
-            <p><strong>Số tiền giảm:</strong> - {{ selectedOrder?.soTienGiam | number: '1.0-0' }} VNĐ</p>
-            <p><strong>Phí vận chuyển:</strong> {{ selectedOrder?.phiVanChuyen | number: '1.0-0' }} VNĐ</p>
-            <p><strong>Tổng tiền:</strong> {{ selectedOrder?.tongTien | number: '1.0-0' }} VNĐ</p>
-          </div>
-          <button
-            *ngIf="selectedOrder?.trangThai === 1"
-            class="cancel-order"
-            (click)="cancelOrder(selectedOrder.maDonHang)"
-          >
-            Hủy Đơn Hàng
-          </button>
-        </div>
+  <div class="order-payment">
+  <h4>Thanh toán</h4>
+  <div class="payment-detail">
+    <p><strong>Giảm giá:</strong> - {{ selectedOrder.soTienGiam | number: '1.0-0' }} VNĐ</p>
+    <p><strong>Thành tiền:</strong> {{ selectedOrder.tongTien | number: '1.0-0' }} VNĐ</p>
+  </div>
+  <button
+    *ngIf="selectedOrder?.trangThai === 1 && selectedOrder.phuongThucThanhToan === 'ck' && !selectedOrder.paymentConfirmed"
+    class="retry-payment"
+    (click)="retryPayment(selectedOrder)"
+  >
+    Thanh toán
+  </button>
+  <button
+    *ngIf="selectedOrder?.trangThai === 1"
+    class="cancel-order"
+    (click)="cancelOrder(selectedOrder.maDonHang)"
+  >
+    Hủy
+  </button>
+</div>
       </div>
     </div>
   </div>

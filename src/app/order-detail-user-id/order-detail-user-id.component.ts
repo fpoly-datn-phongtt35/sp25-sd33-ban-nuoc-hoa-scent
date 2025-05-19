@@ -5,6 +5,7 @@ import { TokenService } from '../service/token.service';
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { DonhangService } from '../service/donhang.service';
+import { MomoPaymentService } from '../service/momoPayment.service'; // Thêm import
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -49,6 +50,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private tokenService: TokenService,
     private donhangService: DonhangService,
+    private momoService: MomoPaymentService, // Thêm service
     private danhGiaService: DanhGiaService,
     private cdRef: ChangeDetectorRef,
     private webSocketService: WebSocketService,
@@ -90,6 +92,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
         const selected = this.orders.find(order => order.maDonHang === parseInt(orderId));
         if (selected) {
           this.selectedOrder = selected;
+          this.checkPaymentStatus(selected); // Kiểm tra trạng thái thanh toán
           this.loadUserReviews();
           this.cdRef.detectChanges();
         } else {
@@ -125,11 +128,13 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     if (orderToUpdate) {
       orderToUpdate.trangThai = trangThai;
       orderToUpdate.statusLabel = this.getStatusLabel(trangThai);
+      orderToUpdate.paymentConfirmed = trangThai === 6; // Cập nhật trạng thái thanh toán
       this.filteredOrders = [...this.orders];
 
       if (this.selectedOrder && this.selectedOrder.maDonHang === idDonHang) {
         this.selectedOrder.trangThai = trangThai;
         this.selectedOrder.statusLabel = this.getStatusLabel(trangThai);
+        this.selectedOrder.paymentConfirmed = trangThai === 6;
         this.loadUserReviews();
       }
 
@@ -150,9 +155,16 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           this.orders = data.map((order: { trangThai: number }) => ({
             ...order,
             statusLabel: this.getStatusLabel(order.trangThai),
+            paymentConfirmed: order.trangThai === 6, // Giả định đã thanh toán nếu trạng thái là 6
           }));
           this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
           this.filteredOrders = [...this.orders];
+          // Kiểm tra trạng thái thanh toán cho các đơn hàng chuyển khoản
+          this.orders.forEach(order => {
+            if (order.trangThai === 1 && order.phuongThucThanhToan === 'ck') {
+              this.checkPaymentStatus(order);
+            }
+          });
           console.log('Dữ liệu đơn hàng:', this.orders);
           resolve();
         },
@@ -170,6 +182,127 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     });
   }
 
+  checkPaymentStatus(order: any): void {
+    if (order.trangThai === 1 && order.phuongThucThanhToan === 'ck') {
+      const momoOrderId = `ORDER_${order.maDonHang}`;
+      this.momoService.checkStatus(momoOrderId).subscribe({
+        next: (res: any) => {
+          order.paymentConfirmed = res.resultCode === 0;
+          if (order.paymentConfirmed) {
+            this.updateOrderStatusToPaid(order.maDonHang);
+          }
+          this.cdRef.detectChanges();
+        },
+        error: () => {
+          order.paymentConfirmed = false;
+          this.cdRef.detectChanges();
+        },
+      });
+    } else {
+      order.paymentConfirmed = order.trangThai === 6;
+      this.cdRef.detectChanges();
+    }
+  }
+
+  retryPayment(order: any): void {
+    if (!order || !order.maDonHang || !order.tongTien) {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Thiếu thông tin để thực hiện thanh toán lại.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    const utf8ToBase64 = (str: string) => btoa(unescape(encodeURIComponent(str)));
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}`;
+
+    const extraData = utf8ToBase64(
+      JSON.stringify({
+        orderId: newMomoOrderId,
+        originalOrderId: order.maDonHang,
+        amount: order.tongTien,
+        orderInfo: `Thanh toán đơn hàng ${order.maDonHang}`,
+      })
+    );
+
+    const momoRequest = {
+      orderId: newMomoOrderId,
+      orderInfo: `Thanh toán đơn hàng ${order.maDonHang}`,
+      amount: order.tongTien,
+      returnUrl: `http://localhost:4200/order-success/${order.maDonHang}?extraData=${extraData}`,
+      notifyUrl: 'http://localhost:8080/api/momo/callback',
+      requestType: 'captureWallet',
+    };
+
+    console.log('Gửi yêu cầu thanh toán MoMo:', momoRequest);
+
+    this.momoService.createPayment(momoRequest).subscribe({
+      next: (res: any) => {
+        if (res?.payUrl) {
+          window.location.href = res.payUrl;
+        } else {
+          Swal.fire({
+            title: 'Lỗi',
+            text: 'Không thể khởi tạo thanh toán. Vui lòng thử lại.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Lỗi khi gọi API MoMo:', err);
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Có lỗi xảy ra khi khởi tạo thanh toán. Vui lòng thử lại.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+        });
+      },
+    });
+  }
+
+  updateOrderStatusToPaid(orderId: number): void {
+    const userInfo = this.tokenService.getUserInfo();
+    const userID = userInfo.UserID;
+    const tenDangNhap = userInfo.sub;
+    const apiUrl = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${orderId}?trangThai=6&userID=${userID}&tenDangNhap=${tenDangNhap}`;
+
+    fetch(apiUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(res => {
+        if (res.ok) {
+          return res.json().then(data => {
+            console.log('Cập nhật trạng thái đơn hàng thành "Đã thanh toán":', data);
+            this.loadOrders(); // Tải lại danh sách đơn hàng
+          });
+        } else {
+          return res.text().then(errorMessage => {
+            console.error('Cập nhật trạng thái thất bại:', errorMessage);
+            Swal.fire({
+              title: 'Lỗi',
+              text: 'Không thể cập nhật trạng thái đơn hàng.',
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
+          });
+        }
+      })
+      .catch(err => {
+        console.error('Lỗi khi gọi API cập nhật trạng thái:', err);
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+        });
+      });
+  }
+
   loadProvinces(): void {
     this.donhangService.getProvinces().subscribe({
       next: (response: { result: { [key: number]: string } }) => {
@@ -180,13 +313,13 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
         console.log('Danh sách tỉnh đã tải:', this.provinces);
         if (this.provinces.length === 0) {
           console.warn('Danh sách tỉnh rỗng, thử tải lại sau 2 giây');
-          setTimeout(() => this.loadProvinces(), 2000); // Retry sau 2 giây
+          setTimeout(() => this.loadProvinces(), 2000);
         }
       },
       error: (error) => {
         console.error('Lỗi khi lấy danh sách tỉnh:', error);
         console.warn('Thử tải lại danh sách tỉnh sau 2 giây');
-        setTimeout(() => this.loadProvinces(), 2000); // Retry sau 2 giây
+        setTimeout(() => this.loadProvinces(), 2000);
       },
     });
   }
@@ -258,40 +391,31 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       maQuan: parseInt(formData.maQuan),
       maPhuong: formData.maPhuong,
     };
-  
+
     this.donhangService.updateOrderAddress(this.selectedOrder.maDonHang, updateData).subscribe({
       next: (response) => {
-        // Gọi lại API getOrders để lấy dữ liệu đầy đủ
         this.userService.getOrders(this.userId).subscribe({
           next: (data) => {
             this.orders = data.map((order: { trangThai: number }) => ({
               ...order,
               statusLabel: this.getStatusLabel(order.trangThai),
+              paymentConfirmed: order.trangThai === 6,
             }));
             this.orders.sort((a, b) => b.maDonHang - a.maDonHang);
             this.filteredOrders = [...this.orders];
-  
-            // Cập nhật lại selectedOrder từ danh sách orders
+
             const updatedOrder = this.orders.find(order => order.maDonHang === this.selectedOrder.maDonHang);
             if (updatedOrder) {
-              this.selectedOrder = {
-                ...this.selectedOrder,
-                ...updatedOrder,
-                statusLabel: this.getStatusLabel(updatedOrder.trangThai),
-              };
-  
-              // Xử lý diaChiGiaoHang
+              this.selectedOrder = { ...this.selectedOrder, ...updatedOrder, statusLabel: this.getStatusLabel(updatedOrder.trangThai) };
               if (updatedOrder.diaChiGiaoHang) {
                 this.selectedOrder.diaChiGiaoHang = updatedOrder.diaChiGiaoHang;
+              } else if (!this.provinces || this.provinces.length === 0) {
+                this.loadProvincesWithRetry();
               } else {
-                if (!this.provinces || this.provinces.length === 0) {
-                  this.loadProvincesWithRetry();
-                } else {
-                  this.processAddressUpdate(updatedOrder);
-                }
+                this.processAddressUpdate(updatedOrder);
               }
             }
-  
+
             this.isUpdateAddressFormVisible = false;
             this.cdRef.detectChanges();
             Swal.fire({
@@ -326,7 +450,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Tải provinces với retry logic
   private loadProvincesWithRetry(attempts: number = 3): void {
     this.donhangService.getProvinces().subscribe({
       next: (response: { result: { [key: number]: string } }) => {
@@ -335,11 +458,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           name: response.result[key],
         }));
         console.log('Danh sách tỉnh sau khi tải lại:', this.provinces);
-  
-        // Kiểm tra xem id: 215 có trong provinces không
-        const province215 = this.provinces.find(p => p.id === 215);
-        console.log('Tỉnh với id 215:', province215);
-  
         if (this.provinces.length === 0 && attempts > 1) {
           console.warn(`Danh sách tỉnh rỗng, thử lại sau 2 giây (còn ${attempts - 1} lần)`);
           setTimeout(() => this.loadProvincesWithRetry(attempts - 1), 2000);
@@ -359,7 +477,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Phương thức xử lý tiếp theo sau khi provinces đã được tải
   private processAddressUpdate(updatedOrder: any): void {
     if (updatedOrder.maTinh) {
       this.donhangService.getDistricts(updatedOrder.maTinh).subscribe({
@@ -368,8 +485,6 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
             id: key,
             name: districtResponse.result[key],
           }));
-          console.log('Danh sách quận:', this.districts);
-
           if (updatedOrder.maQuan) {
             this.donhangService.getWards(updatedOrder.maQuan).subscribe({
               next: (wardResponse: { result: { [key: string]: string } }) => {
@@ -377,11 +492,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
                   id: key,
                   name: wardResponse.result[key],
                 }));
-                console.log('Danh sách phường:', this.wards);
-
                 this.buildDiaChiGiaoHang();
                 this.isUpdateAddressFormVisible = false;
-                this.cdRef.detectChanges(); // Đảm bảo render giao diện
+                this.cdRef.detectChanges();
                 Swal.fire({
                   title: 'Thành công!',
                   text: 'Địa chỉ giao hàng đã được cập nhật.',
@@ -394,7 +507,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
                 console.error('Lỗi khi lấy danh sách phường:', error);
                 this.buildDiaChiGiaoHang();
                 this.isUpdateAddressFormVisible = false;
-                this.cdRef.detectChanges(); // Đảm bảo render giao diện
+                this.cdRef.detectChanges();
                 Swal.fire({
                   title: 'Thành công!',
                   text: 'Địa chỉ giao hàng đã được cập nhật, nhưng không thể tải đầy đủ thông tin phường.',
@@ -406,7 +519,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           } else {
             this.buildDiaChiGiaoHang();
             this.isUpdateAddressFormVisible = false;
-            this.cdRef.detectChanges(); // Đảm bảo render giao diện
+            this.cdRef.detectChanges();
             Swal.fire({
               title: 'Thành công!',
               text: 'Địa chỉ giao hàng đã được cập nhật.',
@@ -420,7 +533,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           console.error('Lỗi khi lấy danh sách quận:', error);
           this.buildDiaChiGiaoHang();
           this.isUpdateAddressFormVisible = false;
-          this.cdRef.detectChanges(); // Đảm bảo render giao diện
+          this.cdRef.detectChanges();
           Swal.fire({
             title: 'Thành công!',
             text: 'Địa chỉ giao hàng đã được cập nhật, nhưng không thể tải đầy đủ thông tin quận.',
@@ -432,7 +545,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     } else {
       this.buildDiaChiGiaoHang();
       this.isUpdateAddressFormVisible = false;
-      this.cdRef.detectChanges(); // Đảm bảo render giao diện
+      this.cdRef.detectChanges();
       Swal.fire({
         title: 'Thành công!',
         text: 'Địa chỉ giao hàng đã được cập nhật.',
@@ -443,55 +556,43 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Phương thức xây dựng lại diaChiGiaoHang
   private buildDiaChiGiaoHang(): void {
-    console.log('Dữ liệu trước khi xây dựng diaChiGiaoHang:');
-    console.log('maTinh:', this.selectedOrder.maTinh);
-    console.log('Provinces:', this.provinces);
-    console.log('maQuan:', this.selectedOrder.maQuan);
-    console.log('Districts:', this.districts);
-    console.log('maPhuong:', this.selectedOrder.maPhuong);
-    console.log('Wards:', this.wards);
-    console.log('diaChiChiTiet:', this.selectedOrder.diaChiChiTiet);
-  
-    // Nếu diaChiGiaoHang từ API đã đúng và không cần xây dựng lại, sử dụng nó
+    console.log('Dữ liệu trước khi xây dựng diaChiGiaoHang:', {
+      maTinh: this.selectedOrder.maTinh,
+      provinces: this.provinces,
+      maQuan: this.selectedOrder.maQuan,
+      districts: this.districts,
+      maPhuong: this.selectedOrder.maPhuong,
+      wards: this.wards,
+      diaChiChiTiet: this.selectedOrder.diaChiChiTiet,
+    });
+
     if (this.selectedOrder.diaChiGiaoHang && !this.isUpdateAddressFormVisible) {
       console.log('Sử dụng diaChiGiaoHang từ API:', this.selectedOrder.diaChiGiaoHang);
       return;
     }
-  
-    // Chuẩn hóa maTinh thành kiểu number để so sánh với provinces
-    const maTinh = typeof this.selectedOrder.maTinh === 'string' 
-      ? parseInt(this.selectedOrder.maTinh, 10) 
+
+    const maTinh = typeof this.selectedOrder.maTinh === 'string'
+      ? parseInt(this.selectedOrder.maTinh, 10)
       : this.selectedOrder.maTinh;
-  
-    // Tìm tên tỉnh, quận, phường
     const province = this.provinces.find(p => p.id === maTinh)?.name || 'Tỉnh không xác định';
     const district = this.districts.find(d => d.id === this.selectedOrder.maQuan?.toString())?.name || '';
     const ward = this.wards.find(w => w.id === this.selectedOrder.maPhuong)?.name || '';
     const diaChiChiTiet = this.selectedOrder.diaChiChiTiet || '';
-  
-    // Xây dựng địa chỉ giao hàng
+
     this.selectedOrder.diaChiGiaoHang = `${diaChiChiTiet}${ward ? ', ' + ward : ''}${district ? ', ' + district : ''}${province ? ', ' + province : ''}`;
     console.log('Địa chỉ giao hàng đã xây dựng:', this.selectedOrder.diaChiGiaoHang);
   }
 
   getStatusLabel(statusCode: number): string {
     switch (statusCode) {
-      case 1:
-        return 'Chờ xác nhận';
-      case 2:
-        return 'Đã xác nhận';
-      case 3:
-        return 'Đang giao';
-      case 4:
-        return 'Hoàn thành';
-      case 5:
-        return 'Đã hủy';
-      case 6:
-        return 'Đã thanh toán';
-      default:
-        return 'Trạng thái không xác định';
+      case 1: return 'Chờ xác nhận';
+      case 2: return 'Đã xác nhận';
+      case 3: return 'Đang giao';
+      case 4: return 'Hoàn thành';
+      case 5: return 'Đã hủy';
+      case 6: return 'Đã thanh toán';
+      default: return 'Trạng thái không xác định';
     }
   }
 
@@ -501,6 +602,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       this.router.navigate(['/app-order-id']);
     } else {
       this.selectedOrder = order;
+      this.checkPaymentStatus(order); // Kiểm tra trạng thái thanh toán khi xem chi tiết
       this.loadUserReviews();
       this.router.navigate(['/app-order-id', order.maDonHang]);
     }
@@ -515,27 +617,19 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
     this.selectedOrder.chiTietDonHangs.forEach((item: any) => {
       if (item.idSanPham) {
-        this.danhGiaService
-          .getUserDanhGia(item.idSanPham, this.userId, this.selectedOrder.maDonHang)
-          .subscribe({
-            next: (danhGia: any) => {
-              if (danhGia) {
-                this.danhGias[item.idSanPham] = {
-                  id: danhGia.id,
-                  rating: danhGia.rating,
-                  comment: danhGia.comment,
-                };
-              } else {
-                this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
-              }
-              this.cdRef.detectChanges();
-            },
-            error: (error) => {
-              console.error(`Lỗi khi lấy đánh giá cho sản phẩm ${item.idSanPham}:`, error);
-              this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
-              this.cdRef.detectChanges();
-            },
-          });
+        this.danhGiaService.getUserDanhGia(item.idSanPham, this.userId, this.selectedOrder.maDonHang).subscribe({
+          next: (danhGia: any) => {
+            this.danhGias[item.idSanPham] = danhGia
+              ? { id: danhGia.id, rating: danhGia.rating, comment: danhGia.comment }
+              : { rating: 0, comment: '' };
+            this.cdRef.detectChanges();
+          },
+          error: (error) => {
+            console.error(`Lỗi khi lấy đánh giá cho sản phẩm ${item.idSanPham}:`, error);
+            this.danhGias[item.idSanPham] = { rating: 0, comment: '' };
+            this.cdRef.detectChanges();
+          },
+        });
       }
     });
   }
@@ -571,17 +665,17 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           if (orderToUpdate) {
             orderToUpdate.trangThai = 5;
             orderToUpdate.statusLabel = this.getStatusLabel(5);
-            orderToUpdate.lyDoHuy = "Khách hàng hủy đơn hàng";
+            orderToUpdate.lyDoHuy = 'Khách hàng hủy đơn hàng';
             this.filteredOrders = [...this.orders];
 
             if (this.selectedOrder && this.selectedOrder.maDonHang === orderId) {
               this.selectedOrder.trangThai = 5;
               this.selectedOrder.statusLabel = this.getStatusLabel(5);
-              this.selectedOrder.lyDoHuy = "Khách hàng hủy đơn hàng";
+              this.selectedOrder.lyDoHuy = 'Khách hàng hủy đơn hàng';
             }
           }
 
-          await this.loadOrders(); // Đồng bộ với server
+          await this.loadOrders();
           this.cdRef.detectChanges();
           Swal.fire({
             title: 'Thành công',
@@ -613,13 +707,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   filterOrders(status: string): void {
     const statusCode = this.keyToStatus[status] ?? 0;
     this.selectedStatus = statusCode;
-
-    if (statusCode === 0) {
-      this.filteredOrders = [...this.orders];
-    } else {
-      this.filteredOrders = this.orders.filter((order) => order.trangThai === statusCode);
-      this.filteredOrders.sort((a, b) => b.maDonHang - a.maDonHang);
-    }
+    this.filteredOrders = statusCode === 0
+      ? [...this.orders]
+      : this.orders.filter(order => order.trangThai === statusCode).sort((a, b) => b.maDonHang - a.maDonHang);
   }
 
   submitDanhGia(productId: number): void {
@@ -644,91 +734,40 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (danhGia.id) {
-      this.danhGiaService.getUserDanhGia(productId, this.userId, this.selectedOrder.maDonHang).subscribe({
-        next: (existingDanhGia: any) => {
-          if (existingDanhGia && existingDanhGia.id === danhGia.id) {
-            const danhGiaDTO = {
-              id: danhGia.id,
-              idSanPham: productId,
-              idTaiKhoan: this.userId,
-              idDonHang: existingDanhGia.idDonHang,
-              rating: danhGia.rating,
-              comment: danhGia.comment,
-            };
+    const danhGiaDTO = {
+      id: danhGia.id,
+      idSanPham: productId,
+      idTaiKhoan: this.userId,
+      idDonHang: this.selectedOrder.maDonHang,
+      rating: danhGia.rating,
+      comment: danhGia.comment,
+    };
 
-            this.danhGiaService.updateDanhGia(danhGia.id, danhGiaDTO).subscribe({
-              next: (res) => {
-                Swal.fire({
-                  title: 'Thành công!',
-                  text: 'Đánh giá của bạn đã được cập nhật.',
-                  icon: 'success',
-                  timer: 1500,
-                  showConfirmButton: false,
-                });
-                this.loadUserReviews();
-              },
-              error: (err) => {
-                const errorMessage = err.error?.message || 'Có lỗi xảy ra khi cập nhật đánh giá.';
-                Swal.fire({
-                  title: 'Lỗi',
-                  text: errorMessage,
-                  icon: 'error',
-                  confirmButtonText: 'OK',
-                });
-              },
-            });
-          } else {
-            Swal.fire({
-              title: 'Lỗi',
-              text: 'Đánh giá không tồn tại hoặc không khớp. Vui lòng thử lại.',
-              icon: 'error',
-              confirmButtonText: 'OK',
-            });
-            this.loadUserReviews();
-          }
-        },
-        error: (err) => {
-          Swal.fire({
-            title: 'Lỗi',
-            text: 'Không thể kiểm tra đánh giá. Vui lòng thử lại.',
-            icon: 'error',
-            confirmButtonText: 'OK',
-          });
-          this.loadUserReviews();
-        },
-      });
-    } else {
-      const danhGiaDTO = {
-        idSanPham: productId,
-        idTaiKhoan: this.userId,
-        idDonHang: this.selectedOrder.maDonHang,
-        rating: danhGia.rating,
-        comment: danhGia.comment,
-      };
+    const action = danhGia.id
+      ? this.danhGiaService.updateDanhGia(danhGia.id, danhGiaDTO)
+      : this.danhGiaService.addDanhGia(danhGiaDTO);
 
-      this.danhGiaService.addDanhGia(danhGiaDTO).subscribe({
-        next: (res) => {
-          Swal.fire({
-            title: 'Thành công!',
-            text: 'Đánh giá của bạn đã được gửi.',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          this.loadUserReviews();
-        },
-        error: (err) => {
-          const errorMessage = err.error?.message || 'Có lỗi xảy ra khi gửi đánh giá.';
-          Swal.fire({
-            title: 'Lỗi',
-            text: errorMessage,
-            icon: 'error',
-            confirmButtonText: 'OK',
-          });
-        },
-      });
-    }
+    action.subscribe({
+      next: (res) => {
+        Swal.fire({
+          title: 'Thành công!',
+          text: danhGia.id ? 'Đánh giá đã được cập nhật.' : 'Đánh giá đã được gửi.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        this.loadUserReviews();
+      },
+      error: (err) => {
+        const errorMessage = err.error?.message || 'Có lỗi xảy ra khi xử lý đánh giá.';
+        Swal.fire({
+          title: 'Lỗi',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonText: 'OK',
+        });
+      },
+    });
   }
 
   deleteDanhGia(productId: number): void {
@@ -778,25 +817,28 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
     });
   }
 
-  openReturnModal(): void {
-    if (this.selectedOrder && this.selectedOrder.maDonHang) {
-      const dialogRef = this.dialog.open(TraHangComponent, {
-        width: '500px',
-        data: { maDonHang: this.selectedOrder.maDonHang }
-      });
+openReturnModal(order?: any): void {
+  // Nếu order được truyền từ danh sách đơn hàng, gán tạm vào selectedOrder
+  const tempSelectedOrder = order || this.selectedOrder;
 
-      dialogRef.afterClosed().subscribe(result => {
-        if (result) {
-          this.loadOrders();
-        }
-      });
-    } else {
-      Swal.fire({
-        title: 'Lỗi',
-        text: 'Không tìm thấy thông tin đơn hàng để trả.',
-        icon: 'error',
-        confirmButtonText: 'OK',
-      });
-    }
+  if (tempSelectedOrder && tempSelectedOrder.maDonHang) {
+    const dialogRef = this.dialog.open(TraHangComponent, {
+      width: '500px',
+      data: { maDonHang: tempSelectedOrder.maDonHang },
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadOrders(); // Làm mới danh sách đơn hàng
+      }
+    });
+  } else {
+    Swal.fire({
+      title: 'Lỗi',
+      text: 'Không tìm thấy thông tin đơn hàng để trả.',
+      icon: 'error',
+      confirmButtonText: 'OK',
+    });
   }
+}
 }
