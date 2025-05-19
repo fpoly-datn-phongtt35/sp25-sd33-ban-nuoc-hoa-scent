@@ -18,8 +18,8 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subscrip
 export class RegisterComponent implements OnInit, OnDestroy {
   registerForm: FormGroup;
   private subscriptions: Subscription[] = [];
-  showPassword: boolean = false; // Biến điều khiển hiển thị/ẩn mật khẩu
-  showConfirmPassword: boolean = false; // Biến điều khiển hiển thị/ẩn xác nhận mật khẩu
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -32,9 +32,27 @@ export class RegisterComponent implements OnInit, OnDestroy {
       email: ['', [Validators.required, Validators.email]],
       sdt: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
       tenDangNhap: ['', [Validators.required, Validators.minLength(3)]],
-      matKhau: ['', [Validators.required, Validators.minLength(6)]],
-      xacNhanMatKhau: ['', Validators.required],
+      matKhau: ['', [Validators.required, Validators.minLength(6), this.passwordStrengthValidator()]],
+      xacNhanMatKhau: ['',  [Validators.required, Validators.minLength(6), this.passwordStrengthValidator()]],
     }, { validators: this.checkPasswords });
+  }
+
+  // Validator tùy chỉnh để kiểm tra độ mạnh của mật khẩu
+  passwordStrengthValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      if (!value) {
+        return null; // Để Validators.required xử lý trường hợp trống
+      }
+
+      const hasUpperCase = /[A-Z]/.test(value);
+      const hasLowerCase = /[a-z]/.test(value);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+
+      const valid = hasUpperCase && hasLowerCase && hasSpecialChar;
+
+      return valid ? null : { passwordStrength: true };
+    };
   }
 
   checkPasswords: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
@@ -97,12 +115,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  // Hàm để bật/ẩn mật khẩu
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
-  // Hàm để bật/ẩn xác nhận mật khẩu
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword = !this.showConfirmPassword;
   }

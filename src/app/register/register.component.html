@@ -45,56 +45,65 @@
       </div>
 
       <div class="form-group password-group">
-        <label for="matKhau">Mật khẩu</label>
-        <div class="password-wrapper">
-          <input
-            [type]="showPassword ? 'text' : 'password'"
-            id="matKhau"
-            placeholder="Nhập mật khẩu"
-            formControlName="matKhau"
-            [class.invalid]="registerForm.get('matKhau')?.touched && registerForm.get('matKhau')?.errors"
-          />
-          <span class="eye-icon" (click)="togglePasswordVisibility()">
-            <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-            </svg>
-          </span>
-        </div>
-        <div *ngIf="registerForm.get('matKhau')?.touched && registerForm.get('matKhau')?.errors" class="error">
-          Mật khẩu phải có ít nhất 6 ký tự.
-        </div>
-      </div>
+  <label for="matKhau">Mật khẩu</label>
+  <div class="password-wrapper">
+    <input
+      [type]="showPassword ? 'text' : 'password'"
+      id="matKhau"
+      placeholder="Nhập mật khẩu"
+      formControlName="matKhau"
+      [class.invalid]="registerForm.get('matKhau')?.touched && registerForm.get('matKhau')?.errors"
+    />
+    <span class="eye-icon" (click)="togglePasswordVisibility()">
+      <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      </svg>
+    </span>
+  </div>
+  <div *ngIf="registerForm.get('matKhau')?.touched && registerForm.get('matKhau')?.errors" class="error">
+    <span *ngIf="registerForm.get('matKhau')?.errors?.['required']">Mật khẩu không được để trống.</span>
+    <span *ngIf="registerForm.get('matKhau')?.errors?.['minlength']">Mật khẩu phải có ít nhất 6 ký tự.</span>
+    <span *ngIf="registerForm.get('matKhau')?.errors?.['passwordStrength']">
+      Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường và một ký tự đặc biệt.
+    </span>
+  </div>
+</div>
 
-      <div class="form-group password-group">
-        <label for="xacNhanMatKhau">Xác nhận mật khẩu</label>
-        <div class="password-wrapper">
-          <input
-            [type]="showConfirmPassword ? 'text' : 'password'"
-            id="xacNhanMatKhau"
-            placeholder="Nhập lại mật khẩu"
-            formControlName="xacNhanMatKhau"
-            [class.invalid]="registerForm.get('xacNhanMatKhau')?.touched && registerForm.hasError('notSame')"
-          />
-          <span class="eye-icon" (click)="toggleConfirmPasswordVisibility()">
-            <svg *ngIf="!showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            <svg *ngIf="showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-            </svg>
-          </span>
-        </div>
-        <div *ngIf="registerForm.get('xacNhanMatKhau')?.touched && registerForm.hasError('notSame')" class="error">
-          Mật khẩu không khớp.
-        </div>
-      </div>
+     <div class="form-group password-group">
+  <label for="xacNhanMatKhau">Xác nhận mật khẩu</label>
+  <div class="password-wrapper">
+    <input
+      [type]="showConfirmPassword ? 'text' : 'password'"
+      id="xacNhanMatKhau"
+      placeholder="Nhập lại mật khẩu"
+      formControlName="xacNhanMatKhau"
+      [class.invalid]="registerForm.get('xacNhanMatKhau')?.touched && (registerForm.get('xacNhanMatKhau')?.errors || registerForm.hasError('notSame'))"
+    />
+    <span class="eye-icon" (click)="toggleConfirmPasswordVisibility()">
+      <svg *ngIf="!showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <svg *ngIf="showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      </svg>
+    </span>
+  </div>
+  <div *ngIf="registerForm.get('xacNhanMatKhau')?.touched" class="error">
+    <span *ngIf="registerForm.get('xacNhanMatKhau')?.errors?.['required']">Xác nhận mật khẩu không được để trống.</span>
+    <span *ngIf="registerForm.get('xacNhanMatKhau')?.errors?.['minlength']">Xác nhận mật khẩu phải có ít nhất 6 ký tự.</span>
+    <span *ngIf="registerForm.get('xacNhanMatKhau')?.errors?.['passwordStrength']">
+      Xác nhận mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường và một ký tự đặc biệt.
+    </span>
+    <span *ngIf="registerForm.hasError('notSame') && !registerForm.get('xacNhanMatKhau')?.errors">Mật khẩu không khớp.</span>
+  </div>
+</div>
 
       <button type="submit" class="register-btn" [disabled]="registerForm.invalid">Đăng Ký</button>
     </form>
