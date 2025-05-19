@@ -30,6 +30,11 @@ export class ChangePasswordModalComponent implements OnDestroy {
   email: string = '';
   username: string = '';
   maskedEmail: string = '';
+  
+  // Variables for show/hide password
+  showOldPassword: boolean = false;
+  showNewPassword: boolean = false;
+  showConfirmNewPassword: boolean = false;
 
   constructor(
     public activeModal: NgbActiveModal,
@@ -52,7 +57,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
             text: 'Không thể lấy thông tin người dùng!',
             icon: 'error',
             confirmButtonText: 'OK',
-            position: 'center', // Centered position
+            position: 'center',
             customClass: {
               popup: 'swal2-centered',
               icon: 'swal2-icon',
@@ -74,7 +79,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
         text: 'Bạn chưa đăng nhập!',
         icon: 'error',
         confirmButtonText: 'OK',
-        position: 'center', // Centered position
+        position: 'center',
         customClass: {
           popup: 'swal2-centered',
           icon: 'swal2-icon',
@@ -94,11 +99,24 @@ export class ChangePasswordModalComponent implements OnDestroy {
   private maskEmail(email: string): string {
     if (!email) return '';
     const [localPart, domain] = email.split('@');
-    if (localPart.length <= 3) return email; // Nếu phần local quá ngắn, không che
+    if (localPart.length <= 3) return email;
     const firstThree = localPart.substring(0, 3);
     const lastTwo = localPart.substring(localPart.length - 2);
-    const maskedPart = '*'.repeat(localPart.length - 5); // Che phần giữa
+    const maskedPart = '*'.repeat(localPart.length - 5);
     return `${firstThree}${maskedPart}${lastTwo}@${domain}`;
+  }
+
+  // Methods for toggling password visibility
+  toggleOldPasswordVisibility(): void {
+    this.showOldPassword = !this.showOldPassword;
+  }
+
+  toggleNewPasswordVisibility(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmNewPasswordVisibility(): void {
+    this.showConfirmNewPassword = !this.showConfirmNewPassword;
   }
 
   ngOnDestroy(): void {
@@ -120,7 +138,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
         text: 'Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt!',
         icon: 'error',
         confirmButtonText: 'Thử lại',
-        position: 'center', // Centered position
+        position: 'center',
         customClass: {
           popup: 'swal2-centered',
           icon: 'swal2-icon',
@@ -143,7 +161,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
         text: 'Mật khẩu xác nhận không khớp!',
         icon: 'error',
         confirmButtonText: 'Thử lại',
-        position: 'center', // Centered position
+        position: 'center',
         customClass: {
           popup: 'swal2-centered',
           icon: 'swal2-icon',
@@ -164,11 +182,10 @@ export class ChangePasswordModalComponent implements OnDestroy {
     this.confirmPasswordInvalid = false;
     this.isLoading = true;
 
-    // Gọi API kiểm tra mật khẩu cũ
     this.accountService.verifyOldPassword(this.username, this.oldPassword).subscribe({
       next: (response) => {
         if (response === 'Mật khẩu cũ hợp lệ') {
-          this.sendOtp(); // Gửi OTP nếu mật khẩu cũ đúng
+          this.sendOtp();
         }
       },
       error: (err) => {
@@ -179,7 +196,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: err.error || 'Mật khẩu cũ không đúng!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -204,7 +221,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -217,11 +234,10 @@ export class ChangePasswordModalComponent implements OnDestroy {
           backdrop: true,
           allowOutsideClick: true,
           didClose: () => {
-            // Đảm bảo modal không đóng sau khi thông báo
-            this.step = 2; // Chuyển sang bước nhập OTP
+            this.step = 2;
             this.startCountdown();
             this.isLoading = false;
-            this.cdr.detectChanges(); // Cập nhật giao diện
+            this.cdr.detectChanges();
           },
         });
       },
@@ -231,13 +247,13 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: err.error || 'Không thể gửi OTP. Vui lòng thử lại!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
             title: 'swal2-title',
             htmlContainer: 'swal2-content',
-            confirmButton: "swal2-confirm",
+            confirmButton: 'swal2-confirm',
           },
           timer: 3000,
           timerProgressBar: true,
@@ -282,7 +298,6 @@ export class ChangePasswordModalComponent implements OnDestroy {
 
     this.accountService.verifyOtp(this.email, this.otp).subscribe({
       next: () => {
-        // Đổi mật khẩu sau khi OTP xác nhận thành công
         this.accountService.changePassword(this.username, this.oldPassword, this.newPassword).subscribe({
           next: (response) => {
             Swal.fire({
@@ -290,7 +305,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
               text: response,
               icon: 'success',
               confirmButtonText: 'OK',
-              position: 'center', // Centered position
+              position: 'center',
               customClass: {
                 popup: 'swal2-centered',
                 icon: 'swal2-icon',
@@ -311,7 +326,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
               text: err.error || 'Không thể đổi mật khẩu. Vui lòng thử lại!',
               icon: 'error',
               confirmButtonText: 'Thử lại',
-              position: 'center', // Centered position
+              position: 'center',
               customClass: {
                 popup: 'swal2-centered',
                 icon: 'swal2-icon',
@@ -337,7 +352,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
           text: err.error || 'OTP không hợp lệ hoặc đã hết hạn!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -358,13 +373,12 @@ export class ChangePasswordModalComponent implements OnDestroy {
   closeModal() {
     console.log('🛑 Attempting to close modal...');
     if (this.activeModal) {
-      this.activeModal.dismiss('cancel'); // Dismiss the modal
+      this.activeModal.dismiss('cancel');
       console.log('✅ Dismiss method called');
     } else {
       console.error('❌ ActiveModal is not available');
     }
 
-    // Backup plan: Remove modal manually using Bootstrap classes
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {
@@ -376,7 +390,7 @@ export class ChangePasswordModalComponent implements OnDestroy {
       }
       document.body.classList.remove('modal-open');
       console.log('✅ Forced modal removal executed');
-      this.cdr.detectChanges(); // Trigger change detection to update UI
+      this.cdr.detectChanges();
     }, 100);
   }
 
@@ -391,6 +405,9 @@ export class ChangePasswordModalComponent implements OnDestroy {
     this.confirmPasswordInvalid = false;
     this.otpInvalid = false;
     this.isLoading = false;
+    this.showOldPassword = false;
+    this.showNewPassword = false;
+    this.showConfirmNewPassword = false;
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
