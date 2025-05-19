@@ -198,32 +198,149 @@ body {
   border-top: 1px solid #eee;
   margin: 1rem 0;
 }
-
+/* Price Filter Section */
+/* Price Filter Section */
 .price-filter {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(145deg, #fff, #f7f1fb);
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.price-filter:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .filter-subtitle {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
-  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4b3f72;
   text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  position: relative;
 }
 
+.filter-subtitle::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, #ff6f91, #d4a5ff);
+  transition: width 0.3s ease;
+}
+
+.price-filter:hover .filter-subtitle::after {
+  width: 60px;
+}
+
+/* Tùy chỉnh mat-slider */
 .price-slider {
   width: 100%;
-  margin: 0.5rem 0;
+  margin: 2.5rem 0;
+  position: relative;
+  padding: 0 15px;
 }
 
+/* Track nền */
+:host ::ng-deep .mat-slider-track-background {
+  background: #f1e7f6 !important;
+  height: 10px !important;
+  border-radius: 5px !important;
+  border: 1px solid #e8d6f0 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Phạm vi giá đã chọn */
+:host ::ng-deep .mat-slider-track-fill {
+  background: linear-gradient(90deg, #ff6f91, #d4a5ff) !important;
+  height: 10px !important;
+  border-radius: 5px !important;
+  transition: width 0.5s ease-out, left 0.5s ease-out !important;
+}
+
+/* Thumb của slider (dạng mũi tên hoặc hình tròn mềm mại) */
+:host ::ng-deep .mat-slider-thumb {
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important; /* Loại bỏ nền mặc định */
+  border: none !important; /* Loại bỏ viền mặc định */
+  box-shadow: 0 4px 15px rgba(255, 111, 145, 0.4) !important;
+  transition: transform 0.3s ease !important;
+  z-index: 2 !important;
+  position: relative !important;
+}
+
+/* Tạo hình mũi tên bằng pseudo-element */
+:host ::ng-deep .mat-slider-thumb::before {
+  content: '';
+  position: absolute;
+  top: -8px; /* Điều chỉnh vị trí */
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(45deg, #ff6f91, #d4a5ff) !important;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) !important; /* Hình tam giác (mũi tên) */
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+:host ::ng-deep .mat-slider-thumb:hover::before {
+  transform: translateX(-50%) rotate(45deg) scale(1.3) !important; /* Phóng to khi hover */
+}
+
+:host ::ng-deep .mat-slider-thumb:focus {
+  outline: none !important;
+  box-shadow: 0 0 12px rgba(255, 111, 145, 0.6) !important;
+}
+
+/* Tooltip hiển thị giá trị trên thumb */
+:host ::ng-deep .mat-slider-thumb-label {
+  transform: translateY(-70%) scale(0.9) !important;
+  background: #4b3f72 !important;
+  color: #fff !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2) !important;
+  white-space: nowrap !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+:host ::ng-deep .mat-slider-thumb-label.show {
+  opacity: 1 !important;
+  transform: translateY(-90%) scale(1) !important;
+}
+
+/* Hiển thị giá trị tổng */
 .price-range {
-  font-size: 0.8125rem;
-  color: #666;
+  font-size: 0.95rem;
+  color: #7f8c8d;
   text-align: center;
+  margin-top: 1.5rem;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
 .price-range strong {
-  color: #007bff;
+  color: #ff6f91;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Best-Selling Products Section */

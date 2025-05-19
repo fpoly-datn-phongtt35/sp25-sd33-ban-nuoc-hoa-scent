@@ -125,20 +125,44 @@
         </div>
         <!-- Danh sách sản phẩm -->
         <div class="product-list" *ngIf="products.length > 0">
-          <div class="product-item" *ngFor="let product of products; trackBy: trackByProduct" (click)="openQuantityModal(product)">
-            <img
-              [src]="product.urlImage || 'assets/placeholder.png'"
-              alt="{{ product.tenSanPham }}"
-              class="product-image"
-            />
-            <div class="product-info">
-              <span class="product-name">{{ product.tenSanPham }}</span>
-              <div class="product-details">
-                <span class="product-volume">{{ product.dungTich }}ml</span>
-                <span class="product-code">Mã: {{ product.idSpct }}</span>
-                <span class="product-code">SL: {{ product.soLuongtonkho }}</span>
+          <div
+            class="product-item"
+            *ngFor="let product of products; trackBy: trackByProduct"
+            [class.disabled]="product.soLuongtonkho === 0"
+            [ngClass]="{'cursor-not-allowed': product.soLuongtonkho === 0}"
+          >
+            <div *ngIf="product.soLuongtonkho > 0" (click)="openQuantityModal(product)">
+              <img
+                [src]="product.urlImage || 'assets/placeholder.png'"
+                alt="{{ product.tenSanPham }}"
+                class="product-image"
+              />
+              <div class="product-info">
+                <span class="product-name">{{ product.tenSanPham }}</span>
+                <div class="product-details">
+                  <span class="product-volume">{{ product.dungTich }}ml</span>
+                  <span class="product-code">Mã: {{ product.idSpct }}</span>
+                  <span class="product-code">SL: {{ product.soLuongtonkho }}</span>
+                </div>
+                <span class="product-price">{{ product.donGia | number }} VNĐ</span>
               </div>
-              <span class="product-price">{{ product.donGia | number }} VNĐ</span>
+            </div>
+            <div *ngIf="product.soLuongtonkho === 0" class="out-of-stock">
+              <img
+                [src]="product.urlImage || 'assets/placeholder.png'"
+                alt="{{ product.tenSanPham }}"
+                class="product-image"
+              />
+              <div class="product-info">
+                <span class="product-name">{{ product.tenSanPham }}</span>
+                <div class="product-details">
+                  <span class="product-volume">{{ product.dungTich }}ml</span>
+                  <span class="product-code">Mã: {{ product.idSpct }}</span>
+                  <span class="product-code">SL: {{ product.soLuongtonkho }}</span>
+                </div>
+                <span class="product-price">{{ product.donGia | number }} VNĐ</span>
+              </div>
+              <span class="out-of-stock-label">Hết hàng</span>
             </div>
           </div>
         </div>

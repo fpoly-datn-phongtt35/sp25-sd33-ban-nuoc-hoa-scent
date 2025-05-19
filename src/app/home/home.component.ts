@@ -11,7 +11,7 @@ import { ThuongHieuService } from '../service/thuonghieu.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { WebSocketService } from '../service/WebSocketService';
-import { BannerService, Banner } from '../service/BannerService'; // Import Banner từ BannerService
+import { BannerService, Banner } from '../service/BannerService';
 
 @Component({
   selector: 'app-home',
@@ -45,7 +45,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   tenNhomHuongs: any[] = [];
   tenThuongHieus: any[] = [];
   quocGias: any[] = [];
-
+  showMinLabel: boolean = false;
+  showMaxLabel: boolean = false;
   isLoading: boolean = false;
   isBestSellingLoading: boolean = false;
 
@@ -127,12 +128,16 @@ export class HomeComponent implements OnInit, OnDestroy {
       error: (err) => console.error('[HomeComponent] Lỗi WebSocket:', err),
     });
 
-    // Tải banner trước, sau đó khởi động auto slide
     this.loadBanners().then(() => {
       this.preloadSlides().then(() => {
         this.startAutoSlide();
       });
     });
+  }
+
+  showThumbLabel(type: string) {
+    if (type === 'min') this.showMinLabel = true;
+    else this.showMaxLabel = true;
   }
 
   ngOnDestroy(): void {
@@ -143,12 +148,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.stopAutoSlide();
   }
 
-  // Tải banner từ API
   loadBanners(): Promise<void> {
     return new Promise((resolve) => {
       this.bannerService.getActiveBanners().subscribe({
         next: (banners: Banner[]) => {
-          
           if (banners && banners.length > 0) {
             this.slides = banners.map((banner) => ({
               banner: {
@@ -157,7 +160,6 @@ export class HomeComponent implements OnInit, OnDestroy {
               },
               loaded: false,
             }));
-            
           } else {
             this.slides = [
               { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+1', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
@@ -170,7 +172,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           resolve();
         },
         error: (err) => {
-          
           this.slides = [
             { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+1', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
             { banner: { id: 0, imageUrl: 'https://placehold.co/1200x360?text=Banner+2', title: '', createdAt: '', updatedAt: '', isActive: 1 } as Banner, loaded: false },
@@ -192,7 +193,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.quocGias = Array.from(new Set(data.map((item: any) => item.quocGia)));
         }
       },
-     
     });
 
     this.nhomHuongService.getNhomHuong().subscribe({
@@ -201,7 +201,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.tenNhomHuongs = Array.from(new Set(data.map((item: any) => item.tenNhomHuong)));
         }
       },
-      
     });
 
     const queryParams = {
@@ -221,7 +220,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         this.categories = Array.from(new Set(data.content.map((item: any) => item.tenDanhMuc)));
       },
-      
     });
   }
 
@@ -254,6 +252,11 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       },
     });
+  }
+
+  hideThumbLabel(type: string) {
+    if (type === 'min') this.showMinLabel = false;
+    else this.showMaxLabel = false;
   }
 
   isNewProduct(createDate: string | Date): boolean {
@@ -352,7 +355,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     return range;
   }
 
-  // Phương thức cho Slider Banner
   startAutoSlide(): void {
     if (this.slides.length > 1) {
       this.slideInterval = setInterval(() => {
@@ -413,20 +415,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       }
       let loadedCount = 0;
       this.slides.forEach((slide, index) => {
-        
         const img = new Image();
         img.src = slide.banner.imageUrl;
         img.onload = () => {
           slide.loaded = true;
           loadedCount++;
-         
           this.cdr.detectChanges();
           if (loadedCount === this.slides.length) {
             resolve();
           }
         };
         img.onerror = () => {
-         
           slide.banner.imageUrl = `https://placehold.co/1200x360?text=Banner+${index + 1}`;
           slide.loaded = true;
           loadedCount++;

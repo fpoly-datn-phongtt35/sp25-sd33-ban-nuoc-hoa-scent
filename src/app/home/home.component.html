@@ -82,8 +82,8 @@
         <div class="filter-group price-filter">
           <h4 class="filter-subtitle">Lọc Theo Giá</h4>
           <mat-slider class="price-slider" [min]="minPrice" [max]="maxPrice" [step]="50000" (change)="filterByPrice()">
-            <input matSliderStartThumb [(ngModel)]="selectedMinPrice">
-            <input matSliderEndThumb [(ngModel)]="selectedMaxPrice">
+            <input matSliderStartThumb [(ngModel)]="selectedMinPrice" (focus)="showThumbLabel('min')" (blur)="hideThumbLabel('min')" />
+            <input matSliderEndThumb [(ngModel)]="selectedMaxPrice" (focus)="showThumbLabel('max')" (blur)="hideThumbLabel('max')" />
           </mat-slider>
           <div class="price-range">
             Giá: <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
