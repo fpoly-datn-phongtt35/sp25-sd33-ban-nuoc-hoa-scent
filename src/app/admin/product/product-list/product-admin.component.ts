@@ -11,6 +11,7 @@ import { SpctService } from '../../../service/spct.service';
 import { TokenService } from '../../../service/token.service';
 import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-product-admin',
@@ -155,6 +156,21 @@ export class ProductAdminComponent implements OnInit {
           console.log('✅ Cập nhật trạng thái SanPham:', response);
           this.loadProducts();
           this.toastr.success(`Đã ${action} sản phẩm.`, 'Thành công');
+          // Nếu chuyển thành "Bán", mở chi tiết sản phẩm và hiển thị thông báo
+          if (newTrangThai === 1) {
+            const product = this.products.find(p => p.idSanPham === id);
+            if (product) {
+              this.viewProductDetails(product); // Mở chi tiết sản phẩm
+              // Hiển thị thông báo SweetAlert2
+              Swal.fire({
+                title: 'Nhắc nhở',
+                text: 'Sản phẩm đã được bật trạng thái bán. Vui lòng kiểm tra và bật trạng thái hoạt động cho các sản phẩm chi tiết (SPCT) nếu cần!',
+                icon: 'info',
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#3085d6',
+              });
+            }
+          }
         },
         error: (error) => {
           console.error('❌ Lỗi khi cập nhật trạng thái:', error);

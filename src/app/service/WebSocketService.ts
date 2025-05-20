@@ -15,6 +15,7 @@ export class WebSocketService {
   private productUpdateSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   private spctUpdateSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   private chatMessageSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  private returnMessageSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null); // Thêm cho trả hàng
   private isConnected: boolean = false;
   private userId: string | null = null;
   private isAdmin: boolean = false;
@@ -32,13 +33,10 @@ export class WebSocketService {
       reconnectDelay: this.reconnectDelay,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: (str) => {
-        
-      },
+      debug: (str) => {},
     });
 
     this.stompClient.onConnect = (frame) => {
-      
       this.isConnected = true;
       this.reconnectAttempts = 0;
       this.setupSubscriptions();
@@ -50,19 +48,16 @@ export class WebSocketService {
 
   connectAdmin(): void {
     if (this.isConnected) {
-      
       return;
     }
 
     this.isAdmin = true;
     this.userId = null;
     this.stompClient.activate();
-   
   }
 
   connect(userId: number): void {
     if (this.isConnected) {
-     
       this.setupSubscriptions();
       return;
     }
@@ -70,12 +65,10 @@ export class WebSocketService {
     this.userId = userId.toString();
     this.isAdmin = false;
     this.stompClient.activate();
-  
   }
 
   connectAdmin2(adminId: number): void {
     if (this.isConnected) {
-     
       this.userId = adminId.toString();
       this.isAdmin = true;
       this.setupSubscriptions();
@@ -85,14 +78,11 @@ export class WebSocketService {
     this.userId = adminId.toString();
     this.isAdmin = true;
     this.stompClient.activate();
-    
   }
 
   private setupSubscriptions(): void {
-   
     this.subscriptions.forEach((sub, destination) => {
       sub.unsubscribe();
-      
     });
     this.subscriptions.clear();
 
@@ -103,13 +93,12 @@ export class WebSocketService {
       this.subscribeToAdminOrders();
       if (this.userId) {
         this.subscribeToChatMessages();
-      } else {
-       
       }
     } else if (this.userId) {
       this.subscribeToUserOrders();
       this.subscribeToUserProductUpdates();
       this.subscribeToChatMessages();
+      this.subscribeToUserReturnUpdates(); // Thêm subscription cho trả hàng
     }
   }
 
@@ -124,10 +113,9 @@ export class WebSocketService {
 
   private subscribeToChatMessages(): void {
     if (!this.userId) {
-      
       return;
     }
-  
+
     const destination = this.isAdmin ? `/topic/admin-messages/${this.userId}` : `/topic/messages/${this.userId}`;
     this.subscribe(destination, this.chatMessageSubject, 'chat message');
   }
@@ -149,44 +137,40 @@ export class WebSocketService {
     this.subscribe('/topic/spctUpdates', this.spctUpdateSubject, 'Spct update');
   }
 
+  private subscribeToUserReturnUpdates(): void {
+    if (!this.userId) return;
+    this.subscribe(`/topic/trahang/${this.userId}`, this.returnMessageSubject, 'user return'); // Subscription cho trả hàng
+  }
+
   private subscribe(destination: string, subject: BehaviorSubject<any>, type: string): void {
     if (!this.stompClient.active) {
-      
       setTimeout(() => this.subscribe(destination, subject, type), 1000);
       return;
     }
 
     if (this.subscriptions.has(destination)) {
-      
       return;
     }
 
-    
     const subscription = this.stompClient.subscribe(destination, (message: IMessage) => {
-     
       this.handleMessage(message, subject, type);
     }, { id: `sub-${type}-${this.userId || 'admin'}` });
 
     this.subscriptions.set(destination, subscription);
-    
   }
 
   private handleMessage(message: IMessage, subject: BehaviorSubject<any>, type: string): void {
     if (!message.body) {
-      
       return;
     }
 
     try {
       const update = JSON.parse(message.body);
-     
       if (type === 'chat message') {
         if (!update || typeof update !== 'object') {
-         
           return;
         }
 
-        // Đảm bảo các trường cần thiết tồn tại
         const normalizedMessage = {
           sender: update.sender || null,
           senderId: update.sender?.id ?? update.senderId ?? null,
@@ -199,38 +183,29 @@ export class WebSocketService {
           isRecalled: update.isRecalled || false,
         };
 
-        // Kiểm tra các trường bắt buộc cho tin nhắn chat
         if (normalizedMessage.senderId === null || !normalizedMessage.content) {
-          
           return;
         }
 
-       
         subject.next(normalizedMessage);
       } else {
-        // Các loại tin nhắn khác (order, inventory, product updates, v.v.)
         subject.next(update);
       }
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   }
 
   private handleErrorsAndEvents(): void {
     this.stompClient.onStompError = (frame) => {
-      
       this.isConnected = false;
       this.handleReconnect();
     };
 
     this.stompClient.onWebSocketClose = (event) => {
-     
       this.isConnected = false;
       this.handleReconnect();
     };
 
     this.stompClient.onWebSocketError = (error) => {
-      
       this.isConnected = false;
       this.handleReconnect();
     };
@@ -239,34 +214,26 @@ export class WebSocketService {
   private handleReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      
       setTimeout(() => {
         if (!this.isConnected) {
           this.stompClient.activate();
         }
       }, this.reconnectDelay);
     } else {
-      
-      // Instead of completing subjects, emit a special message
       this.chatMessageSubject.next({ type: 'error', message: 'Đã đạt tối đa số lần thử kết nối lại' });
     }
   }
 
   private notify_CMError(error: string): void {
-    // Instead of calling error() on subjects, emit an error message
     this.chatMessageSubject.next({ type: 'error', message: error });
   }
 
-  private notifyComplete(): void {
-    // Remove completion of subjects
-  
-  }
+  private notifyComplete(): void {}
 
   disconnect(): void {
     if (this.isConnected) {
       this.subscriptions.forEach((sub, destination) => {
         sub.unsubscribe();
-        
       });
       this.subscriptions.clear();
       this.stompClient.deactivate();
@@ -275,18 +242,15 @@ export class WebSocketService {
       this.userId = null;
       this.isAdmin = false;
       this.pendingMessages = [];
-     
     }
   }
 
   sendChatMessage(senderId: number, receiverId: number | null, message: string): void {
     if (senderId < 1000) {
-      
       return;
     }
 
     if (receiverId !== null && receiverId < 1000) {
-      
       return;
     }
 
@@ -301,23 +265,18 @@ export class WebSocketService {
       let destination: string;
       if (receiverId) {
         destination = `/app/admin-to-user/${senderId}/${receiverId}`;
-       
         this.stompClient.publish({
           destination: destination,
           body: JSON.stringify(chatMessage),
         });
-       
       } else {
         destination = `/app/user-to-admin/${senderId}`;
-       
         this.stompClient.publish({
           destination: destination,
           body: JSON.stringify(chatMessage),
         });
-        
       }
     } else {
-     
       if (isPlatformBrowser(this.platformId)) {
         this.pendingMessages.push({ senderId, receiverId, message });
         localStorage.setItem('pendingMessages', JSON.stringify(this.pendingMessages));
@@ -327,7 +286,6 @@ export class WebSocketService {
 
   private resendPendingMessages(): void {
     if (!isPlatformBrowser(this.platformId)) {
-     
       return;
     }
 
@@ -364,6 +322,10 @@ export class WebSocketService {
 
   getChatMessages(): Observable<any> {
     return this.chatMessageSubject.asObservable();
+  }
+
+  getReturnMessages(): Observable<any> { // Thêm phương thức để lấy thông báo trả hàng
+    return this.returnMessageSubject.asObservable();
   }
 
   isWebSocketConnected(): boolean {

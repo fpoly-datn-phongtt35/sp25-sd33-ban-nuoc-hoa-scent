@@ -280,7 +280,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
   // Các phương thức khác (giữ nguyên)
   refreshProducts(): void {
-    console.log('Manually refreshing product list...');
+   
     this.loadAllProducts();
   }
 
@@ -289,15 +289,15 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     const newTrangThai = update.trangThai;
 
     if (!spctId || newTrangThai === undefined) {
-      console.error('Invalid Spct Update: Missing idSpct or trangThai', update);
+    
       return;
     }
 
-    console.log(`Updating Spct ID: ${spctId} to trangThai: ${newTrangThai}`);
+  console.log(`Updating Spct ID: ${spctId} to trangThai: ${newTrangThai}`);
 
     this.allProducts = this.allProducts.map(product => {
       if (product.idSpct === spctId) {
-        console.log(`Found matching Spct ID: ${spctId}, updating trangThai to ${newTrangThai}`);
+       
         return { ...product, trangThai: newTrangThai };
       }
       return product;
@@ -320,31 +320,24 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const statusText = newTrangThai === 1 ? 'Đang bán' : 'Ngừng bán';
-    Swal.fire({
-      icon: 'info',
-      title: 'Cập nhật trạng thái sản phẩm chi tiết',
-      text: `Sản phẩm chi tiết (ID: ${spctId}) đã được cập nhật trạng thái: ${statusText}.`,
-      timer: 2000,
-      showConfirmButton: false,
-    });
+  
   }
 
   private handleProductUpdate(update: any): void {
-    console.log('Processing Product Update:', update);
+    
     const productId = update.id;
     const newTrangThai = update.trangThai;
 
     if (!productId || newTrangThai === undefined) {
-      console.error('Invalid Product Update: Missing id or trangThai', update);
+      
       return;
     }
 
-    console.log(`Updating products with idSanPham: ${productId} to trangThai: ${newTrangThai}`);
-    console.log('Products before update:', this.products);
+  
 
     this.allProducts = this.allProducts.map(product => {
       if (product.idSanPham === productId) {
-        console.log(`Updating Spct ID: ${product.idSpct} for product ID: ${product.idSanPham}`);
+       
         return { ...product, trangThai: newTrangThai };
       }
       return product;
@@ -365,13 +358,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const statusText = newTrangThai === 1 ? 'Đang bán' : 'Ngừng bán';
-    Swal.fire({
-      icon: 'info',
-      title: 'Cập nhật trạng thái sản phẩm',
-      text: `Sản phẩm (ID: ${productId}) và các sản phẩm chi tiết liên quan đã được cập nhật trạng thái: ${statusText}.`,
-      timer: 2000,
-      showConfirmButton: false,
-    });
+   
   }
 
   trackByProduct(index: number, product: any): number {
@@ -404,7 +391,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     return new Promise((resolve, reject) => {
       this.vietQRService.generateQRCode(vietQRData).subscribe({
         next: (response: any) => {
-          console.log('Response từ API VietQR:', response);
+          
           if (response && response.code === '00' && response.data && response.data.qrDataURL) {
             resolve(response.data.qrDataURL);
           } else {
@@ -650,9 +637,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       ),
     ].sort();
 
-    console.log('Danh sách Nhóm Hương:', this.nhomHuongList);
-    console.log('Danh sách Danh Mục:', this.danhMucList);
-    console.log('Danh sách Thương Hiệu:', this.thuongHieuList);
+ 
   }
 
   filterProducts(): void {
@@ -879,15 +864,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   increaseQuantity(index: number): void {
     const item = this.currentOrder.chiTietDonHangs[index];
     const product = this.allProducts.find(p => p.idSpct === item.idSpct);
-    if (product.trangThai !== 1) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: `Sản phẩm "${item.tenSanPham}" hiện không khả dụng để bán!`,
-      });
-      this.removeProduct(index);
-      return;
-    }
+  
 
     item.soLuong++;
     item.thanhTien = item.donGia * item.soLuong;
@@ -934,7 +911,18 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       (response) => {
         this.orderStateService.updateState({ isLoading: false });
         console.log('Chi tiết mã giảm giá:', response);
-  
+        if (!response || response.trangThai !== 1) { // Giả sử trangThai = 1 là hoạt động
+          this.currentOrder.maGiamGia = null;
+          this.orderStateService.updateState({
+            discountDetails: null,
+            totalAfterDiscount: undefined,
+            discountAmount: 0,
+            discountMessage: 'Mã giảm giá không hoạt động !',
+            orders: this.orders,
+          });
+          this.cdr.detectChanges();
+          return;
+        }
         // Kiểm tra điều kiện áp dụng (online/offline)
         if (response.dieuKienapDung !== 0) {
           this.currentOrder.maGiamGia = null;

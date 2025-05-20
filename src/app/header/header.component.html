@@ -5,7 +5,6 @@
   <nav class="navbar">
     <a routerLink="/">Trang Chủ</a>
     <a routerLink="/app-gioithieu">Giới thiệu</a>
-    <!-- Thanh tìm kiếm chỉ hiển thị trên trang chủ -->
     <div class="search-box" *ngIf="isHomePage">
       <input
         type="text"
@@ -16,6 +15,10 @@
     </div>
   </nav>
   <div class="header-actions">
+    <a class="icon-link" (click)="toggleNotification()">
+      <i class="fas fa-bell"></i>
+      <span class="notification-badge" *ngIf="getUnreadCount() > 0">{{ getUnreadCount() }}</span>
+    </a>
     <a class="icon-link" (click)="toggleShoppingCart()">
       <i class="bi bi-cart"></i>
       <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
@@ -43,5 +46,13 @@
   <div class="shopping-cart-container">
     <span class="close-btn" (click)="closeShoppingCart()"><i class="bi bi-x-lg"></i></span>
     <app-shopping-cart></app-shopping-cart>
+  </div>
+</div>
+
+<!-- Popup thông báo -->
+<div class="notification-popup" [ngClass]="{'show': isNotificationOpen}">
+  <div class="notification-container">
+    <span class="close-btn" (click)="closeNotification()"><i class="bi bi-x-lg"></i></span>
+    <app-thongbao></app-thongbao> <!-- Đảm bảo component được render -->
   </div>
 </div>

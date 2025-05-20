@@ -1,0 +1,76 @@
+.notification-content {
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 300px; /* Định width cố định để giao diện đồng nhất */
+  font-family: 'Arial', sans-serif;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.clear-btn:hover {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.no-notifications {
+  padding: 16px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.3s;
+}
+
+.notification-item:hover {
+  background-color: #f1f3f5;
+}
+
+.notification-item p {
+  margin: 0;
+  color: #212529;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.notification-item small {
+  display: block;
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Thêm icon cho thông báo */
+.notification-item::before {
+  content: '📩'; /* Biểu tượng thư */
+  margin-right: 8px;
+  vertical-align: middle;
+}
