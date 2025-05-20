@@ -182,7 +182,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           next: (data: any) => {
             if (data && data.length > 0) {
               this.product = { ...data[0] };
-               
+               console.log('datâ',this.product)
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }

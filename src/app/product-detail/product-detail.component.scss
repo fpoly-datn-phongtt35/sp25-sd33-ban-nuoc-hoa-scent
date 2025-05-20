@@ -92,11 +92,21 @@
     background-color: #fff;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 14px;
 
     &.selected {
       background-color: #007bff;
       color: white;
       border-color: #007bff;
+
+      .stock-label {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
     }
 
     &.disabled-volume {
@@ -107,18 +117,34 @@
     &:disabled {
       cursor: not-allowed;
     }
+
+    .stock-label {
+      background-color: #f1f1f1;
+      color: #555;
+      padding: 2px 6px;
+      font-size: 10px;
+      border-radius: 10px;
+      line-height: 1;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+
+      &.low-stock {
+        background-color: #ff9800;
+        color: white;
+      }
+    }
   }
 
   .out-of-stock-label {
     position: absolute;
-    top: -10px;
-    left: 5px;
+    top: -8px;
+    right: 5px;
     background-color: rgba(255, 0, 0, 0.8);
     color: white;
-    padding: 2px 5px;
+    padding: 2px 6px;
     font-size: 10px;
     font-weight: bold;
-    border-radius: 2px;
+    border-radius: 10px;
     z-index: 1;
   }
 }

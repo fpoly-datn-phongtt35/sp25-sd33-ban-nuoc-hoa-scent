@@ -129,6 +129,7 @@ export class OrderComponent implements OnInit, OnDestroy {
 
   private loadSelectedProducts() {
     this.selectedProducts = this.cartService.getSelectedCartItems();
+    console.log('product',this.selectedProducts)
     if (this.selectedProducts.length === 0) {
       Swal.fire({
         icon: 'warning',
@@ -589,15 +590,48 @@ private handleDiscountError(message: string) {
   }
 
   updateQuantity(index: number, change: number) {
-    const newQty = this.selectedProducts[index].quantity + change;
-    if (newQty < 1) return this.removeProduct(index);
-
+    const product = this.selectedProducts[index];
+  
+    // Ensure product exists
+    if (!product) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Sản phẩm không tồn tại!',
+        confirmButtonText: 'OK',
+        customClass: { confirmButton: 'btn btn-primary' }
+      });
+      return;
+    }
+  
+    const newQty = product.quantity + change;
+  
+    // Check if new quantity is less than 1
+    if (newQty < 1) {
+      return this.removeProduct(index);
+    }
+  
+    // Check if new quantity exceeds stock
+    if (newQty > product.product.soLuongTonKho) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Không đủ hàng',
+        text: `Sản phẩm ${product.product.tenSanPham} chỉ còn số lượng là ${product.product.soLuongTonKho} trong kho!`,
+        confirmButtonText: 'OK',
+        customClass: { confirmButton: 'btn btn-primary' }
+      });
+      return;
+    }
+  
+    // Update quantity if within stock limits
     this.selectedProducts[index].quantity = newQty;
     this.orderData.chiTietDonHangs[index].quantity = newQty;
     this.cartService.setSelectedCartItems([...this.selectedProducts]);
     this.calculateTotals();
     this.tinhPhiVanChuyen();
-    if (this.isDiscountApplied) this.onDiscountCodeEntered(this.orderData.maGiamGia!);
+    if (this.isDiscountApplied && this.orderData.maGiamGia) {
+      this.onDiscountCodeEntered(this.orderData.maGiamGia);
+    }
   }
 
   removeProduct(index: number) {

@@ -28,7 +28,7 @@ export class HeaderComponent implements OnInit {
   isHomePage: boolean = true;
   cartItemCount: number = 0;
   isNotificationOpen: boolean = false; // Khởi tạo là false
-
+  isOrderPage: boolean = false;
   constructor(
     private router: Router,
     private tokenService: TokenService,
@@ -52,6 +52,7 @@ export class HeaderComponent implements OnInit {
 
   checkRoute(): void {
     this.isHomePage = this.router.url === '/';
+    this.isOrderPage = this.router.url === '/app-order';
   }
 
   toggleShoppingCart() {

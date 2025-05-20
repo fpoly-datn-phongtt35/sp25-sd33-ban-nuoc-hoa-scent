@@ -4,7 +4,18 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+.error-message {
+  color: #dc3545; /* Màu đỏ */
+  font-weight: 500; /* Chữ đậm vừa phải */
+  text-align: center; /* Căn giữa */
+  white-space: normal; /* Cho phép xuống dòng tự động */
+  padding: 8px 0; /* Khoảng cách trên dưới */
+  margin: 5px 0; /* Khoảng cách ngoài */
+  font-size: 14px; /* Kích thước chữ vừa phải */
+  display: inline-block; /* Hiển thị trên cùng dòng với bảng */
+  width: 100%; /* Đảm bảo chiếm toàn bộ chiều rộng */
+  box-sizing: border-box; /* Bao gồm padding trong chiều rộng */
+}
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;

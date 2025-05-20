@@ -19,7 +19,7 @@
       <i class="fas fa-bell"></i>
       <span class="notification-badge" *ngIf="getUnreadCount() > 0">{{ getUnreadCount() }}</span>
     </a>
-    <a class="icon-link" (click)="toggleShoppingCart()">
+    <a class="icon-link" *ngIf="!isOrderPage" (click)="toggleShoppingCart()">
       <i class="bi bi-cart"></i>
       <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
     </a>

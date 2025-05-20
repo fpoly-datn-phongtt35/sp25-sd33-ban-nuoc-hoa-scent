@@ -178,8 +178,9 @@
         <div class="cart-list" *ngIf="currentOrder.chiTietDonHangs.length > 0">
           <div class="cart-item" *ngFor="let item of currentOrder.chiTietDonHangs; let i = index; trackBy: trackByCartItem">
             <div class="cart-item-info">
-              <span class="cart-item-name">{{ item.tenSanPham }} ({{ item.dungTich }}ml)</span>
-              <span class="cart-item-price">{{ item.thanhTien | number }} VNĐ</span>
+              <span class="cart-item-name">{{ item.tenSanPham }}</span>
+              <span>Dung tích:{{ item.dungTich }}ml</span>
+              <span class="cart-item-price">{{ item.donGia | number }} VNĐ</span>
             </div>
             <div class="cart-item-actions">
               <div class="quantity-control">

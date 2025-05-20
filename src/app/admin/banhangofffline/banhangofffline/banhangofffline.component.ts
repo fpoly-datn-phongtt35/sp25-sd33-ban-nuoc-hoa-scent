@@ -865,7 +865,18 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     const item = this.currentOrder.chiTietDonHangs[index];
     const product = this.allProducts.find(p => p.idSpct === item.idSpct);
   
-
+    // Kiểm tra nếu sản phẩm tồn tại và số lượng muốn tăng vượt quá tồn kho
+    if (product && item.soLuong + 1 > product.soLuongtonkho) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: `Số lượng tồn kho của sản phẩm ${product.tenSanPham} chỉ còn ${product.soLuongtonkho}! Không thể thêm nữa.`,
+        confirmButtonText: 'Đóng',
+      });
+      return; // Dừng hàm, không tăng số lượng
+    }
+  
+    // Nếu không vượt quá tồn kho, tiến hành tăng số lượng
     item.soLuong++;
     item.thanhTien = item.donGia * item.soLuong;
     this.orderStateService.updateState({ orders: this.orders });

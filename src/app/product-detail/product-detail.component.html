@@ -27,6 +27,9 @@
           (click)="volume.soLuongTonKho > 0 ? selectVolume(volume) : null"
         >
           {{ volume.dungTich }}ml - {{ volume.donGia | number }}đ
+          <span class="stock-label" [ngClass]="{'low-stock': volume.soLuongTonKho <= 5 && volume.soLuongTonKho > 0}">
+            sl:{{ volume.soLuongTonKho }} 
+          </span>
           <span *ngIf="volume.soLuongTonKho <= 0" class="out-of-stock-label">Hết hàng</span>
         </button>
       </div>
