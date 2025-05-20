@@ -5,6 +5,26 @@ import { CommonModule } from '@angular/common';
 import { HeaderComponent } from "../header/header.component";
 import { TokenService } from '../service/token.service';
 import { DonhangService } from '../service/donhang.service';
+import { HttpClient } from '@angular/common/http';
+
+interface SanPhamInfoDTO2 {
+  idSanPham: number;
+  tenSanPham: string;
+  donGia: number;
+  imageURL: string | null;
+  tenThuongHieu: string;
+  tenDanhMuc: string;
+  moTaHuongDau: string;
+  moTaHuongGiua: string;
+  moTaHuongCuoi: string;
+  idNhomHuong: number;
+  tenNhomHuong: string;
+  quocGia: string;
+  trangThai: number;
+  soLuongTonKho: number;
+  createDate: string;
+  totalSold: number;
+}
 
 @Component({
   selector: 'app-order-success',
@@ -21,6 +41,9 @@ export class OrderSuccessComponent implements OnInit {
   orderInfo: string = '';
   extraOrderData: any;
   ngayTao: string | null = null;
+  isUpdatingStatus: boolean = false;
+  errorMessage: string | null = null;
+  topSellingProducts: SanPhamInfoDTO2[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -28,23 +51,32 @@ export class OrderSuccessComponent implements OnInit {
     private momoService: MomoPaymentService,
     private tokenService: TokenService,
     private donhangService: DonhangService,
+    private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.orderId = this.route.snapshot.paramMap.get('orderId');
     console.log('Order ID từ URL:', this.orderId);
-    const queryParams = this.route.snapshot.queryParamMap;
-    const extraDataEncoded = queryParams.get('extraData');
 
-    // Lấy ngayTao trước khi xử lý paymentStatus
+    // Fetch top-selling products
+    this.fetchTopSellingProducts();
+
     if (this.orderId) {
-      this.donhangService.getOrderDetails(parseInt(this.orderId)).subscribe({
+      const orderIdNum = parseInt(this.orderId);
+      if (isNaN(orderIdNum)) {
+        console.error('❌ Order ID không hợp lệ:', this.orderId);
+        this.errorMessage = 'Mã đơn hàng không hợp lệ.';
+        this.cdr.detectChanges();
+        return;
+      }
+
+      this.donhangService.getOrderDetails(orderIdNum).subscribe({
         next: (order: any) => {
           console.log('Toàn bộ dữ liệu order từ API:', order);
           if (Array.isArray(order) && order.length > 0) {
             this.ngayTao = order[0].ngayTao || null;
-          } else {
+          } else if (order && typeof order === 'object') {
             this.ngayTao = order.ngayTao || null;
           }
           if (!this.ngayTao) {
@@ -52,15 +84,23 @@ export class OrderSuccessComponent implements OnInit {
           } else {
             console.log('Ngày tạo sau khi gán:', this.ngayTao);
           }
-          this.cdr.detectChanges(); // Cập nhật giao diện ngay khi có ngayTao
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('❌ Lỗi khi lấy thông tin đơn hàng:', err);
+          this.errorMessage = 'Không thể lấy thông tin đơn hàng. Vui lòng thử lại sau.';
           this.ngayTao = null;
           this.cdr.detectChanges();
         }
       });
+    } else {
+      this.errorMessage = 'Mã đơn hàng không tồn tại.';
+      this.cdr.detectChanges();
+      return;
     }
+
+    const queryParams = this.route.snapshot.queryParamMap;
+    const extraDataEncoded = queryParams.get('extraData');
 
     if (extraDataEncoded) {
       try {
@@ -82,17 +122,20 @@ export class OrderSuccessComponent implements OnInit {
               this.updateOrderStatusToPaid();
             } else {
               this.paymentStatus = 'fail';
+              this.errorMessage = 'Thanh toán thất bại. Vui lòng thử lại.';
             }
-            this.cdr.detectChanges(); // Cập nhật giao diện sau khi thay đổi paymentStatus
+            this.cdr.detectChanges();
           },
           error: () => {
             this.paymentStatus = 'fail';
+            this.errorMessage = 'Có lỗi khi kiểm tra trạng thái thanh toán.';
             this.cdr.detectChanges();
           }
         });
       } catch (err) {
         console.error('❌ Lỗi giải mã extraData:', err);
         this.paymentStatus = 'fail';
+        this.errorMessage = 'Dữ liệu thanh toán không hợp lệ.';
         this.cdr.detectChanges();
       }
     } else {
@@ -101,37 +144,57 @@ export class OrderSuccessComponent implements OnInit {
     }
   }
 
+  // Method to fetch top-selling products
+  fetchTopSellingProducts() {
+    this.http.get<SanPhamInfoDTO2[]>('http://localhost:8080/rest/san-pham/top-selling-products').subscribe({
+      next: (products) => {
+        this.topSellingProducts = products;
+        console.log('Top-selling products:', this.topSellingProducts);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('❌ Error fetching top-selling products:', err);
+        this.errorMessage = 'Không thể tải danh sách sản phẩm bán chạy.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // New method to navigate to product details
+  viewProductDetails(productId: number) {
+    this.router.navigate(['/detail', productId]);
+  }
+
   updateOrderStatusToPaid() {
     if (!this.orderId) {
       console.error('❌ orderId không tồn tại');
+      this.errorMessage = 'Mã đơn hàng không tồn tại.';
+      this.cdr.detectChanges();
       return;
     }
+
+    this.isUpdatingStatus = true;
+    this.cdr.detectChanges();
 
     const userInfo = this.tokenService.getUserInfo();
     const userID = userInfo.UserID;
     const tenDangNhap = userInfo.sub;
-    console.log('tendangnhap:', tenDangNhap + '\n' + 'userId:', userID);
+    console.log('tendangnhap:', tenDangNhap, '\nuserId:', userID);
+
     const apiUrl = `http://localhost:8080/rest/don-hang/capnhat-trangthai/${this.orderId}?trangThai=6&userID=${userID}&tenDangNhap=${tenDangNhap}`;
 
-    fetch(apiUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
+    this.http.put(apiUrl, {}).subscribe({
+      next: (data) => {
+        console.log('✅ Đã cập nhật trạng thái đơn hàng thành "Đã thanh toán"', data);
+        this.isUpdatingStatus = false;
+        this.cdr.detectChanges();
       },
-    })
-    .then((res) => {
-      if (res.ok) {
-        return res.json().then((data) => {
-          console.log('✅ Đã cập nhật trạng thái đơn hàng thành "Đã thanh toán"', data);
-        });
-      } else {
-        return res.text().then((errorMessage) => {
-          console.error('❌ Cập nhật trạng thái thất bại:', errorMessage);
-        });
+      error: (err) => {
+        console.error('❌ Lỗi khi gọi API cập nhật trạng thái:', err);
+        this.isUpdatingStatus = false;
+        this.errorMessage = 'Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại.';
+        this.cdr.detectChanges();
       }
-    })
-    .catch((err) => {
-      console.error('❌ Lỗi khi gọi API cập nhật trạng thái:', err);
     });
   }
 
@@ -144,12 +207,16 @@ export class OrderSuccessComponent implements OnInit {
       this.router.navigate(['/app-order-id', this.orderId]);
     } else {
       console.error('❌ No Order ID provided.');
+      this.errorMessage = 'Mã đơn hàng không tồn tại.';
+      this.cdr.detectChanges();
     }
   }
 
   retryPayment() {
     if (!this.orderId || !this.amount || !this.orderInfo) {
       console.warn('❗ Thiếu dữ liệu để tạo lại thanh toán');
+      this.errorMessage = 'Thiếu thông tin để thực hiện thanh toán lại.';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -184,10 +251,14 @@ export class OrderSuccessComponent implements OnInit {
           window.location.href = res.payUrl;
         } else {
           console.error('❌ Không nhận được payUrl từ MoMo');
+          this.errorMessage = 'Không thể tạo thanh toán. Vui lòng thử lại.';
+          this.cdr.detectChanges();
         }
       },
       error: (err) => {
         console.error('❌ Lỗi khi gọi MoMo:', err);
+        this.errorMessage = 'Có lỗi khi tạo thanh toán. Vui lòng thử lại.';
+        this.cdr.detectChanges();
       },
     });
   }

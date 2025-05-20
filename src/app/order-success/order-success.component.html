@@ -1,38 +1,66 @@
 <app-header></app-header>
-<div class="order-success-container" *ngIf="paymentStatus === 'checking'">
+
+<!-- Top Selling Products Section -->
+
+
+<!-- Existing Template Code -->
+<div class="order-success-container" *ngIf="errorMessage">
+  <h1>⚠️ Có lỗi xảy ra</h1>
+  <p>{{ errorMessage }}</p>
+  <button class="btn btn-secondary" (click)="goToHomePage()">Quay về Trang Chủ</button>
+</div>
+
+<div class="order-success-container" *ngIf="!errorMessage && paymentStatus === 'checking'">
   <h1>🔄 Đang kiểm tra trạng thái thanh toán...</h1>
   <p>Vui lòng chờ trong giây lát...</p>
 </div>
 
-<div class="order-success-container" *ngIf="paymentStatus === 'success'">
+<div class="order-success-container" *ngIf="!errorMessage && paymentStatus === 'success'">
   <h1>✅ Đặt Hàng Thành Công!</h1>
   <p>Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đang được xử lý và sẽ được giao sớm.</p>
   <p *ngIf="ngayTao">Ngày tạo: {{ ngayTao | date:'dd/MM/yyyy HH:mm:ss' }}</p>
-  <p><strong>Mã đơn hàng:</strong>  {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
+  <p><strong>Mã đơn hàng:</strong> {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
   <div class="buttons">
-    <button class="btn btn-primary" (click)="goToHomePage()">Trang Chủ</button>
-    <button class="btn btn-secondary" (click)="viewOrderDetails()">Xem Chi Tiết Đơn Hàng</button>
+    <button class="btn btn-primary" (click)="goToHomePage()" [disabled]="isUpdatingStatus">
+      {{ isUpdatingStatus ? 'Đang xử lý...' : 'Trang Chủ' }}
+    </button>
+    <button class="btn btn-secondary" (click)="viewOrderDetails()" [disabled]="isUpdatingStatus">
+      Xem Chi Tiết Đơn Hàng
+    </button>
   </div>
 </div>
 
-<div class="order-success-container" *ngIf="paymentStatus === 'fail'">
+<div class="order-success-container" *ngIf="!errorMessage && paymentStatus === 'fail'">
   <h1>❌ Thanh toán không thành công!</h1>
   <p>Giao dịch chưa hoàn tất hoặc gặp lỗi. Vui lòng thử lại.</p>
   <p *ngIf="ngayTao">Ngày tạo: {{ ngayTao | date:'dd/MM/yyyy HH:mm:ss' }}</p>
-  <p><strong>Mã đơn hàng:</strong>  {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
+  <p><strong>Mã đơn hàng:</strong> {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
   <div class="buttons">
     <button class="btn btn-warning" (click)="retryPayment()">🔁 Thanh Toán Lại</button>
     <button class="btn btn-secondary" (click)="goToHomePage()">Trang Chủ</button>
   </div>
 </div>
 
-<div class="order-success-container" *ngIf="paymentStatus === 'cod-success'">
+<div class="order-success-container" *ngIf="!errorMessage && paymentStatus === 'cod-success'">
   <h1>✅ Đặt hàng thành công!</h1>
   <p>Đơn hàng của bạn đã được ghi nhận và đang chờ xác nhận từ hệ thống.</p>
   <p *ngIf="ngayTao">Ngày tạo: {{ ngayTao | date:'dd/MM/yyyy HH:mm:ss' }}</p>
-  <p><strong>Mã đơn hàng:</strong>  {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
+  <p><strong>Mã đơn hàng:</strong> {{ (ngayTao | date: 'yyyyMMdd':'UTC') + orderId }}</p>
   <div class="buttons">
     <button class="btn btn-primary" (click)="goToHomePage()">Trang Chủ</button>
     <button class="btn btn-secondary" (click)="viewOrderDetails()">Xem Chi Tiết Đơn Hàng</button>
+  </div>
+</div>
+<div class="top-selling-products" *ngIf="topSellingProducts.length > 0">
+  <h2>Sản Phẩm Bán Chạy</h2>
+  <div class="product-list">
+    <div class="product-card" *ngFor="let product of topSellingProducts" (click)="viewProductDetails(product.idSanPham)">
+      <img [src]="product.imageURL || 'assets/default-product-image.jpg'" alt="{{ product.tenSanPham }}" class="product-image">
+      <h3>{{ product.tenSanPham }}</h3>
+      <p>Giá: {{ product.donGia | currency:'VND' }}</p>
+      <p>Thương hiệu: {{ product.tenThuongHieu }}</p>
+      <p>Danh mục: {{ product.tenDanhMuc }}</p>
+      <p>Số lượng bán: {{ product.totalSold }}</p>
+    </div>
   </div>
 </div>

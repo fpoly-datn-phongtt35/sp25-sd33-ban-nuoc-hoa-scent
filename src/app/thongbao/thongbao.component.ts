@@ -1,8 +1,10 @@
+
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { WebSocketService } from '../service/WebSocketService';
 import { TokenService } from '../service/token.service';
+import { Router } from '@angular/router'; // Import Router
 
 interface Notification {
   id: number;
@@ -21,7 +23,7 @@ interface Notification {
 })
 export class ThongbaoComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
-  showPopup: boolean = false; // Khởi tạo là false
+  showPopup: boolean = false;
   unreadCount: number = 0;
   private userId: number | null = null;
   private orderSubscription: Subscription | undefined;
@@ -30,7 +32,8 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
   constructor(
     private webSocketService: WebSocketService,
     private tokenService: TokenService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router // Inject Router
   ) {}
 
   ngOnInit() {
@@ -160,5 +163,24 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
     this.showPopup = false;
     this.saveNotificationsToStorage();
     this.cdr.detectChanges();
+  }
+
+  // Phương thức điều hướng đến chi tiết đơn hàng
+  navigateToOrder(notification: Notification): void {
+    if (notification.type === 'order') {
+      const orderIdMatch = notification.message.match(/#(\d+)/); // Trích xuất số từ #1072
+      if (orderIdMatch && orderIdMatch[1]) {
+        const orderId = orderIdMatch[1];
+        this.router.navigate([`/app-order-id/${orderId}`]); // Điều hướng đến URL
+        notification.read = true; // Đánh dấu đã đọc
+        this.unreadCount = this.notifications.filter(n => !n.read).length;
+        this.saveNotificationsToStorage();
+        this.cdr.detectChanges();
+      } else {
+        console.error('Không thể trích xuất mã đơn hàng từ thông báo:', notification.message);
+      }
+    }
+    // Nếu là 'return', có thể thêm logic tương tự nếu cần
+    this.togglePopup(false); // Đóng popup sau khi nhấp
   }
 }
