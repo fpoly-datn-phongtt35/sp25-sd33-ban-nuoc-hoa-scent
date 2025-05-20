@@ -472,12 +472,12 @@ export class VourcherComponent {
   }
 
   shouldShowToggleButton(item: any): boolean {
-    const show = item.trangThai === 1 && this.isNotExpired(item.ngayHetHan);
+    const show = item.trangThai === 1  && this.isNotExpired(item.ngayHetHan);
     return show;
   }
 
   shouldShowActivateButton(item: any): boolean {
-    const show = item.trangThai === 0 && this.isNotExpired(item.ngayHetHan);
+    const show = item.trangThai === 0 || item.trangThai === 2 && this.isNotExpired(item.ngayHetHan);
     return show;
   }
 

@@ -911,7 +911,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       (response) => {
         this.orderStateService.updateState({ isLoading: false });
         console.log('Chi tiết mã giảm giá:', response);
-        if (!response || response.trangThai !== 1) { // Giả sử trangThai = 1 là hoạt động
+        if (!response || response.trangThai !== 1 ) { // Giả sử trangThai = 1 là hoạt động
           this.currentOrder.maGiamGia = null;
           this.orderStateService.updateState({
             discountDetails: null,
