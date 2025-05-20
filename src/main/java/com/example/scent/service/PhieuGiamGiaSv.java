@@ -191,9 +191,6 @@ public class PhieuGiamGiaSv {
             if (phieuGiamGia.getNgayHetHan().isBefore(now)) {
                 phieuGiamGia.setTrangThai(0); // Đã hết hạn, chuyển thành Ngưng
                 logger.info("Phiếu giảm giá ID: {} đã hết hạn, cập nhật trạng thái thành Ngưng", phieuGiamGia.getId());
-            } else {
-                phieuGiamGia.setTrangThai(1); // Chưa hết hạn, chuyển thành Hoạt động
-                logger.info("Phiếu giảm giá ID: {} chưa hết hạn, cập nhật trạng thái thành Hoạt động", phieuGiamGia.getId());
             }
         } else {
             logger.warn("Ngày hết hạn của phiếu giảm giá ID: {} là null, không cập nhật trạng thái", phieuGiamGia.getId());
@@ -207,34 +204,50 @@ public class PhieuGiamGiaSv {
     }
 
     @Transactional
-    public void updateTrangThaiOnly(Integer id, Integer trangThai) {
-        logger.info("Cập nhật trạng thái phiếu giảm giá với ID: {}, trạng thái: {}", id, trangThai);
+    public void updateTrangThaiOnly(Integer id, Integer trangThai, boolean reset) {
+        logger.info("Cập nhật trạng thái phiếu giảm giá với ID: {}, trạng thái: {}, reset: {}", id, trangThai, reset);
 
         // Kiểm tra xem phiếu có tồn tại không
-        if (!pggi.existsById(id)) {
-            logger.error("Phiếu giảm giá với ID {} không tồn tại!", id);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Mã giảm giá không tồn tại!");
+        PhieuGiamGia phieu = pggi.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Mã giảm giá không tồn tại!"));
+
+        // Nếu reset = true, khôi phục trạng thái tự động
+        if (reset) {
+            LocalDateTime now = LocalDateTime.now();
+            if (phieu.getSoLuong() == 0) {
+                phieu.setTrangThai(0); // Ngừng nếu hết số lượng
+            } else if (phieu.getNgayBatDau() != null && phieu.getNgayHetHan() != null) {
+                if (now.isBefore(phieu.getNgayBatDau()) || now.isAfter(phieu.getNgayHetHan())) {
+                    phieu.setTrangThai(0); // Ngừng
+                } else {
+                    phieu.setTrangThai(1); // Hoạt động
+                }
+            } else {
+                phieu.setTrangThai(0); // Mặc định Ngừng nếu thiếu thông tin thời gian
+            }
+            logger.info("Khôi phục trạng thái tự động cho phiếu giảm giá ID: {}, trạng thái: {}", id, phieu.getTrangThai());
+        } else {
+            // Kiểm tra trạng thái hợp lệ
+            if (trangThai != 0 && trangThai != 1) {
+                logger.error("Trạng thái {} không hợp lệ!", trangThai);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Trạng thái phải là 0 hoặc 1!");
+            }
+
+            // Ép trạng thái thành 0 nếu số lượng bằng 0
+            if (phieu.getSoLuong() == 0) {
+                logger.info("Số lượng phiếu giảm giá ID {} bằng 0, tự động đặt trạng thái thành 0", id);
+                trangThai = 0;
+            }
+
+            // Nếu trạng thái là 0, đánh dấu là "tắt thủ công" (trangThai = 2)
+            if (trangThai == 0) {
+                phieu.setTrangThai(2); // Tắt thủ công
+            } else {
+                phieu.setTrangThai(trangThai); // Kích hoạt (trangThai = 1)
+            }
         }
 
-        // Kiểm tra trạng thái hợp lệ
-        if (trangThai != 0 && trangThai != 1) {
-            logger.error("Trạng thái {} không hợp lệ!", trangThai);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Trạng thái phải là 0 hoặc 1!");
-        }
-
-        // Cập nhật chỉ cột trangThai
-        Query query = entityManager.createQuery(
-                "UPDATE PhieuGiamGia p SET p.trangThai = :trangThai WHERE p.id = :id"
-        );
-        query.setParameter("trangThai", trangThai);
-        query.setParameter("id", id);
-        int updatedRows = query.executeUpdate();
-
-        if (updatedRows == 0) {
-            logger.error("Không thể cập nhật trạng thái cho phiếu giảm giá với ID: {}", id);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "⚠️ Cập nhật trạng thái thất bại!");
-        }
-
+        pggi.save(phieu);
         logger.info("Cập nhật trạng thái thành công cho phiếu giảm giá với ID: {}", id);
     }
     public void delete(Integer id) {

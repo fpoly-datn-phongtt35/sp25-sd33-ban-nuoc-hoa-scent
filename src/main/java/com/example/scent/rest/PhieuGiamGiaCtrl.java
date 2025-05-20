@@ -144,6 +144,7 @@ private PhieuGiamGiaInterface pggi;
                 // Nếu thời gian hiện tại nằm ngoài khoảng
                 phieuGiamGia.setTrangThai(0); // Ngừng
             }
+
         } else if (phieuGiamGia.getNgayHetHan() != null) {
             // Nếu chỉ có ngày hết hạn, kiểm tra chỉ với ngày hết hạn
             phieuGiamGia.setTrangThai(phieuGiamGia.getNgayHetHan().isBefore(now) ? 0 : 1);
@@ -260,49 +261,50 @@ private PhieuGiamGiaInterface pggi;
     @PutMapping("/update-status/{id}")
     public ResponseEntity<Map<String, Object>> updateStatus(
             @PathVariable Integer id,
-            @RequestParam Integer trangThai) {
+            @RequestParam Integer trangThai,
+            @RequestParam(defaultValue = "false") Boolean reset) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Kiểm tra trạng thái hợp lệ (0 hoặc 1)
-            if (trangThai != 0 && trangThai != 1) {
+            // Nếu không reset, kiểm tra trạng thái hợp lệ (0 hoặc 1)
+            if (!reset && (trangThai != 0 && trangThai != 1)) {
                 response.put("status", "error");
                 response.put("message", "Trạng thái phải là 0 hoặc 1!");
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
             }
 
             // Lấy phiếu giảm giá
-            PhieuGiamGia phieuGiamGia = pggs.detail(id);
-            if (phieuGiamGia == null) {
-                response.put("status", "error");
-                response.put("message", "Phiếu giảm giá không tồn tại!");
-                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-            }
+            PhieuGiamGia phieuGiamGia = pggi.findById(id).orElseThrow(() ->
+                    new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Mã giảm giá không tồn tại!"));
 
-            // Lấy thời gian hiện tại (giữ nếu bạn muốn kiểm tra thời gian)
-            LocalDateTime currentTime = LocalDateTime.now();
-            LocalDateTime startTime = phieuGiamGia.getNgayBatDau();
-            LocalDateTime endTime = phieuGiamGia.getNgayHetHan();
+            // Kiểm tra nếu đang cố gắng kích hoạt voucher (trangThai = 1) mà không reset
+            if (!reset && trangThai == 1) {
+                LocalDateTime currentTime = LocalDateTime.now();
+                LocalDateTime startTime = phieuGiamGia.getNgayBatDau();
+                LocalDateTime endTime = phieuGiamGia.getNgayHetHan();
 
-            // Kiểm tra nếu đang cố gắng kích hoạt voucher (trangThai = 1)
-            if (trangThai == 1) {
-                if (currentTime.isBefore(startTime)) {
+                if (startTime != null && currentTime.isBefore(startTime)) {
                     response.put("status", "error");
                     response.put("message", "Chưa đến thời gian bắt đầu của phiếu giảm giá!");
                     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                 }
-                if (currentTime.isAfter(endTime)) {
+                if (endTime != null && currentTime.isAfter(endTime)) {
                     response.put("status", "error");
                     response.put("message", "Phiếu giảm giá đã hết hạn!");
                     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                 }
+                if (phieuGiamGia.getSoLuong() == 0) {
+                    response.put("status", "error");
+                    response.put("message", "Số lượng phiếu giảm giá đã hết, không thể kích hoạt!");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
             }
 
-            // Cập nhật chỉ trạng thái
-            pggs.updateTrangThaiOnly(id, trangThai);
+            // Cập nhật trạng thái
+            pggs.updateTrangThaiOnly(id, trangThai, reset);
 
             response.put("status", "success");
-            response.put("message", "Cập nhật trạng thái thành công!");
+            response.put("message", reset ? "Khôi phục trạng thái tự động thành công!" : "Cập nhật trạng thái thành công!");
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             response.put("status", "error");
