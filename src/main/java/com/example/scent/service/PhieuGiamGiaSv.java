@@ -9,6 +9,8 @@ import com.example.scent.repo.PhieuGiamGiaInterface;
 import com.example.scent.repo.SuDungPhieuGiamGiaInterface;
 import com.example.scent.repo.TaiKhoanInterface;
 import com.example.scent.rest.DonHangCtrl;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +44,8 @@ public class PhieuGiamGiaSv {
     SuDungPhieuGiamGiaInterface suDungPhieuGiamGiaInterface;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private EntityManager entityManager;
     public List<TaiKhoan> getUsersByRole() {
         return taiKhoanInterface.findByVaiTro("user");
     }
@@ -202,7 +206,37 @@ public class PhieuGiamGiaSv {
         return updatedVoucher;
     }
 
+    @Transactional
+    public void updateTrangThaiOnly(Integer id, Integer trangThai) {
+        logger.info("Cập nhật trạng thái phiếu giảm giá với ID: {}, trạng thái: {}", id, trangThai);
 
+        // Kiểm tra xem phiếu có tồn tại không
+        if (!pggi.existsById(id)) {
+            logger.error("Phiếu giảm giá với ID {} không tồn tại!", id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "⚠️ Mã giảm giá không tồn tại!");
+        }
+
+        // Kiểm tra trạng thái hợp lệ
+        if (trangThai != 0 && trangThai != 1) {
+            logger.error("Trạng thái {} không hợp lệ!", trangThai);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Trạng thái phải là 0 hoặc 1!");
+        }
+
+        // Cập nhật chỉ cột trangThai
+        Query query = entityManager.createQuery(
+                "UPDATE PhieuGiamGia p SET p.trangThai = :trangThai WHERE p.id = :id"
+        );
+        query.setParameter("trangThai", trangThai);
+        query.setParameter("id", id);
+        int updatedRows = query.executeUpdate();
+
+        if (updatedRows == 0) {
+            logger.error("Không thể cập nhật trạng thái cho phiếu giảm giá với ID: {}", id);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "⚠️ Cập nhật trạng thái thất bại!");
+        }
+
+        logger.info("Cập nhật trạng thái thành công cho phiếu giảm giá với ID: {}", id);
+    }
     public void delete(Integer id) {
         pggi.deleteById(id);
     }

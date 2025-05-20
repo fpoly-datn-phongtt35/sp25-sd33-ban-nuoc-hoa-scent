@@ -279,20 +279,18 @@ private PhieuGiamGiaInterface pggi;
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
 
-            // Lấy thời gian hiện tại
+            // Lấy thời gian hiện tại (giữ nếu bạn muốn kiểm tra thời gian)
             LocalDateTime currentTime = LocalDateTime.now();
             LocalDateTime startTime = phieuGiamGia.getNgayBatDau();
             LocalDateTime endTime = phieuGiamGia.getNgayHetHan();
 
             // Kiểm tra nếu đang cố gắng kích hoạt voucher (trangThai = 1)
             if (trangThai == 1) {
-                // Nếu thời gian hiện tại nhỏ hơn thời gian bắt đầu
                 if (currentTime.isBefore(startTime)) {
                     response.put("status", "error");
                     response.put("message", "Chưa đến thời gian bắt đầu của phiếu giảm giá!");
                     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                 }
-                // Nếu thời gian hiện tại lớn hơn thời gian hết hạn
                 if (currentTime.isAfter(endTime)) {
                     response.put("status", "error");
                     response.put("message", "Phiếu giảm giá đã hết hạn!");
@@ -300,9 +298,8 @@ private PhieuGiamGiaInterface pggi;
                 }
             }
 
-            // Cập nhật trạng thái
-            phieuGiamGia.setTrangThai(trangThai);
-            pggs.update(phieuGiamGia);
+            // Cập nhật chỉ trạng thái
+            pggs.updateTrangThaiOnly(id, trangThai);
 
             response.put("status", "success");
             response.put("message", "Cập nhật trạng thái thành công!");

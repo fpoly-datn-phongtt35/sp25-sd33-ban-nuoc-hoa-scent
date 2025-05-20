@@ -5,11 +5,13 @@ package com.example.scent.rest;
 import com.example.scent.dto.DefectiveProductDTO;
 import com.example.scent.entity.LichSuTraHang;
 import com.example.scent.entity.YeuCauTraHang;
+import com.example.scent.repo.LichSuTraHangInterface;
 import com.example.scent.repo.YeuCauTraHangInterface;
 import com.example.scent.reques.CustomException;
 import com.example.scent.reques.SendToManufacturerRequest;
 import com.example.scent.reques.YeuCauTraHangRequest;
 import com.example.scent.service.TraHangService;
+import com.example.scent.websocket.YeuCauTraHangUpdateDTO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,26 +22,53 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tra-hang")
 public class TraHangControler {
-
+@Autowired
+private LichSuTraHangInterface lichSuTraHang;
     @Autowired
     private TraHangService traHangService;
     @Autowired
     private YeuCauTraHangInterface yeuCauTraHangInterface;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
     // Tạo yêu cầu trả hàng
     public TraHangControler(TraHangService traHangService, ObjectMapper objectMapper) {
         this.traHangService = traHangService;
         this.objectMapper = objectMapper;
+    }
+    private void sendWebSocketNotification(YeuCauTraHang yeuCau) {
+        if (yeuCau == null || yeuCau.getTaiKhoan() == null || yeuCau.getId() == null || yeuCau.getTrangThai() == null) {
+            System.out.println("Cannot send WebSocket notification: YeuCauTraHang or required fields are null");
+            return;
+        }
+
+        Integer idTaiKhoan = yeuCau.getTaiKhoan().getId();
+        YeuCauTraHangUpdateDTO updateDTO = new YeuCauTraHangUpdateDTO(yeuCau.getId(), yeuCau.getTrangThai(), idTaiKhoan);
+
+        // Lấy lý do từ chối từ lịch sử nếu trạng thái là 2 (Từ chối)
+        if (yeuCau.getTrangThai() == 2) {
+            Optional<LichSuTraHang> latestRejection = lichSuTraHang.findLatestRejectionByYeuCauId(yeuCau.getId());
+            updateDTO.setLyDoTuChoi(latestRejection.map(LichSuTraHang::getLyDoTuChoi).orElse(null));
+        }
+
+        try {
+            messagingTemplate.convertAndSend("/topic/admin/returns", updateDTO);
+            messagingTemplate.convertAndSend("/topic/trahang/" + idTaiKhoan, updateDTO);
+        } catch (Exception e) {
+            System.out.println("Error sending WebSocket notification: " + e.getMessage());
+        }
     }
     @GetMapping
     public ResponseEntity<Page<YeuCauTraHang>> getAllYeuCauTraHang(Pageable pageable) {
@@ -80,6 +109,7 @@ public class TraHangControler {
     @PutMapping("/{id}/approve")
     public ResponseEntity<YeuCauTraHang> approveYeuCauTraHang(@PathVariable Integer id, @RequestParam Integer idTaiKhoanDuyet) {
         YeuCauTraHang approvedYeuCau = traHangService.approveYeuCauTraHang(id, idTaiKhoanDuyet);
+        sendWebSocketNotification(approvedYeuCau);
         return ResponseEntity.ok(approvedYeuCau);
     }
 
@@ -87,6 +117,7 @@ public class TraHangControler {
     @PutMapping("/{id}/reject")
     public ResponseEntity<YeuCauTraHang> rejectYeuCauTraHang(@PathVariable Integer id, @RequestParam Integer idTaiKhoanDuyet, @RequestParam String lyDoTuChoi) {
         YeuCauTraHang rejectedYeuCau = traHangService.rejectYeuCauTraHang(id, idTaiKhoanDuyet, lyDoTuChoi);
+        sendWebSocketNotification(rejectedYeuCau);
         return ResponseEntity.ok(rejectedYeuCau);
     }
 
@@ -94,6 +125,7 @@ public class TraHangControler {
     @PutMapping("/{id}/complete")
     public ResponseEntity<YeuCauTraHang> completeYeuCauTraHang(@PathVariable Integer id, @RequestParam Integer idTaiKhoanDuyet) {
         YeuCauTraHang completedYeuCau = traHangService.completeYeuCauTraHang(id, idTaiKhoanDuyet);
+        sendWebSocketNotification(completedYeuCau);
         return ResponseEntity.ok(completedYeuCau);
     }
     @GetMapping("/{id}/history")
