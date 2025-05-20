@@ -489,6 +489,41 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
     @Transactional
     @Query("UPDATE SanPham sp SET sp.trangThai = 1 WHERE sp.thuongHieu.id = :thuongHieuId")
     void updateTrangThaiToActiveByThuongHieuId(Integer thuongHieuId);
+
+
+    @Query("SELECT NEW com.example.scent.dto.SanPhamInfoDTO2(" +
+            "sp.idSanPham, " +
+            "sp.tenSanPham, " +
+            "MIN(spct.donGia), " +
+            "NULL, " + // Tạm thời để imageURL là NULL, sẽ xử lý trong service
+            "th.tenThuongHieu, " +
+            "dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, " +
+            "hg.moTaHuongGiua, " +
+            "hc.moTaHuongCuoi, " +
+            "nh.id, " +
+            "nh.tenNhomHuong, " +
+            "th.quocGia, " +
+            "sp.trangThai, " +
+            "SUM(spct.soLuongTonKho), " +
+            "sp.createDate, " +
+            "COALESCE(SUM(ctdh.soLuong), 0L)" +
+            ") " +
+            "FROM SanPham sp " +
+            "LEFT JOIN sp.thuongHieu th " +
+            "LEFT JOIN sp.danhMuc dm " +
+            "LEFT JOIN sp.nhomHuong nh " +
+            "LEFT JOIN sp.huongDau hd " +
+            "LEFT JOIN sp.huongGiua hg " +
+            "LEFT JOIN sp.huongCuoi hc " +
+            "LEFT JOIN sp.spcts spct " +
+            "LEFT JOIN spct.ctdh ctdh " +
+            "WHERE sp.trangThai = 1 " +
+            "GROUP BY sp.idSanPham, sp.tenSanPham, sp.trangThai, sp.createDate, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
+            "ORDER BY COALESCE(SUM(ctdh.soLuong), 0L) DESC")
+    List<SanPhamInfoDTO2> findTopSellingProducts();
 }
+
 
 

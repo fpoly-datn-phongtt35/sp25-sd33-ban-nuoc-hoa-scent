@@ -1,13 +1,11 @@
 package com.example.scent.service;
 
 
+import com.example.scent.dto.SanPhamInfoDTO;
 import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.SuDungPhieuGiamGia;
 import com.example.scent.entity.TaiKhoan;
-import com.example.scent.repo.DonHangInterface;
-import com.example.scent.repo.PhieuGiamGiaInterface;
-import com.example.scent.repo.SuDungPhieuGiamGiaInterface;
-import com.example.scent.repo.TaiKhoanInterface;
+import com.example.scent.repo.*;
 import com.example.scent.rest.DonHangCtrl;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -29,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 @Service
@@ -46,6 +46,8 @@ public class PhieuGiamGiaSv {
     private EmailService emailService;
     @Autowired
     private EntityManager entityManager;
+    @Autowired
+    private SanPhamInterface sanPhamInterface;
     public List<TaiKhoan> getUsersByRole() {
         return taiKhoanInterface.findByVaiTro("user");
     }
@@ -440,4 +442,5 @@ public class PhieuGiamGiaSv {
             return response;
         }
     }
+
 }

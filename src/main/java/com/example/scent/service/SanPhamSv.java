@@ -59,6 +59,8 @@
         private NongDoInterface ndi;
         @Autowired
         private SanPhamMuiHuongInterface sanPhamMuiHuongInterface;
+        @Autowired
+        private HinhAnhInterface hinhAnhInterface;
         public List<SanPham> getAll() {
             return spi.findAll();
         }
@@ -899,6 +901,17 @@
                 return score;
             }
         }
-
+        public List<SanPhamInfoDTO2> getTop10SellingProducts() {
+            List<SanPhamInfoDTO2> products = spi.findTopSellingProducts();
+            return products.stream()
+                    .limit(10) // Giới hạn 10 sản phẩm
+                    .map(dto -> {
+                        // Lấy hình ảnh đầu tiên từ HinhAnh
+                        hinhAnhInterface.findFirstBySanPhamId(dto.getIdSanPham())
+                                .ifPresent(hinhAnh -> dto.setImageURL(hinhAnh.getLink()));
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+        }
 
     }

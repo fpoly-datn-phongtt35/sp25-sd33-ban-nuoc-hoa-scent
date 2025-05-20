@@ -229,6 +229,11 @@ public class SanPhamCtrl {
     public Page<SanPhammDTO> getSanPhamonAdmin(@RequestParam String keyword, @PageableDefault(size = 12) Pageable pageable) {
         return sps.detailOnAdmin(keyword,pageable);
     }
+    @GetMapping("/top-selling-products")
+    public ResponseEntity<List<SanPhamInfoDTO2>> getTopSellingProducts() {
+        List<SanPhamInfoDTO2> topProducts = sps.getTop10SellingProducts();
+        return ResponseEntity.ok(topProducts);
+    }
     @GetMapping("findAllHinhAnhById")
     public List<HinhAnh> findAllHinhAnhById(@RequestParam Integer id) {
         return sps.findAllImageBySanPhamId(id);

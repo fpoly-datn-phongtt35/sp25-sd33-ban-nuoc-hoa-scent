@@ -174,6 +174,25 @@ public class SanPhamInfoDTO {
         this.soLuongBan=soLuongBan;
     }
 
+    public SanPhamInfoDTO(Integer idSanPham, String tenSanPham, BigDecimal donGia, String imageURL, String tenThuongHieu, String tenDanhMuc, String moTaHuongDau, String moTaHuongGiua, String moTaHuongCuoi, Integer idnhomHuong, String tennhomHuong, String quocGia, Integer trangThai, Integer tongSoLuongTonKho, LocalDateTime createDate, Long soLuongBan) {
+        IdSanPham = idSanPham;
+        TenSanPham = tenSanPham;
+        DonGia = donGia;
+        this.imageURL = imageURL;
+        this.tenThuongHieu = tenThuongHieu;
+        this.tenDanhMuc = tenDanhMuc;
+        this.moTaHuongDau = moTaHuongDau;
+        this.moTaHuongGiua = moTaHuongGiua;
+        this.moTaHuongCuoi = moTaHuongCuoi;
+        IdnhomHuong = idnhomHuong;
+        this.tennhomHuong = tennhomHuong;
+        QuocGia = quocGia;
+        this.trangThai = trangThai;
+        this.tongSoLuongTonKho = tongSoLuongTonKho;
+        this.createDate = createDate;
+        this.soLuongBan = soLuongBan;
+    }
+
     public SanPhamInfoDTO() {
     }
 }

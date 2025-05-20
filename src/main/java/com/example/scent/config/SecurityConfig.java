@@ -110,7 +110,8 @@ public class SecurityConfig {
                 "/rest/san-pham/search-price/**",
                 "/rest/san-pham/search/**",
                 "/rest/san-pham/search-danhmuc/**",
-                "rest/san-pham/sorted")
+                "rest/san-pham/sorted",
+                    "/rest/san-pham/top-selling-products")
             .permitAll()
             .requestMatchers("rest/nhom-huong", "rest/nhom-huong/**").permitAll()
             .requestMatchers("/rest/san-pham/All", "/rest/san-pham/detail/**",
