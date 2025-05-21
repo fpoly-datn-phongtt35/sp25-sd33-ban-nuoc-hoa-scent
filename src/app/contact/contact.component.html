@@ -12,7 +12,7 @@
           {{ message.content }}
         </div>
         <div *ngIf="!message.isOption" class="message-content">
-          <span class="sender-name">{{ message.sender?.tenDangNhap || 'Khách ' + userId }}</span>
+          <!-- <span class="sender-name">{{ message.sender?.tenDangNhap }}</span> -->
           <span class="message-text" [innerHTML]="message.content | safeHtml"></span>
           <span class="timestamp">{{ message.timestamp | date:'short' }}</span>
         </div>
