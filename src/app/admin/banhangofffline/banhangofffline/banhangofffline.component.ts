@@ -934,6 +934,18 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
           return;
         }
+        if (response.soLuong <= 0) {
+          this.currentOrder.maGiamGia = null;
+          this.orderStateService.updateState({
+            discountDetails: null,
+            totalAfterDiscount: undefined,
+            discountAmount: 0,
+            discountMessage: 'Mã giảm giá đã được dùng hết hết số lượng!',
+            orders: this.orders,
+          });
+          this.cdr.detectChanges();
+          return;
+        }
         // Kiểm tra điều kiện áp dụng (online/offline)
         if (response.dieuKienapDung !== 0) {
           this.currentOrder.maGiamGia = null;

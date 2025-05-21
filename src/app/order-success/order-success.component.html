@@ -7,6 +7,13 @@
 <div class="order-success-container" *ngIf="errorMessage">
   <h1>⚠️ Có lỗi xảy ra</h1>
   <p>{{ errorMessage }}</p>
+  <button
+      *ngIf="paymentStatus === 'fail'"
+      class="retry-payment btn btn-warning"
+      (click)="retryPayment()"
+    >
+      Thanh toán Lại
+    </button>
   <button class="btn btn-secondary" (click)="goToHomePage()">Quay về Trang Chủ</button>
 </div>
 

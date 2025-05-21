@@ -264,4 +264,5 @@ export class OrderSuccessComponent implements OnInit {
       },
     });
   }
+  
 }

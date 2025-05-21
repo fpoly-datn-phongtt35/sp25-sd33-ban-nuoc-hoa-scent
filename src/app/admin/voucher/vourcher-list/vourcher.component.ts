@@ -24,7 +24,7 @@ export class VourcherComponent {
   page: number = 0;
   size: number = 10;
   totalPages: number = 1;
-  filterType: string = 'all'; // Đổi mặc định thành 'all' vì lọc sẽ ở backend
+  filterType: string = 'online'; // Đổi mặc định thành 'all' vì lọc sẽ ở backend
   statusFilter: string = 'all'; // Đổi mặc định thành 'all'
   sortField: string = 'id';
   sortDirection: string = 'desc';
@@ -221,14 +221,7 @@ export class VourcherComponent {
           this.cdr.detectChanges();
 
           if (this.phieuGiamGias.length > 0) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Thành công!',
-              text: 'Đã tìm thấy ' + this.phieuGiamGias.length + ' kết quả.',
-              confirmButtonText: 'OK',
-              timer: 1500,
-              showConfirmButton: false
-            });
+           
           } else {
             Swal.fire({
               icon: 'info',

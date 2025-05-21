@@ -254,10 +254,61 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.cdRef.detectChanges();
   }
 
-  confirmStatusChange(order: any) {
+  // Thêm phương thức kiểm tra số lượng tồn kho
+  private checkInventory(orderId: number): boolean {
+    console.log('Checking inventory for order:', orderId);
+
+    // Tìm đơn hàng trong this.orders
+    const order = this.orders.find((o) => o.id === orderId);
+    if (!order) {
+      console.warn('Order not found in this.orders:', orderId);
+      this.showErrorMessage('Không tìm thấy đơn hàng để kiểm tra tồn kho.');
+      return false;
+    }
+
+    console.log('Order found:', order);
+
+    const chiTietDonHang = order.chiTietDonHangs || [];
+    if (!Array.isArray(chiTietDonHang) || chiTietDonHang.length === 0) {
+      console.warn('No chiTietDonHang found for order:', orderId);
+      this.showErrorMessage('Không tìm thấy chi tiết đơn hàng để kiểm tra tồn kho.');
+      return false;
+    }
+
+    for (const item of chiTietDonHang) {
+      const soLuong = item.soLuong ?? 0;
+      const soLuongTonKho = item.sanPham?.soLuongTonKho ?? 0;
+      const tenSanPham = item.spct.sanPham?.tenSanPham ?? 'Sản phẩm không xác định';
+const dungTich=item.spct.dungTich;
+      console.log(`Checking product: ${tenSanPham} dung tích , soLuong: ${soLuong}, soLuongTonKho: ${soLuongTonKho}`);
+
+      if (soLuong > soLuongTonKho) {
+        Swal.fire({
+          title: 'Lỗi tồn kho',
+          text: `Sản phẩm "${tenSanPham}" dung tích "${dungTich}"  có số lượng yêu cầu (${soLuong}) lớn hơn số lượng tồn kho (${soLuongTonKho}). Vui lòng kiểm tra và cập nhật số lượng tồn kho.`,
+          icon: 'warning',
+          confirmButtonText: 'OK',
+        });
+        return false;
+      }
+    }
+
+    console.log(`Inventory check passed for order ${orderId}`);
+    return true;
+  }
+
+  async confirmStatusChange(order: any) {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
+
+    // Kiểm tra tồn kho nếu chuyển từ trạng thái "Chờ xác nhận" (1) sang "Đã xác nhận" (2 hoặc 6)
+    if (order.selectedStatus === 1) {
+      const isInventorySufficient = await this.checkInventory(order.id);
+      if (!isInventorySufficient) {
+        return; // Dừng lại nếu tồn kho không đủ
+      }
+    }
 
     if ((order.selectedStatus === 2 || order.selectedStatus === 6) && nextStatus === 3) {
       const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
@@ -331,7 +382,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       input: 'select',
       inputOptions: {
         '1': '✅ Đã Nhận Hàng (Hoàn thành)',
-        '2': '❌Giao không thành công',
+        '2': '❌ Giao không thành công',
       },
       inputPlaceholder: 'Chọn hành động',
       showCancelButton: true,
@@ -407,7 +458,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         console.error('Error updating status:', error);
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       },
-  });
+    });
   }
 
   showErrorMessage(message: string): void {

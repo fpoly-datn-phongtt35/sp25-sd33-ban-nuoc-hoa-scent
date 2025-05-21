@@ -31,7 +31,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   sanPhams: any[] = [];
   bestSellingProducts: any[] = [];
   page: number = 0;
-  size: number = 16;
+  size: number = 20;
   totalPages: number = 1;
   visiblePages: number[] = [];
 

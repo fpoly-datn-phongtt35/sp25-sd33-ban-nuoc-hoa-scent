@@ -161,7 +161,7 @@
               <button *ngIf="shouldShowActivateButton(item)" class="btn btn-sm btn-success" (click)="toggleStatus(item)">
                 Kích hoạt
               </button>
-              <button class="btn btn-sm btn-primary" (click)="openSendCouponModal(item)">📧 Gửi</button>
+              <button class="btn btn-sm btn-primary" *ngIf="filterType === 'online'" (click)="openSendCouponModal(item)">📧 Gửi</button>
             </div>
           </td>
         </tr>
