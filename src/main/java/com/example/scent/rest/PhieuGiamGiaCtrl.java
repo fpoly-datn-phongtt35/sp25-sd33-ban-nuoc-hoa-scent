@@ -133,18 +133,26 @@ private PhieuGiamGiaInterface pggi;
             }
         }
 
+        PhieuGiamGia existingPhieu = pggi.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Phiếu giảm giá không tồn tại!"));
+
         // Cập nhật trạng thái dựa trên thời gian hiện tại
         LocalDateTime now = LocalDateTime.now(); // Hiện tại: 18/05/2025 16:32 +07
         if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayHetHan() != null) {
-            if (now.isAfter(phieuGiamGia.getNgayBatDau().minusSeconds(1)) &&
-                    now.isBefore(phieuGiamGia.getNgayHetHan().plusSeconds(1))) {
-                // Nếu thời gian hiện tại nằm trong khoảng [ngayBatDau, ngayHetHan]
-                phieuGiamGia.setTrangThai(1); // Hoạt động
+            if (existingPhieu.getTrangThai() != 2) { // Chỉ tự động cập nhật nếu không bị tắt thủ công
+                if (now.isAfter(phieuGiamGia.getNgayBatDau().minusSeconds(1)) &&
+                        now.isBefore(phieuGiamGia.getNgayHetHan().plusSeconds(1))) {
+                    // Nếu thời gian hiện tại nằm trong khoảng [ngayBatDau, ngayHetHan]
+                    phieuGiamGia.setTrangThai(1); // Hoạt động
+                } else {
+                    // Nếu thời gian hiện tại nằm ngoài khoảng
+                    phieuGiamGia.setTrangThai(0); // Ngừng tự động
+                }
             } else {
-                // Nếu thời gian hiện tại nằm ngoài khoảng
-                phieuGiamGia.setTrangThai(0); // Ngừng
+                // Nếu phiếu giảm giá đã bị tắt thủ công, giữ nguyên trạng thái
+                logger.info("Phiếu giảm giá ID: {} đã bị tắt thủ công, giữ nguyên trạng thái: {}", id, existingPhieu.getTrangThai());
+                phieuGiamGia.setTrangThai(existingPhieu.getTrangThai()); // Giữ nguyên trạng thái
             }
-
         } else if (phieuGiamGia.getNgayHetHan() != null) {
             // Nếu chỉ có ngày hết hạn, kiểm tra chỉ với ngày hết hạn
             phieuGiamGia.setTrangThai(phieuGiamGia.getNgayHetHan().isBefore(now) ? 0 : 1);
@@ -153,6 +161,7 @@ private PhieuGiamGiaInterface pggi;
             logger.warn("Ngày bắt đầu và ngày hết hạn của phiếu giảm giá ID: {} là null, đặt trạng thái Ngừng", id);
             phieuGiamGia.setTrangThai(0);
         }
+
         logger.info("Phiếu giảm giá ID: {} trạng thái được đặt là: {}", id, phieuGiamGia.getTrangThai());
 
         // Đặt ID để đảm bảo cập nhật đúng bản ghi

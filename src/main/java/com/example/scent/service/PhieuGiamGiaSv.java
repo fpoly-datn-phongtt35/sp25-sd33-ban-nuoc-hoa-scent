@@ -236,10 +236,7 @@ public class PhieuGiamGiaSv {
             }
 
             // Ép trạng thái thành 0 nếu số lượng bằng 0
-            if (phieu.getSoLuong() == 0) {
-                logger.info("Số lượng phiếu giảm giá ID {} bằng 0, tự động đặt trạng thái thành 0", id);
-                trangThai = 0;
-            }
+
 
             // Nếu trạng thái là 0, đánh dấu là "tắt thủ công" (trangThai = 2)
             if (trangThai == 0) {
