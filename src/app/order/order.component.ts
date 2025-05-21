@@ -14,7 +14,7 @@ import { CartService, CartItemWithKey } from '../service/cart.Service';
 import { VietQRService } from '../service/VietQR.Service';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { Subscription } from 'rxjs';
+import { Subscription, timestamp } from 'rxjs';
 
 interface OrderDetail {
   spctId: number;
@@ -724,11 +724,12 @@ private handleDiscountError(message: string) {
       this.router.navigate(['/order-success', orderRes.id]);
       return;
     }
-
+   const now = new Date();
+    const timestamp = now.toISOString().replace(/[-:T.]/g, "").slice(0, 14); // Format: YYYYMMDDHHMMSS
     const extraDataObj = {
       amount: Math.round(this.finalAmount),
       orderInfo: `Thanh toán đơn hàng ${orderRes.id}`,
-      orderId: 'ORDERTOSCENT_' + orderRes.id
+      orderId: 'ORDERTOSCENT_' + orderRes.id+timestamp,
     };
     const extraData = btoa(unescape(encodeURIComponent(JSON.stringify(extraDataObj))));
     const momoRequest = {

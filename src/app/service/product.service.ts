@@ -91,7 +91,7 @@ private urb ='http://localhost:8080/api';
     // page và size luôn được gửi, với giá trị mặc định nếu không có
     params = params.set('page', queryParams.page?.toString() || '0');
     params = params.set('size', queryParams.size?.toString() || '16');
-
+   console.log(this.apiURLbb,params);
     return this.http.get<any>(this.apiURLbb, { params });
   }
 

@@ -217,8 +217,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
     const utf8ToBase64 = (str: string) => btoa(unescape(encodeURIComponent(str)));
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}`;
-
+   const now = new Date();
+const timestamp = now.toISOString().replace(/[-:T.]/g, "").slice(0, 14); // Format: YYYYMMDDHHMMSS
+const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timestamp}`;
     const extraData = utf8ToBase64(
       JSON.stringify({
         orderId: newMomoOrderId,
