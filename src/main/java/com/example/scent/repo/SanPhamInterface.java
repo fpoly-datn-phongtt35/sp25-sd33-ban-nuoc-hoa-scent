@@ -63,9 +63,8 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
             "nh.id, nh.tenNhomHuong, th.quocGia, sp.trangThai, " +
-
             "sp.createDate, " +
-            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham)) " +
+            "COALESCE(SUM(ctdh.soLuong), 0)) " +
             "FROM SanPham sp " +
             "JOIN sp.spcts spct " +
             "LEFT JOIN spct.ctdh ctdh " +
@@ -94,7 +93,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "GROUP BY sp.idSanPham, sp.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
             "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
             "nh.tenNhomHuong, th.quocGia, sp.trangThai, sp.createDate " +
-            "ORDER BY (SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = sp.idSanPham) DESC")
+            "ORDER BY COALESCE(SUM(ctdh.soLuong), 0) DESC")
     Page<SanPhamInfoDTO> searchSanPhamCombinedByBestSelling(
             @Param("searchQuery") String searchQuery,
             @Param("minPrice") BigDecimal minPrice,

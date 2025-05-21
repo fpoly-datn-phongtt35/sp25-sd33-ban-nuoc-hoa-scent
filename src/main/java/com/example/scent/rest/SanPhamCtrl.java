@@ -195,10 +195,9 @@ public class SanPhamCtrl {
             @RequestParam(value = "tenNhomHuong", required = false) String tenNhomHuong,
             @RequestParam(value = "tenThuongHieu", required = false) String tenThuongHieu,
             @RequestParam(value = "quocGia", required = false) String quocGia,
-            @RequestParam(value = "sort", required = false) String sort, // Tham số sort là tùy chọn
+            @RequestParam(value = "sort", required = false) String sort,
             @PageableDefault(size = 16) Pageable pageable) {
-
-        // Kiểm tra xem tất cả tham số lọc có phải là null hoặc chuỗi rỗng không
+        System.out.println("API called with sort: '" + sort + "'");
         boolean allFiltersEmpty = (searchQuery == null || searchQuery.isEmpty())
                 && minPrice == null
                 && maxPrice == null
@@ -206,13 +205,11 @@ public class SanPhamCtrl {
                 && (tenNhomHuong == null || tenNhomHuong.isEmpty())
                 && (tenThuongHieu == null || tenThuongHieu.isEmpty())
                 && (quocGia == null || quocGia.isEmpty());
-
-        // Nếu tất cả tham số lọc đều rỗng, trả về tất cả sản phẩm
+        System.out.println("allFiltersEmpty: " + allFiltersEmpty);
         if (allFiltersEmpty) {
-            return sps.searchSanPhamCombined(null, null, null, null, null, null, null,null,pageable);
+            System.out.println("All filters empty, calling searchSanPhamCombined with sort: '" + sort + "'");
+            return sps.searchSanPhamCombined(null, null, null, null, null, null, null, sort, pageable);
         }
-
-        // Nếu có ít nhất một tham số hợp lệ, gọi service với các tham số đã lọc
         return sps.searchSanPhamCombined(
                 searchQuery != null && !searchQuery.isEmpty() ? searchQuery : null,
                 minPrice,
@@ -220,7 +217,8 @@ public class SanPhamCtrl {
                 tenDanhMuc != null && !tenDanhMuc.isEmpty() ? tenDanhMuc : null,
                 tenNhomHuong != null && !tenNhomHuong.isEmpty() ? tenNhomHuong : null,
                 tenThuongHieu != null && !tenThuongHieu.isEmpty() ? tenThuongHieu : null,
-                quocGia != null && !quocGia.isEmpty() ? quocGia : null,sort,
+                quocGia != null && !quocGia.isEmpty() ? quocGia : null,
+                sort,
                 pageable
         );
     }
