@@ -267,13 +267,36 @@
               Vui lòng chọn ít nhất một phong cách.
             </div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Mô tả</label>
-            <textarea class="form-control" formControlName="moTa" rows="3" placeholder="Nhập mô tả sản phẩm"></textarea>
-            <div *ngIf="productForm.get('moTa')?.touched && productForm.get('moTa')?.invalid" class="text-danger small mt-1">
-              <div *ngIf="productForm.get('moTa')?.errors?.['maxlength']">Mô tả tối đa 1000 ký tự.</div>
-            </div>
-          </div>
+         <div class="form-group">
+  <label for="moTa">Mô tả sản phẩm <span class="text-danger">*</span></label>
+  <textarea
+    id="moTa"
+    formControlName="moTa"
+    class="form-control"
+    rows="5"
+    placeholder="Nhập mô tả sản phẩm..."
+    [ngClass]="{
+      'is-invalid': productForm.get('moTa')?.touched && productForm.get('moTa')?.invalid
+    }"
+  ></textarea>
+  <div
+    *ngIf="productForm.get('moTa')?.touched && productForm.get('moTa')?.invalid"
+    class="invalid-feedback"
+  >
+    <div *ngIf="productForm.get('moTa')?.errors?.['required'] || productForm.get('moTa')?.errors?.['meaningless']">
+      Mô tả sản phẩm không được để trống.
+    </div>
+    <div *ngIf="productForm.get('moTa')?.errors?.['minlength']">
+      Mô tả sản phẩm phải có ít nhất 10 ký tự.
+    </div>
+    <div *ngIf="productForm.get('moTa')?.errors?.['maxlength']">
+      Mô tả sản phẩm không được vượt quá 1000 ký tự.
+    </div>
+    <div *ngIf="productForm.get('moTa')?.errors?.['pattern']">
+      Mô tả sản phẩm chứa ký tự không hợp lệ.
+    </div>
+  </div>
+</div>
 
           <!-- Images -->
           <div class="col-12">

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output, ChangeDetectorRef, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { firstValueFrom, Subject } from 'rxjs';
@@ -66,7 +66,12 @@ export class AddProductComponent implements OnInit {
   ) {
     this.productForm = this.fb.group({
       ten: ['', [Validators.required, Validators.minLength(3)]],
-      moTa: ['', [Validators.maxLength(1000)]],
+moTa: ['', [
+    Validators.required, // Ensures the field cannot be empty
+    Validators.minLength(10),
+    Validators.maxLength(1000),
+    Validators.pattern(/^[a-zA-Z0-9\sÀ-ỹ.,!?()-]*$/),
+  ]],
       idThuongHieu: ['', Validators.required],
       idDanhMuc: ['', Validators.required],
       idNhomHuong: ['', Validators.required],
@@ -481,6 +486,21 @@ cancelProminenceModal() {
 
  async addProduct() {
   if (this.productForm.invalid) {
+    const moTaControl = this.productForm.get('moTa');
+    if (moTaControl?.errors) {
+      if (moTaControl.errors['required'] || moTaControl.errors['meaningless']) {
+        this.toastr.warning('Mô tả sản phẩm không được để trống!', 'Cảnh báo');
+      } else if (moTaControl.errors['minlength']) {
+        this.toastr.warning('Mô tả sản phẩm phải có ít nhất 10 ký tự!', 'Cảnh báo');
+      } else if (moTaControl.errors['maxlength']) {
+        this.toastr.warning('Mô tả sản phẩm không được vượt quá 1000 ký tự!', 'Cảnh báo');
+      } else if (moTaControl.errors['pattern']) {
+        this.toastr.warning('Mô tả sản phẩm chứa ký tự không hợp lệ!', 'Cảnh báo');
+      } else if (moTaControl.errors['meaningless']) {
+        this.toastr.warning('Mô tả sản phẩm không đủ ý nghĩa hoặc chứa quá nhiều ký tự lặp lại!', 'Cảnh báo');
+      }
+      return;
+    }
     this.productForm.markAllAsTouched();
     this.toastr.warning('Vui lòng điền đầy đủ thông tin hợp lệ!', 'Cảnh báo');
     return;
