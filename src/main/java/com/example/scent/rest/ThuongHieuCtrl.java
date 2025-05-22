@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,21 +27,31 @@ public class ThuongHieuCtrl {
         return thuongHieuService.getAll();
     }
     @PostMapping
-    public ResponseEntity<ThuongHieu> createThuongHieu(@RequestBody ThuongHieu thuongHieu) {
-        ThuongHieu createdThuongHieu = thuongHieuService.createThuongHieu(thuongHieu);
-        return ResponseEntity.ok(createdThuongHieu);
+    public ResponseEntity<?> createThuongHieu(@RequestBody ThuongHieu thuongHieu) {
+        try {
+            ThuongHieu createdThuongHieu = thuongHieuService.createThuongHieu(thuongHieu);
+            return ResponseEntity.ok(createdThuongHieu);
+        } catch (IllegalArgumentException ex) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", ex.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // Trả về 400
+        } catch (Exception ex) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Lỗi server: " + ex.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR); // Trả về 500
+        }
     }
-
     // Read (Get all)
     @GetMapping
     public Page<ThuongHieuWithStatusDTO> getAllThuongHieu(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size) {
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "searchQuery", required = false) String searchQuery) {
         if (size < 1) {
             size = 10;
         }
         Pageable pageable = PageRequest.of(page, size);
-        return thuongHieuService.findAllWithStatusPaged(pageable);
+        return thuongHieuService.findAllWithStatusPaged(searchQuery, pageable);
     }
 
 

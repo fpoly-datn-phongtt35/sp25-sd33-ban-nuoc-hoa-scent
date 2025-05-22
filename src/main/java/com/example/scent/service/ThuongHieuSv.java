@@ -6,11 +6,13 @@ import com.example.scent.entity.PhieuGiamGia;
 import com.example.scent.entity.ThuongHieu;
 import com.example.scent.repo.SanPhamInterface;
 import com.example.scent.repo.ThuongHieuInterface;
+import com.example.scent.reques.CustomException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,14 +31,14 @@ public class ThuongHieuSv {
         return thuongHieuRepository.findAll();
     }
     // Phương thức mới trả về Page<ThuongHieuWithStatusDTO>
-    public Page<ThuongHieuWithStatusDTO> findAllWithStatusPaged(Pageable pageable) {
-        Page<ThuongHieu> thuongHieuPage = thuongHieuRepository.findAll(pageable);
+    public Page<ThuongHieuWithStatusDTO> findAllWithStatusPaged(String searchQuery, Pageable pageable) {
+        // Sử dụng phương thức tìm kiếm mới nếu có searchQuery
+        Page<ThuongHieu> thuongHieuPage = thuongHieuRepository.searchByMultipleFields(searchQuery, pageable);
+
         List<ThuongHieuWithStatusDTO> dtos = thuongHieuPage.getContent().stream().map(thuongHieu -> {
             boolean hasProduct = thuongHieuRepository.existsSanPhamByThuongHieuId(thuongHieu.getId());
             Long soLuongSanPham = thuongHieuRepository.countSanPhamByThuongHieuId(thuongHieu.getId());
-            boolean allInactive = thuongHieuRepository.areAllSanPhamInactiveByThuongHieuId(thuongHieu.getId());
             boolean canRestore = thuongHieuRepository.existsSanPhamInactiveByThuongHieuId(thuongHieu.getId());
-
 
             return new ThuongHieuWithStatusDTO(
                     thuongHieu.getId(),
@@ -48,17 +50,28 @@ public class ThuongHieuSv {
                     canRestore
             );
         }).collect(Collectors.toList());
+
         return new PageImpl<>(dtos, pageable, thuongHieuPage.getTotalElements());
     }
-    // Create
     public ThuongHieu createThuongHieu(ThuongHieu thuongHieu) {
-        // Kiểm tra xem tên thương hiệu đã tồn tại chưa
-        if (thuongHieuRepository.existsByTenThuongHieuIgnoreCase(thuongHieu.getTenThuongHieu())) {
-            throw new IllegalArgumentException("Tên thương hiệu đã tồn tại!");
+        // Kiểm tra các trường bắt buộc
+        if (thuongHieu.getTenThuongHieu() == null || thuongHieu.getTenThuongHieu().trim().isEmpty()) {
+            throw new CustomException("Tên thương hiệu không được để trống!", HttpStatus.BAD_REQUEST, "VALIDATION_EMPTY_NAME");
         }
+        if (thuongHieu.getQuocGia() == null || thuongHieu.getQuocGia().trim().isEmpty()) {
+            throw new CustomException("Quốc gia không được để trống!", HttpStatus.BAD_REQUEST, "VALIDATION_EMPTY_COUNTRY");
+        }
+        if (thuongHieu.getMoTa() == null || thuongHieu.getMoTa().trim().isEmpty()) {
+            throw new CustomException("Mô tả không được để trống!", HttpStatus.BAD_REQUEST, "VALIDATION_EMPTY_DESCRIPTION");
+        }
+
+        // Kiểm tra tên thương hiệu đã tồn tại
+        if (thuongHieuRepository.existsByTenThuongHieuIgnoreCase(thuongHieu.getTenThuongHieu())) {
+            throw new CustomException("Tên thương hiệu đã tồn tại!", HttpStatus.BAD_REQUEST, "DUPLICATE_NAME");
+        }
+
         return thuongHieuRepository.save(thuongHieu);
     }
-
     // Read (Get all)
     public List<ThuongHieu> getAllThuongHieu() {
         return thuongHieuRepository.findAll();

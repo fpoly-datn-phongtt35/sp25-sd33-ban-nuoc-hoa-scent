@@ -340,7 +340,7 @@
             SanPham sanPham = new SanPham();
             sanPham.setTenSanPham(tenSanPham);
             sanPham.setMoTaSanPham(moTaSanPham);
-
+            sanPham.setTrangThai(1);
             sanPham.setThuongHieu(thuongHieuRepo.findById(idThuongHieu)
                     .orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại")));
             sanPham.setDanhMuc(danhMucRepo.findById(idDanhMuc)
@@ -373,7 +373,6 @@
 
             sanPham.updateFragranceDescriptions();
             sanPham.setPhongCachs(phongCachInterface.findAllById(phongCachIds));
-
             SanPham savedSanPham = spi.save(sanPham);
 
             // Add scents with prominence
