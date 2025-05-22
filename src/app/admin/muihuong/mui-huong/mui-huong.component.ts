@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AddMuiHuongComponent } from '../add-mui-huong/add-mui-huong.component';
 import { UpdateMuiHuongComponent } from '../update-mui-huong/update-mui-huong.component';
 import { MuiHuongService } from '../../../service/muihuong.service';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 export interface MuiHuong {
   id?: number;
@@ -20,8 +22,10 @@ export interface MuiHuong {
   templateUrl: './mui-huong.component.html',
   styleUrls: ['./mui-huong.component.scss']
 })
-export class MuiHuongComponent implements OnInit {
+export class MuiHuongComponent implements OnInit, OnDestroy {
   muiHuongs: MuiHuong[] = [];
+  filteredMuiHuongs: MuiHuong[] = []; // Danh sách mùi hương sau khi lọc
+  displayedMuiHuongs: MuiHuong[] = []; // Danh sách hiển thị trên trang hiện tại
   isLoading = false;
   errorMessage = '';
   showAddModal = false;
@@ -31,32 +35,91 @@ export class MuiHuongComponent implements OnInit {
   muiHuongToDelete: number | null = null;
 
   page: number = 0;
-  size: number = 10;
+  size: number = 10000; // Lấy tất cả từ backend
+  pageSize: number = 10; // Số mùi hương mỗi trang ở frontend
   totalPages: number = 1;
   totalElements: number = 0;
+  searchTerm: string = ''; // Từ khóa tìm kiếm
+  private searchSubject = new Subject<string>();
+  private searchSubscription: Subscription | null = null;
 
   constructor(private muiHuongService: MuiHuongService) {}
 
   ngOnInit(): void {
     this.loadMuiHuongs();
+    // Thiết lập debounce cho tìm kiếm
+    this.searchSubscription = this.searchSubject
+      .pipe(debounceTime(300))
+      .subscribe((term: string) => {
+        this.searchTerm = term;
+        this.page = 0; // Đặt lại trang khi tìm kiếm
+        this.filterMuiHuongs();
+      });
+  }
+
+  ngOnDestroy(): void {
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
+  }
+
+  // Hàm xử lý thay đổi từ khóa tìm kiếm
+  onSearchChange(term: string): void {
+    this.searchSubject.next(term);
+  }
+
+  // Hàm loại bỏ dấu tiếng Việt
+  removeVietnameseTones(str: string): string {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  }
+
+  // Hàm lọc mùi hương theo từ khóa
+  filterMuiHuongs(): void {
+    if (!this.searchTerm) {
+      this.filteredMuiHuongs = [...this.muiHuongs];
+    } else {
+      const searchTermLower = this.removeVietnameseTones(this.searchTerm.toLowerCase());
+      this.filteredMuiHuongs = this.muiHuongs.filter((muiHuong: MuiHuong) =>
+        this.removeVietnameseTones(muiHuong.tenMuiHuong.toLowerCase()).includes(searchTermLower) ||
+        this.removeVietnameseTones((muiHuong.moTa || '').toLowerCase()).includes(searchTermLower) ||
+        String(muiHuong.id).includes(searchTermLower)
+      );
+    }
+    this.totalElements = this.filteredMuiHuongs.length;
+    this.totalPages = Math.ceil(this.totalElements / this.pageSize); // Tính số trang
+    this.updateDisplayedMuiHuongs();
+  }
+
+  // Cập nhật danh sách hiển thị dựa trên trang hiện tại
+  updateDisplayedMuiHuongs(): void {
+    const start = this.page * this.pageSize;
+    const end = start + this.pageSize;
+    this.displayedMuiHuongs = this.filteredMuiHuongs.slice(start, end);
   }
 
   loadMuiHuongs(): void {
     this.isLoading = true;
     this.errorMessage = '';
+
     this.muiHuongService.getPagedMuiHuong(this.page, this.size).subscribe({
       next: (res) => {
         this.muiHuongs = res.content.map((muiHuong: MuiHuong) => ({
           ...muiHuong,
           isNew: false
         }));
-        this.totalPages = res.page?.totalPages || 1;
-        this.totalElements = res.totalElements || 0;
+        this.filteredMuiHuongs = [...this.muiHuongs]; // Khởi tạo danh sách lọc
+        this.totalElements = this.filteredMuiHuongs.length;
+        this.totalPages = Math.ceil(this.totalElements / this.pageSize);
         this.isLoading = false;
-        console.log('mui huong:', this.muiHuongs);
+        this.filterMuiHuongs(); // Áp dụng lọc nếu có từ khóa
+        console.log('Danh sách mùi hương:', this.muiHuongs);
       },
       error: (error) => {
-        this.errorMessage = error.message;
+        this.errorMessage = 'Không thể tải danh sách mùi hương: ' + error.message;
         this.isLoading = false;
       }
     });
@@ -73,24 +136,8 @@ export class MuiHuongComponent implements OnInit {
   handleMuiHuongAdded(newMuiHuong: MuiHuong): void {
     newMuiHuong.isNew = true;
     this.muiHuongs.unshift(newMuiHuong);
+    this.filterMuiHuongs(); // Cập nhật danh sách lọc và phân trang
     this.closeAddModal();
-    this.loadMuiHuongs();
-  }
-
-  undoAddMuiHuong(muiHuong: MuiHuong): void {
-    if (muiHuong.id !== undefined) {
-      this.muiHuongService.deleteMuiHuong(muiHuong.id).subscribe({
-        next: () => {
-          muiHuong.isNew = false;
-          this.loadMuiHuongs();
-          console.log(`Undid adding MuiHuong with ID: ${muiHuong.id}`);
-        },
-        error: (err) => {
-          console.error('Error undoing MuiHuong addition:', err);
-          this.errorMessage = 'Không thể hoàn tác thêm mùi hương.';
-        }
-      });
-    }
   }
 
   openUpdateModal(muiHuong: MuiHuong): void {
@@ -122,7 +169,7 @@ export class MuiHuongComponent implements OnInit {
           this.loadMuiHuongs();
         },
         error: (error) => {
-          this.errorMessage = error.message;
+          this.errorMessage = 'Không thể xóa mùi hương: ' + error.message;
           this.closeDeleteModal();
         }
       });
@@ -133,21 +180,21 @@ export class MuiHuongComponent implements OnInit {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
-      this.loadMuiHuongs();
+      this.updateDisplayedMuiHuongs();
     }
   }
 
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      this.loadMuiHuongs();
+      this.updateDisplayedMuiHuongs();
     }
   }
 
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-      this.loadMuiHuongs();
+      this.updateDisplayedMuiHuongs();
     }
   }
 
