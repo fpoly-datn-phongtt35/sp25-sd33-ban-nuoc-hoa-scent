@@ -24,6 +24,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 export class InvoiceComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   selectedStatus: number | null = null;
+  selectedPaymentMethod: string | null = null;
   orderId: number | null = null;
   searchControl = new FormControl<string>('');
   filteredDonhang: any[] = [];
@@ -51,6 +52,8 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   private allowedStatuses: { [key: string]: number[] } = {
     online: [1, 2, 3, 4, 5, 6],
     offline: [4, 5],
+    'online_ck': [1, 4, 5, 6], // Chuyển khoản: Chờ xác nhận (chờ thanh toán), Đã thanh toán, Hoàn thành, Đã hủy
+    'online_tm': [1, 2, 3, 4, 5], // Tiền mặt: Chờ xác nhận, Đã xác nhận, Đang giao, Hoàn thành, Đã hủy
   };
 
   private webSocketSubscription: Subscription | undefined;
@@ -211,6 +214,8 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   switchTab(tab: string): void {
     this.selectedTab = tab;
+    this.selectedPaymentMethod = null; // Reset payment method filter
+    this.selectedStatus = null; // Reset status filter
     this.applySearch(this.searchControl.value || '');
   }
 
@@ -225,7 +230,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   private applySearch(keyword: string | null = ''): void {
     const searchTerm = (keyword ?? '').toLowerCase().trim();
     const statusCode = this.selectedStatus;
-    const allowedStatuses = this.allowedStatuses[this.selectedTab] || [];
+    const paymentMethod = this.selectedPaymentMethod;
+
+    // Determine allowed statuses based on tab and payment method
+    const statusKey = this.selectedTab === 'online' && paymentMethod
+      ? `online_${paymentMethod}`
+      : this.selectedTab;
+    const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
 
     this.filteredDonhang = this.orders.filter((order) => {
       const searchableText = [
@@ -243,22 +254,23 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
       const matchesKeyword = searchTerm === '' || searchableText.includes(searchTerm);
       const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
+      const matchesPaymentMethod =
+        this.selectedTab !== 'online' ||
+        paymentMethod == null ||
+        order.phuongThucThanhToan?.toLowerCase() === paymentMethod;
       const isOnline = order.luongBan === 1;
       const matchesTab = this.selectedTab === 'online' ? isOnline : !isOnline;
       const matchesAllowedStatus =
         allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
 
-      return matchesKeyword && matchesStatus && matchesTab && matchesAllowedStatus;
+      return matchesKeyword && matchesStatus && matchesPaymentMethod && matchesTab && matchesAllowedStatus;
     });
 
     this.cdRef.detectChanges();
   }
 
-  // Thêm phương thức kiểm tra số lượng tồn kho
   private checkInventory(orderId: number): boolean {
     console.log('Checking inventory for order:', orderId);
-
-    // Tìm đơn hàng trong this.orders
     const order = this.orders.find((o) => o.id === orderId);
     if (!order) {
       console.warn('Order not found in this.orders:', orderId);
@@ -267,7 +279,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     }
 
     console.log('Order found:', order);
-
     const chiTietDonHang = order.chiTietDonHangs || [];
     if (!Array.isArray(chiTietDonHang) || chiTietDonHang.length === 0) {
       console.warn('No chiTietDonHang found for order:', orderId);
@@ -279,13 +290,14 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       const soLuong = item.soLuong ?? 0;
       const soLuongTonKho = item.sanPham?.soLuongTonKho ?? 0;
       const tenSanPham = item.spct.sanPham?.tenSanPham ?? 'Sản phẩm không xác định';
-const dungTich=item.spct.dungTich;
-      console.log(`Checking product: ${tenSanPham} dung tích , soLuong: ${soLuong}, soLuongTonKho: ${soLuongTonKho}`);
+      const dungTich = item.spct.dungTich;
+
+      console.log(`Checking product: ${tenSanPham}, dung tích: ${dungTich}, soLuong: ${soLuong}, soLuongTonKho: ${soLuongTonKho}`);
 
       if (soLuong > soLuongTonKho) {
         Swal.fire({
           title: 'Lỗi tồn kho',
-          text: `Sản phẩm "${tenSanPham}" dung tích "${dungTich}"  có số lượng yêu cầu (${soLuong}) lớn hơn số lượng tồn kho (${soLuongTonKho}). Vui lòng kiểm tra và cập nhật số lượng tồn kho.`,
+          text: `Sản phẩm "${tenSanPham}" dung tích "${dungTich}" có số lượng yêu cầu (${soLuong}) lớn hơn số lượng tồn kho (${soLuongTonKho}). Vui lòng kiểm tra và cập nhật số lượng tồn kho.`,
           icon: 'warning',
           confirmButtonText: 'OK',
         });
@@ -302,11 +314,10 @@ const dungTich=item.spct.dungTich;
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
 
-    // Kiểm tra tồn kho nếu chuyển từ trạng thái "Chờ xác nhận" (1) sang "Đã xác nhận" (2 hoặc 6)
     if (order.selectedStatus === 1) {
       const isInventorySufficient = await this.checkInventory(order.id);
       if (!isInventorySufficient) {
-        return; // Dừng lại nếu tồn kho không đủ
+        return;
       }
     }
 
@@ -500,6 +511,12 @@ const dungTich=item.spct.dungTich;
     this.applySearch(this.searchControl.value || '');
   }
 
+  filterByPaymentMethod(method: string | null): void {
+    this.selectedPaymentMethod = method;
+    this.selectedStatus = null; // Reset status filter when payment method changes
+    this.applySearch(this.searchControl.value || '');
+  }
+
   getFilterKey(status: number): string {
     switch (status) {
       case 1:
@@ -541,7 +558,7 @@ const dungTich=item.spct.dungTich;
   getNextStatusText(currentStatus: number, isCK: boolean): string {
     switch (currentStatus) {
       case 1:
-        return 'Đã Xác Nhận';
+        return isCK ? 'Đã Thanh Toán' : 'Đã Xác Nhận';
       case 2:
         return 'Đang Giao';
       case 3:
@@ -606,12 +623,10 @@ const dungTich=item.spct.dungTich;
     switch (normalized) {
       case 'ck':
         return 'Chuyển khoản';
-      case 'tienmat':
+      case 'tm':
         return 'Tiền mặt';
       case 'momo':
         return 'Ví MoMo';
-      case 'tm':
-        return 'Tiền mặt';
       default:
         return '❓ Không rõ';
     }

@@ -1,29 +1,48 @@
 <div class="container mt-4" *ngIf="selectedOrder === null">
   <!-- 🔍 Tìm kiếm -->
- <div class="d-flex justify-content-between align-items-center mb-3">
-  <input class="form-control w-50" type="text" placeholder="🔍 Tìm kiếm..." [formControl]="searchControl" />
-</div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <input class="form-control w-50" type="text" placeholder="🔍 Tìm kiếm..." [formControl]="searchControl" />
+  </div>
 
-  <!-- 🌐 Tab Online/Offline (Moved to Top) -->
+  <!-- 🌐 Tab Online/Offline -->
   <div class="btn-group mb-3" role="group">
     <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'online'}" (click)="switchTab('online')">Online</button>
     <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'offline'}" (click)="switchTab('offline')">Offline</button>
   </div>
 
-  <!-- ✅ Bộ lọc trạng thái -->
-  <div class="btn-group mb-4" role="group">
-    <!-- Common filter for both tabs -->
-    <button class="btn btn-outline-secondary"*ngIf="selectedTab === 'online'" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
+  <!-- ✅ Bộ lọc trạng thái và phương thức thanh toán -->
+  <div class="mb-4">
+     <div *ngIf="selectedTab === 'online'" class="btn-group" role="group">
+      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === null}" (click)="filterByPaymentMethod(null)">Tất cả</button>
+      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'tm'}" (click)="filterByPaymentMethod('tm')">💵 Tiền mặt</button>
+      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'ck'}" (click)="filterByPaymentMethod('ck')">🏦 Chuyển khoản</button>
+    </div>
+    <!-- Status Filters -->
+    <div class="btn-group mb-2" role="group">
+      <!-- Common filter for both tabs -->
+      <button class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === null}" (click)="filterOrders('default')">Tất cả</button>
 
-    <!-- Filters for Online tab only -->
-    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
-    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
-    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
-    <button *ngIf="selectedTab === 'online'" class="btn btn-outline-dark" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+      <!-- Filters for Online tab, adjusted based on payment method -->
+      <button *ngIf="selectedTab === 'online' && (selectedPaymentMethod === null || selectedPaymentMethod === 'tm' || selectedPaymentMethod === 'ck')" 
+              class="btn btn-outline-warning" [ngClass]="{'active': selectedStatus === 1}" (click)="filterOrders('pending')">🕒 Chờ xác nhận</button>
+      <button *ngIf="selectedTab === 'online' && (selectedPaymentMethod === null || selectedPaymentMethod === 'tm')" 
+              class="btn btn-outline-success" [ngClass]="{'active': selectedStatus === 2}" (click)="filterOrders('processed')">✅ Đã xác nhận</button>
+              <button *ngIf="selectedTab === 'online' && (selectedPaymentMethod === null || selectedPaymentMethod === 'ck')" 
+              class="btn btn-outline-dark" [ngClass]="{'active': selectedStatus === 6}" (click)="filterOrders('prepaid')">💰 Đã thanh toán (CK)</button>
+      <button *ngIf="selectedTab === 'online'" 
+              class="btn btn-outline-info" [ngClass]="{'active': selectedStatus === 3}" (click)="filterOrders('shipping')">🚚 Đang giao</button>
+      <button *ngIf="selectedTab === 'online'" 
+              class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
+      <button *ngIf="selectedTab === 'online'" 
+              class="btn btn-outline-danger" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Giao hàng thất bại</button>
 
-    <!-- Common filters for both tabs, but restricted to Offline's allowed statuses -->
-    <button class="btn btn-outline-secondary" *ngIf="selectedTab === 'online'"[ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
-    <button class="btn btn-outline-danger" *ngIf="selectedTab === 'online'"[ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Giao hàng thất bại</button>
+      <!-- Filters for Offline tab -->
+      <button *ngIf="selectedTab === 'offline'" class="btn btn-outline-secondary" [ngClass]="{'active': selectedStatus === 4}" (click)="filterOrders('completed')">🎉 Hoàn thành</button>
+      <button *ngIf="selectedTab === 'offline'" class="btn btn-outline-danger" [ngClass]="{'active': selectedStatus === 5}" (click)="filterOrders('cancelled')">❌ Đã hủy</button>
+    </div>
+
+    <!-- Payment Method Filter (Online tab only) -->
+   
   </div>
 
   <!-- 📋 Bảng đơn hàng -->
@@ -53,27 +72,22 @@
             <div *ngSwitchCase="1" class="badge-status status-warning" title="Click để xác nhận đơn" (click)="confirmStatusChange(order)">
               {{ order.phuongThucThanhToan?.toLowerCase().includes('ck') ? '💳 Chờ Thanh Toán' : '🕒 Chờ Xác Nhận' }}
             </div>
-
             <!-- 2. Đã xác nhận -->
             <div *ngSwitchCase="2" class="badge-status status-success" title="Click để chuyển sang đang giao" (click)="confirmStatusChange(order)">
               ✅ Đã Xác Nhận
             </div>
-
             <!-- 3. Đang giao -->
             <div *ngSwitchCase="3" class="badge-status status-info" title="Click để hoàn thành hoặc hủy đơn" (click)="confirmStatusChange(order)">
               🚚 Đang Giao
             </div>
-
             <!-- 4. Hoàn thành -->
             <div *ngSwitchCase="4" class="badge-status status-secondary disabled" title="Đơn hàng đã hoàn tất">
               🎉 Hoàn Thành
             </div>
-
             <!-- 5. Hủy -->
             <div *ngSwitchCase="5" class="badge-status status-danger disabled" title="Đơn hàng đã bị hủy">
               ❌ Giao hàng thất bại
             </div>
-
             <!-- 6. Đã thanh toán (CK) -->
             <div *ngSwitchCase="6" class="badge-status status-dark" title="Click để xác nhận giao hàng" (click)="confirmStatusChange(order)">
               💰 Đã Thanh Toán
@@ -93,7 +107,6 @@
 
 <!-- ✅ Chi tiết đơn -->
 <div class="container mt-4" *ngIf="selectedOrder !== null">
-
   <app-order-detai [order]="selectedOrder" [selectedTab]="selectedTab" (closeDetail)="closeDetail()"></app-order-detai>
   <button class="btn btn-secondary mt-3" (click)="closeDetail()">Đóng</button>
 </div>

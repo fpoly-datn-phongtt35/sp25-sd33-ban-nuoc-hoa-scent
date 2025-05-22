@@ -29,34 +29,43 @@
 }
 
 /* Ensure table styling remains consistent */
-.table th, .table td {
+.table th,
+.table td {
   min-width: 100px;
   white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
 }
 
-.table th.ten-nguoi-nhan, .table td.ten-nguoi-nhan {
+.table th.ten-nguoi-nhan,
+.table td.ten-nguoi-nhan {
   width: 15%;
 }
-.table th.dia-chi, .table td.dia-chi {
+.table th.dia-chi,
+.table td.dia-chi {
   width: 20%;
 }
-.table th.sdt, .table td.sdt {
+.table th.sdt,
+.table td.sdt {
   width: 10%;
 }
-.table th.tong-tien, .table td.tong-tien {
+.table th.tong-tien,
+.table td.tong-tien {
   width: 10%;
 }
-.table th.ngay-tao, .table td.ngay-tao,
-.table th.ngay-van-chuyen, .table td.ngay-van-chuyen,
+.table th.ngay-tao,
+.table td.ngay-tao,
+.table th.ngay-van-chuyen,
+.table td.ngay-van-chuyen,
 .table td.trang-thai {
   width: 12%;
 }
-.table th.phuong-thuc, .table td.phuong-thuc {
+.table th.phuong-thuc,
+.table td.phuong-thuc {
   width: 10%;
 }
-.table th.hanh-dong, .table td.hanh-dong {
+.table th.hanh-dong,
+.table td.hanh-dong {
   width: 5%;
 }
 .status-column {
@@ -146,7 +155,7 @@ button.btn-sm:hover {
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.2s ease, transform 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   border: 1px solid transparent;
   user-select: none;
 }
