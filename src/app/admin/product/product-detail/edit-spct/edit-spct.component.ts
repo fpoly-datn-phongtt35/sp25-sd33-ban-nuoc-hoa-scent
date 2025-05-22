@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Output, ChangeDetectorRef, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, ChangeDetectorRef, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { SpctService } from '../../../../service/spct.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-edit-spct',
@@ -10,39 +11,40 @@ import { SpctService } from '../../../../service/spct.service';
   imports: [CommonModule, ReactiveFormsModule],
   providers: [NgbActiveModal],
   templateUrl: './edit-spct.component.html',
-  styleUrls: ['./edit-spct.component.scss'] // Fixed typo: `styleUrl` → `styleUrls`
+  styleUrls: ['./edit-spct.component.scss']
 })
 export class EditSpctComponent implements OnInit {
-  @Output() customerUpdated = new EventEmitter<any>();
   @Input() spctdata: any;
+  @Input() spctList: any[] = [];
+  @Output() customerUpdated = new EventEmitter<any>();
   spctForm: FormGroup;
   showProminenceModal: boolean = false;
+
   constructor(
     private fb: FormBuilder,
     private spctService: SpctService,
     public activeModal: NgbActiveModal,
     private cdr: ChangeDetectorRef
   ) {
-
     this.spctForm = this.fb.group({
-      idSpct: [''], // ID để cập nhật, không cần validate required vì đây là trường tự động
+      idSpct: [{ value: '', disabled: true }],
       donGia: ['', [
         Validators.required,
         Validators.min(0),
-        Validators.pattern(/^[0-9]+(\.[0-9]{1,2})?$/) // Số và tối đa 2 chữ số thập phân
+        Validators.pattern(/^[0-9]+(\.[0-9]{1,2})?$/)
       ]],
       soLuongTonKho: ['', [
         Validators.required,
         Validators.min(0),
-        Validators.pattern(/^[0-9]+$/) // Số nguyên
+        Validators.pattern(/^[0-9]+$/)
       ]],
       dungTich: ['', [
         Validators.required,
         Validators.min(0),
-        Validators.pattern(/^[0-9]+(\.[0-9]{1,2})?$/) // Số và tối đa 2 chữ số thập phân
+        Validators.pattern(/^[0-9]+(\.[0-9]{1,2})?$/)
       ]],
-      idSanPham: [''],
-      trangThai: ['', Validators.required] // Add trangThai field
+      idSanPham: [{ value: '', disabled: true }],
+      trangThai: ['', Validators.required]
     });
   }
 
@@ -54,32 +56,125 @@ export class EditSpctComponent implements OnInit {
         soLuongTonKho: this.spctdata.soLuongTonKho,
         dungTich: this.spctdata.dungTich,
         idSanPham: this.spctdata.sanPham?.idSanPham,
-        trangThai: this.spctdata.trangThai // Patch trangThai from spctdata
+        trangThai: this.spctdata.trangThai
       });
+      console.log('📋 Dữ liệu form sau khi patch:', this.spctForm.value);
     } else {
-      console.error('spctdata is undefined');
+      console.error('❌ spctdata is undefined');
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Dữ liệu sản phẩm chi tiết không tồn tại!',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        position: 'center',
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
+        timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
+      });
     }
-    console.log('spctForm:', this.spctForm.value); // Debug form values
+    console.log('📋 Danh sách spctList nhận được:', JSON.stringify(this.spctList, null, 2)); // Log chi tiết spctList
+  }
+
+  // Kiểm tra trùng lặp dungTich (trừ bản ghi hiện tại)
+  isDungTichDuplicate(): boolean {
+    const currentId = this.spctdata?.idSpct;
+    const dungTich = Number(this.spctForm.get('dungTich')?.value); // Chuyển đổi thành số
+    const isDuplicate = this.spctList.some(spct => 
+      spct.idSpct !== currentId && Number(spct.dungTich) === dungTich
+    );
+    console.log('🔍 Kiểm tra trùng lặp - currentId:', currentId, 'dungTich:', dungTich, 'spctList:', JSON.stringify(this.spctList, null, 2), 'Kết quả:', isDuplicate);
+    return isDuplicate;
   }
 
   saveProductDetail() {
-    if (this.spctForm.valid) {
-      const payload = this.spctForm.value;
-      console.log('📤 Payload gửi đi:', payload); // Debug payload
-      this.spctService.updateSpctOnAdmin(payload).subscribe(
+    console.log('🔧 Bắt đầu saveProductDetail - Form valid:', this.spctForm.valid, 'isDungTichDuplicate:', this.isDungTichDuplicate());
+    if (this.spctForm.valid && !this.isDungTichDuplicate()) {
+      const formData = {
+        idSpct: this.spctForm.get('idSpct')?.value,
+        donGia: this.spctForm.get('donGia')?.value,
+        soLuongTonKho: this.spctForm.get('soLuongTonKho')?.value,
+        dungTich: this.spctForm.get('dungTich')?.value,
+        idSanPham: this.spctForm.get('idSanPham')?.value,
+        trangThai: this.spctForm.get('trangThai')?.value
+      };
+      console.log('📤 Payload gửi đi:', formData);
+
+      this.spctService.updateSpctOnAdmin(formData).subscribe(
         (response) => {
-          alert('✅ Cập nhật spct thành công!');
-          this.customerUpdated.emit(response);
-          this.closeModal();
+          console.log('✅ API Response:', response);
+          Swal.fire({
+            title: 'Thành công',
+            text: 'Cập nhật sản phẩm chi tiết thành công!',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            position: 'center',
+            customClass: {
+              popup: 'swal2-centered',
+              icon: 'swal2-icon',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-content',
+              confirmButton: 'swal2-confirm',
+            },
+            timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
+          }).then(() => {
+            this.customerUpdated.emit(response);
+            this.closeModal();
+          });
         },
         (error) => {
           console.error('❌ Lỗi khi cập nhật spct:', error);
-          alert('❌ Không thể cập nhật spct. Vui lòng thử lại!');
+          const errorMessage = error.error?.message || 'Không thể cập nhật sản phẩm chi tiết. Vui lòng thử lại!';
+          Swal.fire({
+            title: 'Lỗi',
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            position: 'center',
+            customClass: {
+              popup: 'swal2-centered',
+              icon: 'swal2-icon',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-content',
+              confirmButton: 'swal2-confirm',
+            },
+            timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
+          });
         }
       );
     } else {
-      console.log('⚠️ Form không hợp lệ:', this.spctForm.errors);
-      alert('⚠️ Vui lòng điền đầy đủ thông tin hợp lệ.');
+      console.log('⚠️ Form không hợp lệ hoặc dung tích trùng lặp:', this.spctForm.errors);
+      Swal.fire({
+        title: 'Lỗi',
+        text: this.isDungTichDuplicate() ? `Dung tích ${this.spctForm.get('dungTich')?.value}ml đã tồn tại!` : 'Vui lòng điền đầy đủ thông tin hợp lệ!',
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        position: 'center',
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
+        timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
+      });
     }
   }
 
@@ -88,7 +183,6 @@ export class EditSpctComponent implements OnInit {
 
     if (this.showProminenceModal) {
       console.log('🔄 Đóng modal con (prominenceModal) trước...');
-      
     }
 
     if (this.activeModal) {

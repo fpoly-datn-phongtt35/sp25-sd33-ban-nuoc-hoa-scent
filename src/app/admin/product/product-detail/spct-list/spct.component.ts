@@ -16,7 +16,7 @@ import { TokenService } from '../../../../service/token.service';
   providers: [NgbActiveModal]
 })
 export class SpctComponent implements OnInit {
-  @Input() product: any = null; // Đảm bảo có khai báo @Input() product
+  @Input() product: any = null;
   @Output() closeSpct = new EventEmitter<void>();
   spct: any[] = [];
   userRole: string | null = null;
@@ -64,19 +64,23 @@ export class SpctComponent implements OnInit {
   openModalAddSpct(): void {
     const modalRef = this.modalService.open(AddSpctComponent, { backdrop: 'static', keyboard: false });
     modalRef.componentInstance.productId = this.product?.idSanPham;
+    modalRef.componentInstance.spctList = this.spct; // Truyền danh sách spct vào AddSpctComponent
     console.log('🎉 IdSpIdSp:', this.product?.idSanPham);
+    console.log('🎉 Danh sách Spct truyền đi:', this.spct);
 
     modalRef.componentInstance.SpctAdded.subscribe((newSpct: any) => {
       console.log('🎉 Spct mới nhận được:', newSpct);
-      this.loadSpct();
+      this.loadSpct(); // Tải lại danh sách sau khi thêm mới
     });
   }
 
   openUpdateSpctModal(spct: any): void {
     const modalRef = this.modalService.open(EditSpctComponent, { backdrop: 'static', keyboard: false });
     modalRef.componentInstance.spctdata = spct;
+    modalRef.componentInstance.spctList = this.spct; // Thêm dòng này để truyền spctList
     console.log('🎉 IdSpIdSp:', spct);
-
+    console.log('🎉 Danh sách Spct truyền đi:', this.spct);
+  
     modalRef.componentInstance.customerUpdated.subscribe((newSpct: any) => {
       console.log('🎉 Spct mới nhận được:', newSpct);
       this.loadSpct();

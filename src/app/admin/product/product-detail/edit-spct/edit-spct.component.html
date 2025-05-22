@@ -5,25 +5,60 @@
 
 <div class="modal-body">
   <form [formGroup]="spctForm">
+    <!-- Đơn giá -->
     <div class="mb-3">
       <label class="form-label">Đơn giá (VND)</label>
-      <input type="number" class="form-control" formControlName="donGia">
+      <input type="number" class="form-control" formControlName="donGia" [class.is-invalid]="spctForm.get('donGia')?.invalid && spctForm.get('donGia')?.touched">
+      <div class="invalid-feedback" *ngIf="spctForm.get('donGia')?.hasError('required') && spctForm.get('donGia')?.touched">
+        Đơn giá là bắt buộc!
+      </div>
+      <div class="invalid-feedback" *ngIf="spctForm.get('donGia')?.hasError('min') && spctForm.get('donGia')?.touched">
+        Đơn giá không được nhỏ hơn 0!
+      </div>
+      <div class="invalid-feedback" *ngIf="spctForm.get('donGia')?.hasError('pattern') && spctForm.get('donGia')?.touched">
+        Đơn giá phải là số, tối đa 2 chữ số thập phân!
+      </div>
     </div>
 
+    <!-- Dung tích -->
     <div class="mb-3">
       <label class="form-label">Dung tích (ml)</label>
-      <input type="number" class="form-control" formControlName="dungTich">
+      <input type="number" class="form-control" formControlName="dungTich" [class.is-invalid]="(spctForm.get('dungTich')?.invalid || isDungTichDuplicate()) && spctForm.get('dungTich')?.touched">
+      <div class="invalid-feedback" *ngIf="spctForm.get('dungTich')?.hasError('required') && spctForm.get('dungTich')?.touched">
+        Dung tích là bắt buộc!
+      </div>
+      <div class="invalid-feedback" *ngIf="spctForm.get('dungTich')?.hasError('min') && spctForm.get('dungTich')?.touched">
+        Dung tích không được nhỏ hơn 0!
+      </div>
+      <div class="invalid-feedback" *ngIf="spctForm.get('dungTich')?.hasError('pattern') && spctForm.get('dungTich')?.touched">
+        Dung tích phải là số, tối đa 2 chữ số thập phân!
+      </div>
+      <div class="invalid-feedback" *ngIf="isDungTichDuplicate() && spctForm.get('dungTich')?.touched">
+        Dung tích {{ spctForm.get('dungTich')?.value }}ml đã tồn tại!
+      </div>
     </div>
 
+    <!-- Số lượng tồn kho -->
     <div class="mb-3">
       <label class="form-label">Số lượng tồn kho</label>
-      <input type="number" class="form-control" formControlName="soLuongTonKho">
+      <input type="number" class="form-control" formControlName="soLuongTonKho" [class.is-invalid]="spctForm.get('soLuongTonKho')?.invalid && spctForm.get('soLuongTonKho')?.touched">
+      <div class="invalid-feedback" *ngIf="spctForm.get('soLuongTonKho')?.hasError('required') && spctForm.get('soLuongTonKho')?.touched">
+        Số lượng tồn kho là bắt buộc!
+      </div>
+      <div class="invalid-feedback" *ngIf="spctForm.get('soLuongTonKho')?.hasError('min') && spctForm.get('soLuongTonKho')?.touched">
+        Số lượng tồn kho không được nhỏ hơn 0!
+      </div>
+      <div class="invalid-feedback" *ngIf="spctForm.get('soLuongTonKho')?.hasError('pattern') && spctForm.get('soLuongTonKho')?.touched">
+        Số lượng tồn kho phải là số nguyên!
+      </div>
     </div>
+
+    <!-- Trạng thái -->
+   
   </form>
 </div>
 
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-  <button type="button" class="btn btn-primary" (click)="saveProductDetail()">Lưu</button>
+  <button type="button" class="btn btn-primary" (click)="saveProductDetail()" [disabled]="spctForm.invalid || isDungTichDuplicate()">Lưu</button>
 </div>
-

@@ -1,8 +1,9 @@
-import { Component,EventEmitter,Input,ChangeDetectorRef,OnInit,Output} from '@angular/core';
+import { Component, EventEmitter, Input, ChangeDetectorRef, OnInit, Output } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { ReactiveFormsModule,FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SpctService } from '../../../../service/spct.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-add-spct',
@@ -11,10 +12,10 @@ import { SpctService } from '../../../../service/spct.service';
   templateUrl: './add-spct.component.html',
   styleUrls: ['./add-spct.component.scss'],
   providers: [NgbActiveModal]
-
 })
 export class AddSpctComponent implements OnInit {
-  @Input() productId: number | null = null; // Nhận productId từ SpctComponent
+  @Input() productId: number | null = null;
+  @Input() spctList: any[] = []; // Nhận danh sách Spct từ SpctComponent
   @Output() SpctAdded = new EventEmitter<any>();
   showProminenceModal: boolean = false;
   spctForm: FormGroup;
@@ -23,7 +24,7 @@ export class AddSpctComponent implements OnInit {
     public activeModal: NgbActiveModal,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private spcts:SpctService
+    private spcts: SpctService
   ) {
     this.spctForm = this.fb.group({
       donGia: [null, [Validators.required, Validators.min(0)]],
@@ -34,39 +35,119 @@ export class AddSpctComponent implements OnInit {
 
   ngOnInit(): void {
     console.log("📌 productId received in modal:", this.productId);
+    console.log("📋 Danh sách Spct nhận được:", this.spctList);
   }
-
 
   saveProductDetail() {
     console.log('📌 Dữ liệu trong form:', this.spctForm.value);
 
     if (this.spctForm.valid) {
-      const formData = { ...this.spctForm.value }; // 🔥 Tạo bản sao để tránh lỗi
-      formData.idSanPham = this.productId; // Thêm productId vào dữ liệu form
+      const formData = { ...this.spctForm.value };
+      formData.idSanPham = this.productId;
       console.log('📤 Dữ liệu gửi đi:', formData);
 
+      // Kiểm tra xem dungTich đã tồn tại trong spctList chưa
+      const dungTichExists = this.spctList.some(spct => spct.dungTich === formData.dungTich);
+
+      if (dungTichExists) {
+        Swal.fire({
+          title: 'Lỗi',
+          text: `Dung tích ${formData.dungTich}ml đã tồn tại cho sản phẩm này!`,
+          icon: 'error',
+          confirmButtonText: 'OK',
+          position: 'center',
+          customClass: {
+            popup: 'swal2-centered',
+            icon: 'swal2-icon',
+            title: 'swal2-title',
+            htmlContainer: 'swal2-content',
+            confirmButton: 'swal2-confirm',
+          },
+          timer: 3000,
+          timerProgressBar: true,
+          backdrop: true,
+          allowOutsideClick: true,
+        });
+        return;
+      }
+
+      // Nếu không trùng, tiến hành thêm mới
       this.spcts.addSpcttOnAdmin(formData).subscribe(
         (response: any) => {
           console.log('✅ API Response:', response);
-         alert('Thêm spct thành công!');
-         this.SpctAdded.emit(response); //
-         console.log('🔴 Đang đóng modal KK...');
-         this.closeModal();
+          Swal.fire({
+            title: 'Thành công',
+            text: 'Thêm sản phẩm chi tiết thành công!',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            position: 'center',
+            customClass: {
+              popup: 'swal2-centered',
+              icon: 'swal2-icon',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-content',
+              confirmButton: 'swal2-confirm',
+            },
+            timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
+          }).then(() => {
+            this.SpctAdded.emit(response);
+            console.log('🔴 Đang đóng modal KK...');
+            this.closeModal();
+          });
         },
         (error: any) => {
           console.error('❌ Lỗi khi thêm spct:', error);
+          Swal.fire({
+            title: 'Lỗi',
+            text: 'Đã xảy ra lỗi khi thêm sản phẩm chi tiết!',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            position: 'center',
+            customClass: {
+              popup: 'swal2-centered',
+              icon: 'swal2-icon',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-content',
+              confirmButton: 'swal2-confirm',
+            },
+            timer: 3000,
+            timerProgressBar: true,
+            backdrop: true,
+            allowOutsideClick: true,
+          });
         }
       );
     } else {
       console.warn('⚠️ Form không hợp lệ, kiểm tra lại:', this.spctForm.errors);
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng điền đầy đủ và đúng thông tin!',
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        position: 'center',
+        customClass: {
+          popup: 'swal2-centered',
+          icon: 'swal2-icon',
+          title: 'swal2-title',
+          htmlContainer: 'swal2-content',
+          confirmButton: 'swal2-confirm',
+        },
+        timer: 3000,
+        timerProgressBar: true,
+        backdrop: true,
+        allowOutsideClick: true,
+      });
     }
   }
+
   closeModal() {
     console.log('🛑 Đang cố đóng modal chính...');
 
     if (this.showProminenceModal) {
       console.log('🔄 Đóng modal con (prominenceModal) trước...');
-
     }
 
     if (this.activeModal) {
