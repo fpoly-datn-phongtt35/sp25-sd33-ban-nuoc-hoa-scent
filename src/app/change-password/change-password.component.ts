@@ -20,9 +20,13 @@ export class ChangePasswordModalComponent implements OnDestroy {
   otp: string = '';
   step: number = 1;
   oldPasswordInvalid: boolean = false;
+  oldPasswordHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách
   newPasswordInvalid: boolean = false;
+  newPasswordHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách
   confirmPasswordInvalid: boolean = false;
+  confirmPasswordHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách
   otpInvalid: boolean = false;
+  otpHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách
   resendDisabled: boolean = true;
   countdown: number = 90;
   private countdownInterval: any;
@@ -106,6 +110,11 @@ export class ChangePasswordModalComponent implements OnDestroy {
     return `${firstThree}${maskedPart}${lastTwo}@${domain}`;
   }
 
+  // Hàm kiểm tra dấu cách
+  private hasWhitespace(value: string): boolean {
+    return /\s/.test(value); // Kiểm tra dấu cách bằng regex
+  }
+
   // Methods for toggling password visibility
   toggleOldPasswordVisibility(): void {
     this.showOldPassword = !this.showOldPassword;
@@ -126,8 +135,27 @@ export class ChangePasswordModalComponent implements OnDestroy {
   }
 
   checkOldPassword(): void {
+    this.oldPasswordInvalid = false;
+    this.oldPasswordHasWhitespace = false;
+    this.newPasswordInvalid = false;
+    this.newPasswordHasWhitespace = false;
+    this.confirmPasswordInvalid = false;
+    this.confirmPasswordHasWhitespace = false;
+
+    // Kiểm tra dấu cách cho mật khẩu cũ
+    if (this.hasWhitespace(this.oldPassword)) {
+      this.oldPasswordHasWhitespace = true;
+      return;
+    }
+
     if (!this.oldPassword) {
       this.oldPasswordInvalid = true;
+      return;
+    }
+
+    // Kiểm tra dấu cách cho mật khẩu mới
+    if (this.hasWhitespace(this.newPassword)) {
+      this.newPasswordHasWhitespace = true;
       return;
     }
 
@@ -154,6 +182,12 @@ export class ChangePasswordModalComponent implements OnDestroy {
       return;
     }
 
+    // Kiểm tra dấu cách cho xác nhận mật khẩu mới
+    if (this.hasWhitespace(this.confirmNewPassword)) {
+      this.confirmPasswordHasWhitespace = true;
+      return;
+    }
+
     if (this.newPassword !== this.confirmNewPassword) {
       this.confirmPasswordInvalid = true;
       Swal.fire({
@@ -177,9 +211,6 @@ export class ChangePasswordModalComponent implements OnDestroy {
       return;
     }
 
-    this.oldPasswordInvalid = false;
-    this.newPasswordInvalid = false;
-    this.confirmPasswordInvalid = false;
     this.isLoading = true;
 
     this.accountService.verifyOldPassword(this.username, this.oldPassword).subscribe({
@@ -289,11 +320,20 @@ export class ChangePasswordModalComponent implements OnDestroy {
   }
 
   verifyOtpAndChangePassword(): void {
+    this.otpInvalid = false;
+    this.otpHasWhitespace = false;
+
+    // Kiểm tra dấu cách cho OTP
+    if (this.hasWhitespace(this.otp)) {
+      this.otpHasWhitespace = true;
+      return;
+    }
+
     if (!this.otp || !/^\d{6}$/.test(this.otp)) {
       this.otpInvalid = true;
       return;
     }
-    this.otpInvalid = false;
+
     this.isLoading = true;
 
     this.accountService.verifyOtp(this.email, this.otp).subscribe({
@@ -401,9 +441,13 @@ export class ChangePasswordModalComponent implements OnDestroy {
     this.otp = '';
     this.step = 1;
     this.oldPasswordInvalid = false;
+    this.oldPasswordHasWhitespace = false;
     this.newPasswordInvalid = false;
+    this.newPasswordHasWhitespace = false;
     this.confirmPasswordInvalid = false;
+    this.confirmPasswordHasWhitespace = false;
     this.otpInvalid = false;
+    this.otpHasWhitespace = false;
     this.isLoading = false;
     this.showOldPassword = false;
     this.showNewPassword = false;

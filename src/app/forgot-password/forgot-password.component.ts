@@ -19,8 +19,11 @@ export class ForgotPasswordComponent implements OnDestroy {
   step: number = 1; // 1: Nhập email, 2: Nhập mật khẩu mới, 3: Nhập OTP
   emailInvalid: boolean = false;
   emailNotFound: boolean = false;
+  emailHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách trong email
   otpInvalid: boolean = false;
+  otpHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách trong OTP
   newPasswordInvalid: boolean = false;
+  newPasswordHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách trong mật khẩu mới
   resendDisabled: boolean = true;
   countdown: number = 90; // Đồng bộ với backend (90 giây)
   private countdownInterval: any;
@@ -28,14 +31,27 @@ export class ForgotPasswordComponent implements OnDestroy {
 
   constructor(private accountService: AccountService, private router: Router) {}
 
+  // Hàm kiểm tra dấu cách
+  private hasWhitespace(value: string): boolean {
+    return /\s/.test(value); // Kiểm tra dấu cách bằng regex
+  }
+
   // Bước 1: Kiểm tra email
   checkEmail() {
+    this.emailInvalid = false;
+    this.emailNotFound = false;
+    this.emailHasWhitespace = false;
+
+    // Kiểm tra email có hợp lệ và không chứa dấu cách
     if (!this.email || !this.email.includes('@')) {
       this.emailInvalid = true;
       return;
     }
-    this.emailInvalid = false;
-    this.emailNotFound = false;
+    if (this.hasWhitespace(this.email)) {
+      this.emailHasWhitespace = true;
+      return;
+    }
+
     this.isLoading = true;
 
     this.accountService.findByEmail(this.email).subscribe({
@@ -46,7 +62,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: 'Email hợp lệ, vui lòng nhập mật khẩu mới.',
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -69,7 +85,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: 'Email không tồn tại trong hệ thống!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -88,6 +104,16 @@ export class ForgotPasswordComponent implements OnDestroy {
 
   // Bước 2: Kiểm tra mật khẩu mới và gửi OTP
   proceedToOtp() {
+    this.newPasswordInvalid = false;
+    this.newPasswordHasWhitespace = false;
+
+    // Kiểm tra mật khẩu mới không chứa dấu cách
+    if (this.hasWhitespace(this.newPassword)) {
+      this.newPasswordHasWhitespace = true;
+      return;
+    }
+
+    // Kiểm tra độ mạnh mật khẩu
     if (!this.newPassword || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(this.newPassword)) {
       this.newPasswordInvalid = true;
       Swal.fire({
@@ -95,7 +121,7 @@ export class ForgotPasswordComponent implements OnDestroy {
         text: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt!',
         icon: 'error',
         confirmButtonText: 'Thử lại',
-        position: 'center', // Centered position
+        position: 'center',
         customClass: {
           popup: 'swal2-centered',
           icon: 'swal2-icon',
@@ -110,7 +136,7 @@ export class ForgotPasswordComponent implements OnDestroy {
       });
       return;
     }
-    this.newPasswordInvalid = false;
+
     this.isLoading = true;
 
     this.accountService.sendOtpForUser(this.email).subscribe({
@@ -120,7 +146,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -143,7 +169,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -175,7 +201,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -197,7 +223,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -220,11 +246,21 @@ export class ForgotPasswordComponent implements OnDestroy {
 
   // Bước 3: Xác nhận OTP và đặt lại mật khẩu
   resetPassword() {
+    this.otpInvalid = false;
+    this.otpHasWhitespace = false;
+
+    // Kiểm tra OTP không chứa dấu cách
+    if (this.hasWhitespace(this.otp)) {
+      this.otpHasWhitespace = true;
+      return;
+    }
+
+    // Kiểm tra OTP hợp lệ
     if (!this.otp || !/^\d{6}$/.test(this.otp)) {
       this.otpInvalid = true;
       return;
     }
-    this.otpInvalid = false;
+
     this.isLoading = true;
 
     this.accountService.resetPasswordWithOtp(this.email, this.otp, this.newPassword).subscribe({
@@ -234,7 +270,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: response,
           icon: 'success',
           confirmButtonText: 'OK',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',
@@ -257,7 +293,7 @@ export class ForgotPasswordComponent implements OnDestroy {
           text: errorMessage,
           icon: 'error',
           confirmButtonText: 'Thử lại',
-          position: 'center', // Centered position
+          position: 'center',
           customClass: {
             popup: 'swal2-centered',
             icon: 'swal2-icon',

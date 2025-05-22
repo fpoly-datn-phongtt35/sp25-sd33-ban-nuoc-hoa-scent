@@ -1,10 +1,10 @@
-
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { WebSocketService } from '../service/WebSocketService';
 import { TokenService } from '../service/token.service';
-import { Router } from '@angular/router'; // Import Router
+import { Router } from '@angular/router';
+import { TraHangService } from '../service/TraHangService'; // Import TraHangService nếu cần
 
 interface Notification {
   id: number;
@@ -33,7 +33,8 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
     private webSocketService: WebSocketService,
     private tokenService: TokenService,
     private cdr: ChangeDetectorRef,
-    private router: Router // Inject Router
+    private router: Router,
+    private traHangService: TraHangService // Tiêm TraHangService nếu cần
   ) {}
 
   ngOnInit() {
@@ -165,22 +166,32 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // Phương thức điều hướng đến chi tiết đơn hàng
   navigateToOrder(notification: Notification): void {
     if (notification.type === 'order') {
-      const orderIdMatch = notification.message.match(/#(\d+)/); // Trích xuất số từ #1072
+      const orderIdMatch = notification.message.match(/#(\d+)/);
       if (orderIdMatch && orderIdMatch[1]) {
         const orderId = orderIdMatch[1];
-        this.router.navigate([`/app-order-id/${orderId}`]); // Điều hướng đến URL
-        notification.read = true; // Đánh dấu đã đọc
+        this.router.navigate([`/app-order-id/${orderId}`]);
+        notification.read = true;
         this.unreadCount = this.notifications.filter(n => !n.read).length;
         this.saveNotificationsToStorage();
         this.cdr.detectChanges();
       } else {
         console.error('Không thể trích xuất mã đơn hàng từ thông báo:', notification.message);
       }
+    } else if (notification.type === 'return') {
+      const returnIdMatch = notification.message.match(/#(\d+)/);
+      if (returnIdMatch && returnIdMatch[1]) {
+        const returnId = returnIdMatch[1];
+        this.router.navigate([`/app-tra-hang-user/${returnId}`]); // Điều hướng với ID
+        notification.read = true;
+        this.unreadCount = this.notifications.filter(n => !n.read).length;
+        this.saveNotificationsToStorage();
+        this.cdr.detectChanges();
+      } else {
+        console.error('Không thể trích xuất mã yêu cầu trả hàng từ thông báo:', notification.message);
+      }
     }
-    // Nếu là 'return', có thể thêm logic tương tự nếu cần
-    this.togglePopup(false); // Đóng popup sau khi nhấp
+    this.togglePopup(false);
   }
 }

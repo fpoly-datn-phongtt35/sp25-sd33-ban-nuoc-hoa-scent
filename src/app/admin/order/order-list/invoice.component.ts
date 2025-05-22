@@ -288,7 +288,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
     for (const item of chiTietDonHang) {
       const soLuong = item.soLuong ?? 0;
-      const soLuongTonKho = item.sanPham?.soLuongTonKho ?? 0;
+      const soLuongTonKho = item.spct.soLuongTonKho?? 0;
       const tenSanPham = item.spct.sanPham?.tenSanPham ?? 'Sản phẩm không xác định';
       const dungTich = item.spct.dungTich;
 

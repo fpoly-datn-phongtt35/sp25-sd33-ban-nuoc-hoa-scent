@@ -1,3 +1,4 @@
+<app-header></app-header>
 <div class="container">
   <h1>Theo dõi yêu cầu trả hàng</h1>
 
@@ -16,7 +17,7 @@
         Bạn chưa có yêu cầu trả hàng nào.
       </div>
       <div class="request-list-scroll">
-        <mat-card *ngFor="let yeuCau of yeuCauList" class="yeu-cau-card" [class.selected]="yeuCau.id === selectedYeuCau" (click)="loadLichSu(yeuCau.id)">
+        <mat-card *ngFor="let yeuCau of paginatedYeuCauList" class="yeu-cau-card" [class.selected]="yeuCau.id === selectedYeuCau" (click)="loadLichSu(yeuCau.id)">
           <div class="card-header">
             <p class="card-title">ID: {{ yeuCau.id }}</p>
             <span class="badge" [ngClass]="{
@@ -62,6 +63,13 @@
           </div>
         </mat-card>
       </div>
+
+      <!-- Phân trang -->
+      <div class="pagination" *ngIf="yeuCauList.length > 0">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">Trang trước</button>
+        <span>Trang {{ currentPage }} / {{ totalPages }}</span>
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">Trang sau</button>
+      </div>
     </div>
 
     <!-- Lịch sử trả hàng -->
@@ -100,7 +108,7 @@
                  lichSu.trangThaiMoi === 3 ? 'Hoàn thành' : 'Không xác định' }}
             </p>
             <p><strong>Người thực hiện:</strong> {{ lichSu.taiKhoan?.tenDangNhap || 'N/A' }} (ID: {{ lichSu.taiKhoan?.id || 'N/A' }})</p>
-            <p ><strong>Lý do từ chối:</strong> {{ lichSu.lyDoTuChoi || 'Không có' }}</p>
+            <p><strong>Lý do từ chối:</strong> {{ lichSu.lyDoTuChoi || 'Không có' }}</p>
             <p><strong>Ghi chú:</strong> {{ lichSu.ghiChu || 'Không có' }}</p>
           </mat-card>
         </div>
@@ -108,3 +116,4 @@
     </div>
   </div>
 </div>
+<app-footer></app-footer>

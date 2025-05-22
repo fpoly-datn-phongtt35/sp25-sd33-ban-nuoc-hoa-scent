@@ -596,14 +596,13 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
       default: return 'Trạng thái không xác định';
     }
   }
-
   toggleOrderDetail(order: any): void {
     if (this.selectedOrder === order) {
       this.selectedOrder = null;
       this.router.navigate(['/app-order-id']);
     } else {
-      this.selectedOrder = order;
-      this.checkPaymentStatus(order); // Kiểm tra trạng thái thanh toán khi xem chi tiết
+      this.selectedOrder = { ...order }; // Sao chép toàn bộ đối tượng
+      this.checkPaymentStatus(this.selectedOrder); // Kiểm tra trạng thái thanh toán khi xem chi tiết
       this.loadUserReviews();
       this.router.navigate(['/app-order-id', order.maDonHang]);
     }
@@ -818,28 +817,31 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
     });
   }
 
-openReturnModal(order?: any): void {
-  // Nếu order được truyền từ danh sách đơn hàng, gán tạm vào selectedOrder
-  const tempSelectedOrder = order || this.selectedOrder;
-
-  if (tempSelectedOrder && tempSelectedOrder.maDonHang) {
-    const dialogRef = this.dialog.open(TraHangComponent, {
-      width: '500px',
-      data: { maDonHang: tempSelectedOrder.maDonHang },
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.loadOrders(); // Làm mới danh sách đơn hàng
-      }
-    });
-  } else {
-    Swal.fire({
-      title: 'Lỗi',
-      text: 'Không tìm thấy thông tin đơn hàng để trả.',
-      icon: 'error',
-      confirmButtonText: 'OK',
-    });
+  openReturnModal(order?: any): void {
+    // Sử dụng order nếu được truyền từ danh sách, nếu không thì dùng selectedOrder
+    const tempSelectedOrder = order || this.selectedOrder;
+  
+    if (tempSelectedOrder && tempSelectedOrder.maDonHang) {
+      const dialogRef = this.dialog.open(TraHangComponent, {
+        width: '500px',
+        data: { 
+          maDonHang: tempSelectedOrder.maDonHang,
+          chiTietDonHangs: tempSelectedOrder.chiTietDonHangs // Truyền danh sách sản phẩm
+        },
+      });
+  
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.loadOrders(); // Làm mới danh sách đơn hàng
+        }
+      });
+    } else {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Không tìm thấy thông tin đơn hàng để trả.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
   }
-}
 }

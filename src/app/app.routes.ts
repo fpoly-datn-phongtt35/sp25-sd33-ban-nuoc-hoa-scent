@@ -40,6 +40,7 @@ export const routes: Routes = [
   { path: 'order-details/:id', component: OrderDetailComponent },
   { path: 'product_admin', component: ProductAdminComponent, canActivate: [AdminGuard] },
   { path: 'login', component: LoginComponent },
+  { path: 'app-tra-hang-user/:id', component: TraHangUserComponent },
   { path: 'app-chinhsachtrahang', component: ChinhsachtrahangComponent },
   { path: 'app-huongdanmuahang', component: HuongdanmuahangComponent },
   { path: 'app-huongdanthanhtoan', component: HuongdanthanhtoanComponent },

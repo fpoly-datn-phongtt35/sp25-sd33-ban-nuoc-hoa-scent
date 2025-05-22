@@ -28,19 +28,64 @@ export class RegisterComponent implements OnInit, OnDestroy {
     private router: Router
   ) {
     this.registerForm = this.fb.group({
-      hoTen: ['', [Validators.required, Validators.minLength(3)]],
-      email: ['', [Validators.required, Validators.email]],
-      sdt: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-      tenDangNhap: ['', [Validators.required, Validators.minLength(3)]],
-      matKhau: ['', [Validators.required, Validators.minLength(6), this.passwordStrengthValidator()]],
-      xacNhanMatKhau: ['',  [Validators.required, Validators.minLength(6), this.passwordStrengthValidator()]],
+      hoTen: ['', [
+        Validators.required, 
+        Validators.minLength(3), 
+        this.noMultipleWhitespaceValidator(), 
+        this.noSpecialCharactersValidator(), 
+        this.requireLettersValidator()
+      ]],
+      email: ['', [Validators.required, Validators.email, this.noWhitespaceValidator()]],
+      sdt: ['', [Validators.required, Validators.pattern('^[0-9]{10}$'), this.noWhitespaceValidator()]],
+      tenDangNhap: ['', [Validators.required, Validators.minLength(3), this.noWhitespaceValidator()]],
+      matKhau: ['', [Validators.required, Validators.minLength(6), this.passwordStrengthValidator(), this.noWhitespaceValidator()]],
+      xacNhanMatKhau: ['', [Validators.required, Validators.minLength(6), this.passwordStrengthValidator(), this.noWhitespaceValidator()]],
     }, { validators: this.checkPasswords });
   }
 
-  // Validator tùy chỉnh để kiểm tra độ mạnh của mật khẩu
+  // Validator kiểm tra không có nhiều dấu cách liên tiếp
+  noMultipleWhitespaceValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value || '';
+      const hasMultipleWhitespace = /\s{2,}/.test(value); // Kiểm tra 2 hoặc nhiều dấu cách liên tiếp
+      const isOnlyWhitespace = /^\s*$/.test(value); // Kiểm tra nếu chỉ có dấu cách
+      return hasMultipleWhitespace || isOnlyWhitespace ? { multipleWhitespace: true } : null;
+    };
+  }
+
+  // Validator kiểm tra không có ký tự đặc biệt
+  noSpecialCharactersValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value || '';
+      // Cho phép chữ cái (bao gồm chữ cái có dấu tiếng Việt), dấu cách, và không cho phép ký tự đặc biệt
+      const hasSpecialCharacters = /[^a-zA-Z\s\u00C0-\u1EF9]/.test(value);
+      return hasSpecialCharacters ? { specialCharacters: true } : null;
+    };
+  }
+
+  // Validator yêu cầu ít nhất một chữ cái
+  requireLettersValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value || '';
+      // Kiểm tra xem có ít nhất một chữ cái (bao gồm chữ cái có dấu tiếng Việt)
+      const hasLetters = /[a-zA-Z\u00C0-\u1EF9]/.test(value);
+      return !hasLetters ? { noLetters: true } : null;
+    };
+  }
+
+  // Validator kiểm tra không có dấu cách
+  noWhitespaceValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value || '';
+      const hasWhitespace = /\s/.test(value); // Kiểm tra dấu cách bằng regex
+      return hasWhitespace ? { whitespace: true } : null;
+    };
+  }
+
+  // Validator kiểm tra độ mạnh của mật khẩu
   passwordStrengthValidator(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
-      const value = control.value;
+      const value = control.value || '';
       if (!value) {
         return null; // Để Validators.required xử lý trường hợp trống
       }
