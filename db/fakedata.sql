@@ -964,4 +964,69 @@ FROM don_hang dh
 Where DATEPART(YEAR, dh.ngay_tao) = 2025;
 select *from yeu_cau_tra_hang
 
+
 ngay_duyet
+
+UPDATE san_pham
+SET id_nong_do = CASE 
+    -- SP0001: Calvin Klein CK One (EDT)
+    WHEN id = 1000 THEN 1002 -- Eau de Toilette
+    -- SP0002: Calvin Klein CK Be (EDT)
+    WHEN id = 1001 THEN 1002 -- Eau de Toilette
+    -- SP0003: Dior Sauvage Eau Forte Parfum (Parfum)
+    WHEN id = 1002 THEN 1000 -- Parfum classic
+    -- SP0004: Dior Sauvage EDP
+    WHEN id = 1003 THEN 1001 -- Eau de Parfum
+    -- SP0005: Chanel Bleu De Chanel EDP
+    WHEN id = 1004 THEN 1001 -- Eau de Parfum
+    -- SP0006: Chanel Coco Mademoiselle EDP
+    WHEN id = 1005 THEN 1001 -- Eau de Parfum
+    -- SP0007: Chanel Allure Homme Sport (EDT)
+    WHEN id = 1006 THEN 1002 -- Eau de Toilette
+    -- SP0008: Gucci Guilty Elixir De Parfum (Parfum)
+    WHEN id = 1007 THEN 1000 -- Parfum classic
+    -- SP0009: Chanel Coco EDP
+    WHEN id = 1008 THEN 1001 -- Eau de Parfum
+    -- SP0010: Chanel Chance Eau Fraîche (EDT)
+    WHEN id = 1009 THEN 1002 -- Eau de Toilette
+    -- SP0011: Versace Eros (EDT)
+    WHEN id = 1010 THEN 1002 -- Eau de Toilette
+    -- SP0012: Versace Pour Homme (EDT)
+    WHEN id = 1011 THEN 1002 -- Eau de Toilette
+    -- SP0013: Versace Pour Homme Oud Noir (EDP)
+    WHEN id = 1012 THEN 1001 -- Eau de Parfum
+    -- SP0014: Versace Eros Parfum
+    WHEN id = 1013 THEN 1000 -- Parfum classic
+    -- SP0015: Versace Bright Crystal (EDT)
+    WHEN id = 1014 THEN 1002 -- Eau de Toilette
+    -- SP0016: Versace Crystal Noir (Parfum)
+    WHEN id = 1015 THEN 1000 -- Parfum classic
+    -- SP0017: Versace Eros Flame (EDP)
+    WHEN id = 1016 THEN 1001 -- Eau de Parfum
+    -- SP0018: Armaf Club De Nuit Intense Man (EDT)
+    WHEN id = 1017 THEN 1002 -- Eau de Toilette
+    -- SP0019: Armaf Uniq Oud Forever (EDP)
+    WHEN id = 1018 THEN 1001 -- Eau de Parfum
+    -- SP0020: Armaf Yum Yum (EDP)
+    WHEN id = 1019 THEN 1001 -- Eau de Parfum
+    -- SP0021: Armaf Club De Nuit Woman (EDP)
+    WHEN id = 1020 THEN 1001 -- Eau de Parfum
+    -- SP0022: Armaf Club De Nuit El Cielo (EDP)
+    WHEN id = 1021 THEN 1001 -- Eau de Parfum
+    -- SP0023: Armaf Club De Nuit Untold (EDP)
+    WHEN id = 1022 THEN 1001 -- Eau de Parfum
+    -- SP0024: Lacoste L.12.12 Blanc Eau Intense (EDT)
+    WHEN id = 1023 THEN 1002 -- Eau de Toilette
+    -- SP0025: Lacoste Essential Pour Homme (EDT)
+    WHEN id = 1024 THEN 1002 -- Eau de Toilette
+    -- SP0026: Lacoste L.12.12 White Blanc (EDT)
+    WHEN id = 1025 THEN 1002 -- Eau de Toilette
+    -- SP0027: Lacoste Pour Femme Elixir (EDP)
+    WHEN id = 1026 THEN 1001 -- Eau de Parfum
+    -- SP0028: Dolce & Gabbana Light Blue Pour Homme (EDT)
+    WHEN id = 1027 THEN 1002 -- Eau de Toilette
+    -- SP0029: Dolce & Gabbana Light Blue Eau Intense (EDP)
+    WHEN id = 1028 THEN 1001 -- Eau de Parfum
+    -- SP0030: Dolce & Gabbana L’Imperatrice 3 (EDT)
+    WHEN id = 1029 THEN 1002 -- Eau de Toilette
+END;
