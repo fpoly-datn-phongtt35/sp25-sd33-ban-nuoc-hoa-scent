@@ -1,10 +1,41 @@
 <!-- MAIN CONTAINER -->
 <div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold mb-4">Quản Lý Thương Hiệu</h2>
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+    <h2 class="text-2xl font-bold">Quản Lý Thương Hiệu</h2>
+    <button (click)="openAddModal()" class="btn btn-primary">Thêm Thương Hiệu</button>
+  </div>
 
   <!-- Error Message -->
   <div *ngIf="errorMessage" class="error-message">
     {{ errorMessage }}
+  </div>
+
+  <!-- Search Input -->
+  <div class="mb-6 flex items-center gap-2">
+    <div class="relative w-full max-w-md">
+      <input
+        [formControl]="searchControl"
+        type="text"
+        class="form-control w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="Tìm kiếm thương hiệu (Tên, Quốc gia, Mô tả...)"
+      />
+      <!-- Search Icon -->
+      <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </span>
+      <!-- Clear Icon -->
+      <button
+        *ngIf="searchControl.value"
+        (click)="clearSearch()"
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Loading Spinner -->
@@ -14,11 +45,6 @@
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
     </svg>
     <span class="sr-only">Đang tải...</span>
-  </div>
-
-  <!-- Add Button -->
-  <div class="mb-6">
-    <button (click)="openAddModal()" class="btn btn-primary">Thêm Thương Hiệu</button>
   </div>
 
   <!-- Brand Table -->
@@ -47,6 +73,9 @@
             <button *ngIf="!thuongHieu.canRestore && thuongHieu.hasProduct" (click)="deactivateSanPham(thuongHieu.id)" class="btn btn-deactivate">Ngừng bán</button>
             <button *ngIf="thuongHieu.canRestore && thuongHieu.hasProduct" (click)="restoreSanPham(thuongHieu.id)" class="btn btn-restore">Khôi phục</button>
           </td>
+        </tr>
+        <tr *ngIf="!isLoading && thuongHieus.length === 0">
+          <td colspan="6" class="p-2 text-center text-gray-500">Không tìm thấy thương hiệu nào.</td>
         </tr>
       </tbody>
     </table>
@@ -109,9 +138,7 @@
   </div>
 </ng-container>
 
-<ng-container *ngIf="showDeactivateModal
-
-">
+<ng-container *ngIf="showDeactivateModal">
   <div class="modal-overlay">
     <div class="modal-content">
       <h3 class="modal-title">Xác Nhận Ngừng Bán</h3>

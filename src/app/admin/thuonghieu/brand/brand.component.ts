@@ -4,6 +4,8 @@ import { AddBrandComponent } from '../add-brand/add-brand.component';
 import { UpdateBrandComponent } from '../update-brand/update-brand.component';
 import { ThuongHieuService } from '../../../service/thuonghieu.service';
 import { ToastrService } from 'ngx-toastr';
+import { FormControl, ReactiveFormsModule } from '@angular/forms'; // Thêm import cho ReactiveFormsModule
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators'; // Thêm các operator RxJS
 
 export interface ThuongHieu {
   id?: number;
@@ -19,7 +21,7 @@ export interface ThuongHieu {
 @Component({
   selector: 'app-brand',
   standalone: true,
-  imports: [CommonModule, AddBrandComponent, UpdateBrandComponent],
+  imports: [CommonModule, AddBrandComponent, UpdateBrandComponent, ReactiveFormsModule], // Thêm ReactiveFormsModule
   templateUrl: './brand.component.html',
   styleUrls: ['./brand.component.scss']
 })
@@ -44,6 +46,10 @@ export class BrandComponent implements OnInit {
   totalPages: number = 1;
   totalElements: number = 0;
 
+  // Thêm FormControl cho ô tìm kiếm
+  searchControl = new FormControl('');
+  searchQuery: string = '';
+
   constructor(
     private thuongHieuService: ThuongHieuService,
     private toastr: ToastrService
@@ -51,12 +57,25 @@ export class BrandComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadThuongHieus();
+
+    // Lắng nghe thay đổi giá trị trong ô tìm kiếm
+    this.searchControl.valueChanges
+      .pipe(
+        debounceTime(300), // Đợi 300ms sau khi người dùng ngừng gõ
+        distinctUntilChanged() // Chỉ gọi API nếu giá trị thay đổi
+      )
+      .subscribe((value: string) => {
+        this.searchQuery = value.trim();
+        this.page = 0; // Reset về trang đầu khi tìm kiếm
+        this.loadThuongHieus(); // Gọi lại API với searchQuery
+      });
   }
 
   loadThuongHieus(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.thuongHieuService.getThuongHieu1(this.page, this.size).subscribe({
+    // Truyền thêm searchQuery và exactMatch (mặc định là false)
+    this.thuongHieuService.getThuongHieu1(this.page, this.size, this.searchQuery, false).subscribe({
       next: (res) => {
         this.thuongHieus = res.content.map((thuongHieu: ThuongHieu) => ({
           ...thuongHieu,
@@ -65,7 +84,7 @@ export class BrandComponent implements OnInit {
         this.totalPages = res.page?.totalPages || 1;
         this.totalElements = res.totalElements || 0;
         this.isLoading = false;
-        console.log('thương hiệu:', this.thuongHieus);
+        console.log('Thương hiệu:', this.thuongHieus);
       },
       error: (error) => {
         this.errorMessage = error.message;
@@ -73,6 +92,14 @@ export class BrandComponent implements OnInit {
         this.toastr.error(this.errorMessage, 'Lỗi');
       }
     });
+  }
+
+  // Reset tìm kiếm
+  clearSearch(): void {
+    this.searchControl.setValue('');
+    this.searchQuery = '';
+    this.page = 0;
+    this.loadThuongHieus();
   }
 
   openAddModal(): void {
@@ -84,8 +111,8 @@ export class BrandComponent implements OnInit {
   }
 
   handleBrandAdded(newThuongHieu: ThuongHieu): void {
-    console.log('Đã thêm thương hiệu:', newThuongHieu); // Debug
-    this.page = 0; // Quay về trang đầu để hiển thị thương hiệu mới
+    console.log('Đã thêm thương hiệu:', newThuongHieu);
+    this.page = 0;
     this.closeAddModal();
     this.loadThuongHieus();
     this.toastr.success('Thêm thương hiệu thành công!', 'Thành công');

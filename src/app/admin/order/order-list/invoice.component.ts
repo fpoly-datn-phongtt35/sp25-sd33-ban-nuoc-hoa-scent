@@ -24,7 +24,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 export class InvoiceComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   selectedStatus: number | null = null;
-  selectedPaymentMethod: string | null = null;
+  selectedPaymentMethod: string = 'tm';
   orderId: number | null = null;
   searchControl = new FormControl<string>('');
   filteredDonhang: any[] = [];

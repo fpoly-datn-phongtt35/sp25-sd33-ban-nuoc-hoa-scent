@@ -44,9 +44,16 @@ export class ThuongHieuService {
     }
 
 
-    getThuongHieu1(page: number, size: number = 12): Observable<any> {
-      let params = `?page=${page}&size=${size}`;
-      return this.http.get(`${this.apiUrl}${params}`).pipe(
+    getThuongHieu1(page: number, size: number = 12, searchQuery: string = '', exactMatch: boolean = false): Observable<any> {
+      let params = new URLSearchParams();
+      params.set('page', page.toString());
+      params.set('size', size.toString());
+      if (searchQuery) {
+        params.set('searchQuery', encodeURIComponent(searchQuery));
+      }
+      params.set('exactMatch', exactMatch.toString());
+  
+      return this.http.get(`${this.apiUrl}?${params.toString()}`).pipe(
         catchError(this.handleError)
       );
     }
@@ -67,13 +74,11 @@ export class ThuongHieuService {
     }
 
 
-
-
     addThuongHieu1(thuongHieu: Omit<ThuongHieu, 'id'>): Observable<ThuongHieu> {
       return this.http.post<ThuongHieu>(this.apiUrl, thuongHieu).pipe(
         catchError((error) => {
-          console.error('Lỗi khi thêm thương hiệu:', error);
-          return throwError(() => new Error('Failed to add brand'));
+          console.error('Lỗi khi thêm thương hiệu:', new Date().toISOString(), error);
+          return throwError(() => error); // Truyền lỗi gốc
         })
       );
     }

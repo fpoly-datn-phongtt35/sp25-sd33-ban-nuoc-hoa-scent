@@ -13,7 +13,7 @@
   <!-- ✅ Bộ lọc trạng thái và phương thức thanh toán -->
   <div class="mb-4">
      <div *ngIf="selectedTab === 'online'" class="btn-group" role="group">
-      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === null}" (click)="filterByPaymentMethod(null)">Tất cả</button>
+
       <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'tm'}" (click)="filterByPaymentMethod('tm')">💵 Tiền mặt</button>
       <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'ck'}" (click)="filterByPaymentMethod('ck')">🏦 Chuyển khoản</button>
     </div>
