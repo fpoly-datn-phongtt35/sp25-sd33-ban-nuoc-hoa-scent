@@ -291,7 +291,9 @@ public class PhieuGiamGiaSv {
         PhieuGiamGia phieuGiamGia = pggi.findByMaGiamGia(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "⚠️ Mã giảm giá không tồn tại hoặc không hợp lệ!"));
-
+        if (phieuGiamGia.getDieuKienapDung() != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "⚠️ Mã giảm giá này chỉ áp dụng cho đơn hàng Offline!");
+        }
         LocalDateTime now = LocalDateTime.now();
         if (phieuGiamGia.getNgayBatDau() != null && now.isBefore(phieuGiamGia.getNgayBatDau())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

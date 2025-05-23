@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -69,17 +70,47 @@ public class TaiKhoanSv implements UserDetailsService {
     JWTSv js;
 
     public String verify(TaiKhoan taiKhoan) {
-        Authentication auth =
-                //thực hiện xác thực với instance đã được tiêm vào
-                aum.authenticate(new UsernamePasswordAuthenticationToken(taiKhoan.getTenDangNhap(), taiKhoan.getMatKhau()));
-        //khi login sẽ kiểm tra auth có được xác thực hay ko(tk mk có đúng hay ko)
-        if (auth.isAuthenticated()) {
-            return js.generateToken(taiKhoan.getTenDangNhap());
-        } else {
+        System.out.println("Nhận đối tượng taiKhoan từ Postman: " + (taiKhoan != null ? taiKhoan.toString() : "null"));
+        if (taiKhoan == null || taiKhoan.getTenDangNhap() == null || taiKhoan.getMatKhau() == null) {
+            System.out.println("Tài khoản không hợp lệ, trả về fail");
             return "fail";
         }
-    }
 
+        // Truy vấn tài khoản từ DB để lấy trạng thái
+        TaiKhoan taiKhoanFromDb = tki.findByTenDangNhap(taiKhoan.getTenDangNhap())
+                .orElse(null);
+        if (taiKhoanFromDb == null) {
+            System.out.println("Không tìm thấy tài khoản: " + taiKhoan.getTenDangNhap());
+            return "Sai mật khẩu hoặc tài khoản không tồn tại";
+        }
+
+        System.out.println("Tài khoản từ DB: " + taiKhoanFromDb.toString());
+        Integer trangThai = taiKhoanFromDb.getTrangThai();
+        System.out.println("Trạng thái tài khoản: " + trangThai + " cho tài khoản: " + taiKhoanFromDb.getTenDangNhap());
+        if (trangThai == null || trangThai != 1) {
+            System.out.println("Tài khoản bị khóa hoặc trạng thái null");
+            return "Tài khoản đã bị khóa";
+        }
+
+        try {
+            System.out.println("Bắt đầu xác thực với tên đăng nhập: " + taiKhoan.getTenDangNhap());
+            System.out.println("Mật khẩu nhập vào: " + taiKhoan.getMatKhau());
+            Authentication auth = aum.authenticate(
+                    new UsernamePasswordAuthenticationToken(taiKhoan.getTenDangNhap(), taiKhoan.getMatKhau())
+            );
+            if (auth.isAuthenticated()) {
+                String token = js.generateToken(taiKhoan.getTenDangNhap());
+                System.out.println("Xác thực thành công, token: " + token);
+                return token;
+            } else {
+                System.out.println("Xác thực thất bại: không được xác thực");
+                return "Sai mật khẩu hoặc tài khoản không tồn tại";
+            }
+        } catch (AuthenticationException e) {
+            System.out.println("Lỗi xác thực: " + e.getMessage());
+            return "Sai mật khẩu hoặc tài khoản không tồn tại";
+        }
+    }
     @Override
     //lấy ra tk từ tên đăng nhập
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -107,7 +138,7 @@ public class TaiKhoanSv implements UserDetailsService {
 
         // Mã hóa mật khẩu trước khi lưu
         taiKhoan.setMatKhau(e.encode(taiKhoan.getMatKhau()));
-
+taiKhoan.setTrangThai(1);
         // Lưu tài khoản mới
         return tki.save(taiKhoan);
     }
