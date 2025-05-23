@@ -5,7 +5,6 @@ import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AddVoucherComponent } from '../add-voucher/add-voucher.component';
 import { EditVoucherComponent } from '../edit-voucher/edit-voucher.component';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
-
 import * as XLSX from 'xlsx';
 import * as FileSaver from 'file-saver';
 import Swal from 'sweetalert2';
@@ -24,21 +23,19 @@ export class VourcherComponent {
   page: number = 0;
   size: number = 10;
   totalPages: number = 1;
-  filterType: string = 'online'; // Đổi mặc định thành 'all' vì lọc sẽ ở backend
-  statusFilter: string = 'all'; // Đổi mặc định thành 'all'
+  filterType: string = 'online';
+  statusFilter: string = 'all';
   sortField: string = 'id';
   sortDirection: string = 'desc';
 
-  // Biến để quản lý modal gửi mã giảm giá
   users: any[] = [];
   selectedVoucher: any = null;
-  selectedUserId: number | null = null;
+  selectedUserIds: number[] = [];
+  filteredUsers: any[] = [];
+  userSearchTerm: string = '';
+  isSending: boolean = false; // Trạng thái loading khi gửi mã giảm giá
 
-  
-  filteredUsers: any[] = []; // Danh sách khách hàng đã lọc
-
-  userSearchTerm: string = ''; // Từ khóa tìm kiếm
-  private searchTimeout: any; // Biến để quản lý debounce
+  private searchTimeout: any;
 
   @ViewChild('sendCouponModal') sendCouponModal!: TemplateRef<any>;
 
@@ -66,17 +63,16 @@ export class VourcherComponent {
       this.scrollToTop();
     });
   }
+
   filterUsers(): void {
-    // Hủy timeout trước đó nếu người dùng nhập tiếp
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
 
-    // Thêm debounce 300ms
     this.searchTimeout = setTimeout(() => {
       const keyword = this.userSearchTerm.trim().toLowerCase();
       if (!keyword) {
-        this.filteredUsers = [...this.users]; // Nếu không có từ khóa, hiển thị toàn bộ danh sách
+        this.filteredUsers = [...this.users];
       } else {
         this.filteredUsers = this.users.filter(user =>
           user.id.toString().includes(keyword) ||
@@ -85,29 +81,40 @@ export class VourcherComponent {
           user.sdt.toLowerCase().includes(keyword)
         );
       }
-      this.cdr.detectChanges(); // Cập nhật giao diện
+      this.cdr.detectChanges();
     }, 300);
   }
 
   openSendCouponModal(voucher: any): void {
     this.selectedVoucher = voucher;
-    this.selectedUserId = null;
-    this.userSearchTerm = ''; // Reset từ khóa tìm kiếm
+    this.selectedUserIds = [];
+    this.userSearchTerm = '';
+    this.isSending = false;
 
     this.phieuGiamGiaService.getUsers().subscribe({
       next: (users) => {
+        if (!users || users.length === 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Cảnh báo!',
+            text: 'Không có khách hàng nào để gửi mã giảm giá!',
+            confirmButtonText: 'Đóng'
+          });
+          return;
+        }
         this.users = users;
-        this.filteredUsers = [...this.users]; // Khởi tạo danh sách đã lọc bằng danh sách gốc
+        this.filteredUsers = [...this.users];
         console.log('Danh sách khách hàng:', this.users);
-        const modalRef = this.modalService.open(this.sendCouponModal, { 
-          backdrop: 'static', 
-          keyboard: false, 
-          size: 'xl' 
+        const modalRef = this.modalService.open(this.sendCouponModal, {
+          backdrop: 'static',
+          keyboard: false,
+          size: 'xl'
         });
         modalRef.result.finally(() => {
           document.body.classList.remove('modal-open');
           document.body.style.overflow = '';
           document.body.style.paddingRight = '';
+          this.isSending = false;
           this.cdr.detectChanges();
           this.scrollToTop();
         });
@@ -117,12 +124,13 @@ export class VourcherComponent {
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
-          text: 'Không thể tải danh sách khách hàng: ' + (error.message || 'Kiểm tra console!'),
+          text: `Không thể tải danh sách khách hàng: ${error.message || 'Kiểm tra console!'}`,
           confirmButtonText: 'Đóng'
         });
       }
     });
   }
+
   ngOnDestroy(): void {
     window.removeEventListener('reloadTableAndGoToFirstPage', () => {});
     window.removeEventListener('reloadTable', () => {});
@@ -156,7 +164,7 @@ export class VourcherComponent {
           this.phieuGiamGias = response.data || [];
           this.totalPages = response.totalPages || 1;
           this.page = response.currentPage || 0;
-          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias); // Chỉ sắp xếp
+          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias);
           this.cdr.detectChanges();
         } else {
           this.phieuGiamGias = [];
@@ -219,9 +227,8 @@ export class VourcherComponent {
           this.page = response.currentPage || 0;
           this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias);
           this.cdr.detectChanges();
-
           if (this.phieuGiamGias.length > 0) {
-           
+            // Không cần xử lý thêm
           } else {
             Swal.fire({
               icon: 'info',
@@ -290,7 +297,7 @@ export class VourcherComponent {
   sortBy(field: string, direction: string): void {
     this.sortField = field;
     this.sortDirection = direction;
-    this.loadAllPhieuGiamGia(); // Cập nhật lại dữ liệu với sắp xếp mới
+    this.loadAllPhieuGiamGia();
   }
 
   sortData(data: any[]): any[] {
@@ -403,7 +410,7 @@ export class VourcherComponent {
         const index = this.phieuGiamGias.findIndex((v) => v.id === updatedVoucher.id);
         if (index !== -1) {
           this.phieuGiamGias[index] = { ...updatedVoucher };
-          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias); // Cập nhật danh sách đã sắp xếp
+          this.filteredPhieuGiamGias = this.sortData(this.phieuGiamGias);
         }
         this.cdr.detectChanges();
       }
@@ -424,7 +431,7 @@ export class VourcherComponent {
       next: (response) => {
         if (response.status === 'success') {
           voucher.trangThai = newStatus;
-          this.loadAllPhieuGiamGia(); // Tải lại dữ liệu để đồng bộ với backend
+          this.loadAllPhieuGiamGia();
           Swal.fire({
             icon: 'success',
             title: 'Thành công!',
@@ -465,7 +472,7 @@ export class VourcherComponent {
   }
 
   shouldShowToggleButton(item: any): boolean {
-    const show = item.trangThai === 1  && this.isNotExpired(item.ngayHetHan);
+    const show = item.trangThai === 1 && this.isNotExpired(item.ngayHetHan);
     return show;
   }
 
@@ -478,7 +485,7 @@ export class VourcherComponent {
     const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.phieuGiamGias.map(item => ({
       ID: item.id,
       [this.filterType === 'offline' ? 'Phiếu giảm giá' : 'Mã giảm giá']: item.maGiamGia,
-      'Giá trị': `${(item.giaTriGiam * 100)}%`, // Chuyển đổi giá trị thành phần trăm
+      'Giá trị': `${(item.giaTriGiam * 100)}%`,
       'Ngày bắt đầu': new Date(item.ngayBatDau).toLocaleDateString(),
       'Giờ bắt đầu': new Date(item.ngayBatDau).toLocaleTimeString(),
       'Ngày hết hạn': new Date(item.ngayHetHan).toLocaleDateString(),
@@ -490,17 +497,7 @@ export class VourcherComponent {
     })));
 
     const colWidths = [
-      { wch: 5 },  // ID
-      { wch: 15 }, // Mã giảm giá / Phiếu giảm giá
-      { wch: 10 }, // Giá trị
-      { wch: 15 }, // Ngày bắt đầu
-      { wch: 15 }, // Giờ bắt đầu
-      { wch: 15 }, // Ngày hết hạn
-      { wch: 15 }, // Giờ hết hạn
-      { wch: 10 }, // Số lượng
-      { wch: 10 }, // Luồng
-      { wch: 15 }, // Giá trị tối đa
-      { wch: 15 }  // Trạng thái
+      { wch: 5 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 }
     ];
     worksheet['!cols'] = colWidths;
 
@@ -514,61 +511,37 @@ export class VourcherComponent {
     FileSaver.saveAs(data, fileName + '_export_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   }
 
-  // openSendCouponModal(voucher: any): void {
-  //   this.selectedVoucher = voucher;
-  //   this.selectedUserId = null;
-
-  //   this.phieuGiamGiaService.getUsers().subscribe({
-  //     next: (users) => {
-  //       this.users = users;
-  //       console.log('Danh sách users:', this.users);
-  //       const modalRef = this.modalService.open(this.sendCouponModal, { 
-  //         backdrop: 'static', 
-  //         keyboard: false, 
-  //         size: 'xl' 
-  //       });
-  //       modalRef.result.finally(() => {
-  //         document.body.classList.remove('modal-open');
-  //         document.body.style.overflow = '';
-  //         document.body.style.paddingRight = '';
-  //         this.cdr.detectChanges();
-  //         this.scrollToTop();
-  //       });
-  //     },
-  //     error: (error) => {
-  //       console.error('Lỗi khi tải danh sách khách hàng:', error);
-  //       Swal.fire({
-  //         icon: 'error',
-  //         title: 'Lỗi!',
-  //         text: 'Không thể tải danh sách khách hàng: ' + (error.message || 'Kiểm tra console!'),
-  //         confirmButtonText: 'Đóng'
-  //       });
-  //     }
-  //   });
-  // }
-
   onUserSelect(userId: number): void {
-    this.selectedUserId = userId;
+    const index = this.selectedUserIds.indexOf(userId);
+    if (index === -1) {
+      this.selectedUserIds.push(userId);
+    } else {
+      this.selectedUserIds.splice(index, 1);
+    }
+    console.log('Danh sách ID người dùng đã chọn:', this.selectedUserIds);
   }
 
   sendCoupon(): void {
-    if (!this.selectedUserId) {
+    if (this.selectedUserIds.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'Cảnh báo!',
-        text: 'Vui lòng chọn một khách hàng để gửi mã giảm giá!',
+        text: 'Vui lòng chọn ít nhất một khách hàng để gửi mã giảm giá!',
         confirmButtonText: 'Đóng'
       });
       return;
     }
 
-    this.phieuGiamGiaService.sendCoupon(this.selectedVoucher.id, this.selectedUserId).subscribe({
+    this.isSending = true;
+    console.log('Gửi mã giảm giá:', { voucherId: this.selectedVoucher.id, userIds: this.selectedUserIds });
+    this.phieuGiamGiaService.sendCoupon(this.selectedVoucher.id, this.selectedUserIds).subscribe({
       next: (response) => {
+        console.log('Phản hồi từ API:', response);
         if (response.status === 'success') {
           Swal.fire({
             icon: 'success',
             title: 'Thành công!',
-            text: response.message,
+            text: response.message || `Đã gửi mã giảm giá đến ${this.selectedUserIds.length} khách hàng!`,
             confirmButtonText: 'OK',
             timer: 1500,
             showConfirmButton: false
@@ -579,18 +552,23 @@ export class VourcherComponent {
           Swal.fire({
             icon: 'error',
             title: 'Lỗi!',
-            text: response.message,
+            text: response.message || 'Không thể gửi mã giảm giá!',
             confirmButtonText: 'Đóng'
           });
         }
       },
       error: (error) => {
+        console.error('Lỗi khi gửi mã giảm giá:', error);
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
-          text: error.message || 'Có lỗi xảy ra khi gửi mã giảm giá.',
+          text: error.message || 'Có lỗi xảy ra khi gửi mã giảm giá. Kiểm tra console!',
           confirmButtonText: 'Đóng'
         });
+      },
+      complete: () => {
+        this.isSending = false;
+        this.cdr.detectChanges();
       }
     });
   }

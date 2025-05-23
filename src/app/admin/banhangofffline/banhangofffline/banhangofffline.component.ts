@@ -48,7 +48,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   showQuantityModal: boolean = false;
   selectedProduct: any = null;
   selectedQuantity: number = 1;
-
+ 
+  quantityError: string | null = null; // Biến để lưu thông báo lỗi số lượng
   totalBeforeDiscount: number = 0;
   totalAfterDiscount: number | undefined;
   discountCodeInput: string = '';
@@ -530,7 +531,25 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       }
     );
   }
+restrictQuantity(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = Number(input.value);
+    const maxQuantity = this.selectedProduct?.soLuongtonkho || 0;
 
+    if (value < 1) {
+      this.selectedQuantity = 1;
+      this.quantityError = 'Số lượng phải lớn hơn 0!';
+    } else if (value > maxQuantity) {
+      this.selectedQuantity = maxQuantity;
+      this.quantityError = `Số lượng không được vượt quá tồn kho (${maxQuantity})!`;
+    } else {
+      this.selectedQuantity = value;
+      this.quantityError = null;
+    }
+
+    this.orderStateService.updateState({ selectedQuantity: this.selectedQuantity });
+    this.cdr.detectChanges();
+  }
   private finalizeOrder(orderData: any): void {
     this.generatePDF(orderData);
 
@@ -794,7 +813,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     });
   }
 
-  confirmAddProduct(): void {
+ confirmAddProduct(): void {
     if (!this.selectedProduct) {
       Swal.fire({
         icon: 'error',
@@ -809,6 +828,15 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
         icon: 'error',
         title: 'Lỗi',
         text: 'Số lượng phải lớn hơn 0!',
+      });
+      return;
+    }
+
+    if (this.selectedQuantity > this.selectedProduct.soLuongtonkho) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: `Số lượng vượt quá tồn kho (${this.selectedProduct.soLuongtonkho})!`,
       });
       return;
     }
@@ -839,8 +867,18 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
         item.dungTich === this.selectedProduct.dungTich &&
         item.idSanPham === this.selectedProduct.idSanPham
     );
+
     if (existingItem) {
-      existingItem.soLuong += this.selectedQuantity;
+      const newQuantity = existingItem.soLuong + this.selectedQuantity;
+      if (newQuantity > product.soLuongtonkho) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: `Tổng số lượng (${newQuantity}) vượt quá tồn kho (${product.soLuongtonkho})!`,
+        });
+        return;
+      }
+      existingItem.soLuong = newQuantity;
       existingItem.thanhTien = existingItem.donGia * existingItem.soLuong;
     } else {
       this.currentOrder.chiTietDonHangs.push({

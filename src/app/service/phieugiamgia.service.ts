@@ -71,14 +71,26 @@ export class PhieugiamgiaService {
     );
   }
 
-  // Gửi mã giảm giá qua email
-  sendCoupon(couponId: number, userId: number): Observable<any> {
-    const params = { couponId, userId };
-    return this.http.post<any>(`${this.apiUrl}/send-coupon`, null, { params }).pipe(
-      catchError(this.handleError)
-    );
+sendCoupon(couponId: number, userIds: number[]): Observable<any> {
+  // Input validation
+  if (!couponId || couponId <= 0) {
+    return throwError(() => new Error('Coupon ID không hợp lệ'));
+  }
+  if (!userIds || userIds.length === 0) {
+    return throwError(() => new Error('Chưa chọn khách hàng nào'));
   }
 
+  // Construct query parameters
+  const params = new HttpParams()
+    .set('couponId', couponId.toString())
+    .set('userIds', userIds.join(',')); // Convert array to comma-separated string
+
+  console.log('📌 Gửi POST:', `${this.apiUrl}/send-coupon`, 'Params:', params.toString());
+
+  return this.http.post<any>(`${this.apiUrl}/send-coupon`, null, { params }).pipe(
+    catchError(this.handleError)
+  );
+}
   getDiscountCodeDetails(code: string, sdt: string, id: number | null, tongGiaTriDonHang: number): Observable<DiscountResponse> {
     const params: { [key: string]: string | number | null } = { code, tongGiaTriDonHang };
     if (id) params['idTaiKhoan'] = id;

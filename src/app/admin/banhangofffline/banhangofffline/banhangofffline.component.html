@@ -264,19 +264,40 @@
   </div>
 
   <!-- Quantity Modal -->
-  <div class="modal" *ngIf="showQuantityModal">
-    <div class="modal-content">
-      <h4>{{ selectedProduct?.tenSanPham }}</h4>
-      <img
-        [src]="selectedProduct?.urlImage || 'assets/placeholder.png'"
-        alt="{{ selectedProduct?.tenSanPham }}"
-        class="modal-image"
+<div class="modal" *ngIf="showQuantityModal">
+  <div class="modal-content">
+    <h4>{{ selectedProduct?.tenSanPham }}</h4>
+    <img
+      [src]="selectedProduct?.urlImage || 'assets/placeholder.png'"
+      alt="{{ selectedProduct?.tenSanPham }}"
+      class="modal-image"
+    />
+    <div class="form-group">
+      <label for="quantityInput">Số lượng (Tồn kho: {{ selectedProduct?.soLuongtonkho }})</label>
+      <input
+        type="number"
+        id="quantityInput"
+        [(ngModel)]="selectedQuantity"
+        min="1"
+        [max]="selectedProduct?.soLuongtonkho"
+        (input)="restrictQuantity($event)"
+        class="form-control"
+        required
       />
-      <input type="number" [(ngModel)]="selectedQuantity" min="1" class="form-control" />
-      <div class="modal-actions">
-        <button class="btn btn-confirm" (click)="confirmAddProduct()">Thêm vào giỏ</button>
-        <button class="btn btn-cancel" (click)="closeQuantityModal()">Hủy</button>
+      <div *ngIf="quantityError" class="text-danger">
+        {{ quantityError }}
       </div>
     </div>
+    <div class="modal-actions">
+      <button
+        class="btn btn-confirm"
+        (click)="confirmAddProduct()"
+        [disabled]="selectedQuantity < 1 || selectedQuantity > selectedProduct?.soLuongtonkho"
+      >
+        Thêm vào giỏ
+      </button>
+      <button class="btn btn-cancel" (click)="closeQuantityModal()">Hủy</button>
+    </div>
   </div>
+</div>
 </div> 
