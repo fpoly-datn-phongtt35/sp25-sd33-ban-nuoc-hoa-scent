@@ -14,7 +14,8 @@
     >
       Thanh toán Lại
     </button>
-  <button class="btn btn-secondary" (click)="goToHomePage()">Quay về Trang Chủ</button>
+  <button class="btn btn-primary" (click)="goToHomePage()">Quay về Trang Chủ</button>
+  <button class="btn btn-secondary" (click)="viewOrderDetails()">Xem Chi Tiết Đơn Hàng</button>
 </div>
 
 <div class="order-success-container" *ngIf="!errorMessage && paymentStatus === 'checking'">
@@ -45,6 +46,7 @@
   <div class="buttons">
     <button class="btn btn-warning" (click)="retryPayment()">🔁 Thanh Toán Lại</button>
     <button class="btn btn-secondary" (click)="goToHomePage()">Trang Chủ</button>
+        <button class="btn btn-secondary" (click)="viewOrderDetails()">Xem Chi Tiết Đơn Hàng</button>
   </div>
 </div>
 

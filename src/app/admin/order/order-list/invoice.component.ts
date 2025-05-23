@@ -49,12 +49,12 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     cancelled: 5,
   };
 
-  private allowedStatuses: { [key: string]: number[] } = {
-    online: [1, 2, 3, 4, 5, 6],
-    offline: [4, 5],
-    'online_ck': [1, 4, 5, 6], // Chuyển khoản: Chờ xác nhận (chờ thanh toán), Đã thanh toán, Hoàn thành, Đã hủy
-    'online_tm': [1, 2, 3, 4, 5], // Tiền mặt: Chờ xác nhận, Đã xác nhận, Đang giao, Hoàn thành, Đã hủy
-  };
+ private allowedStatuses: { [key: string]: number[] } = {
+  online: [1, 2, 3, 4, 5, 6],
+  offline: [4, 5],
+  'online_ck': [1, 3,4, 5, 6], // Chuyển khoản: Chờ xác nhận, Đã thanh toán, Hoàn thành, Đã hủy
+  'online_tm': [1, 2, 3, 4, 5], // Tiền mặt: Chờ xác nhận, Đã xác nhận, Đang giao, Hoàn thành, Đã hủy
+};
 
   private webSocketSubscription: Subscription | undefined;
   private searchSubscription: Subscription | undefined;
@@ -555,35 +555,35 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     }
   }
 
-  getNextStatusText(currentStatus: number, isCK: boolean): string {
-    switch (currentStatus) {
-      case 1:
-        return isCK ? 'Đã Thanh Toán' : 'Đã Xác Nhận';
-      case 2:
-        return 'Đang Giao';
-      case 3:
-        return 'Đã Hoàn Thành';
-      case 6:
-        return 'Đang Giao';
-      default:
-        return 'Không xác định';
-    }
+ getNextStatusText(currentStatus: number, isCK: boolean): string {
+  switch (currentStatus) {
+    case 1:
+      return isCK ? 'Đã Thanh Toán' : 'Đã Xác Nhận';
+    case 2:
+      return 'Đang Giao';
+    case 3:
+      return 'Đã Hoàn Thành';
+    case 6:
+      return 'Đang Giao';
+    default:
+      return 'Không xác định';
   }
+}
 
-  getNextStatusCode(currentStatus: number, isCK: boolean): number {
-    switch (currentStatus) {
-      case 1:
-        return isCK ? 6 : 2;
-      case 2:
-        return 3;
-      case 3:
-        return 4;
-      case 6:
-        return 3;
-      default:
-        return currentStatus;
-    }
+ getNextStatusCode(currentStatus: number, isCK: boolean): number {
+  switch (currentStatus) {
+    case 1:
+      return isCK ? 6 : 2;
+    case 2:
+      return 3;
+    case 3:
+      return 4;
+    case 6:
+      return 3;
+    default:
+      return currentStatus;
   }
+}
 
   goToPage(p: number) {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
