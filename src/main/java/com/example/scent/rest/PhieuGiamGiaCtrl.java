@@ -43,8 +43,21 @@ private PhieuGiamGiaInterface pggi;
 
     // Gửi mã giảm giá qua email
     @PostMapping("/send-coupon")
-    public Map<String, Object> sendCouponToUser(@RequestParam Integer couponId, @RequestParam Integer userId) {
-        return pggs.sendCouponToUser(couponId, userId);
+    public Map<String, Object> sendCouponToUser(@RequestParam Integer couponId, @RequestParam List<Integer> userIds) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (userIds == null || userIds.isEmpty()) {
+                response.put("status", "error");
+                response.put("message", "Danh sách người dùng không được để trống!");
+                return response;
+            }
+            return pggs.sendCouponToUser(couponId, userIds);
+        } catch (Exception e) {
+            logger.error("Lỗi khi xử lý yêu cầu gửi mã giảm giá: {}", e.getMessage(), e);
+            response.put("status", "error");
+            response.put("message", "Lỗi: " + e.getMessage());
+            return response;
+        }
     }
     @GetMapping("/getAll")
     public List<PhieuGiamGia> getAll() {

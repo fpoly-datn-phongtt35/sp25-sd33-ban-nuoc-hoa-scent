@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,24 +23,21 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Async
     public void sendCouponEmail(String to, String couponCode, BigDecimal discount, LocalDate startDate, LocalDate endDate) {
         try {
-            // Kiểm tra định dạng email
             if (!EMAIL_PATTERN.matcher(to).matches()) {
                 throw new IllegalArgumentException("Địa chỉ email không hợp lệ: " + to);
             }
-
-            // Kiểm tra startDate và endDate
             if (startDate == null || endDate == null) {
                 throw new IllegalArgumentException("Thời gian bắt đầu và kết thúc không được để trống");
             }
 
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("laivanquang986@gmail.com"); // Địa chỉ gửi phải khớp với tài khoản Gmail
+            message.setFrom("laivanquang986@gmail.com");
             message.setTo(to);
             message.setSubject("Mã giảm giá từ SCENT");
 
-            // Trích xuất tên người dùng hoặc dùng giá trị mặc định
             String username = to.contains("@") ? to.split("@")[0] : "Khách hàng";
             message.setText(String.format(
                     "Chào bạn %s,\n\nMã giảm giá của bạn là: %s\nGiá trị giảm: %s%%\nThời gian bắt đầu: %s\nThời gian kết thúc: %s\nLưu ý:\n+Phiếu giảm giá chỉ sử dụng khi mua hàng trực tuyến\n+Mỗi phiếu giảm giá chỉ được sử dụng 1 lần cho 1 tài khoản\n\nCảm ơn bạn đã sử dụng dịch vụ!\n\nTrân trọng,\nĐội ngũ SCENT",
