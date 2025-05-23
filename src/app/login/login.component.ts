@@ -16,7 +16,7 @@ import Swal from 'sweetalert2';
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
-  showPassword: boolean = false; // Biến điều khiển hiển thị/ẩn mật khẩu
+  showPassword: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -48,7 +48,6 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  // Hàm để bật/ẩn mật khẩu
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
@@ -58,25 +57,15 @@ export class LoginComponent implements OnInit {
       const { username, password } = this.loginForm.value;
 
       this.authService.login(username, password).subscribe({
-        next: (token: string) => {
-          console.log('Token nhận được:', token);
-          try {
-            this.tokenService.setToken(token);
-            const role = this.tokenService.getRole();
-            console.log('Vai trò sau khi đăng nhập:', role);
-            const UserID: number = this.tokenService.getUserId();
-            console.log('ID:', UserID);
-            if (UserID) {
-              this.cartService.setUserId(UserID.toString());
-            } else {
-              throw new Error('Không lấy được UserID từ token');
-            }
-
+        next: (response: string) => {
+          // Kiểm tra phản hồi từ API
+          if (response === 'fail' || response === 'Sai mật khẩu hoặc tài khoản không tồn tại') {
+            // Sai tài khoản hoặc mật khẩu
             Swal.fire({
-              title: 'Đăng nhập thành công!',
-              text: 'Chào mừng bạn đến với hệ thống!',
-              icon: 'success',
-              confirmButtonText: 'OK',
+              icon: 'error',
+              title: 'Đăng nhập thất bại',
+              text: 'Tài khoản hoặc mật khẩu không đúng. Vui lòng thử lại!',
+              confirmButtonText: 'Thử lại',
               position: 'center',
               customClass: {
                 popup: 'swal2-centered',
@@ -89,20 +78,14 @@ export class LoginComponent implements OnInit {
               timerProgressBar: true,
               backdrop: true,
               allowOutsideClick: true,
-            }).then(() => {
-              if (role === 'ADMIN' || role === 'STAFF') {
-                this.router.navigate(['/admin']);
-              } else {
-                this.router.navigate(['/']);
-              }
             });
-          } catch (error) {
-            console.error('Lỗi khi xử lý token sau đăng nhập:', error);
+          } else if (response === 'Tài khoản đã bị khóa') {
+            // Tài khoản bị khóa
             Swal.fire({
               icon: 'error',
-              title: 'Lỗi đăng nhập',
-              text: 'Không thể lưu thông tin đăng nhập do bộ nhớ trình duyệt đầy. Vui lòng xóa dữ liệu trình duyệt và thử lại!',
-              confirmButtonText: 'Thử lại',
+              title: 'Đăng nhập thất bại',
+              text: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!',
+              confirmButtonText: 'OK',
               position: 'center',
               customClass: {
                 popup: 'swal2-centered',
@@ -116,14 +99,71 @@ export class LoginComponent implements OnInit {
               backdrop: true,
               allowOutsideClick: true,
             });
+          } else {
+            // Đăng nhập thành công (response là token)
+            try {
+              this.tokenService.setToken(response);
+              const role = this.tokenService.getRole();
+              const UserID: number = this.tokenService.getUserId();
+              if (UserID) {
+                this.cartService.setUserId(UserID.toString());
+              } else {
+                throw new Error('Không lấy được UserID từ token');
+              }
+
+              Swal.fire({
+                title: 'Đăng nhập thành công!',
+                text: 'Chào mừng bạn đến với hệ thống!',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                position: 'center',
+                customClass: {
+                  popup: 'swal2-centered',
+                  icon: 'swal2-icon',
+                  title: 'swal2-title',
+                  htmlContainer: 'swal2-content',
+                  confirmButton: 'swal2-confirm',
+                },
+                timer: 3000,
+                timerProgressBar: true,
+                backdrop: true,
+                allowOutsideClick: true,
+              }).then(() => {
+                if (role === 'ADMIN' || role === 'STAFF') {
+                  this.router.navigate(['/admin']);
+                } else {
+                  this.router.navigate(['/']);
+                }
+              });
+            } catch (error) {
+              console.error('Lỗi khi xử lý token sau đăng nhập:', error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Lỗi đăng nhập',
+                text: 'Không thể lưu thông tin đăng nhập do bộ nhớ trình duyệt đầy. Vui lòng xóa dữ liệu trình duyệt và thử lại!',
+                confirmButtonText: 'Thử lại',
+                position: 'center',
+                customClass: {
+                  popup: 'swal2-centered',
+                  icon: 'swal2-icon',
+                  title: 'swal2-title',
+                  htmlContainer: 'swal2-content',
+                  confirmButton: 'swal2-confirm',
+                },
+                timer: 5000,
+                timerProgressBar: true,
+                backdrop: true,
+                allowOutsideClick: true,
+              });
+            }
           }
         },
         error: (error: any) => {
-          console.error('Đăng nhập thất bại', error);
+          console.error('Lỗi kết nối API đăng nhập:', error);
           Swal.fire({
             icon: 'error',
-            title: 'Đăng nhập thất bại',
-            text: 'Tài khoản hoặc mật khẩu không đúng. Vui lòng thử lại!',
+            title: 'Lỗi hệ thống',
+            text: 'Không thể kết nối đến server. Vui lòng thử lại sau!',
             confirmButtonText: 'Thử lại',
             position: 'center',
             customClass: {
@@ -133,7 +173,7 @@ export class LoginComponent implements OnInit {
               htmlContainer: 'swal2-content',
               confirmButton: 'swal2-confirm',
             },
-            timer: 3000,
+            timer: 5000,
             timerProgressBar: true,
             backdrop: true,
             allowOutsideClick: true,

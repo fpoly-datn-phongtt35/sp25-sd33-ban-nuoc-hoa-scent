@@ -1,11 +1,30 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectorRef, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PercentTransformPipe } from '../../../service/PercentTransformPipe';
 
+// Validator tùy chỉnh
+function noSpecialCharactersOrOnlySpacesValidator(): ValidatorFn {
+  return (control: AbstractControl): { [key: string]: any } | null => {
+    const value = control.value as string;
+
+    // Kiểm tra nếu chỉ chứa dấu cách
+    if (value && value.trim().length === 0) {
+      return { onlySpaces: true };
+    }
+
+    // Kiểm tra ký tự đặc biệt (cho phép chữ cái, số, gạch dưới, không cho phép ký tự đặc biệt khác)
+    const specialCharRegex = /^[a-zA-Z0-9_]+$/;
+    if (value && !specialCharRegex.test(value)) {
+      return { specialCharacters: true };
+    }
+
+    return null;
+  };
+}
 
 @Component({
   selector: 'app-edit-voucher',
@@ -31,7 +50,11 @@ export class EditVoucherComponent implements OnInit {
   ) {
     this.voucherForm = this.fb.group({
       id: [null],
-      maGiamGia: ['', [Validators.required, Validators.maxLength(50)]],
+      maGiamGia: ['', [
+        Validators.required,
+        Validators.maxLength(50),
+        noSpecialCharactersOrOnlySpacesValidator() // Thêm validator tùy chỉnh
+      ]],
       giaTriGiam: [0, [Validators.required, Validators.min(0.1), Validators.max(0.9)]], // Updated max to 0.9 (90%)
       ngayBatDau: ['', Validators.required],
       gioPhutBatDau: ['', Validators.required],
@@ -157,11 +180,10 @@ export class EditVoucherComponent implements OnInit {
     return date.toTimeString().slice(0, 5);
   }
 
-closeModal() {
+  closeModal() {
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
     }
-    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {

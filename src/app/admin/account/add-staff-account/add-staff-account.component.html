@@ -11,6 +11,8 @@
       <input type="text" class="form-control" formControlName="hoTen">
       <div *ngIf="accountForm.get('hoTen')?.invalid && (accountForm.get('hoTen')?.touched || accountForm.get('hoTen')?.dirty)" class="text-danger">
         <div *ngIf="accountForm.get('hoTen')?.errors?.['required']">Họ và tên là bắt buộc.</div>
+        <div *ngIf="accountForm.get('hoTen')?.errors?.['onlyWhitespace']">Họ và tên không được chỉ chứa dấu cách.</div>
+        <div *ngIf="accountForm.get('hoTen')?.errors?.['specialChar']">Họ và tên không được chứa ký tự đặc biệt.</div>
       </div>
     </div>
 
@@ -23,15 +25,18 @@
         <div *ngIf="accountForm.get('email')?.errors?.['email']">Email không hợp lệ.</div>
       </div>
     </div>
+
     <!-- Số điện thoại -->
     <div class="mb-3">
       <label class="form-label">Số Điện Thoại</label>
       <input type="text" class="form-control" formControlName="sdt">
       <div *ngIf="accountForm.get('sdt')?.invalid && (accountForm.get('sdt')?.touched || accountForm.get('sdt')?.dirty)" class="text-danger">
         <div *ngIf="accountForm.get('sdt')?.errors?.['required']">Số điện thoại là bắt buộc.</div>
+        <div *ngIf="accountForm.get('sdt')?.errors?.['onlyWhitespace']">Số điện thoại không được chỉ chứa dấu cách.</div>
         <div *ngIf="accountForm.get('sdt')?.errors?.['pattern']">Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.</div>
       </div>
     </div>
+
     <!-- Tên đăng nhập -->
     <div class="mb-3">
       <label class="form-label">Tên Đăng Nhập</label>
@@ -40,22 +45,37 @@
         <div *ngIf="accountForm.get('tenDangNhap')?.errors?.['required']">Tên đăng nhập là bắt buộc.</div>
       </div>
     </div>
+
     <!-- Mật khẩu -->
-    <div class="mb-3">
+    <div class="mb-3 position-relative">
       <label class="form-label">Mật Khẩu</label>
-      <input type="password" class="form-control" formControlName="matKhau">
+      <div class="input-group">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          class="form-control"
+          formControlName="matKhau"
+        >
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="togglePasswordVisibility()"
+        >
+          <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+        </button>
+      </div>
       <div *ngIf="accountForm.get('matKhau')?.invalid && (accountForm.get('matKhau')?.touched || accountForm.get('matKhau')?.dirty)" class="text-danger">
         <div *ngIf="accountForm.get('matKhau')?.errors?.['required']">Mật khẩu là bắt buộc.</div>
-        <div *ngIf="accountForm.get('matKhau')?.errors?.['minlength']">Mật khẩu phải có ít nhất 6 ký tự.</div>
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['onlyWhitespace']">Mật khẩu không được chỉ chứa dấu cách.</div>
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['minlength']">Mật khẩu phải có ít nhất 8 ký tự.</div>
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['uppercase']">Mật khẩu phải có ít nhất 1 chữ hoa.</div>
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['number']">Mật khẩu phải có ít nhất 1 số.</div>
+        <div *ngIf="accountForm.get('matKhau')?.errors?.['specialChar']">Mật khẩu phải có ít nhất 1 ký tự đặc biệt.</div>
       </div>
-    </div>
-    <!-- Submit Button -->
-    <div class="mb-3">
-      <button type="submit" class="btn btn-primary" [disabled]="!accountForm.valid">Lưu</button>
     </div>
   </form>
 </div>
+
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-  <button type="submit" class="btn btn-primary" [disabled]="!accountForm.valid" (click)="saveAccount()">Lưu</button>
+  <button type="button" class="btn btn-primary" [disabled]="!accountForm.valid" (click)="saveAccount()">Lưu</button>
 </div>

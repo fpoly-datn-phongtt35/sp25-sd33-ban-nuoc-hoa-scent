@@ -48,8 +48,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   showQuantityModal: boolean = false;
   selectedProduct: any = null;
   selectedQuantity: number = 1;
- 
-  quantityError: string | null = null; // Biến để lưu thông báo lỗi số lượng
+
+  quantityError: string | null = null;
   totalBeforeDiscount: number = 0;
   totalAfterDiscount: number | undefined;
   discountCodeInput: string = '';
@@ -59,10 +59,12 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
   orderStatusUpdated = new EventEmitter<void>();
   @Input() isComponentSwitched: boolean = false;
 
-  // Biến để quản lý gợi ý số điện thoại
   showSuggestions: boolean = false;
   suggestions: any[] = [];
-  private sdtInputSubject = new Subject<string>(); // Để debounce input
+  private sdtInputSubject = new Subject<string>();
+
+  tenNguoiNhanError: string | null = null;
+  sdtNguoiNhanError: string | null = null;
 
   private stateSubscription: Subscription;
   private spctUpdateSubscription: Subscription;
@@ -84,7 +86,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     private productCacheService: ProductCacheService,
     private orderStateService: OrderStateService,
     private webSocketService: WebSocketService,
-    private http: HttpClient, // Inject HttpClient để gọi API
+    private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.stateSubscription = this.orderStateService.getState().subscribe(state => {
@@ -110,14 +112,13 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
-    // Debounce input số điện thoại để tránh gọi API quá nhiều
     this.sdtInputSubject
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe(sdt => {
-        if (sdt && sdt.length >= 3) { // Chỉ tìm kiếm khi nhập ít nhất 3 ký tự
+        if (sdt && sdt.length >= 3) {
           this.searchTaiKhoanBySdt(sdt);
         } else {
-          this.suggestions = []
+          this.suggestions = [];
           this.showSuggestions = false;
         }
       });
@@ -193,52 +194,68 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       });
     }
   }
-  cancelDiscount(): void {
-    if (this.isLoading) return;
-  
-    this.currentOrder.maGiamGia = null;
-    this.discountCodeInput = '';
-    this.discountAmount = 0;
-    this.totalAfterDiscount = this.totalBeforeDiscount;
-    this.discountDetails = null;
-    this.discountMessage = 'Đã hủy áp dụng mã giảm giá!';
-  
-    this.orderStateService.updateState({
-      orders: this.orders,
-      discountCodeInput: this.discountCodeInput,
-      discountMessage: this.discountMessage,
-      totalAfterDiscount: this.totalAfterDiscount,
-      discountAmount: this.discountAmount,
-      discountDetails: this.discountDetails,
-    });
-  
-    Swal.fire({
-      icon: 'info',
-      title: 'Hủy mã giảm giá',
-      text: 'Mã giảm giá đã được hủy thành công.',
-      timer: 1500,
-      showConfirmButton: false,
-    });
-  
-    this.cdr.detectChanges();
-  }
-  ngOnDestroy(): void {
-    if (this.stateSubscription) {
-      this.stateSubscription.unsubscribe();
+
+  validateTenNguoiNhan(value: string): void {
+    if (!value) {
+      this.tenNguoiNhanError = null;
+      return;
     }
-    if (this.spctUpdateSubscription) {
-      this.spctUpdateSubscription.unsubscribe();
+
+    if (value.trim().length === 0) {
+      this.tenNguoiNhanError = 'Họ và tên không được chỉ chứa dấu cách!';
+      return;
     }
-    if (this.productUpdateSubscription) {
-      this.productUpdateSubscription.unsubscribe();
+
+    const specialCharRegex = /^[a-zA-ZÀ-ỹ\s]+$/;
+    if (!specialCharRegex.test(value)) {
+      this.tenNguoiNhanError = 'Họ và tên không được chứa ký tự đặc biệt!';
+      return;
     }
-    if (this.connectionCheckSubscription) {
-      this.connectionCheckSubscription.unsubscribe();
-    }
-    this.webSocketService.disconnect();
+
+    this.tenNguoiNhanError = null;
   }
 
-  // Hàm gọi API để tìm kiếm tài khoản theo số điện thoại
+  validateSdtNguoiNhan(value: string): void {
+    if (!value) {
+      this.sdtNguoiNhanError = null;
+      return;
+    }
+
+    if (value.trim().length === 0) {
+      this.sdtNguoiNhanError = 'Số điện thoại không được chỉ chứa dấu cách!';
+      return;
+    }
+
+    const numberRegex = /^[0-9]+$/;
+    if (!numberRegex.test(value)) {
+      this.sdtNguoiNhanError = 'Số điện thoại chỉ được chứa số!';
+      return;
+    }
+
+    if (!value.startsWith('0')) {
+      this.sdtNguoiNhanError = 'Số điện thoại phải bắt đầu bằng số 0!';
+      return;
+    }
+
+    if (value.length > 10) {
+      this.sdtNguoiNhanError = 'Số điện thoại chỉ được tối đa 10 số!';
+      return;
+    }
+
+    this.sdtNguoiNhanError = null;
+  }
+
+  updateCustomerInfo(field: 'tenNguoiNhanHang' | 'sdtNguoiNhan', value: string): void {
+    this.currentOrder.donHang[field] = value;
+    this.orderStateService.updateState({ orders: this.orders });
+
+    if (field === 'tenNguoiNhanHang') {
+      this.validateTenNguoiNhan(value);
+    } else if (field === 'sdtNguoiNhan') {
+      this.validateSdtNguoiNhan(value);
+    }
+  }
+
   searchTaiKhoanBySdt(sdt: string): void {
     this.http.get<any[]>(`http://localhost:8080/rest/tai-khoan/search-by-sdt?sdt=${sdt}`).subscribe(
       (response) => {
@@ -255,23 +272,22 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     );
   }
 
-  // Hàm xử lý khi người dùng nhập số điện thoại
   onSdtInput(sdt: string): void {
     this.updateCustomerInfo('sdtNguoiNhan', sdt);
     this.sdtInputSubject.next(sdt);
   }
 
-  // Hàm chọn một gợi ý từ danh sách
   selectSuggestion(suggestion: any): void {
     this.currentOrder.donHang.sdtNguoiNhan = suggestion.sdt;
     this.currentOrder.donHang.tenNguoiNhanHang = suggestion.hoTen;
     this.orderStateService.updateState({ orders: this.orders });
+    this.validateTenNguoiNhan(suggestion.hoTen);
+    this.validateSdtNguoiNhan(suggestion.sdt);
     this.suggestions = [];
     this.showSuggestions = false;
     this.cdr.detectChanges();
   }
 
-  // Hàm ẩn danh sách gợi ý khi mất focus
   hideSuggestions(): void {
     setTimeout(() => {
       this.showSuggestions = false;
@@ -279,9 +295,104 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     }, 200);
   }
 
-  // Các phương thức khác (giữ nguyên)
+  validateOrder(): boolean {
+    if (this.currentOrder.chiTietDonHangs.length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Giỏ hàng trống, không thể tạo đơn hàng!',
+      });
+      return false;
+    }
+
+    const idTaiKhoan = this.tokenService.getUserId();
+    if (!idTaiKhoan) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Không thể lấy ID tài khoản. Vui lòng đăng nhập lại!',
+      });
+      return false;
+    }
+
+    const invalidItem = this.currentOrder.chiTietDonHangs.find((item: any) => !item.idSanPham);
+    if (invalidItem) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: `Sản phẩm "${invalidItem.tenSanPham || 'Không xác định'}" có ID không hợp lệ!`,
+      });
+      return false;
+    }
+
+    if (this.tenNguoiNhanError) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: this.tenNguoiNhanError,
+      });
+      return false;
+    }
+
+    if (this.sdtNguoiNhanError) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: this.sdtNguoiNhanError,
+      });
+      return false;
+    }
+
+    return true;
+  }
+
+  cancelDiscount(): void {
+    if (this.isLoading) return;
+
+    this.currentOrder.maGiamGia = null;
+    this.discountCodeInput = '';
+    this.discountAmount = 0;
+    this.totalAfterDiscount = this.totalBeforeDiscount;
+    this.discountDetails = null;
+    this.discountMessage = 'Đã hủy áp dụng mã giảm giá!';
+
+    this.orderStateService.updateState({
+      orders: this.orders,
+      discountCodeInput: this.discountCodeInput,
+      discountMessage: this.discountMessage,
+      totalAfterDiscount: this.totalAfterDiscount,
+      discountAmount: this.discountAmount,
+      discountDetails: this.discountDetails,
+    });
+
+    Swal.fire({
+      icon: 'info',
+      title: 'Hủy mã giảm giá',
+      text: 'Mã giảm giá đã được hủy thành công.',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+    this.cdr.detectChanges();
+  }
+
+  ngOnDestroy(): void {
+    if (this.stateSubscription) {
+      this.stateSubscription.unsubscribe();
+    }
+    if (this.spctUpdateSubscription) {
+      this.spctUpdateSubscription.unsubscribe();
+    }
+    if (this.productUpdateSubscription) {
+      this.productUpdateSubscription.unsubscribe();
+    }
+    if (this.connectionCheckSubscription) {
+      this.connectionCheckSubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
+  }
+
   refreshProducts(): void {
-   
     this.loadAllProducts();
   }
 
@@ -290,15 +401,13 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     const newTrangThai = update.trangThai;
 
     if (!spctId || newTrangThai === undefined) {
-    
       return;
     }
 
-  console.log(`Updating Spct ID: ${spctId} to trangThai: ${newTrangThai}`);
+    console.log(`Updating Spct ID: ${spctId} to trangThai: ${newTrangThai}`);
 
     this.allProducts = this.allProducts.map(product => {
       if (product.idSpct === spctId) {
-       
         return { ...product, trangThai: newTrangThai };
       }
       return product;
@@ -321,24 +430,18 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const statusText = newTrangThai === 1 ? 'Đang bán' : 'Ngừng bán';
-  
   }
 
   private handleProductUpdate(update: any): void {
-    
     const productId = update.id;
     const newTrangThai = update.trangThai;
 
     if (!productId || newTrangThai === undefined) {
-      
       return;
     }
 
-  
-
     this.allProducts = this.allProducts.map(product => {
       if (product.idSanPham === productId) {
-       
         return { ...product, trangThai: newTrangThai };
       }
       return product;
@@ -359,7 +462,6 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const statusText = newTrangThai === 1 ? 'Đang bán' : 'Ngừng bán';
-   
   }
 
   trackByProduct(index: number, product: any): number {
@@ -372,11 +474,6 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
   onDiscountCodeChange(value: string): void {
     this.orderStateService.updateState({ discountCodeInput: value });
-  }
-
-  updateCustomerInfo(field: 'tenNguoiNhanHang' | 'sdtNguoiNhan', value: string): void {
-    this.currentOrder.donHang[field] = value;
-    this.orderStateService.updateState({ orders: this.orders });
   }
 
   async generateVietQRString(orderId: string, amount: number, orderInfo: string): Promise<string> {
@@ -392,7 +489,6 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
     return new Promise((resolve, reject) => {
       this.vietQRService.generateQRCode(vietQRData).subscribe({
         next: (response: any) => {
-          
           if (response && response.code === '00' && response.data && response.data.qrDataURL) {
             resolve(response.data.qrDataURL);
           } else {
@@ -531,7 +627,8 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
       }
     );
   }
-restrictQuantity(event: Event): void {
+
+  restrictQuantity(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = Number(input.value);
     const maxQuantity = this.selectedProduct?.soLuongtonkho || 0;
@@ -550,6 +647,7 @@ restrictQuantity(event: Event): void {
     this.orderStateService.updateState({ selectedQuantity: this.selectedQuantity });
     this.cdr.detectChanges();
   }
+
   private finalizeOrder(orderData: any): void {
     this.generatePDF(orderData);
 
@@ -596,7 +694,7 @@ restrictQuantity(event: Event): void {
       return;
     }
 
-    this.orderStateService.updateState({ isLoading: true, errorMessage: null });
+    this.orderStateService.updateState({ isLoading: true, errorMessage: '' });
 
     this.orderoffservice.searchSanPham('').subscribe(
       (data) => {
@@ -655,8 +753,6 @@ restrictQuantity(event: Event): void {
           .filter((value): value is string => typeof value === 'string' && value.trim() !== '')
       ),
     ].sort();
-
- 
   }
 
   filterProducts(): void {
@@ -781,6 +877,9 @@ restrictQuantity(event: Event): void {
   }
 
   openQuantityModal(product: any): void {
+    if (this.selectedProduct?.idSpct !== product.idSpct || !this.quantityError) {
+      this.quantityError = null;
+    }
     this.orderStateService.updateState({
       selectedProduct: product,
       selectedQuantity: 1,
@@ -789,6 +888,7 @@ restrictQuantity(event: Event): void {
   }
 
   closeQuantityModal(): void {
+    this.quantityError = null;
     this.orderStateService.updateState({
       showQuantityModal: false,
       selectedProduct: null,
@@ -813,7 +913,7 @@ restrictQuantity(event: Event): void {
     });
   }
 
- confirmAddProduct(): void {
+  confirmAddProduct(): void {
     if (!this.selectedProduct) {
       Swal.fire({
         icon: 'error',
@@ -833,11 +933,8 @@ restrictQuantity(event: Event): void {
     }
 
     if (this.selectedQuantity > this.selectedProduct.soLuongtonkho) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: `Số lượng vượt quá tồn kho (${this.selectedProduct.soLuongtonkho})!`,
-      });
+      this.quantityError = `Số lượng không được vượt quá tồn kho (${this.selectedProduct.soLuongtonkho})!`;
+      this.orderStateService.updateState({ errorMessage: this.quantityError });
       return;
     }
 
@@ -871,11 +968,8 @@ restrictQuantity(event: Event): void {
     if (existingItem) {
       const newQuantity = existingItem.soLuong + this.selectedQuantity;
       if (newQuantity > product.soLuongtonkho) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi',
-          text: `Tổng số lượng (${newQuantity}) vượt quá tồn kho (${product.soLuongtonkho})!`,
-        });
+        this.quantityError = `Tổng số lượng (${newQuantity}) vượt quá tồn kho (${product.soLuongtonkho})!`;
+        this.orderStateService.updateState({ errorMessage: this.quantityError });
         return;
       }
       existingItem.soLuong = newQuantity;
@@ -893,7 +987,8 @@ restrictQuantity(event: Event): void {
       });
     }
 
-    this.orderStateService.updateState({ orders: this.orders });
+    this.quantityError = null;
+    this.orderStateService.updateState({ orders: this.orders, errorMessage: '' });
     this.calculateTotal();
     this.reapplyDiscountIfExists();
     this.closeQuantityModal();
@@ -902,8 +997,7 @@ restrictQuantity(event: Event): void {
   increaseQuantity(index: number): void {
     const item = this.currentOrder.chiTietDonHangs[index];
     const product = this.allProducts.find(p => p.idSpct === item.idSpct);
-  
-    // Kiểm tra nếu sản phẩm tồn tại và số lượng muốn tăng vượt quá tồn kho
+
     if (product && item.soLuong + 1 > product.soLuongtonkho) {
       Swal.fire({
         icon: 'warning',
@@ -911,13 +1005,12 @@ restrictQuantity(event: Event): void {
         text: `Số lượng tồn kho của sản phẩm ${product.tenSanPham} chỉ còn ${product.soLuongtonkho}! Không thể thêm nữa.`,
         confirmButtonText: 'Đóng',
       });
-      return; // Dừng hàm, không tăng số lượng
+      return;
     }
-  
-    // Nếu không vượt quá tồn kho, tiến hành tăng số lượng
+
     item.soLuong++;
     item.thanhTien = item.donGia * item.soLuong;
-    this.orderStateService.updateState({ orders: this.orders });
+    this.orderStateService.updateState({ orders: this.orders, errorMessage: '' });
     this.calculateTotal();
     this.reapplyDiscountIfExists();
     this.cdr.detectChanges();
@@ -928,7 +1021,7 @@ restrictQuantity(event: Event): void {
       this.currentOrder.chiTietDonHangs[index].soLuong--;
       this.currentOrder.chiTietDonHangs[index].thanhTien =
         this.currentOrder.chiTietDonHangs[index].donGia * this.currentOrder.chiTietDonHangs[index].soLuong;
-      this.orderStateService.updateState({ orders: this.orders });
+      this.orderStateService.updateState({ orders: this.orders, errorMessage: '' });
       this.calculateTotal();
       this.reapplyDiscountIfExists();
       this.cdr.detectChanges();
@@ -937,7 +1030,7 @@ restrictQuantity(event: Event): void {
 
   removeProduct(index: number): void {
     this.currentOrder.chiTietDonHangs.splice(index, 1);
-    this.orderStateService.updateState({ orders: this.orders });
+    this.orderStateService.updateState({ orders: this.orders, errorMessage: '' });
     this.calculateTotal();
     this.reapplyDiscountIfExists();
     this.cdr.detectChanges();
@@ -948,25 +1041,25 @@ restrictQuantity(event: Event): void {
       this.orderStateService.updateState({ discountMessage: 'Vui lòng nhập mã giảm giá!' });
       return;
     }
-  
+
     if (this.totalBeforeDiscount <= 0) {
       this.orderStateService.updateState({ discountMessage: 'Giỏ hàng trống, không thể áp dụng mã giảm giá!' });
       return;
     }
-  
+
     this.orderStateService.updateState({ isLoading: true, discountMessage: null });
-  
+
     this.orderoffservice.getDiscountCodeDetails(this.discountCodeInput).subscribe(
       (response) => {
         this.orderStateService.updateState({ isLoading: false });
         console.log('Chi tiết mã giảm giá:', response);
-        if (!response || response.trangThai !== 1 ) { // Giả sử trangThai = 1 là hoạt động
+        if (!response || response.trangThai !== 1) {
           this.currentOrder.maGiamGia = null;
           this.orderStateService.updateState({
             discountDetails: null,
             totalAfterDiscount: undefined,
             discountAmount: 0,
-            discountMessage: 'Mã giảm giá không hoạt động !',
+            discountMessage: 'Mã giảm giá không hoạt động!',
             orders: this.orders,
           });
           this.cdr.detectChanges();
@@ -978,13 +1071,12 @@ restrictQuantity(event: Event): void {
             discountDetails: null,
             totalAfterDiscount: undefined,
             discountAmount: 0,
-            discountMessage: 'Mã giảm giá đã được dùng hết hết số lượng!',
+            discountMessage: 'Mã giảm giá đã được dùng hết số lượng!',
             orders: this.orders,
           });
           this.cdr.detectChanges();
           return;
         }
-        // Kiểm tra điều kiện áp dụng (online/offline)
         if (response.dieuKienapDung !== 0) {
           this.currentOrder.maGiamGia = null;
           this.orderStateService.updateState({
@@ -997,8 +1089,7 @@ restrictQuantity(event: Event): void {
           this.cdr.detectChanges();
           return;
         }
-  
-        // Kiểm tra giá trị tối thiểu của đơn hàng
+
         if (response.giaTriDonToiThieu && this.totalBeforeDiscount < response.giaTriDonToiThieu) {
           this.currentOrder.maGiamGia = null;
           this.orderStateService.updateState({
@@ -1011,13 +1102,12 @@ restrictQuantity(event: Event): void {
           this.cdr.detectChanges();
           return;
         }
-  
-        // Nếu mã giảm giá hợp lệ và đủ điều kiện, tiến hành áp dụng
+
         this.discountDetails = response;
         this.currentOrder.maGiamGia = this.discountCodeInput;
-  
+
         this.applyDiscountLogic(response);
-  
+
         this.orderStateService.updateState({
           discountDetails: this.discountDetails,
           discountMessage: `Áp dụng mã giảm giá thành công! Số tiền giảm: ${this.discountAmount.toLocaleString()} VNĐ`,
@@ -1083,39 +1173,6 @@ restrictQuantity(event: Event): void {
     }
   }
 
-  validateOrder(): boolean {
-    if (this.currentOrder.chiTietDonHangs.length === 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Giỏ hàng trống, không thể tạo đơn hàng!',
-      });
-      return false;
-    }
-
-    const idTaiKhoan = this.tokenService.getUserId();
-    if (!idTaiKhoan) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Không thể lấy ID tài khoản. Vui lòng đăng nhập lại!',
-      });
-      return false;
-    }
-
-    const invalidItem = this.currentOrder.chiTietDonHangs.find((item: any) => !item.idSanPham);
-    if (invalidItem) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: `Sản phẩm "${invalidItem.tenSanPham || 'Không xác định'}" có ID không hợp lệ!`,
-      });
-      return false;
-    }
-
-    return true;
-  }
-
   updatePaymentMethod(method: string): void {
     console.log('Phương thức thanh toán được chọn:', method);
     this.currentOrder.phuongThucThanhToan = method;
@@ -1144,7 +1201,7 @@ restrictQuantity(event: Event): void {
         .replace(/</g, '<')
         .replace(/>/g, '>')
         .replace(/"/g, '"')
-        .replace(/'/g, '');
+        .replace(/'/g, "'");
     };
 
     const container = document.createElement('div');
@@ -1218,6 +1275,8 @@ restrictQuantity(event: Event): void {
         </div>
 
         <p style="font-size: 12px; font-weight: bold; text-align: right;" id="total">Tổng tiền: ${orderData.total ? orderData.total.toLocaleString() : '0'} VNĐ</p>
+
+        <p style="font-size: 10px; text-align: left; color: #666;" id="note">Lưu ý: Khách mua hàng tại cửa hàng được trả hàng sau 3 ngày kể từ ngày mua, nếu do lỗi phía cửa hàng.</p>
       </div>
     `;
 
@@ -1263,6 +1322,7 @@ restrictQuantity(event: Event): void {
       const productTable = container.querySelector('#product-table') as HTMLElement;
       const footer = container.querySelector('#footer') as HTMLElement;
       const total = container.querySelector('#total') as HTMLElement;
+      const note = container.querySelector('#note') as HTMLElement;
 
       if (headerSection) {
         console.log('Đang render phần header...');
@@ -1290,6 +1350,13 @@ restrictQuantity(event: Event): void {
         await addElementToPDF(total, false);
       } else {
         console.warn('Không tìm thấy phần tổng tiền!');
+      }
+
+      if (note) {
+        console.log('Đang render phần lưu ý...');
+        await addElementToPDF(note, false);
+      } else {
+        console.warn('Không tìm thấy phần lưu ý!');
       }
 
       pdf.save(`hoadon_${orderData.orderId || 'unknown'}.pdf`);
@@ -1390,13 +1457,33 @@ restrictQuantity(event: Event): void {
   }
 
   private formatOrderId(orderData: any): string {
-    const date = new Date(orderData.ngayTao);
+    // Kiểm tra orderId
+    let orderIdStr = '0000'; // Giá trị mặc định nếu orderId không hợp lệ
+    if (orderData.orderId && !isNaN(orderData.orderId)) {
+      orderIdStr = orderData.orderId.toString().padStart(4, '0');
+    } else {
+      console.warn('orderId không hợp lệ, sử dụng giá trị mặc định:', orderIdStr);
+    }
+
+    // Kiểm tra ngày tạo
+    let date: Date;
+    if (orderData.ngayTao) {
+      date = new Date(orderData.ngayTao);
+      if (isNaN(date.getTime())) {
+        console.warn('Ngày tạo không hợp lệ, sử dụng ngày hiện tại:', orderData.ngayTao);
+        date = new Date(); // Sử dụng ngày hiện tại nếu ngày tạo không hợp lệ
+      }
+    } else {
+      console.warn('Không có ngày tạo, sử dụng ngày hiện tại');
+      date = new Date();
+    }
+
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
+
     const dateString = `${year}${month}${day}`;
-    const paddedId = orderData.orderId.toString().padStart(4, '0');
-    return `${dateString}${paddedId}`;
+    return `${dateString}${orderIdStr}`;
   }
 
   resetCurrentOrder(): void {
@@ -1416,7 +1503,11 @@ restrictQuantity(event: Event): void {
       discountDetails: null,
       vietQRString: null,
       finalAmount: 0,
+      errorMessage: '',
     });
+    this.tenNguoiNhanError = null;
+    this.sdtNguoiNhanError = null;
+    this.quantityError = null;
     this.calculateTotal();
     this.cdr.detectChanges();
   }

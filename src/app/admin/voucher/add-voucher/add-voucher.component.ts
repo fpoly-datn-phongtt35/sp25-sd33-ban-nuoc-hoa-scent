@@ -1,11 +1,31 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { PhieugiamgiaService } from '../../../service/phieugiamgia.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PercentTransformPipe } from '../../../service/PercentTransformPipe';
 
+// Validator tùy chỉnh
+function noSpecialCharactersOrOnlySpacesValidator(): ValidatorFn {
+  return (control: AbstractControl): { [key: string]: any } | null => {
+    const value = control.value as string;
+
+    // Kiểm tra nếu chỉ chứa dấu cách
+    if (value && value.trim().length === 0) {
+      return { onlySpaces: true };
+    }
+
+    // Kiểm tra ký tự đặc biệt (cho phép chữ cái, số, gạch dưới, không cho phép ký tự đặc biệt khác)
+    const specialCharRegex = /^[a-zA-Z0-9_]+$/;
+    if (value && !specialCharRegex.test(value)) {
+      return { specialCharacters: true };
+    }
+
+    // Kiểm tra nếu chỉ chứa ký tự đặc biệt (trường hợp này không cần vì regex trên đã xử lý)
+    return null;
+  };
+}
 
 @Component({
   selector: 'app-add-voucher',
@@ -31,7 +51,11 @@ export class AddVoucherComponent {
     private cdr: ChangeDetectorRef
   ) {
     this.voucherForm = this.fb.group({
-      maGiamGia: ['', [Validators.required, Validators.maxLength(50)]],
+      maGiamGia: ['', [
+        Validators.required,
+        Validators.maxLength(50),
+        noSpecialCharactersOrOnlySpacesValidator() // Thêm validator tùy chỉnh
+      ]],
       giaTriGiam: [null, [Validators.required, Validators.min(0.1), Validators.max(0.9)]],
       ngayBatDau: ['', Validators.required],
       gioPhutBatDau: ['', Validators.required],
@@ -48,6 +72,7 @@ export class AddVoucherComponent {
     }
   }
 
+  // Các phương thức khác giữ nguyên, chỉ cần cập nhật phần hiển thị lỗi trong template
   updatePercent(event: Event) {
     const input = event.target as HTMLInputElement;
     const value = input.value;
@@ -68,7 +93,7 @@ export class AddVoucherComponent {
 
     this.voucherForm.patchValue({
       maGiamGia: this.voucher.maGiamGia,
-      giaTriGiam: this.voucher.giaTriGiam, // Giá trị từ DB là thập phân (0.1), pipe sẽ hiển thị 10
+      giaTriGiam: this.voucher.giaTriGiam,
       ngayBatDau: this.formatDate(startDateTime),
       gioPhutBatDau: this.formatTime(startDateTime),
       ngayHetHan: this.formatDate(endDateTime),
@@ -87,7 +112,6 @@ export class AddVoucherComponent {
 
     if (this.voucherForm.valid) {
       const formData = { ...this.voucherForm.value };
-
       const start = new Date(this.combineDateTime(formData.ngayBatDau, formData.gioPhutBatDau));
       const end = new Date(this.combineDateTime(formData.ngayHetHan, formData.gioPhutHetHan));
 
@@ -147,11 +171,10 @@ export class AddVoucherComponent {
     });
   }
 
-closeModal() {
+  closeModal() {
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
     }
-    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
       if (modalElement) {
