@@ -147,7 +147,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   private setupSearch(): void {
     this.searchSubscription = this.searchControl.valueChanges.pipe(
-      debounceTime(300),
+      debounceTime(100),
       distinctUntilChanged()
     ).subscribe((keyword) => {
       this.applySearch(keyword ?? '');
@@ -209,7 +209,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     const day = date.getDate().toString().padStart(2, '0');
     const dateString = `${year}${month}${day}`;
     const paddedId = order.id.toString().padStart(4, '0');
-    return `${dateString}${paddedId}`;
+    return `${paddedId}${dateString}`;
   }
 
   switchTab(tab: string): void {
@@ -239,8 +239,9 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
 
     this.filteredDonhang = this.orders.filter((order) => {
+      const idDonHangStringFake=this.formatOrderId(order);
       const searchableText = [
-        order.id?.toString(),
+        idDonHangStringFake,
         order.tenNguoiNhanHang,
         order.sdtNguoiNhan,
         order.diaChiGiaoHang,

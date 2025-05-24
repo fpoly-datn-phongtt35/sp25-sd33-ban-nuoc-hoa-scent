@@ -6,16 +6,16 @@
 
   <!-- 🌐 Tab Online/Offline -->
   <div class="btn-group mb-3" role="group">
-    <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'online'}" (click)="switchTab('online')">Online</button>
-    <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'offline'}" (click)="switchTab('offline')">Offline</button>
+    <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'online'}" (click)="switchTab('online')">Đơn hàng bán trên Website</button>
+    <button class="btn btn-outline-primary" [ngClass]="{'active': selectedTab === 'offline'}" (click)="switchTab('offline')">Đơn hàng tại quầy</button>
   </div>
 
   <!-- ✅ Bộ lọc trạng thái và phương thức thanh toán -->
   <div class="mb-4">
      <div *ngIf="selectedTab === 'online'" class="btn-group" role="group">
 
-      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'tm'}" (click)="filterByPaymentMethod('tm')">💵 Tiền mặt</button>
-      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'ck'}" (click)="filterByPaymentMethod('ck')">🏦 Chuyển khoản</button>
+      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'tm'}" (click)="filterByPaymentMethod('tm')">💵 Phương Thức Thanh Toán Tiền Mặt</button>
+      <button class="btn btn-outline-primary" [ngClass]="{'active': selectedPaymentMethod === 'ck'}" (click)="filterByPaymentMethod('ck')">🏦 Phương Thức Thanh Toán Trực Tuyến</button>
     </div>
     <!-- Status Filters -->
     <div class="btn-group mb-2" role="group">

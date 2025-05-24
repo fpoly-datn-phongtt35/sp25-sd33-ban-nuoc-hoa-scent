@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -22,7 +22,10 @@ export class AccountService {
       catchError(this.handleError)
     );
   }
-
+ createNhanVien(data: any): Observable<any> {
+  return this.http.post(`${this.apiUrl}/nhan-vien/create`, data).pipe(
+      catchError(this.handleError));
+  }
   getStaffAccounts(keyword: string, page: number, size: number): Observable<any> {
     const params = new HttpParams()
       .set('keyword', keyword)
@@ -162,4 +165,5 @@ export class AccountService {
     const params = new HttpParams().set('trangThai', trangThai.toString());
     return this.http.put<any>(`${this.apiUrl}/setTrangThaiByIdTaiKhoan/${id}`, null, { params });
   }
+
 }
