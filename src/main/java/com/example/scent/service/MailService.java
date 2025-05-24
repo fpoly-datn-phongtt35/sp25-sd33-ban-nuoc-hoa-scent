@@ -33,15 +33,16 @@ public class MailService {
         sendHtmlEmail(to, subject, body);
     }
     @Async
-    public void sendNewPasswordEmail(String email, String newPassword) {
+    public void sendNewPasswordEmail(String email, String username, String newPassword) {
         String subject = "Mật khẩu mới của bạn - Scent";
         String body = "<html>" +
                 "<body>" +
                 "<div style='font-family: Arial, sans-serif;'>" +
-                "<h2 style='color: #4CAF50;'>Chào bạn,</h2>" +
-                "<p style='font-size: 16px;'>Mật khẩu mới của bạn cho tài khoản tại <b>Scent</b> đã được tạo thành công.</p>" +
+                "<h2 style='color: #4CAF50;'>Chào " + (username != null ? username : "bạn") + ",</h2>" +
+                "<p style='font-size: 16px;'>Mật khẩu mới cho tài khoản <b>" + (username != null ? username : "của bạn") + "</b> tại <b>Scent</b> đã được tạo thành công.</p>" +
                 "<h3 style='color: #FF5722;'>Mật khẩu mới: " + newPassword + "</h3>" +
-                "<p style='font-size: 14px;'>Vui lòng sử dụng mật khẩu này để đăng nhập vào tài khoản của bạn. Đảm bảo thay đổi mật khẩu sau khi đăng nhập thành công để bảo mật tài khoản của bạn.</p>" +
+                "<p style='font-size: 14px;'>Vui lòng sử dụng tên đăng nhập <b>" + (username != null ? username : "email của bạn") + "</b> và mật khẩu này để đăng nhập vào tài khoản của bạn.</p>" +
+                "<p style='font-size: 14px;'>Đảm bảo thay đổi mật khẩu sau khi đăng nhập thành công để bảo mật tài khoản của bạn.</p>" +
                 "<footer style='margin-top: 20px;'>" +
                 "<p style='font-size: 12px; color: #888;'>Nếu bạn không yêu cầu thay đổi mật khẩu, vui lòng liên hệ với chúng tôi ngay lập tức.</p>" +
                 "</footer>" +
@@ -66,7 +67,27 @@ public class MailService {
             e.printStackTrace();
         }
     }
+    @Async
+    public void sendNewAccountEmail(String email, String username, String newPassword, String hoTen) {
+        String subject = "Tài khoản mới của bạn - Scent";
+        String body = "<html>" +
+                "<body>" +
+                "<div style='font-family: Arial, sans-serif;'>" +
+                "<h2 style='color: #4CAF50;'>Chào " + (hoTen != null ? hoTen : "bạn") + ",</h2>" +
+                "<p style='font-size: 16px;'>Tài khoản nhân viên của bạn tại <b>Scent</b> đã được tạo thành công.</p>" +
+                "<h3 style='color: #FF5722;'>Thông tin đăng nhập:</h3>" +
+                "<p style='font-size: 14px;'>Tên đăng nhập: <b>" + (username != null ? username : "email của bạn") + "</b></p>" +
+                "<p style='font-size: 14px;'>Mật khẩu: <b>" + newPassword + "</b></p>" +
+                "<p style='font-size: 14px;'>Vui lòng sử dụng thông tin này để đăng nhập vào tài khoản của bạn. Đảm bảo thay đổi mật khẩu sau khi đăng nhập thành công để bảo mật tài khoản.</p>" +
+                "<footer style='margin-top: 20px;'>" +
+                "<p style='font-size: 12px; color: #888;'>Nếu bạn không yêu cầu tạo tài khoản, vui lòng liên hệ với chúng tôi ngay lập tức.</p>" +
+                "</footer>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
 
+        sendHtmlEmail(email, subject, body);
+    }
 
 
 }

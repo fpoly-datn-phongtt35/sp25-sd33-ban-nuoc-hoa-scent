@@ -5,6 +5,7 @@ import com.example.scent.dto.TaiKhoanUpdateRequestDTO;
 import com.example.scent.entity.AccountDetail;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
+import com.example.scent.reques.NhanVienRequest;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -19,6 +20,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,8 @@ import java.util.UUID;
 public class TaiKhoanSv implements UserDetailsService {
     final
     TaiKhoanInterface tki;
+    @Autowired
+    private MailService mailService;
 
     public TaiKhoanSv(TaiKhoanInterface tki) {
         this.tki = tki;
@@ -210,5 +214,51 @@ taiKhoan.setTrangThai(1);
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với id: " + IdTaiKhoan));
          tk.setTrangThai(TrangThai);
          return tki.save(tk);
+    }
+    public TaiKhoan createNhanVien(NhanVienRequest request) {
+        // Kiểm tra email và username đã tồn tại
+        if (findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email đã tồn tại");
+        }
+        if (findByUsername(request.getUsername())!=null) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại");
+        }
+
+        // Kiểm tra định dạng email
+        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new IllegalArgumentException("Email không hợp lệ");
+        }
+
+        // Kiểm tra định dạng số điện thoại (ví dụ: 10-11 chữ số)
+        if (request.getSoDienThoai() == null || !request.getSoDienThoai().matches("^\\d{10,11}$")) {
+            throw new IllegalArgumentException("Số điện thoại không hợp lệ");
+        }
+
+        // Kiểm tra họ tên và tên đăng nhập không rỗng
+        if (request.getHoTen() == null || request.getHoTen().trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ và tên không được để trống");
+        }
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên đăng nhập không được để trống");
+        }
+
+        // Tạo tài khoản mới
+        TaiKhoan taiKhoan = new TaiKhoan();
+        taiKhoan.setHoTen(request.getHoTen().trim());
+        taiKhoan.setEmail(request.getEmail().trim());
+        taiKhoan.setSdt(request.getSoDienThoai().trim());
+        taiKhoan.setTenDangNhap(request.getUsername().trim());
+        taiKhoan.setVaiTro("STAFF");
+        // Tạo và mã hóa mật khẩu
+        String newPassword = generateRandomPassword();
+        taiKhoan.setMatKhau(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
+
+        // Lưu tài khoản
+        TaiKhoan savedTaiKhoan = tki.save(taiKhoan);
+
+        // Gửi email chứa username và password
+        mailService.sendNewAccountEmail(request.getEmail(), request.getUsername(), newPassword, request.getHoTen());
+
+        return savedTaiKhoan;
     }
 }

@@ -3,6 +3,7 @@ package com.example.scent.rest;
 import com.example.scent.dto.TaiKhoanUpdateRequestDTO;
 import com.example.scent.entity.TaiKhoan;
 import com.example.scent.repo.TaiKhoanInterface;
+import com.example.scent.reques.NhanVienRequest;
 import com.example.scent.service.TaiKhoanSv;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -150,13 +151,10 @@ public class TaiKhoanCtrl {
         }
 
         TaiKhoan tk = tkOpt.get();
-
         String newPassword = tks.generateRandomPassword();
         tks.resetPassword(tk, newPassword);
-        mailService.sendNewPasswordEmail(email, newPassword);
+        mailService.sendNewPasswordEmail(email, tk.getTenDangNhap(), newPassword); // Truyền thêm username
         return ResponseEntity.ok("Mật khẩu mới đã được gửi tới email");
-
-
     }
 
     @PutMapping("/change-password")
@@ -201,7 +199,7 @@ public class TaiKhoanCtrl {
         }
 
         tks.resetPassword(tk, newPassword);
-        mailService.sendNewPasswordEmail(email, newPassword);
+        mailService.sendNewPasswordEmail(email,tk.getTenDangNhap(), newPassword);
         response.put("success", true);
         response.put("message", "Mật khẩu đã được đặt lại thành công.");
         return ResponseEntity.ok(response);
@@ -254,5 +252,30 @@ public class TaiKhoanCtrl {
        return ResponseEntity.ok(tkUpdate);
 
    }
-
+    @PostMapping(value = "/nhan-vien/create", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Map<String, Object>> createNhanVien(@RequestBody NhanVienRequest request) {
+        try {
+            TaiKhoan taiKhoan = tks.createNhanVien(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tài khoản nhân viên đã được tạo và email đã được gửi");
+            response.put("data", Map.of(
+                    "username", taiKhoan.getTenDangNhap(),
+                    "email", taiKhoan.getEmail(),
+                    "hoTen", taiKhoan.getHoTen(),
+                    "soDienThoai", taiKhoan.getSdt()
+            ));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Đã xảy ra lỗi khi tạo tài khoản: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }
