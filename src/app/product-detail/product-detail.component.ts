@@ -600,15 +600,47 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.activeTab = tab;
     // console.log('Tab hiện tại:', this.activeTab);
   }
-
+  onQuantityChange(): void {
+    if (!this.selectedVolume) {
+      this.quantity = 1;
+      return;
+    }
+    if (this.quantity > this.selectedVolume.soLuongTonKho) {
+      this.quantity = this.selectedVolume.soLuongTonKho;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Số lượng vượt quá tồn kho',
+        text: `Chỉ còn ${this.selectedVolume.soLuongTonKho} sản phẩm cho dung tích đã chọn!`,
+        position: 'bottom-end',
+      });
+    } else if (this.quantity < 1) {
+      this.quantity = 1;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Số lượng không hợp lệ',
+        text: 'Số lượng phải lớn hơn 0!',
+        position: 'bottom-end',
+      });
+    }
+  }
   increaseQuantity(): void {
-    if (this.quantity < this.product.soLuongTonKho) {
+    if (!this.selectedVolume) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn dung tích',
+        text: 'Vui lòng chọn dung tích trước khi điều chỉnh số lượng!',
+        position: 'bottom-end',
+      });
+      return;
+    }
+
+    if (this.quantity < this.selectedVolume.soLuongTonKho) {
       this.quantity++;
     } else {
       Swal.fire({
         icon: 'warning',
         title: 'Số lượng vượt quá tồn kho',
-        text: `Chỉ còn ${this.product.soLuongTonKho} sản phẩm!`,
+        text: `Chỉ còn ${this.selectedVolume.soLuongTonKho} sản phẩm cho dung tích đã chọn!`,
         position: 'bottom-end',
       });
     }

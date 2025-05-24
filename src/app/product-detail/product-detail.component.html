@@ -43,7 +43,9 @@
       <div class="add-to-cart-section">
         <div class="quantity">
           <label>Số lượng:</label>
-          <input type="number" [(ngModel)]="quantity" min="1" (ngModelChange)="quantity = $event < 1 ? 1 : $event"/>
+          <button type="button" (click)="decreaseQuantity()" class="qty-btn">-</button>
+          <input type="number" [(ngModel)]="quantity" min="1" [max]="selectedVolume?.soLuongTonKho || 1" (ngModelChange)="onQuantityChange()"/>
+          <button type="button" (click)="increaseQuantity()" class="qty-btn">+</button>
         </div>
         <button class="add-btn" [disabled]="!product || !selectedVolume" (click)="addToCart()">Thêm vào giỏ</button>
         <button (click)="buyNow()" class="buy-now-btn">Mua ngay</button>

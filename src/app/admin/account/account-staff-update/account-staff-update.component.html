@@ -3,43 +3,64 @@
   <button type="button" class="btn-close" (click)="closeModal()"></button>
 </div>
 <div class="modal-body">
-  <form>
+  <form [formGroup]="updateForm">
+    <!-- Họ và tên -->
     <div class="mb-3">
       <label for="hoTen" class="form-label">Họ tên</label>
       <input
         type="text"
         class="form-control"
         id="hoTen"
-        [(ngModel)]="accountData.hoTen"
-        name="hoTen"
-        required
+        formControlName="hoTen"
+        [ngClass]="{'is-invalid': updateForm.get('hoTen')?.invalid && (updateForm.get('hoTen')?.touched || updateForm.get('hoTen')?.dirty)}"
       />
+      <div *ngIf="updateForm.get('hoTen')?.invalid && (updateForm.get('hoTen')?.touched || updateForm.get('hoTen')?.dirty)" class="text-danger">
+        <div *ngIf="updateForm.get('hoTen')?.errors?.['required']">Họ và tên là bắt buộc.</div>
+        <div *ngIf="updateForm.get('hoTen')?.errors?.['onlyWhitespace']">Họ và tên không được chỉ chứa dấu cách.</div>
+        <div *ngIf="updateForm.get('hoTen')?.errors?.['specialChar']">Họ và tên không được chứa ký tự đặc biệt.</div>
+      </div>
     </div>
+
+    <!-- Email -->
     <div class="mb-3">
       <label for="email" class="form-label">Email</label>
       <input
         type="email"
         class="form-control"
         id="email"
-        [(ngModel)]="accountData.email"
-        name="email"
-        required
+        formControlName="email"
+        [ngClass]="{'is-invalid': updateForm.get('email')?.invalid && (updateForm.get('email')?.touched || updateForm.get('email')?.dirty)}"
       />
+      <div *ngIf="updateForm.get('email')?.invalid && (updateForm.get('email')?.touched || updateForm.get('email')?.dirty)" class="text-danger">
+        <div *ngIf="updateForm.get('email')?.errors?.['required']">Email là bắt buộc.</div>
+        <div *ngIf="updateForm.get('email')?.errors?.['email']">Email không hợp lệ.</div>
+        <div *ngIf="updateForm.get('email')?.errors?.['emailExists']">Email đã tồn tại trong hệ thống.</div>
+      </div>
     </div>
+
+    <!-- Số điện thoại -->
     <div class="mb-3">
       <label for="sdt" class="form-label">Số điện thoại</label>
       <input
         type="text"
         class="form-control"
         id="sdt"
-        [(ngModel)]="accountData.sdt"
-        name="sdt"
-        required
+        formControlName="sdt"
+        [ngClass]="{'is-invalid': updateForm.get('sdt')?.invalid && (updateForm.get('sdt')?.touched || updateForm.get('sdt')?.dirty)}"
       />
+      <div *ngIf="updateForm.get('sdt')?.invalid && (updateForm.get('sdt')?.touched || updateForm.get('sdt')?.dirty)" class="text-danger">
+        <div *ngIf="updateForm.get('sdt')?.errors?.['required']">Số điện thoại là bắt buộc.</div>
+        <div *ngIf="updateForm.get('sdt')?.errors?.['onlyWhitespace']">Số điện thoại không được chỉ chứa dấu cách.</div>
+        <div *ngIf="updateForm.get('sdt')?.errors?.['pattern']">Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.</div>
+        <div *ngIf="updateForm.get('sdt')?.errors?.['sdtExists']">Số điện thoại đã tồn tại trong hệ thống.</div>
+      </div>
     </div>
+
+ <!-- Tên đăng nhập -->
+
   </form>
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-  <button type="button" class="btn btn-primary" (click)="updateAccount()">Cập nhật</button>
+  <button type="button" class="btn btn-primary" [disabled]="!updateForm.valid" (click)="updateAccount()">Cập nhật</button>
 </div>

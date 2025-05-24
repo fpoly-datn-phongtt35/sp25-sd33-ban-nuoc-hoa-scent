@@ -13,6 +13,7 @@
         <div *ngIf="accountForm.get('hoTen')?.errors?.['required']">Họ và tên là bắt buộc.</div>
         <div *ngIf="accountForm.get('hoTen')?.errors?.['onlyWhitespace']">Họ và tên không được chỉ chứa dấu cách.</div>
         <div *ngIf="accountForm.get('hoTen')?.errors?.['specialChar']">Họ và tên không được chứa ký tự đặc biệt.</div>
+        <div *ngIf="accountForm.get('hoTen')?.errors?.['insufficientWords']">Họ và tên phải bao gồm ít nhất họ và tên (tối thiểu 2 từ).</div>
       </div>
     </div>
 
@@ -23,6 +24,7 @@
       <div *ngIf="accountForm.get('email')?.invalid && (accountForm.get('email')?.touched || accountForm.get('email')?.dirty)" class="text-danger">
         <div *ngIf="accountForm.get('email')?.errors?.['required']">Email là bắt buộc.</div>
         <div *ngIf="accountForm.get('email')?.errors?.['email']">Email không hợp lệ.</div>
+        <div *ngIf="accountForm.get('email')?.errors?.['emailExists']">Email đã tồn tại trong hệ thống.</div>
       </div>
     </div>
 
@@ -34,6 +36,7 @@
         <div *ngIf="accountForm.get('sdt')?.errors?.['required']">Số điện thoại là bắt buộc.</div>
         <div *ngIf="accountForm.get('sdt')?.errors?.['onlyWhitespace']">Số điện thoại không được chỉ chứa dấu cách.</div>
         <div *ngIf="accountForm.get('sdt')?.errors?.['pattern']">Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.</div>
+        <div *ngIf="accountForm.get('sdt')?.errors?.['sdtExists']">Số điện thoại đã tồn tại trong hệ thống.</div>
       </div>
     </div>
 
@@ -43,6 +46,7 @@
       <input type="text" class="form-control" formControlName="tenDangNhap">
       <div *ngIf="accountForm.get('tenDangNhap')?.invalid && (accountForm.get('tenDangNhap')?.touched || accountForm.get('tenDangNhap')?.dirty)" class="text-danger">
         <div *ngIf="accountForm.get('tenDangNhap')?.errors?.['required']">Tên đăng nhập là bắt buộc.</div>
+        <div *ngIf="accountForm.get('tenDangNhap')?.errors?.['usernameExists']">Tên đăng nhập đã tồn tại trong hệ thống.</div>
       </div>
     </div>
 

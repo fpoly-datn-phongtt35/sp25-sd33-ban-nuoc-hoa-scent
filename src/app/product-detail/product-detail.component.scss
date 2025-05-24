@@ -152,7 +152,37 @@
 .current-price {
   margin-bottom: 20px;
 }
+.quantity {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
 
+  .qty-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    cursor: pointer;
+    font-size: 18px;
+
+    &:hover {
+      background-color: #f0f0f0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+
+  input {
+    width: 60px;
+    text-align: center;
+    margin: 0 5px;
+    border: 1px solid #ccc;
+    padding: 5px;
+  }
+}
 .price {
   font-size: 28px;
   font-weight: bold;

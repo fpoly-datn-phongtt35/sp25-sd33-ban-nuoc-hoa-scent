@@ -10,7 +10,6 @@ import { TokenService } from '../../../service/token.service';
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
 
-// Thêm interface Account để fix lỗi TS2304
 interface Account {
   id: number;
   hoTen: string;
@@ -29,6 +28,7 @@ interface Account {
 })
 export class UserAdminComponent implements OnInit {
   accounts: any[] = [];
+  allAccounts: any[] = []; // Danh sách toàn bộ tài khoản
   page: number = 0;
   size: number = 5;
   totalPages: number = 15;
@@ -53,6 +53,7 @@ export class UserAdminComponent implements OnInit {
     this.userRole = this.tokenService.getRole();
     console.log('Vai trò trong UserAdminComponent:', this.userRole);
     this.loadAccounts();
+    this.loadAllAccounts(); // Tải toàn bộ tài khoản
   }
 
   loadAccounts(): void {
@@ -66,6 +67,20 @@ export class UserAdminComponent implements OnInit {
       error: (error) => {
         console.error('❌ Lỗi khi lấy dữ liệu tài khoản:', error);
         Swal.fire('Lỗi', 'Không thể tải danh sách nhân viên.', 'error');
+      }
+    });
+  }
+
+  loadAllAccounts(): void {
+    // Tải toàn bộ tài khoản với size lớn để lấy hết dữ liệu
+    this.accountService.getStaffAccounts('', 0, 1000).subscribe({
+      next: (response) => {
+        console.log('✅ Tải toàn bộ tài khoản:', response);
+        this.allAccounts = response.content || [];
+      },
+      error: (error) => {
+        console.error('❌ Lỗi khi lấy toàn bộ tài khoản:', error);
+        Swal.fire('Lỗi', 'Không thể tải danh sách toàn bộ nhân viên.', 'error');
       }
     });
   }
@@ -116,9 +131,12 @@ export class UserAdminComponent implements OnInit {
       keyboard: false
     });
 
+    modalRef.componentInstance.accounts = this.allAccounts; // Truyền toàn bộ danh sách
+
     modalRef.componentInstance.accountAdded.subscribe((newAccount: any) => {
       console.log('🎉 Tài khoản mới:', newAccount);
       this.loadAccounts();
+      this.loadAllAccounts(); // Cập nhật lại toàn bộ danh sách
       this.accounts.unshift(newAccount);
     });
   }
@@ -129,12 +147,14 @@ export class UserAdminComponent implements OnInit {
       backdrop: 'static',
       keyboard: false
     });
-
+  
     modalRef.componentInstance.account = account;
-
+    modalRef.componentInstance.accounts = this.allAccounts; // Đảm bảo truyền danh sách đầy đủ
+  
     modalRef.componentInstance.accountUpdated.subscribe((updatedAccount: any) => {
       console.log('🎉 Tài khoản đã cập nhật:', updatedAccount);
       this.loadAccounts();
+      this.loadAllAccounts(); // Cập nhật lại danh sách
     });
   }
 
@@ -321,9 +341,7 @@ export class UserAdminComponent implements OnInit {
   async exportToExcel(): Promise<void> {
     const exportData: any[] = [];
     let index = 0;
-    let allAccounts: any[] = [];
 
-    // Define headers for width calculation
     const headers = {
       'STT': 'STT',
       'Tên người dùng': 'Tên người dùng',
@@ -336,23 +354,9 @@ export class UserAdminComponent implements OnInit {
     };
 
     try {
-      // Fetch the first page to get totalPages
-      const firstResponse = await this.accountService.getStaffAccounts('', 0, 100).toPromise();
-      const totalPages = firstResponse.page?.totalPages || 1;
-      allAccounts = firstResponse.content || [];
-
-      // Fetch remaining pages if totalPages > 1
-      if (totalPages > 1) {
-        for (let page = 1; page < totalPages; page++) {
-          const response = await this.accountService.getStaffAccounts('', page, 100).toPromise();
-          allAccounts = allAccounts.concat(response.content || []);
-        }
-      }
-
-      for (const account of allAccounts) {
+      for (const account of this.allAccounts) {
         try {
           const orders = await this.accountService.getOrdersByTaiKhoanId(account.id).toPromise();
-          // Count completed orders (trangThai = 4) and calculate total revenue
           const completedOrders = orders.filter((order: any) => order.trangThai === 4);
           const orderCount = completedOrders.length;
           const totalRevenue = completedOrders.reduce((total: number, order: any) => {
@@ -384,7 +388,7 @@ export class UserAdminComponent implements OnInit {
         }
       }
     } catch (error) {
-      console.error('❌ Lỗi khi lấy toàn bộ tài khoản:', error);
+      console.error('❌ Lỗi khi xuất dữ liệu:', error);
       Swal.fire('Lỗi', 'Không thể xuất danh sách nhân viên.', 'error');
       return;
     }
@@ -393,21 +397,17 @@ export class UserAdminComponent implements OnInit {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh Sách Nhân Viên');
 
-    // Calculate column widths based on content and headers
     const colWidths = Object.keys(headers).reduce((widths, key, i) => {
-      // Get max length for this column (data + header)
       const maxLength = exportData.reduce((max, row) => {
         const value = row[key] ? row[key].toString() : '';
         return Math.max(max, value.length);
-      }, key.length); // Compare with header length
-      // Convert to Excel width units (approx. 1 char = 1 unit, with padding)
-      const width = Math.min(Math.max(maxLength + 2, 10), 80); // Min 10, max 80
+      }, key.length);
+      const width = Math.min(Math.max(maxLength + 2, 10), 80);
       widths[i] = width;
       return widths;
     }, [] as number[]);
     worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
 
-    // Add headers styling
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: C })];
