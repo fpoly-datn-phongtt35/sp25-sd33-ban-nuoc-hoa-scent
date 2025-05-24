@@ -249,6 +249,7 @@ taiKhoan.setTrangThai(1);
         taiKhoan.setSdt(request.getSoDienThoai().trim());
         taiKhoan.setTenDangNhap(request.getUsername().trim());
         taiKhoan.setVaiTro("STAFF");
+        taiKhoan.setTrangThai(1);
         // Tạo và mã hóa mật khẩu
         String newPassword = generateRandomPassword();
         taiKhoan.setMatKhau(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
