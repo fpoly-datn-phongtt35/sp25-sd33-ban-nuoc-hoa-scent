@@ -65,34 +65,30 @@ export class AccountService {
     );
   }
 
-  findByEmail(email: string): Observable<any> {
+// Kiểm tra email
+  findByEmail(email: string): Observable<{ email: any; success: boolean; message: string }> {
     const params = new HttpParams().set('email', email);
-    return this.http.get(`${this.apiUrl}/findByEmail`, { params }).pipe(
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<{ email: any; success: boolean; message: string }>(`${this.apiUrl}/findByEmail`, { params })
+      .pipe(catchError(this.handleError));
   }
 
-  sendOtpForUser(email: string): Observable<string> {
+// Gửi OTP
+  sendOtpForUser(email: string): Observable<{ success: boolean; message: string }> {
     const params = new HttpParams().set('email', email);
-    return this.http.post(`${this.apiUrl}/forgot-password/sendOTP`, null, {
-      params,
-      responseType: 'text',
-    }).pipe(
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<{ success: boolean; message: string }>(`${this.apiUrl}/forgot-password/sendOTP`, null, { params })
+      .pipe(catchError(this.handleError));
   }
-
-  resetPasswordWithOtp(email: string, otp: string, newPassword: string): Observable<string> {
+ // Đặt lại mật khẩu với OTP
+  resetPasswordWithOtp(email: string, otp: string, newPassword: string): Observable<{ success: boolean; message: string }> {
     const params = new HttpParams()
       .set('email', email)
       .set('otp', otp)
       .set('newPassword', newPassword);
-    return this.http.post(`${this.apiUrl}/forgot-password/reset`, null, {
-      params,
-      responseType: 'text',
-    }).pipe(
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<{ success: boolean; message: string }>(`${this.apiUrl}/forgot-password/reset`, null, { params })
+      .pipe(catchError(this.handleError));
   }
 
   changePassword(username: string, oldPassword: string, newPassword: string): Observable<string> {
@@ -137,9 +133,16 @@ export class AccountService {
     );
   }
 
+ // Xử lý lỗi chung
   private handleError(error: any): Observable<never> {
-    console.error('Có lỗi xảy ra:', error);
-    const errorMessage = error.error || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
+    let errorMessage = 'Đã xảy ra lỗi. Vui lòng thử lại!';
+    if (error.error instanceof ErrorEvent) {
+      // Lỗi phía client
+      errorMessage = `Lỗi: ${error.error.message}`;
+    } else {
+      // Lỗi phía server
+      errorMessage = error.error?.message || `Lỗi server: ${error.status}`;
+    }
     return throwError(() => new Error(errorMessage));
   }
   verifyOldPassword(username: string, oldPassword: string): Observable<string> {

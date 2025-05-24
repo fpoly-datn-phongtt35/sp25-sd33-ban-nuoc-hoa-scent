@@ -16,33 +16,41 @@ export class ForgotPasswordComponent implements OnDestroy {
   email: string = '';
   otp: string = '';
   newPassword: string = '';
-  step: number = 1; // 1: Nhập email, 2: Nhập mật khẩu mới, 3: Nhập OTP
+  confirmPassword: string = '';
+  step: number = 1;
   emailInvalid: boolean = false;
   emailNotFound: boolean = false;
-  emailHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách trong email
+  emailHasWhitespace: boolean = false;
   otpInvalid: boolean = false;
-  otpHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách trong OTP
+  otpHasWhitespace: boolean = false;
   newPasswordInvalid: boolean = false;
-  newPasswordHasWhitespace: boolean = false; // Thêm biến để kiểm tra dấu cách trong mật khẩu mới
+  newPasswordHasWhitespace: boolean = false;
+  confirmPasswordInvalid: boolean = false;
   resendDisabled: boolean = true;
-  countdown: number = 90; // Đồng bộ với backend (90 giây)
+  countdown: number = 60; // Đồng bộ với BE
   private countdownInterval: any;
   isLoading: boolean = false;
-
+  showNewPassword: boolean = false; // Biến để quản lý hiển thị mật khẩu mới
+  showConfirmPassword: boolean = false; // Biến để quản lý hiển thị xác nhận mật khẩu
   constructor(private accountService: AccountService, private router: Router) {}
 
-  // Hàm kiểm tra dấu cách
   private hasWhitespace(value: string): boolean {
-    return /\s/.test(value); // Kiểm tra dấu cách bằng regex
+    return /\s/.test(value);
+  }
+// Hàm chuyển đổi hiển thị/ẩn mật khẩu mới
+  toggleNewPassword() {
+    this.showNewPassword = !this.showNewPassword;
   }
 
-  // Bước 1: Kiểm tra email
+  // Hàm chuyển đổi hiển thị/ẩn xác nhận mật khẩu
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
   checkEmail() {
     this.emailInvalid = false;
     this.emailNotFound = false;
     this.emailHasWhitespace = false;
 
-    // Kiểm tra email có hợp lệ và không chứa dấu cách
     if (!this.email || !this.email.includes('@')) {
       this.emailInvalid = true;
       return;
@@ -55,66 +63,62 @@ export class ForgotPasswordComponent implements OnDestroy {
     this.isLoading = true;
 
     this.accountService.findByEmail(this.email).subscribe({
-      next: () => {
+      next: (response) => {
         this.isLoading = false;
-        Swal.fire({
-          title: 'Thành công',
-          text: 'Email hợp lệ, vui lòng nhập mật khẩu mới.',
-          icon: 'success',
-          confirmButtonText: 'OK',
-          position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
-          timer: 3000,
-          timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
-        });
-        this.step = 2; // Chuyển sang bước nhập mật khẩu mới
+        if (response.success) {
+          Swal.fire({
+            title: 'Thành công',
+            text: response.message,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+          this.step = 2;
+        } else {
+          this.emailNotFound = true;
+          Swal.fire({
+            title: 'Lỗi',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Thử lại',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+        }
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
         this.emailNotFound = true;
         Swal.fire({
           title: 'Lỗi',
-          text: 'Email không tồn tại trong hệ thống!',
+          text: err.message || 'Không thể kiểm tra email. Vui lòng thử lại!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
           position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
           timer: 3000,
           timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
         });
       },
     });
   }
 
-  // Bước 2: Kiểm tra mật khẩu mới và gửi OTP
   proceedToOtp() {
     this.newPasswordInvalid = false;
     this.newPasswordHasWhitespace = false;
+    this.confirmPasswordInvalid = false;
 
-    // Kiểm tra mật khẩu mới không chứa dấu cách
     if (this.hasWhitespace(this.newPassword)) {
       this.newPasswordHasWhitespace = true;
       return;
     }
 
-    // Kiểm tra độ mạnh mật khẩu
-    if (!this.newPassword || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(this.newPassword)) {
+    if (
+      !this.newPassword ||
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(this.newPassword)
+    ) {
       this.newPasswordInvalid = true;
       Swal.fire({
         title: 'Lỗi',
@@ -122,17 +126,22 @@ export class ForgotPasswordComponent implements OnDestroy {
         icon: 'error',
         confirmButtonText: 'Thử lại',
         position: 'center',
-        customClass: {
-          popup: 'swal2-centered',
-          icon: 'swal2-icon',
-          title: 'swal2-title',
-          htmlContainer: 'swal2-content',
-          confirmButton: 'swal2-confirm',
-        },
         timer: 3000,
         timerProgressBar: true,
-        backdrop: true,
-        allowOutsideClick: true,
+      });
+      return;
+    }
+
+    if (this.newPassword !== this.confirmPassword) {
+      this.confirmPasswordInvalid = true;
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Mật khẩu xác nhận không khớp!',
+        icon: 'error',
+        confirmButtonText: 'Thử lại',
+        position: 'center',
+        timer: 3000,
+        timerProgressBar: true,
       });
       return;
     }
@@ -141,121 +150,99 @@ export class ForgotPasswordComponent implements OnDestroy {
 
     this.accountService.sendOtpForUser(this.email).subscribe({
       next: (response) => {
-        Swal.fire({
-          title: 'Thành công',
-          text: response,
-          icon: 'success',
-          confirmButtonText: 'OK',
-          position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
-          timer: 3000,
-          timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
-        });
-        this.step = 3; // Chuyển sang bước nhập OTP
-        this.startCountdown();
+        this.isLoading = false;
+        if (response.success) {
+          Swal.fire({
+            title: 'Thành công',
+            text: response.message,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+          this.step = 3;
+          this.startCountdown();
+        } else {
+          Swal.fire({
+            title: 'Lỗi',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Thử lại',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+        }
       },
       error: (err) => {
-        const errorMessage = err.error || 'Không thể gửi OTP. Vui lòng thử lại!';
+        this.isLoading = false;
         Swal.fire({
           title: 'Lỗi',
-          text: errorMessage,
+          text: err.message || 'Không thể gửi OTP. Vui lòng thử lại!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
           position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
           timer: 3000,
           timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
         });
-        this.isLoading = false;
-      },
-      complete: () => {
-        this.isLoading = false;
       },
     });
   }
 
-  // Gửi lại OTP
   resendOtp() {
     if (this.resendDisabled) return;
     this.isLoading = true;
     this.accountService.sendOtpForUser(this.email).subscribe({
       next: (response) => {
-        Swal.fire({
-          title: 'Thành công',
-          text: response,
-          icon: 'success',
-          confirmButtonText: 'OK',
-          position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
-          timer: 3000,
-          timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
-        });
-        this.startCountdown();
+        this.isLoading = false;
+        if (response.success) {
+          Swal.fire({
+            title: 'Thành công',
+            text: response.message,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+          this.startCountdown();
+        } else {
+          Swal.fire({
+            title: 'Lỗi',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Thử lại',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+        }
       },
       error: (err) => {
-        const errorMessage = err.error || 'Không thể gửi OTP. Vui lòng thử lại!';
+        this.isLoading = false;
         Swal.fire({
           title: 'Lỗi',
-          text: errorMessage,
+          text: err.message || 'Không thể gửi OTP. Vui lòng thử lại!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
           position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
           timer: 3000,
           timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
         });
-        this.isLoading = false;
-      },
-      complete: () => {
-        this.isLoading = false;
       },
     });
   }
 
-  // Bước 3: Xác nhận OTP và đặt lại mật khẩu
   resetPassword() {
     this.otpInvalid = false;
     this.otpHasWhitespace = false;
 
-    // Kiểm tra OTP không chứa dấu cách
     if (this.hasWhitespace(this.otp)) {
       this.otpHasWhitespace = true;
       return;
     }
 
-    // Kiểm tra OTP hợp lệ
     if (!this.otp || !/^\d{6}$/.test(this.otp)) {
       this.otpInvalid = true;
       return;
@@ -265,58 +252,49 @@ export class ForgotPasswordComponent implements OnDestroy {
 
     this.accountService.resetPasswordWithOtp(this.email, this.otp, this.newPassword).subscribe({
       next: (response) => {
-        Swal.fire({
-          title: 'Thành công',
-          text: response,
-          icon: 'success',
-          confirmButtonText: 'OK',
-          position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
-          timer: 3000,
-          timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
-        }).then(() => {
-          this.router.navigate(['/login']);
-        });
+        this.isLoading = false;
+        if (response.success) {
+          Swal.fire({
+            title: 'Thành công',
+            text: response.message,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          }).then(() => {
+            this.router.navigate(['/login']);
+          });
+        } else {
+          Swal.fire({
+            title: 'Lỗi',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Thử lại',
+            position: 'center',
+            timer: 3000,
+            timerProgressBar: true,
+          });
+        }
       },
       error: (err) => {
-        const errorMessage = err.error || 'Không thể đặt lại mật khẩu. Vui lòng thử lại!';
+        this.isLoading = false;
         Swal.fire({
           title: 'Lỗi',
-          text: errorMessage,
+          text: err.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại!',
           icon: 'error',
           confirmButtonText: 'Thử lại',
           position: 'center',
-          customClass: {
-            popup: 'swal2-centered',
-            icon: 'swal2-icon',
-            title: 'swal2-title',
-            htmlContainer: 'swal2-content',
-            confirmButton: 'swal2-confirm',
-          },
           timer: 3000,
           timerProgressBar: true,
-          backdrop: true,
-          allowOutsideClick: true,
         });
-        this.isLoading = false;
-      },
-      complete: () => {
-        this.isLoading = false;
       },
     });
   }
 
   startCountdown() {
     this.resendDisabled = true;
-    this.countdown = 30;
+    this.countdown = 90;
 
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
