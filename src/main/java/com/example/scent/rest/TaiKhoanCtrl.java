@@ -13,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -100,26 +102,39 @@ public class TaiKhoanCtrl {
     }
 
     @PostMapping("/forgot-password/sendOTP")
-    public ResponseEntity<String> sendOtpForUser(@RequestParam String email) {
+    public ResponseEntity<Map<String, Object>> sendOtpForUser(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Kiểm tra email tồn tại
         Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
         if (tkOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Không tìm thấy tài khoản");
+            response.put("success", false);
+            response.put("message", "Không tìm thấy tài khoản.");
+            return ResponseEntity.badRequest().body(response);
         }
 
-        TaiKhoan tk = tkOpt.get();
-        if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
-            return ResponseEntity.status(403).body("Chỉ USER mới có thể yêu cầu OTP");
-        }
-
+        // Tạo OTP
         CompletableFuture<String> otpFuture = otpService.generateOtp(email);
         String otp;
         try {
-            otp = otpFuture.get(); // Chờ và lấy giá trị String từ CompletableFuture
+            otp = otpFuture.get(); // Chờ và lấy giá trị OTP
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Đã xảy ra lỗi khi tạo OTP: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "Đã xảy ra lỗi khi tạo OTP: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
-        mailService.sendOtpEmail(email, otp);
-        return ResponseEntity.ok("OTP đã gửi tới email của bạn");
+
+        // Gửi email OTP
+        try {
+            mailService.sendOtpEmail(email, otp);
+            response.put("success", true);
+            response.put("message", "OTP đã được gửi tới email của bạn.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Không thể gửi OTP. Vui lòng thử lại: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @GetMapping("/{idTaiKhoan}")
@@ -135,9 +150,6 @@ public class TaiKhoanCtrl {
         }
 
         TaiKhoan tk = tkOpt.get();
-        if (!"ADMIN".equalsIgnoreCase(tk.getVaiTro()) && !"STAFF".equalsIgnoreCase(tk.getVaiTro())) {
-            return ResponseEntity.status(403).body("Chỉ ADMIN hoặc STAFF mới có thể sử dụng phương thức này");
-        }
 
         String newPassword = tks.generateRandomPassword();
         tks.resetPassword(tk, newPassword);
@@ -165,30 +177,36 @@ public class TaiKhoanCtrl {
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
     @PostMapping("/forgot-password/reset")
-    public ResponseEntity<String> resetPassword(
+    public ResponseEntity<Map<String, Object>> resetPassword(
             @RequestParam String email,
             @RequestParam String otp,
             @RequestParam String newPassword) {
 
+        Map<String, Object> response = new HashMap<>();
+
         Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
         if (tkOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Không tìm thấy tài khoản.");
+            response.put("success", false);
+            response.put("message", "Không tìm thấy tài khoản.");
+            return ResponseEntity.badRequest().body(response);
         }
 
         TaiKhoan tk = tkOpt.get();
-        if (!"USER".equalsIgnoreCase(tk.getVaiTro())) {
-            return ResponseEntity.status(403).body("Chỉ USER mới được phép sử dụng phương thức này.");
-        }
 
         boolean valid = otpService.validateOtp(email, otp).join();
         if (!valid) {
-            return ResponseEntity.badRequest().body("OTP không hợp lệ hoặc đã hết hạn.");
+            response.put("success", false);
+            response.put("message", "OTP không hợp lệ hoặc đã hết hạn.");
+            return ResponseEntity.badRequest().body(response);
         }
 
         tks.resetPassword(tk, newPassword);
         mailService.sendNewPasswordEmail(email, newPassword);
-        return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công.");
+        response.put("success", true);
+        response.put("message", "Mật khẩu đã được đặt lại thành công.");
+        return ResponseEntity.ok(response);
     }
+
     // Thêm endpoint để lấy thông tin người dùng theo username
     @GetMapping("/findByUsername")
     public ResponseEntity<TaiKhoan> findByUsername(@RequestParam("username") String username) {
@@ -209,16 +227,17 @@ public class TaiKhoanCtrl {
         return ResponseEntity.ok("Mật khẩu cũ hợp lệ");
     }
     @GetMapping("/findByEmail")
-    public TaiKhoan findByEmail(@RequestParam("email") String email) {
+    public ResponseEntity<Map<String, Object>> findByEmail(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
         Optional<TaiKhoan> tkOpt = tks.findByEmail(email);
-
         if (tkOpt.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaiKhoan not found for email: " + email);
+            response.put("success", false);
+            response.put("message", "Email không tồn tại trong hệ thống.");
+            return ResponseEntity.badRequest().body(response);
         }
-
-        TaiKhoan tk = tkOpt.get();
-        // Return the TaiKhoan with 200 OK (default status for a successful response)
-        return tk;
+        response.put("success", true);
+        response.put("message", "Email hợp lệ.");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/search-by-sdt")
