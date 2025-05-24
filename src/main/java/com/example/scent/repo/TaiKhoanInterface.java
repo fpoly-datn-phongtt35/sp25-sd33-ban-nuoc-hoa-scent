@@ -44,6 +44,8 @@ List<TaiKhoan> findByVaiTroIn(List<String> vaiTro);
             @Param("role") String role,
             @Param("keyword") String keyword,
             Pageable pageable);
+
+    @Query("SELECT t FROM TaiKhoan t WHERE LOWER(t.email) = LOWER(?1)")
     Optional<TaiKhoan> findByEmail(String email);
     Optional<TaiKhoan> findBySdt(String sdt);
 

@@ -164,10 +164,7 @@ taiKhoan.setTrangThai(1);
         return tki.searchByRoleAndKeyword("STAFF", keyword, pageable);
     }
     public Optional<TaiKhoan> findByEmail(String email) {
-        return tki.findAll().stream().filter(
-                t -> t.getEmail().equalsIgnoreCase(email)
-
-        ).findFirst();
+        return tki.findByEmail(email);
     }
     public TaiKhoan getTaiKhoanById(Integer id) {
         return tki.findById(id)
