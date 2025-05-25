@@ -278,4 +278,22 @@ public class TaiKhoanCtrl {
             return ResponseEntity.status(500).body(response);
         }
     }
+    @GetMapping("/findByPhoneNumber")
+    public ResponseEntity<Map<String, Object>> findByPhoneNumber(@RequestParam String soDienThoai) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Optional<TaiKhoan> taiKhoan = taiKhoanInterface.findBySdt(soDienThoai);
+            if (taiKhoan.isPresent()) {
+                response.put("success", false);
+                response.put("message", "Số điện thoại đã tồn tại");
+            } else {
+                response.put("success", true);
+                response.put("message", "Số điện thoại chưa tồn tại");
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Số điện thoại đã tồn tại");
+        }
+        return ResponseEntity.ok(response);
+    }
 }

@@ -94,7 +94,8 @@ public class SecurityConfig {
                 "rest/tai-khoan/findByUsername",
                 "rest/tai-khoan/findByEmail",
                 "rest/tai-khoan/forgot-password/reset"
-            ,"rest/phieu-giam-gia/update-status/**")
+            ,"rest/phieu-giam-gia/update-status/**",
+                    "rest/tai-khoan/findByPhoneNumber")
             .permitAll()
             .requestMatchers("rest/otp/send",
                 "rest/otp/verify")
