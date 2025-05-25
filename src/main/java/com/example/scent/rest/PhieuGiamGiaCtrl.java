@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -334,7 +336,6 @@ private PhieuGiamGiaInterface pggi;
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchVouchers(
             @RequestParam(required = false) String maGiamGia,
@@ -345,12 +346,35 @@ private PhieuGiamGiaInterface pggi;
             @RequestParam(required = false) Integer giaTriToiDa,
             @RequestParam(required = false) Integer giaTriToiThieu,
             @RequestParam(required = false) Integer trangThai,
-            @RequestParam(required = false) Integer dieuKienapDung, // Thêm tham số dieuKienapDung
+            @RequestParam(required = false) Integer dieuKienapDung,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
-        LocalDateTime startDate = ngayBatDau != null ? LocalDateTime.parse(ngayBatDau) : null;
-        LocalDateTime endDate = ngayHetHan != null ? LocalDateTime.parse(ngayHetHan) : null;
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+
+        // Định dạng cho LocalDateTime (yyyy-MM-dd'T'HH:mm:ss)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        // Chuyển đổi ngayBatDau từ chuỗi thành LocalDateTime
+        if (ngayBatDau != null && !ngayBatDau.isEmpty()) {
+            try {
+                startDate = LocalDateTime.parse(ngayBatDau, formatter);
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                        "Định dạng ngày bắt đầu không hợp lệ. Sử dụng định dạng yyyy-MM-dd'T'HH:mm:ss (ví dụ: 2025-05-01T00:00:00).");
+            }
+        }
+
+        // Chuyển đổi ngayHetHan từ chuỗi thành LocalDateTime
+        if (ngayHetHan != null && !ngayHetHan.isEmpty()) {
+            try {
+                endDate = LocalDateTime.parse(ngayHetHan, formatter);
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                        "Định dạng ngày hết hạn không hợp lệ. Sử dụng định dạng yyyy-MM-dd'T'HH:mm:ss (ví dụ: 2025-05-31T23:59:59).");
+            }
+        }
 
         Map<String, Object> response = pggs.searchVouchers(
                 maGiamGia,
@@ -361,8 +385,7 @@ private PhieuGiamGiaInterface pggi;
                 giaTriToiDa,
                 giaTriToiThieu,
                 trangThai,
-                dieuKienapDung, // Truyền tham số dieuKienapDung vào service
-
+                dieuKienapDung,
                 page,
                 size
         );
