@@ -73,7 +73,6 @@ export class BrandComponent implements OnInit {
         this.totalPages = res.totalPages || 1;
         this.totalElements = res.totalElements || 0;
         this.isLoading = false;
-        console.log('Thương hiệu:', this.thuongHieus);
       },
       error: (error) => {
         this.errorMessage = error.message;
@@ -99,7 +98,6 @@ export class BrandComponent implements OnInit {
   }
 
   handleBrandAdded(newThuongHieu: ThuongHieu): void {
-    console.log('Đã thêm thương hiệu:', newThuongHieu);
     this.page = 0;
     this.closeAddModal();
     this.loadThuongHieus();
@@ -207,7 +205,6 @@ export class BrandComponent implements OnInit {
 
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
-      console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
       this.loadThuongHieus();
     }
@@ -229,24 +226,21 @@ export class BrandComponent implements OnInit {
 
   getPaginationRange(): { page: number, isEllipsis: boolean }[] {
     const range: { page: number, isEllipsis: boolean }[] = [];
-    const maxVisiblePages = 3;
+    const maxVisiblePages = 5;
 
-    if (this.totalPages <= 5) {
+    if (this.totalPages <= maxVisiblePages) {
       for (let i = 0; i < this.totalPages; i++) {
         range.push({ page: i, isEllipsis: false });
       }
     } else {
       range.push({ page: 0, isEllipsis: false });
 
-      let start = Math.max(1, this.page - 1);
-      let end = Math.min(this.totalPages - 2, this.page + 1);
+      let start = Math.max(1, this.page - Math.floor(maxVisiblePages / 2));
+      let end = start + maxVisiblePages - 2;
 
-      if (end - start + 1 < maxVisiblePages) {
-        if (start === 1) {
-          end = Math.min(start + maxVisiblePages - 1, this.totalPages - 2);
-        } else if (end === this.totalPages - 2) {
-          start = Math.max(1, end - maxVisiblePages + 1);
-        }
+      if (end >= this.totalPages - 1) {
+        end = this.totalPages - 2;
+        start = Math.max(1, end - maxVisiblePages + 2);
       }
 
       if (start > 1) {
@@ -264,7 +258,6 @@ export class BrandComponent implements OnInit {
       range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
-    console.log('📌 Pagination range:', range);
     return range;
   }
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AddNotHuongComponent } from '../add-not-huong/add-not-huong.component';
 import { UpdateNotHuongComponent } from '../update-not-huong/update-not-huong.component';
 import { NotHuongService } from '../../../service/nothuong.service';
+import { ToastrService } from 'ngx-toastr';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
@@ -35,7 +36,7 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   notHuongToDelete: number | null = null;
 
   page: number = 0;
-  size: number = 10000;
+  size: number = 10000; // Giữ nguyên để lấy tất cả dữ liệu
   pageSize: number = 10;
   totalPages: number = 1;
   totalElements: number = 0;
@@ -43,7 +44,10 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription | null = null;
 
-  constructor(private notHuongService: NotHuongService) {}
+  constructor(
+    private notHuongService: NotHuongService,
+    private toastr: ToastrService
+  ) {}
 
   ngOnInit(): void {
     this.loadNotHuongs();
@@ -86,7 +90,10 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       );
     }
     this.totalElements = this.filteredNotHuongs.length;
-    this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+    this.totalPages = Math.ceil(this.totalElements / this.pageSize) || 1; // Đảm bảo ít nhất 1 trang
+    if (this.page >= this.totalPages) {
+      this.page = Math.max(0, this.totalPages - 1); // Điều chỉnh trang nếu vượt quá
+    }
     this.updateDisplayedNotHuongs();
   }
 
@@ -99,8 +106,6 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   loadNotHuongs(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    const previousNotHuongs = [...this.notHuongs]; // Lưu danh sách hiện tại
-
     this.notHuongService.getPagedNotHuong(this.page, this.size).subscribe({
       next: (res) => {
         if (res && res.content) {
@@ -108,21 +113,15 @@ export class NotHuongComponent implements OnInit, OnDestroy {
             ...notHuong,
             isNew: false
           }));
-          this.filteredNotHuongs = [...this.notHuongs];
-          this.totalElements = this.filteredNotHuongs.length;
-          this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+          this.filterNotHuongs(); // Lọc lại để cập nhật danh sách hiển thị
         } else {
-          console.warn('Không có dữ liệu nốt hương từ API:', res);
-          this.notHuongs = previousNotHuongs; // Khôi phục danh sách cũ
           this.errorMessage = 'Không tìm thấy dữ liệu nốt hương.';
+          this.notHuongs = [];
+          this.filterNotHuongs();
         }
         this.isLoading = false;
-        this.filterNotHuongs();
-        console.log('Danh sách nốt hương:', this.notHuongs);
       },
       error: (error) => {
-        console.error('Lỗi khi tải nốt hương:', error);
-        this.notHuongs = previousNotHuongs; // Khôi phục danh sách cũ
         this.errorMessage = 'Không thể tải danh sách nốt hương: ' + (error.message || 'Lỗi không xác định');
         this.isLoading = false;
         this.filterNotHuongs();
@@ -143,18 +142,20 @@ export class NotHuongComponent implements OnInit, OnDestroy {
     this.notHuongs.unshift(newNotHuong);
     this.filterNotHuongs();
     this.closeAddModal();
+    this.toastr.success('Thêm nốt hương thành công!', 'Thành công');
   }
 
   undoAddNotHuong(notHuong: NotHuong): void {
     if (notHuong.id !== undefined) {
       this.notHuongService.deleteNotHuong(notHuong.id).subscribe({
         next: () => {
-          this.loadNotHuongs();
-          console.log(`Đã hoàn tác thêm Nốt Hương với ID: ${notHuong.id}`);
+          this.notHuongs = this.notHuongs.filter(nh => nh.id !== notHuong.id);
+          this.filterNotHuongs();
+          this.toastr.success('Hoàn tác thêm nốt hương thành công!', 'Thành công');
         },
         error: (err) => {
-          console.error('Lỗi khi hoàn tác thêm Nốt Hương:', err);
-          this.errorMessage = 'Không thể hoàn tác thêm nốt hương.';
+          this.errorMessage = 'Không thể hoàn tác thêm nốt hương: ' + (err.message || 'Lỗi không xác định');
+          this.toastr.error(this.errorMessage, 'Lỗi');
         }
       });
     }
@@ -168,7 +169,6 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   closeUpdateModal(): void {
     this.showUpdateModal = false;
     this.selectedNotHuong = null;
-    // Không gọi loadNotHuongs() ở đây, vì đã xử lý cập nhật trong handleNotHuongUpdated
   }
 
   handleNotHuongUpdated(updatedNotHuong: NotHuong): void {
@@ -177,8 +177,9 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       if (index !== -1) {
         this.notHuongs[index] = { ...updatedNotHuong, hasProduct: this.notHuongs[index].hasProduct, isNew: false };
         this.filterNotHuongs();
+        this.toastr.success('Cập nhật nốt hương thành công!', 'Thành công');
       } else {
-        console.warn(`Không tìm thấy nốt hương với ID ${updatedNotHuong.id} trong danh sách.`);
+        this.toastr.error('Không tìm thấy nốt hương để cập nhật.', 'Lỗi');
       }
     }
     this.closeUpdateModal();
@@ -198,11 +199,14 @@ export class NotHuongComponent implements OnInit, OnDestroy {
     if (this.notHuongToDelete !== null) {
       this.notHuongService.deleteNotHuong(this.notHuongToDelete).subscribe({
         next: () => {
+          this.notHuongs = this.notHuongs.filter(nh => nh.id !== this.notHuongToDelete);
+          this.filterNotHuongs();
           this.closeDeleteModal();
-          this.loadNotHuongs();
+          this.toastr.success('Xóa nốt hương thành công!', 'Thành công');
         },
         error: (error) => {
           this.errorMessage = 'Không thể xóa nốt hương: ' + (error.message || 'Lỗi không xác định');
+          this.toastr.error(this.errorMessage, 'Lỗi');
           this.closeDeleteModal();
         }
       });
@@ -211,7 +215,6 @@ export class NotHuongComponent implements OnInit, OnDestroy {
 
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
-      console.log('🔄 Chuyển đến trang:', p);
       this.page = p;
       this.updateDisplayedNotHuongs();
     }
@@ -268,7 +271,6 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
-    console.log('📌 Dải phân trang:', range);
     return range;
   }
 }

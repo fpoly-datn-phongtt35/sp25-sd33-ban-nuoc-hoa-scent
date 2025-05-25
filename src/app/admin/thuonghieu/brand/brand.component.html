@@ -1,45 +1,29 @@
 <!-- MAIN CONTAINER -->
-<div class="container mx-auto p-4 max-w-7xl bg-white shadow-md rounded-lg">
-  <!-- Header Section -->
-  <div class="flex justify-between items-center mb-6 flex-wrap gap-4 border-b pb-4">
-    <h2 class="text-3xl font-bold text-gray-800">Quản Lý Thương Hiệu</h2>
-    <button
-      (click)="openAddModal()"
-      class="btn btn-primary bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
-    >
-      Thêm Thương Hiệu
-    </button>
+<div class="container mx-auto p-4">
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+    <h2 class="text-2xl font-bold">Quản Lý Thương Hiệu</h2>
+    <button (click)="openAddModal()" class="btn btn-primary">Thêm Thương Hiệu</button>
   </div>
 
   <!-- Error Message -->
-  <div *ngIf="errorMessage" class="bg-red-100 text-red-700 p-3 rounded-lg mb-4">
+  <div *ngIf="errorMessage" class="bg-red-100">
     {{ errorMessage }}
   </div>
 
   <!-- Search Input -->
-  <div class="mb-6">
+  <div class="mb-6 flex items-center gap-2">
     <div class="relative w-full max-w-md">
       <input
         [formControl]="searchControl"
         type="text"
-        class="form-control w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="form-control w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         placeholder="Tìm kiếm thương hiệu (Tên, Quốc gia, Mô tả...)"
+        aria-label="Tìm kiếm thương hiệu"
       />
       <!-- Search Icon -->
       <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-        <svg
-          class="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          ></path>
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
       </span>
       <!-- Clear Icon -->
@@ -47,134 +31,76 @@
         *ngIf="searchControl.value"
         (click)="clearSearch()"
         class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+        aria-label="Xóa tìm kiếm"
       >
-        <svg
-          class="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          ></path>
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
     </div>
   </div>
 
   <!-- Loading Spinner -->
-  <div *ngIf="isLoading" class="flex justify-center mb-6">
-    <div class="loading-spinner">
-      <svg
-        class="animate-spin h-10 w-10 text-blue-500"
-        aria-hidden="true"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
-        ></path>
-      </svg>
-      <span class="sr-only">Đang tải...</span>
-    </div>
+  <div *ngIf="isLoading" class="loading-spinner">
+    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+    </svg>
+    <span class="sr-only">Đang tải...</span>
   </div>
 
   <!-- Brand Table -->
   <div class="table-container">
     <table class="w-full">
       <thead>
-        <tr class="bg-gray-100">
-          <th scope="col" class="p-3 text-left text-gray-600 font-semibold">ID</th>
-          <th scope="col" class="p-3 text-left text-gray-600 font-semibold">Tên Thương Hiệu</th>
-          <th scope="col" class="p-3 text-left text-gray-600 font-semibold">Quốc Gia</th>
-          <th scope="col" class="p-3 text-left text-gray-600 font-semibold">Mô Tả</th>
+        <tr class="bg-gray-200">
+          <th scope="col" class="p-2 text-left">ID</th>
+          <th scope="col" class="p-2 text-left">Tên Thương Hiệu</th>
+          <th scope="col" class="p-2 text-left">Quốc Gia</th>
+          <th scope="col" class="p-2 text-left">Mô Tả</th>
+          <th scope="col" class="p-2 text-left">Số Lượng Sản Phẩm</th>
+          <th scope="col" class="p-2 text-left">Hành Động</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let thuongHieu of thuongHieus" class="border-b hover:bg-gray-50 transition duration-200">
-          <td class="p-3">{{ thuongHieu.id }}</td>
-          <td class="p-3">{{ thuongHieu.tenThuongHieu }}</td>
-          <td class="p-3">{{ thuongHieu.quocGia }}</td>
-          <td class="p-3">{{ thuongHieu.moTa }}</td>
+        <tr *ngFor="let thuongHieu of thuongHieus" class="border-b hover:bg-gray-50">
+          <td class="p-2">{{ thuongHieu.id }}</td>
+          <td class="p-2">{{ thuongHieu.tenThuongHieu }}</td>
+          <td class="p-2">{{ thuongHieu.quocGia }}</td>
+          <td class="p-2">{{ thuongHieu.moTa }}</td>
+          <td class="p-2">{{ thuongHieu.soLuongSanPham }}</td>
+          <td class="p-2 space-x-1">
+            <button (click)="openUpdateModal(thuongHieu)" class="btn btn-edit" aria-label="Sửa thương hiệu">Sửa</button>
+            <button *ngIf="!thuongHieu.hasProduct" (click)="openDeleteModal(thuongHieu.id)" class="btn btn-delete" aria-label="Xóa thương hiệu">Xóa</button>
+            <button *ngIf="!thuongHieu.canRestore && thuongHieu.hasProduct" (click)="deactivateSanPham(thuongHieu.id)" class="btn btn-deactivate" aria-label="Ngừng bán sản phẩm">Ngừng bán</button>
+            <button *ngIf="thuongHieu.canRestore && thuongHieu.hasProduct" (click)="restoreSanPham(thuongHieu.id)" class="btn btn-restore" aria-label="Khôi phục sản phẩm">Khôi phục</button>
+          </td>
         </tr>
         <tr *ngIf="!isLoading && thuongHieus.length === 0">
-          <td colspan="4" class="p-4 text-center text-gray-500">Không tìm thấy thương hiệu nào.</td>
+          <td colspan="6" class="p-2 text-center text-gray-500">Không tìm thấy thương hiệu nào.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Pagination Controls -->
-  <nav aria-label="Page navigation" class="mt-6 flex justify-center">
-    <ul class="pagination flex space-x-2">
+ <!-- Pagination Controls -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
       <li class="page-item" [class.disabled]="page === 0">
-        <button
-          class="page-link bg-white border border-gray-300 px-3 py-1 rounded-l hover:bg-gray-100"
-          (click)="goToPage(0)"
-          aria-label="Trang đầu"
-        >
-          «
-        </button>
+        <button class="page-link" (click)="goToPage(0)">«</button>
       </li>
       <li class="page-item" [class.disabled]="page === 0">
-        <button
-          class="page-link bg-white border border-gray-300 px-3 py-1 hover:bg-gray-100"
-          (click)="prevPage()"
-          aria-label="Trang trước"
-        >
-          ‹
-        </button>
+        <button class="page-link" (click)="prevPage()">‹</button>
       </li>
-      <ng-container *ngFor="let p of getPaginationRange()">
-        <li
-          class="page-item"
-          [class.active]="p.page === page"
-          [class.disabled]="p.isEllipsis"
-        >
-          <button
-            *ngIf="!p.isEllipsis"
-            class="page-link bg-white border border-gray-300 px-3 py-1 hover:bg-gray-100"
-            (click)="goToPage(p.page)"
-          >
-            {{ p.page + 1 }}
-          </button>
-          <span *ngIf="p.isEllipsis" class="page-link bg-white border border-gray-300 px-3 py-1 text-gray-500">
-            ...
-          </span>
-        </li>
-      </ng-container>
-      <li class="page-item" [class.disabled]="page >= totalPages - 1">
-        <button
-          class="page-link bg-white border border-gray-300 px-3 py-1 hover:bg-gray-100"
-          (click)="nextPage()"
-          aria-label="Trang sau"
-        >
-          ›
-        </button>
+      <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === page" [class.disabled]="p.isEllipsis">
+        <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+        <span *ngIf="p.isEllipsis" class="page-link">...</span>
       </li>
       <li class="page-item" [class.disabled]="page >= totalPages - 1">
-        <button
-          class="page-link bg-white border border-gray-300 px-3 py-1 rounded-r hover:bg-gray-100"
-          (click)="goToPage(totalPages - 1)"
-          aria-label="Trang cuối"
-        >
-          »
-        </button>
+        <button class="page-link" (click)="nextPage()">›</button>
+      </li>
+      <li class="page-item" [class.disabled]="page >= totalPages - 1">
+        <button class="page-link" (click)="goToPage(totalPages - 1)">»</button>
       </li>
     </ul>
   </nav>
@@ -182,10 +108,72 @@
 
 <!-- MODALS -->
 <ng-container *ngIf="showAddModal">
-  <div class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="modal-content bg-white rounded-lg p-6 w-full max-w-md">
-      <h3 class="modal-title text-xl font-bold text-gray-800 mb-4">Thêm Thương Hiệu</h3>
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title">Thêm Thương Hiệu</h3>
       <app-add-brand (close)="closeAddModal()" (brandAdded)="handleBrandAdded($event)"></app-add-brand>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="showUpdateModal">
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title">Sửa Thương Hiệu</h3>
+      <app-update-brand [thuongHieu]="selectedThuongHieu" (close)="closeUpdateModal()" (brandUpdated)="closeUpdateModal()"></app-update-brand>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="showDeleteModal">
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title">Xác Nhận Xóa</h3>
+      <p>Bạn có chắc muốn xóa thương hiệu này?</p>
+      <div class="modal-actions">
+        <button (click)="confirmDelete()" class="btn btn-primary">Xóa</button>
+        <button (click)="closeDeleteModal()" class="btn btn-secondary">Hủy</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="showDeactivateModal">
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title">Xác Nhận Ngừng Bán</h3>
+      <p>Bạn có chắc muốn ngừng bán tất cả sản phẩm của thương hiệu này?</p>
+      <div *ngIf="isDeactivating" class="loading-spinner">
+        <svg class="animate-spin h-6 w-6 mx-auto text-orange-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+        </svg>
+        <span class="sr-only">Đang xử lý...</span>
+      </div>
+      <div class="modal-actions">
+        <button (click)="confirmDeactivate()" [disabled]="isDeactivating" class="btn btn-deactivate">Ngừng Bán</button>
+        <button (click)="closeDeactivateModal()" [disabled]="isDeactivating" class="btn btn-secondary">Hủy</button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="showRestoreModal">
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="modal-title">Xác Nhận Khôi Phục</h3>
+      <p>Bạn có chắc muốn khôi phục tất cả sản phẩm của thương hiệu này?</p>
+      <div *ngIf="isRestoring" class="loading-spinner">
+        <svg class="animate-spin h-6 w-6 mx-auto text-green-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+        </svg>
+        <span class="sr-only">Đang xử lý...</span>
+      </div>
+      <div class="modal-actions">
+        <button (click)="confirmRestore()" [disabled]="isRestoring" class="btn btn-restore">Khôi Phục</button>
+        <button (click)="closeRestoreModal()" [disabled]="isRestoring" class="btn btn-secondary">Hủy</button>
+      </div>
     </div>
   </div>
 </ng-container>

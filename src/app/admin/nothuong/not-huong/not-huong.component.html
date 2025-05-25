@@ -10,6 +10,7 @@
       (ngModelChange)="onSearchChange($event)"
       placeholder="Tìm kiếm nốt hương theo ID, tên hoặc mô tả..."
       class="search-input"
+      aria-label="Tìm kiếm nốt hương"
     />
   </div>
 
@@ -25,10 +26,11 @@
 
   <!-- Loading Spinner -->
   <div *ngIf="isLoading" class="text-center p-4">
-    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
     </svg>
+    <span class="sr-only">Đang tải...</span>
   </div>
 
   <!-- Add Button -->
@@ -39,28 +41,30 @@
   </div>
 
   <!-- Not Huong Table -->
-  <table class="w-full border-collapse bg-white shadow rounded">
-    <thead>
-      <tr class="bg-gray-200">
-        <th class="p-2 text-left">ID</th>
-        <th class="p-2 text-left">Tên Nốt Hương</th>
-        <th class="p-2 text-left">Mô Tả</th>
-        <th class="p-2 text-left">Hành Động</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let notHuong of displayedNotHuongs" class="border-b">
-        <td class="p-2">{{ notHuong.id }}</td>
-        <td class="p-2">{{ notHuong.tenNotHuong }}</td>
-        <td class="p-2">{{ notHuong.moTa }}</td>
-        <td class="p-2">
-          <button (click)="openUpdateModal(notHuong)" class="bg-yellow-500 text-white p-1 rounded mr-1 hover:bg-yellow-600">Sửa</button>
-          <button *ngIf="!notHuong.hasProduct" (click)="openDeleteModal(notHuong.id)" class="bg-red-500 text-white p-1 rounded mr-1 hover:bg-red-600">Xóa</button>
-          <button *ngIf="!notHuong.hasProduct && notHuong.isNew" (click)="undoAddNotHuong(notHuong)" class="bg-green-500 text-white p-1 rounded mr-1 hover:bg-green-600">Undo</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table class="w-full border-collapse bg-white shadow rounded">
+      <thead>
+        <tr class="bg-gray-200">
+          <th class="p-2 text-left">ID</th>
+          <th class="p-2 text-left">Tên Nốt Hương</th>
+          <th class="p-2 text-left">Mô Tả</th>
+          <th class="p-2 text-left">Hành Động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let notHuong of displayedNotHuongs" class="border-b hover:bg-gray-50">
+          <td class="p-2">{{ notHuong.id }}</td>
+          <td class="p-2">{{ notHuong.tenNotHuong }}</td>
+          <td class="p-2">{{ notHuong.moTa }}</td>
+          <td class="p-2 space-x-1">
+            <button (click)="openUpdateModal(notHuong)" class="btn btn-edit" aria-label="Sửa nốt hương">Sửa</button>
+            <button *ngIf="!notHuong.hasProduct" (click)="openDeleteModal(notHuong.id)" class="btn btn-delete" aria-label="Xóa nốt hương">Xóa</button>
+            <button *ngIf="!notHuong.hasProduct && notHuong.isNew" (click)="undoAddNotHuong(notHuong)" class="btn btn-undo" aria-label="Hoàn tác thêm nốt hương">Hoàn tác</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <!-- Pagination Controls -->
   <nav aria-label="Page navigation">
@@ -85,9 +89,7 @@
   </nav>
 </div>
 
-<!-- MODALS - OUTSIDE MAIN CONTAINER -->
-
-<!-- Add Not Huong Modal -->
+<!-- MODALS -->
 <div *ngIf="showAddModal" class="modal-overlay">
   <div class="modal-content w-full max-w-sm">
     <h3 class="text-base font-semibold mb-3 text-center text-gray-800">Thêm Nốt Hương</h3>
@@ -95,7 +97,6 @@
   </div>
 </div>
 
-<!-- Update Not Huong Modal -->
 <div *ngIf="showUpdateModal" class="modal-overlay">
   <div class="modal-content w-full max-w-sm">
     <h3 class="text-base font-semibold mb-3 text-center text-gray-800">Sửa Nốt Hương</h3>
@@ -107,14 +108,13 @@
   </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div *ngIf="showDeleteModal" class="modal-overlay">
   <div class="modal-content w-full max-w-md">
     <h3 class="text-lg font-semibold mb-4">Xác Nhận Xóa</h3>
     <p>Bạn có chắc muốn xóa nốt hương này?</p>
     <div class="mt-4 flex justify-end gap-2">
-      <button (click)="confirmDelete()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Xóa</button>
-      <button (click)="closeDeleteModal()" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Hủy</button>
+      <button (click)="confirmDelete()" class="btn btn-primary">Xóa</button>
+      <button (click)="closeDeleteModal()" class="btn btn-secondary">Hủy</button>
     </div>
   </div>
 </div>
