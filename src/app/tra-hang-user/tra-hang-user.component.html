@@ -34,7 +34,8 @@
           </div>
           <div class="card-content">
             <p><strong>Đơn hàng:</strong> {{ yeuCau.donHang?.id || 'N/A' }}</p>
-            <p><strong>Sản phẩm:</strong> {{ yeuCau.spct?.id || 'N/A' }}</p>
+            <p><strong>Sản phẩm:</strong> {{ yeuCau.spct?.sanPham.tenSanPham || 'N/A' }}</p>
+            <p><strong>Dung tích:</strong> {{ yeuCau.spct?.dungTich || 'N/A' }}</p>
             <p><strong>Số lượng:</strong> {{ yeuCau.soLuong }}</p>
             <p><strong>Tình trạng:</strong> {{ yeuCau.tinhTrangHang }}</p>
             <p><strong>Lý do:</strong> {{ yeuCau.lyDoTraHang }}</p>
