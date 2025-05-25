@@ -146,13 +146,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   }
 
   private setupSearch(): void {
-    this.searchSubscription = this.searchControl.valueChanges.pipe(
-      debounceTime(100),
-      distinctUntilChanged()
-    ).subscribe((keyword) => {
-      this.applySearch(keyword ?? '');
-    });
-  }
+  this.searchSubscription = this.searchControl.valueChanges.pipe(
+    debounceTime(100),
+    distinctUntilChanged()
+  ).subscribe((keyword) => {
+    this.applySearch(keyword ?? '');
+  });
+}
 
   private fetchOrderDetails(orderId: number): void {
     this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`).subscribe({
@@ -227,33 +227,65 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.selectedOrder = null;
   }
 
-  private applySearch(keyword: string | null = ''): void {
-    const searchTerm = (keyword ?? '').toLowerCase().trim();
-    const statusCode = this.selectedStatus;
-    const paymentMethod = this.selectedPaymentMethod;
+ private applySearch(keyword: string | null = ''): void {
+  const searchTerm = (keyword ?? '').toLowerCase().trim();
+  const statusCode = this.selectedStatus;
+  const paymentMethod = this.selectedPaymentMethod;
 
-    // Determine allowed statuses based on tab and payment method
+  // Lọc đơn hàng dựa trên từ khóa tìm kiếm
+  let filteredResults = this.orders.filter((order) => {
+    const idDonHangStringFake = this.formatOrderId(order);
+    const searchableText = [
+      idDonHangStringFake,
+      order.tenNguoiNhanHang,
+      order.sdtNguoiNhan,
+      order.diaChiGiaoHang,
+      order.ghiChu,
+      order.phuongThucThanhToan,
+      order.taiKhoan?.tenDangNhap,
+    ]
+      .filter((field) => field != null)
+      .map((field) => field.toString().toLowerCase())
+      .join(' ');
+
+    return searchTerm === '' || searchableText.includes(searchTerm);
+  });
+
+  // Nếu chỉ tìm thấy 1 đơn hàng, tự động điều chỉnh bộ lọc
+  if (filteredResults.length === 1) {
+    const order = filteredResults[0];
+    const isOnline = order.luongBan === 1;
+
+    // Cập nhật selectedTab
+    this.selectedTab = isOnline ? 'online' : 'offline';
+
+    // Cập nhật selectedPaymentMethod (chỉ áp dụng cho tab online)
+    if (isOnline) {
+      this.selectedPaymentMethod = order.phuongThucThanhToan?.toLowerCase() || 'tm';
+    } else {
+      this.selectedPaymentMethod = null; // Reset nếu là offline
+    }
+
+    // Cập nhật selectedStatus
+    this.selectedStatus = order.selectedStatus;
+
+    // Kiểm tra xem trạng thái có được phép trong tab hiện tại không
+    const statusKey = this.selectedTab === 'online' && this.selectedPaymentMethod
+      ? `online_${this.selectedPaymentMethod}`
+      : this.selectedTab;
+    const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
+
+    if (!allowedStatuses.includes(order.selectedStatus)) {
+      this.selectedStatus = null; // Reset nếu trạng thái không hợp lệ
+    }
+  } else {
+    // Nếu có nhiều hơn 1 đơn hàng hoặc không có đơn hàng nào, giữ bộ lọc hiện tại
     const statusKey = this.selectedTab === 'online' && paymentMethod
       ? `online_${paymentMethod}`
       : this.selectedTab;
     const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
 
-    this.filteredDonhang = this.orders.filter((order) => {
-      const idDonHangStringFake=this.formatOrderId(order);
-      const searchableText = [
-        idDonHangStringFake,
-        order.tenNguoiNhanHang,
-        order.sdtNguoiNhan,
-        order.diaChiGiaoHang,
-        order.ghiChu,
-        order.phuongThucThanhToan,
-        order.taiKhoan?.tenDangNhap,
-      ]
-        .filter((field) => field != null)
-        .map((field) => field.toString().toLowerCase())
-        .join(' ');
-
-      const matchesKeyword = searchTerm === '' || searchableText.includes(searchTerm);
+    filteredResults = filteredResults.filter((order) => {
       const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
       const matchesPaymentMethod =
         this.selectedTab !== 'online' ||
@@ -264,11 +296,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       const matchesAllowedStatus =
         allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
 
-      return matchesKeyword && matchesStatus && matchesPaymentMethod && matchesTab && matchesAllowedStatus;
+      return matchesStatus && matchesPaymentMethod && matchesTab && matchesAllowedStatus;
     });
-
-    this.cdRef.detectChanges();
   }
+
+  this.filteredDonhang = filteredResults;
+  this.cdRef.detectChanges();
+}
 
   private checkInventory(orderId: number): boolean {
     console.log('Checking inventory for order:', orderId);
