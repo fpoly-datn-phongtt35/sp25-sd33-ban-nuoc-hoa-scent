@@ -1,5 +1,6 @@
 package com.example.scent.rest;
 
+import com.example.scent.dto.NotHuongRequestDTO;
 import com.example.scent.dto.NotHuongWithStatusDTO;
 import com.example.scent.entity.NotHuong;
 import com.example.scent.service.NotHuongService;
@@ -26,15 +27,15 @@ public class NotHuongController {
     }
 
     @PostMapping
-    public ResponseEntity<NotHuong> addNotHuong(@RequestBody NotHuong notHuong) {
-        NotHuong savedNotHuong = notHuongService.save(notHuong);
+    public ResponseEntity<NotHuong> addNotHuong(@RequestBody NotHuongRequestDTO notHuongDTO) {
+        NotHuong savedNotHuong = notHuongService.save(notHuongDTO);
         return ResponseEntity.ok(savedNotHuong);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<NotHuong> updateNotHuong(@PathVariable Integer id, @RequestBody NotHuong notHuong) {
-        notHuong.setId(id);
-        NotHuong updatedNotHuong = notHuongService.save(notHuong);
+    public ResponseEntity<NotHuong> updateNotHuong(@PathVariable Integer id, @RequestBody NotHuongRequestDTO notHuongDTO) {
+        notHuongDTO.setId(id); // Set the ID from the path variable
+        NotHuong updatedNotHuong = notHuongService.save(notHuongDTO);
         return ResponseEntity.ok(updatedNotHuong);
     }
 

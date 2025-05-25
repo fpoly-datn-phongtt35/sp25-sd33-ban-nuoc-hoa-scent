@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface MuiHuongInterface extends JpaRepository<MuiHuong, Integer> {
     @Query(value = "SELECT CAST(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS BIT) " +
@@ -16,4 +18,5 @@ public interface MuiHuongInterface extends JpaRepository<MuiHuong, Integer> {
             "  /* Thêm các bảng khác nếu cần */ " +
             ") AS linked_tables", nativeQuery = true)
     boolean existsSanPhamByMuiHuongId(@Param("muiHuongId") Integer muiHuongId);
-}
+    @Query("SELECT m FROM MuiHuong m WHERE m.id = :id")
+    Optional<MuiHuong> findById(Integer id);}

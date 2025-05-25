@@ -15,10 +15,10 @@ public interface ThuongHieuInterface extends JpaRepository<ThuongHieu, Integer> 
     @Query("SELECT EXISTS (SELECT 1 FROM SanPham sp WHERE sp.thuongHieu.id = :thuongHieuId)")
     boolean existsSanPhamByThuongHieuId(Integer thuongHieuId);
     @Query("SELECT th FROM ThuongHieu th WHERE " +
-            "(:searchQuery IS NULL OR " +
+            ":searchQuery IS NULL OR " +
             "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
             "LOWER(th.quocGia) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-            "LOWER(th.moTa) LIKE LOWER(CONCAT('%', :searchQuery, '%')))")
+            "(th.moTa IS NOT NULL AND LOWER(th.moTa) LIKE LOWER(CONCAT('%', :searchQuery, '%')))")
     Page<ThuongHieu> searchByMultipleFields(@Param("searchQuery") String searchQuery, Pageable pageable);
     @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.thuongHieu.id = :thuongHieuId")
     Long countSanPhamByThuongHieuId(Integer thuongHieuId);
