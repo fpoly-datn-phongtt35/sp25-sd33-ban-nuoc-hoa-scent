@@ -3,7 +3,8 @@ import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, map, catchError } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 import { AccountService } from '../../../service/taikhoan.service';
 
@@ -25,8 +26,7 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     public activeModal: NgbActiveModal,
     private accountService: AccountService,
-    private cdr: ChangeDetectorRef,
-    
+    private cdr: ChangeDetectorRef
   ) {
     // Validator cho hoTen
     const hoTenValidator: ValidatorFn = (control: AbstractControl) => {
@@ -40,7 +40,7 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
       return null;
     };
 
-    // Validator cho email
+    // Validator cho email (local check)
     const emailExistsValidator: ValidatorFn = (control: AbstractControl) => {
       const email = control.value?.trim();
       if (!email || !this.accounts) return null;
@@ -59,45 +59,94 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
       return null;
     };
 
-    const sdtExistsValidator: ValidatorFn = (control: AbstractControl) => {
-      const sdt = control.value?.trim();
-      if (!sdt || !this.accounts) return null;
-      return this.accounts.some(account => account.soDienThoai === sdt)
-        ? { sdtExists: true }
-        : null;
-    };
-
     // Validator cho username
-    const usernameExistsValidator: ValidatorFn = (control: AbstractControl) => {
-      const username = control.value?.trim();
-      if (!username || !this.accounts) return null;
-      return this.accounts.some(account => account.username?.toLowerCase() === username.toLowerCase())
-        ? { usernameExists: true }
-        : null;
+    const usernameValidator: ValidatorFn = (control: AbstractControl) => {
+      const value = control.value?.trim();
+      if (!value) return { required: true };
+      if (value.length === 0) return { onlyWhitespace: true };
+      return null;
     };
 
     this.accountForm = this.fb.group({
       hoTen: ['', hoTenValidator],
-      email: ['', [Validators.required, Validators.email, emailExistsValidator]],
-      soDienThoai: ['', [sdtValidator, sdtExistsValidator]],
-      username: ['', [Validators.required, usernameExistsValidator]]
+      email: ['', [Validators.required, Validators.email, emailExistsValidator], [this.emailAsyncValidator.bind(this)]],
+      soDienThoai: ['', [sdtValidator], [this.phoneNumberAsyncValidator.bind(this)]],
+      username: ['', [usernameValidator], [this.usernameAsyncValidator.bind(this)]]
     });
   }
 
   ngOnInit(): void {
     // Tự động tạo username khi hoTen thay đổi
-    this.hoTenSubscription = this.accountForm.get('hoTen')?.valueChanges.subscribe(value => {
-      if (value) {
+    this.hoTenSubscription = this.accountForm.get('hoTen')?.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(value => {
+      if (value && this.accountForm.get('hoTen')?.valid) {
         const generatedUsername = this.generateUsername(value);
-        this.accountForm.get('username')?.setValue(generatedUsername, { emitEvent: false });
+        this.accountForm.get('username')?.setValue(generatedUsername, { emitEvent: true });
       } else {
         this.accountForm.get('username')?.setValue('', { emitEvent: false });
       }
+      this.cdr.detectChanges();
     });
   }
 
   ngOnDestroy(): void {
     this.hoTenSubscription?.unsubscribe();
+  }
+
+  // Async validator cho email
+  emailAsyncValidator(control: AbstractControl) {
+    const email = control.value?.trim();
+    if (!email) return of(null);
+    return this.accountService.findByEmail(email).pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      map(response => {
+        console.log('Email API response:', response); // Debug response
+        return response.success ? null : { emailExists: true };
+      }),
+      catchError((error) => {
+        console.warn('Email check failed:', error.message); // Debug lỗi
+        return of(null); // Trả về null để tránh báo nhầm tồn tại
+      })
+    );
+  }
+
+  // Async validator cho số điện thoại
+  phoneNumberAsyncValidator(control: AbstractControl) {
+    const sdt = control.value?.trim();
+    if (!sdt) return of(null);
+    return this.accountService.findByPhoneNumber(sdt).pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      map(response => {
+        console.log('Phone API response:', response); // Debug response
+        return response.success ? null : { sdtExists: true };
+      }),
+      catchError((error) => {
+        console.warn('Phone check failed:', error.message); // Debug lỗi
+        return of({ sdtExists: false });
+      })
+    );
+  }
+
+  // Async validator cho username
+  usernameAsyncValidator(control: AbstractControl) {
+    const username = control.value?.trim();
+    if (!username) return of(null);
+    return this.accountService.findByUsername(username).pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      map(response => {
+        console.log('Username API response:', response); // Debug response
+        return response && Object.keys(response).length > 0 ? { usernameExists: true } : null;
+      }),
+      catchError((error) => {
+        console.warn('Username check failed:', error.message); // Debug lỗi
+        return of(null); // Trả về null nếu API lỗi
+      })
+    );
   }
 
   generateUsername(hoTen: string): string {
@@ -115,13 +164,20 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
 
   randomizeUsername(): void {
     const hoTen = this.accountForm.get('hoTen')?.value;
-    if (!hoTen || this.accountForm.get('hoTen')?.invalid) return;
+    if (!hoTen || this.accountForm.get('hoTen')?.invalid) {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng nhập họ và tên hợp lệ trước khi tạo tên đăng nhập ngẫu nhiên.',
+        icon: 'warning',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
 
     const normalized = hoTen.trim().toLowerCase().replace(/\s+/g, ' ');
     const parts = normalized.split(' ');
     if (parts.length < 2) return;
 
-    // Tạo ngẫu nhiên bằng cách xáo trộn hoặc thêm số ngẫu nhiên
     const ten = parts[parts.length - 1];
     const ho = parts[0];
     const tenDem = parts.slice(1, parts.length - 1);
@@ -134,7 +190,36 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
     let username = variations[Math.floor(Math.random() * variations.length)];
     username = this.removeVietnameseDiacritics(username);
     username = this.makeUniqueUsername(username);
-    this.accountForm.get('username')?.setValue(username, { emitEvent: false });
+
+    // Kiểm tra username với backend trước khi set
+    this.accountService.findByUsername(username).subscribe({
+      next: (response) => {
+        if (!response || Object.keys(response).length === 0) {
+          this.accountForm.get('username')?.setValue(username, { emitEvent: true });
+        } else {
+          // Nếu username đã tồn tại, thử thêm số ngẫu nhiên khác
+          const newUsername = `${username}${Math.floor(Math.random() * 100)}`;
+          this.accountService.findByUsername(newUsername).subscribe({
+            next: (newResponse) => {
+              this.accountForm.get('username')?.setValue(
+                !newResponse || Object.keys(newResponse).length === 0 ? newUsername : `${newUsername}${Math.floor(Math.random() * 100)}`,
+                { emitEvent: true }
+              );
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.accountForm.get('username')?.setValue(newUsername, { emitEvent: true });
+              this.cdr.detectChanges();
+            }
+          });
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.accountForm.get('username')?.setValue(username, { emitEvent: true });
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   removeVietnameseDiacritics(str: string): string {
@@ -155,7 +240,7 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
   }
 
   saveAccount(): void {
-    if (this.accountForm.invalid) {
+    if (this.accountForm.invalid || this.accountForm.pending) {
       this.accountForm.markAllAsTouched();
       Swal.fire({
         title: 'Lỗi',
@@ -166,7 +251,13 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formData = this.accountForm.value;
+    const formData = {
+      hoTen: this.accountForm.get('hoTen')?.value.trim(),
+      email: this.accountForm.get('email')?.value.trim(),
+      soDienThoai: this.accountForm.get('soDienThoai')?.value.trim(),
+      username: this.accountForm.get('username')?.value.trim()
+    };
+
     this.accountService.createNhanVien(formData).subscribe({
       next: (response: any) => {
         if (response.success) {
@@ -203,20 +294,15 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
     });
   }
 
-   closeModal() {
+  closeModal(): void {
     if (this.activeModal) {
       this.activeModal.dismiss('cancel');
     }
-    // Robust modal cleanup
     setTimeout(() => {
       const modalElement = document.querySelector('.modal');
-      if (modalElement) {
-        modalElement.remove();
-      }
+      if (modalElement) modalElement.remove();
       const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-      }
+      if (backdrop) backdrop.remove();
       document.body.classList.remove('modal-open');
       document.body.style.overflow = 'auto';
       document.body.style.paddingRight = '';

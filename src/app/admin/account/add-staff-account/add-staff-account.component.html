@@ -26,6 +26,9 @@
         <small *ngIf="accountForm.get('email')?.errors?.['email']">Email không hợp lệ.</small>
         <small *ngIf="accountForm.get('email')?.errors?.['emailExists']">Email đã tồn tại.</small>
       </div>
+      <div *ngIf="accountForm.get('email')?.pending" class="text-muted">
+        <small>Đang kiểm tra email...</small>
+      </div>
     </div>
 
     <!-- Số điện thoại -->
@@ -38,20 +41,27 @@
         <small *ngIf="accountForm.get('soDienThoai')?.errors?.['pattern']">Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.</small>
         <small *ngIf="accountForm.get('soDienThoai')?.errors?.['sdtExists']">Số điện thoại đã tồn tại.</small>
       </div>
+      <div *ngIf="accountForm.get('soDienThoai')?.pending" class="text-muted">
+        <small>Đang kiểm tra số điện thoại...</small>
+      </div>
     </div>
 
     <!-- Tên đăng nhập -->
     <div class="mb-3">
       <label for="username" class="form-label">Tên Đăng Nhập</label>
       <div class="input-group">
-        <input type="text" class="form-control" id="username" formControlName="username" readonly>
+        <input type="text" class="form-control" id="username" formControlName="username">
         <button type="button" class="btn btn-outline-secondary random-btn" (click)="randomizeUsername()" [disabled]="!accountForm.get('hoTen')?.valid" aria-label="Tạo tên đăng nhập ngẫu nhiên">
           <i class="bi bi-shuffle"></i> Tạo ngẫu nhiên
         </button>
       </div>
       <div *ngIf="accountForm.get('username')?.invalid && (accountForm.get('username')?.touched || accountForm.get('username')?.dirty)" class="text-danger">
         <small *ngIf="accountForm.get('username')?.errors?.['required']">Tên đăng nhập là bắt buộc.</small>
+        <small *ngIf="accountForm.get('username')?.errors?.['onlyWhitespace']">Tên đăng nhập không được chỉ chứa dấu cách.</small>
         <small *ngIf="accountForm.get('username')?.errors?.['usernameExists']">Tên đăng nhập đã tồn tại.</small>
+      </div>
+      <div *ngIf="accountForm.get('username')?.pending" class="text-muted">
+        <small>Đang kiểm tra tên đăng nhập...</small>
       </div>
     </div>
   </form>
@@ -59,5 +69,5 @@
 
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-  <button type="button" class="btn btn-primary" [disabled]="accountForm.invalid" (click)="saveAccount()">Lưu</button>
+  <button type="button" class="btn btn-primary" [disabled]="accountForm.invalid || accountForm.pending" (click)="saveAccount()">Lưu</button>
 </div>

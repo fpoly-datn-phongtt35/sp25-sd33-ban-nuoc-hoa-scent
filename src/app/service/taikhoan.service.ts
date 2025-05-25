@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 @Injectable({
@@ -107,10 +107,11 @@ export class AccountService {
     );
   }
 
+  // Kiểm tra username
   findByUsername(username: string): Observable<any> {
     const params = new HttpParams().set('username', username);
     return this.http.get(`${this.apiUrl}/findByUsername`, { params }).pipe(
-      catchError(this.handleError)
+      catchError(() => of(null)) // Trả về null nếu API lỗi
     );
   }
 
@@ -156,7 +157,7 @@ export class AccountService {
       catchError(this.handleError)
     );
   }
-  cons
+  
   // Lấy danh sách đơn hàng theo id tài khoản
   getOrdersByTaiKhoanId(idTaiKhoan: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.ApiDonHangUrl}/getByIdTaiKhoan/${idTaiKhoan}`);
@@ -166,4 +167,11 @@ export class AccountService {
     return this.http.put<any>(`${this.apiUrl}/setTrangThaiByIdTaiKhoan/${id}`, null, { params });
   }
 
+  // Kiểm tra số điện thoại
+  findByPhoneNumber(soDienThoai: string): Observable<{ success: boolean; message: string }> {
+    const params = new HttpParams().set('soDienThoai', soDienThoai);
+    return this.http
+      .get<{ success: boolean; message: string }>(`${this.apiUrl}/findByPhoneNumber`, { params })
+      .pipe(catchError(this.handleError));
+  }
 }
