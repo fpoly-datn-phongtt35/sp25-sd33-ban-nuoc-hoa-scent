@@ -1276,7 +1276,7 @@ export class OfflineOrderComponent implements OnInit, OnDestroy {
 
         <p style="font-size: 12px; font-weight: bold; text-align: right;" id="total">Tổng tiền: ${orderData.total ? orderData.total.toLocaleString() : '0'} VNĐ</p>
 
-        <p style="font-size: 10px; text-align: left; color: #666;" id="note">Lưu ý: Khách mua hàng tại cửa hàng được trả hàng sau 3 ngày kể từ ngày mua, nếu do lỗi phía cửa hàng.</p>
+        
       </div>
     `;
 
