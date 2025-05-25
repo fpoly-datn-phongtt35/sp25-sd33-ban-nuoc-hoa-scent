@@ -954,19 +954,16 @@ GO
 
 UPDATE san_pham
 SET create_date = GETDATE();
-
-select*from don_hang
-select*from yeu_cau_tra_hang
-where id_tai_khoan=1011
-
-SELECT * 
-FROM don_hang dh
-Where DATEPART(YEAR, dh.ngay_tao) = 2025;
-select *from yeu_cau_tra_hang
-
-
-ngay_duyet
-
+GO
+update san_pham
+set trang_thai =1
+Go
+update spct 
+set trang_thai=1
+go
+update tai_khoan
+set trang_thai =1 
+go
 UPDATE san_pham
 SET id_nong_do = CASE 
     -- SP0001: Calvin Klein CK One (EDT)
