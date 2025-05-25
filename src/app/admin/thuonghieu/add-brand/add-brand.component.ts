@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ThuongHieuService } from '../../../service/thuonghieu.service';
+import { ThuongHieuService,ThuongHieu } from '../../../service/thuonghieu.service';
 import { EventEmitter, Output } from '@angular/core';
-import { ThuongHieu } from '../brand/brand.component';
+
 import Swal from 'sweetalert2';
 
 @Component({
