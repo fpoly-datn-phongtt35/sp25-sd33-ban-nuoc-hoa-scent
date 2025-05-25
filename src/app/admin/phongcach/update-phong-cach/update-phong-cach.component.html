@@ -7,11 +7,29 @@
     <div class="form-group">
       <label for="tenPhongCach">Tên Phong Cách</label>
       <input type="text" class="form-control" id="tenPhongCach" name="tenPhongCach"
-             [(ngModel)]="phongCach.tenPhongCach" required>
+             [(ngModel)]="phongCach.tenPhongCach" required
+             #tenPhongCachControl="ngModel"
+             [ngClass]="{'is-invalid': tenPhongCachControl.touched && tenPhongCachControl.invalid}"
+             tenPhongCachValidator>
+      <div *ngIf="tenPhongCachControl.touched && tenPhongCachControl.invalid" class="invalid-feedback">
+        <div *ngIf="tenPhongCachControl.errors?.['required']">Tên Phong Cách là bắt buộc.</div>
+        <div *ngIf="tenPhongCachControl.errors?.['onlyNumbers']">Tên Phong Cách không được chỉ chứa số.</div>
+        <div *ngIf="tenPhongCachControl.errors?.['specialCharacters']">Tên Phong Cách không được chứa ký tự đặc biệt.</div>
+        <div *ngIf="tenPhongCachControl.errors?.['invalidFormat']">Tên Phong Cách phải có ít nhất một chữ cái, một dấu cách và một chữ cái khác.</div>
+      </div>
     </div>
     <div class="form-group">
       <label for="moTa">Mô Tả</label>
-      <textarea class="form-control" id="moTa" name="moTa" [(ngModel)]="phongCach.moTa"></textarea>
+      <textarea class="form-control" id="moTa" name="moTa"
+                [(ngModel)]="phongCach.moTa" required
+                #moTaControl="ngModel"
+                [ngClass]="{'is-invalid': moTaControl.touched && moTaControl.invalid}"
+                moTaValidator></textarea>
+      <div *ngIf="moTaControl.touched && moTaControl.invalid" class="invalid-feedback">
+        <div *ngIf="moTaControl.errors?.['required']">Mô Tả là bắt buộc.</div>
+        <div *ngIf="moTaControl.errors?.['onlyNumbers']">Mô Tả không được chỉ chứa số.</div>
+        <div *ngIf="moTaControl.errors?.['invalidFormat']">Mô Tả phải có ít nhất một chữ cái, một dấu cách và một chữ cái khác.</div>
+      </div>
     </div>
     <div class="mt-4 flex justify-end gap-2">
       <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600" [disabled]="!phongCachForm.valid">Lưu</button>

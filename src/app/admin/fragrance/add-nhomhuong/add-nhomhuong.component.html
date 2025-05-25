@@ -1,28 +1,31 @@
-```html
 <div class="modal-header">
-  <h5 class="modal-title">Add New NhomHuong</h5>
+  <h5 class="modal-title">Thêm Nhóm Hương</h5>
   <button type="button" class="btn-close" (click)="activeModal.dismiss('Cancel')" aria-label="Close"></button>
 </div>
 <div class="modal-body">
   <form [formGroup]="addForm" (ngSubmit)="onSubmit()">
     <div class="mb-3">
-      <label for="tenNhomHuong" class="form-label">Name</label>
-      <input type="text" class="form-control" id="tenNhomHuong" formControlName="tenNhomHuong">
-      <div *ngIf="addForm.get('tenNhomHuong')?.invalid && addForm.get('tenNhomHuong')?.touched"
-           class="text-danger">
-        Name is required and must be at least 3 characters.
+      <label for="tenNhomHuong" class="form-label">Tên Nhóm Hương</label>
+      <input type="text" class="form-control" id="tenNhomHuong" formControlName="tenNhomHuong"
+             [ngClass]="{'is-invalid': addForm.get('tenNhomHuong')?.invalid && addForm.get('tenNhomHuong')?.touched}">
+      <div *ngIf="addForm.get('tenNhomHuong')?.invalid && addForm.get('tenNhomHuong')?.touched" class="text-danger">
+        <div *ngIf="addForm.get('tenNhomHuong')?.errors?.['required']">Tên Nhóm Hương là bắt buộc.</div>
+        <div *ngIf="addForm.get('tenNhomHuong')?.errors?.['minlength']">Tên Nhóm Hương phải có ít nhất 3 ký tự.</div>
+        <div *ngIf="addForm.get('tenNhomHuong')?.errors?.['onlyNumbers']">Tên Nhóm Hương không được chỉ chứa số.</div>
+        <div *ngIf="addForm.get('tenNhomHuong')?.errors?.['invalidFormat']">Tên Nhóm Hương phải có ít nhất một chữ cái, một dấu cách và một chữ cái khác.</div>
       </div>
     </div>
     <div class="mb-3">
-      <label for="mota" class="form-label">Description</label>
-      <textarea class="form-control" id="mota" formControlName="mota"></textarea>
-      <div *ngIf="addForm.get('mota')?.invalid && addForm.get('mota')?.touched"
-           class="text-danger">
-        Description is required.
+      <label for="mota" class="form-label">Mô Tả</label>
+      <textarea class="form-control" id="mota" formControlName="mota"
+                [ngClass]="{'is-invalid': addForm.get('mota')?.invalid && addForm.get('mota')?.touched}"></textarea>
+      <div *ngIf="addForm.get('mota')?.invalid && addForm.get('mota')?.touched" class="text-danger">
+        <div *ngIf="addForm.get('mota')?.errors?.['required']">Mô Tả là bắt buộc.</div>
+        <div *ngIf="addForm.get('mota')?.errors?.['onlyNumbers']">Mô Tả không được chỉ chứa số.</div>
+        <div *ngIf="addForm.get('mota')?.errors?.['invalidFormat']">Mô Tả phải có ít nhất một chữ cái, một dấu cách và một chữ cái khác.</div>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary" [disabled]="addForm.invalid">Save</button>
-    <button type="button" class="btn btn-secondary ms-2" (click)="activeModal.dismiss('Cancel')">Cancel</button>
+    <button type="submit" class="btn btn-primary" [disabled]="addForm.invalid">Lưu</button>
+    <button type="button" class="btn btn-secondary ms-2" (click)="activeModal.dismiss('Cancel')">Hủy</button>
   </form>
 </div>
-```

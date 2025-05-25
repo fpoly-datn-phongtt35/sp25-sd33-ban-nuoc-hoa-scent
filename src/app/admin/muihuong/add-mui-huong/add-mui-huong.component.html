@@ -7,11 +7,29 @@
     <div class="form-group">
       <label for="tenMuiHuong">Tên Mùi Hương</label>
       <input type="text" class="form-control" id="tenMuiHuong" name="tenMuiHuong"
-             [(ngModel)]="muiHuong.tenMuiHuong" required>
+             [(ngModel)]="muiHuong.tenMuiHuong" required
+             #tenMuiHuongControl="ngModel"
+             [ngClass]="{'is-invalid': tenMuiHuongControl.touched && tenMuiHuongControl.invalid}"
+             tenMuiHuongValidator>
+      <div *ngIf="tenMuiHuongControl.touched && tenMuiHuongControl.invalid" class="invalid-feedback">
+        <div *ngIf="tenMuiHuongControl.errors?.['required']">Tên Mùi Hương là bắt buộc.</div>
+        <div *ngIf="tenMuiHuongControl.errors?.['onlyNumbers']">Tên Mùi Hương không được chỉ chứa số.</div>
+        <div *ngIf="tenMuiHuongControl.errors?.['specialCharacters']">Tên Mùi Hương không được chứa ký tự đặc biệt.</div>
+        <div *ngIf="tenMuiHuongControl.errors?.['invalidFormat']">Tên Mùi Hương phải có ít nhất một chữ cái, một dấu cách và một chữ cái khác.</div>
+      </div>
     </div>
     <div class="form-group">
       <label for="moTa">Mô Tả</label>
-      <textarea class="form-control" id="moTa" name="moTa" [(ngModel)]="muiHuong.moTa"></textarea>
+      <textarea class="form-control" id="moTa" name="moTa"
+                [(ngModel)]="muiHuong.moTa" required
+                #moTaControl="ngModel"
+                [ngClass]="{'is-invalid': moTaControl.touched && moTaControl.invalid}"
+                moTaValidator></textarea>
+      <div *ngIf="moTaControl.touched && moTaControl.invalid" class="invalid-feedback">
+        <div *ngIf="moTaControl.errors?.['required']">Mô Tả là bắt buộc.</div>
+        <div *ngIf="moTaControl.errors?.['onlyNumbers']">Mô Tả không được chỉ chứa số.</div>
+        <div *ngIf="moTaControl.errors?.['invalidFormat']">Mô Tả phải có ít nhất một chữ cái, một dấu cách và một chữ cái khác.</div>
+      </div>
     </div>
     <div class="mt-4 flex justify-end gap-2">
       <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600" [disabled]="!muiHuongForm.valid">Lưu</button>
