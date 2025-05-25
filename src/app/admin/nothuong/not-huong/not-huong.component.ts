@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { AddNotHuongComponent } from '../add-not-huong/add-not-huong.component';
 import { UpdateNotHuongComponent } from '../update-not-huong/update-not-huong.component';
 import { NotHuongService } from '../../../service/nothuong.service';
-import { MuiHuongService } from '../../../service/muihuong.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
@@ -12,8 +11,6 @@ export interface NotHuong {
   id?: number;
   tenNotHuong: string;
   moTa: string;
-  muiHuongId?: number;
-  tenMuiHuong?: string;
   hasProduct?: boolean;
   isNew?: boolean;
 }
@@ -27,8 +24,8 @@ export interface NotHuong {
 })
 export class NotHuongComponent implements OnInit, OnDestroy {
   notHuongs: NotHuong[] = [];
-  filteredNotHuongs: NotHuong[] = []; // Danh sách nốt hương sau khi lọc
-  displayedNotHuongs: NotHuong[] = []; // Danh sách hiển thị trên trang hiện tại
+  filteredNotHuongs: NotHuong[] = [];
+  displayedNotHuongs: NotHuong[] = [];
   isLoading = false;
   errorMessage = '';
   showAddModal = false;
@@ -38,27 +35,23 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   notHuongToDelete: number | null = null;
 
   page: number = 0;
-  size: number = 10000; // Lấy tất cả từ backend
-  pageSize: number = 10; // Số nốt hương mỗi trang ở frontend
+  size: number = 10000;
+  pageSize: number = 10;
   totalPages: number = 1;
   totalElements: number = 0;
-  searchTerm: string = ''; // Từ khóa tìm kiếm
+  searchTerm: string = '';
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription | null = null;
 
-  constructor(
-    private notHuongService: NotHuongService,
-    private muiHuongService: MuiHuongService
-  ) {}
+  constructor(private notHuongService: NotHuongService) {}
 
   ngOnInit(): void {
     this.loadNotHuongs();
-    // Thiết lập debounce cho tìm kiếm
     this.searchSubscription = this.searchSubject
       .pipe(debounceTime(300))
       .subscribe((term: string) => {
         this.searchTerm = term;
-        this.page = 0; // Đặt lại trang khi tìm kiếm
+        this.page = 0;
         this.filterNotHuongs();
       });
   }
@@ -69,12 +62,10 @@ export class NotHuongComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Hàm xử lý thay đổi từ khóa tìm kiếm
   onSearchChange(term: string): void {
     this.searchSubject.next(term);
   }
 
-  // Hàm loại bỏ dấu tiếng Việt
   removeVietnameseTones(str: string): string {
     return str
       .normalize('NFD')
@@ -83,7 +74,6 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       .replace(/Đ/g, 'D');
   }
 
-  // Hàm lọc nốt hương theo từ khóa
   filterNotHuongs(): void {
     if (!this.searchTerm) {
       this.filteredNotHuongs = [...this.notHuongs];
@@ -92,16 +82,14 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       this.filteredNotHuongs = this.notHuongs.filter((notHuong: NotHuong) =>
         this.removeVietnameseTones(notHuong.tenNotHuong.toLowerCase()).includes(searchTermLower) ||
         this.removeVietnameseTones((notHuong.moTa || '').toLowerCase()).includes(searchTermLower) ||
-        (notHuong.tenMuiHuong ? this.removeVietnameseTones(notHuong.tenMuiHuong.toLowerCase()).includes(searchTermLower) : false) ||
         String(notHuong.id).includes(searchTermLower)
       );
     }
     this.totalElements = this.filteredNotHuongs.length;
-    this.totalPages = Math.ceil(this.totalElements / this.pageSize); // Tính số trang
+    this.totalPages = Math.ceil(this.totalElements / this.pageSize);
     this.updateDisplayedNotHuongs();
   }
 
-  // Cập nhật danh sách hiển thị dựa trên trang hiện tại
   updateDisplayedNotHuongs(): void {
     const start = this.page * this.pageSize;
     const end = start + this.pageSize;
@@ -111,23 +99,33 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   loadNotHuongs(): void {
     this.isLoading = true;
     this.errorMessage = '';
+    const previousNotHuongs = [...this.notHuongs]; // Lưu danh sách hiện tại
 
     this.notHuongService.getPagedNotHuong(this.page, this.size).subscribe({
       next: (res) => {
-        this.notHuongs = res.content.map((notHuong: NotHuong) => ({
-          ...notHuong,
-          isNew: false
-        }));
-        this.filteredNotHuongs = [...this.notHuongs]; // Khởi tạo danh sách lọc
-        this.totalElements = this.filteredNotHuongs.length;
-        this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+        if (res && res.content) {
+          this.notHuongs = res.content.map((notHuong: NotHuong) => ({
+            ...notHuong,
+            isNew: false
+          }));
+          this.filteredNotHuongs = [...this.notHuongs];
+          this.totalElements = this.filteredNotHuongs.length;
+          this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+        } else {
+          console.warn('Không có dữ liệu nốt hương từ API:', res);
+          this.notHuongs = previousNotHuongs; // Khôi phục danh sách cũ
+          this.errorMessage = 'Không tìm thấy dữ liệu nốt hương.';
+        }
         this.isLoading = false;
-        this.filterNotHuongs(); // Áp dụng lọc nếu có từ khóa
+        this.filterNotHuongs();
         console.log('Danh sách nốt hương:', this.notHuongs);
       },
       error: (error) => {
-        this.errorMessage = 'Không thể tải danh sách nốt hương: ' + error.message;
+        console.error('Lỗi khi tải nốt hương:', error);
+        this.notHuongs = previousNotHuongs; // Khôi phục danh sách cũ
+        this.errorMessage = 'Không thể tải danh sách nốt hương: ' + (error.message || 'Lỗi không xác định');
         this.isLoading = false;
+        this.filterNotHuongs();
       }
     });
   }
@@ -143,7 +141,7 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   handleNotHuongAdded(newNotHuong: NotHuong): void {
     newNotHuong.isNew = true;
     this.notHuongs.unshift(newNotHuong);
-    this.filterNotHuongs(); // Cập nhật danh sách lọc và phân trang
+    this.filterNotHuongs();
     this.closeAddModal();
   }
 
@@ -152,10 +150,10 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       this.notHuongService.deleteNotHuong(notHuong.id).subscribe({
         next: () => {
           this.loadNotHuongs();
-          console.log(`Undid adding NotHuong with ID: ${notHuong.id}`);
+          console.log(`Đã hoàn tác thêm Nốt Hương với ID: ${notHuong.id}`);
         },
         error: (err) => {
-          console.error('Error undoing NotHuong addition:', err);
+          console.error('Lỗi khi hoàn tác thêm Nốt Hương:', err);
           this.errorMessage = 'Không thể hoàn tác thêm nốt hương.';
         }
       });
@@ -170,7 +168,20 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   closeUpdateModal(): void {
     this.showUpdateModal = false;
     this.selectedNotHuong = null;
-    this.loadNotHuongs();
+    // Không gọi loadNotHuongs() ở đây, vì đã xử lý cập nhật trong handleNotHuongUpdated
+  }
+
+  handleNotHuongUpdated(updatedNotHuong: NotHuong): void {
+    if (updatedNotHuong.id !== undefined) {
+      const index = this.notHuongs.findIndex(nh => nh.id === updatedNotHuong.id);
+      if (index !== -1) {
+        this.notHuongs[index] = { ...updatedNotHuong, hasProduct: this.notHuongs[index].hasProduct, isNew: false };
+        this.filterNotHuongs();
+      } else {
+        console.warn(`Không tìm thấy nốt hương với ID ${updatedNotHuong.id} trong danh sách.`);
+      }
+    }
+    this.closeUpdateModal();
   }
 
   openDeleteModal(id: number): void {
@@ -191,7 +202,7 @@ export class NotHuongComponent implements OnInit, OnDestroy {
           this.loadNotHuongs();
         },
         error: (error) => {
-          this.errorMessage = 'Không thể xóa nốt hương: ' + error.message;
+          this.errorMessage = 'Không thể xóa nốt hương: ' + (error.message || 'Lỗi không xác định');
           this.closeDeleteModal();
         }
       });
@@ -257,7 +268,7 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
-    console.log('📌 Pagination range:', range);
+    console.log('📌 Dải phân trang:', range);
     return range;
   }
 }

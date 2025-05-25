@@ -58,18 +58,17 @@ export class BrandComponent implements OnInit {
   ngOnInit(): void {
     this.loadThuongHieus();
 
-    // Lắng nghe thay đổi giá trị trong ô tìm kiếm
-    this.searchControl.valueChanges
-      .pipe(
-        debounceTime(300), // Đợi 300ms sau khi người dùng ngừng gõ
-        distinctUntilChanged() // Chỉ gọi API nếu giá trị thay đổi
-      )
-      .subscribe((value: string) => {
-        this.searchQuery = value.trim();
-        this.page = 0; // Reset về trang đầu khi tìm kiếm
-        this.loadThuongHieus(); // Gọi lại API với searchQuery
-      });
-  }
+   this.searchControl.valueChanges
+  .pipe(
+    debounceTime(300),
+    distinctUntilChanged()
+  )
+  .subscribe((value: string) => {
+    this.searchQuery = value.trim();
+    this.page = 0;
+    this.loadThuongHieus();
+  });
+}
 
   loadThuongHieus(): void {
     this.isLoading = true;

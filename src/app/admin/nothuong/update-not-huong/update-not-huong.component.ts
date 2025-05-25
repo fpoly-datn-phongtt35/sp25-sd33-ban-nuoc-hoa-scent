@@ -1,19 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MuiHuongService } from '../../../service/muihuong.service';
 import { NotHuongService } from '../../../service/nothuong.service';
 
 export interface NotHuong {
   id?: number;
   tenNotHuong: string;
   moTa: string;
-  muiHuongId?: number;
-}
-
-export interface MuiHuong {
-  id: number;
-  tenMuiHuong: string;
 }
 
 @Component({
@@ -24,43 +17,37 @@ export interface MuiHuong {
   styleUrls: ['./update-not-huong.component.scss']
 })
 export class UpdateNotHuongComponent implements OnInit {
-  @Input() notHuong: NotHuong = { tenNotHuong: '', moTa: '', muiHuongId: undefined };
+  @Input() notHuong: NotHuong = { tenNotHuong: '', moTa: '' };
   @Output() close = new EventEmitter<void>();
   @Output() notHuongUpdated = new EventEmitter<NotHuong>();
+  errorMessage: string = '';
 
-  muiHuongs: MuiHuong[] = [];
-
-  constructor(
-    private notHuongService: NotHuongService,
-    private muiHuongService: MuiHuongService
-  ) {}
+  constructor(private notHuongService: NotHuongService) {}
 
   ngOnInit(): void {
-    this.loadMuiHuongs();
-  }
-
-  loadMuiHuongs(): void {
-    this.muiHuongService.getAllMuiHuong().subscribe({
-      next: (res) => {
-        this.muiHuongs = res.content;
-      },
-      error: (err) => console.error('Error loading MuiHuong:', err)
-    });
+    // Không cần tải muiHuongs
   }
 
   onSubmit(): void {
     if (this.notHuong.id !== undefined) {
+      this.errorMessage = '';
       const payload = {
         tenNotHuong: this.notHuong.tenNotHuong,
-        moTa: this.notHuong.moTa,
-        muiHuong: this.notHuong.muiHuongId ? { id: this.notHuong.muiHuongId } : null
+        moTa: this.notHuong.moTa
       };
       this.notHuongService.updateNotHuong(this.notHuong.id, payload).subscribe({
         next: (updatedNotHuong) => {
-          this.notHuongUpdated.emit(updatedNotHuong);
+          this.notHuongUpdated.emit({
+            id: updatedNotHuong.id,
+            tenNotHuong: updatedNotHuong.tenNotHuong,
+            moTa: updatedNotHuong.moTa
+          });
           this.close.emit();
         },
-        error: (err) => console.error('Error updating NotHuong:', err)
+        error: (err) => {
+          console.error('Lỗi khi cập nhật Nốt Hương:', err);
+          this.errorMessage = 'Không thể cập nhật nốt hương: ' + (err.message || 'Lỗi không xác định');
+        }
       });
     }
   }

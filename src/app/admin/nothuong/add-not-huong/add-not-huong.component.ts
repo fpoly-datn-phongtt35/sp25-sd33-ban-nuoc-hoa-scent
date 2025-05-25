@@ -1,19 +1,12 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MuiHuongService } from '../../../service/muihuong.service';
 import { NotHuongService } from '../../../service/nothuong.service';
 
 export interface NotHuong {
   id?: number;
   tenNotHuong: string;
   moTa: string;
-  muiHuongId?: number;
-}
-
-export interface MuiHuong {
-  id: number;
-  tenMuiHuong: string;
 }
 
 @Component({
@@ -27,43 +20,29 @@ export class AddNotHuongComponent implements OnInit {
   @Output() close = new EventEmitter<void>();
   @Output() notHuongAdded = new EventEmitter<NotHuong>();
 
-  notHuong: NotHuong = { tenNotHuong: '', moTa: '', muiHuongId: undefined };
-  muiHuongs: MuiHuong[] = [];
+  notHuong: NotHuong = { tenNotHuong: '', moTa: '' };
 
-  constructor(
-    private notHuongService: NotHuongService,
-    private muiHuongService: MuiHuongService
-  ) {}
+  constructor(private notHuongService: NotHuongService) {}
 
   ngOnInit(): void {
-    this.loadMuiHuongs();
-  }
-
-  loadMuiHuongs(): void {
-    this.muiHuongService.getAllMuiHuong().subscribe({
-      next: (res) => {
-        this.muiHuongs = res.content;
-      },
-      error: (err) => console.error('Error loading MuiHuong:', err)
-    });
+    // Không cần tải muiHuongs nữa
   }
 
   onSubmit(): void {
     const payload = {
       tenNotHuong: this.notHuong.tenNotHuong,
-      moTa: this.notHuong.moTa,
-      muiHuong: this.notHuong.muiHuongId ? { id: this.notHuong.muiHuongId } : null
+      moTa: this.notHuong.moTa
     };
     this.notHuongService.addNotHuong(payload).subscribe({
       next: (newNotHuong) => {
         this.notHuongAdded.emit({
-          ...newNotHuong,
-          muiHuongId: newNotHuong.muiHuong?.id,
-          tenMuiHuong: newNotHuong.muiHuong?.tenMuiHuong
+          id: newNotHuong.id,
+          tenNotHuong: newNotHuong.tenNotHuong,
+          moTa: newNotHuong.moTa
         });
         this.close.emit();
       },
-      error: (err) => console.error('Error adding NotHuong:', err)
+      error: (err) => console.error('Lỗi khi thêm Nốt Hương:', err)
     });
   }
 }

@@ -13,16 +13,6 @@
       <label for="moTa">Mô Tả</label>
       <textarea class="form-control" id="moTa" name="moTa" [(ngModel)]="notHuong.moTa"></textarea>
     </div>
-    <div class="form-group">
-      <label for="muiHuongId">Mùi Hương</label>
-      <select class="form-control" id="muiHuongId" name="muiHuongId"
-              [(ngModel)]="notHuong.muiHuongId">
-        <option [ngValue]="undefined">Chọn Mùi Hương</option>
-        <option *ngFor="let muiHuong of muiHuongs" [ngValue]="muiHuong.id">
-          {{ muiHuong.tenMuiHuong }}
-        </option>
-      </select>
-    </div>
     <div class="mt-4 flex justify-end gap-2">
       <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600" [disabled]="!notHuongForm.valid">Lưu</button>
       <button type="button" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600" (click)="close.emit()">Hủy</button>

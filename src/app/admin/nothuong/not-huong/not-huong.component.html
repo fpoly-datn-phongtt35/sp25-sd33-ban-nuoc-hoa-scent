@@ -8,7 +8,7 @@
       type="text"
       [(ngModel)]="searchTerm"
       (ngModelChange)="onSearchChange($event)"
-      placeholder="Tìm kiếm nốt hương theo ID, tên, mô tả hoặc mùi hương..."
+      placeholder="Tìm kiếm nốt hương theo ID, tên hoặc mô tả..."
       class="search-input"
     />
   </div>
@@ -45,7 +45,6 @@
         <th class="p-2 text-left">ID</th>
         <th class="p-2 text-left">Tên Nốt Hương</th>
         <th class="p-2 text-left">Mô Tả</th>
-        <th class="p-2 text-left">Mùi Hương</th>
         <th class="p-2 text-left">Hành Động</th>
       </tr>
     </thead>
@@ -54,7 +53,6 @@
         <td class="p-2">{{ notHuong.id }}</td>
         <td class="p-2">{{ notHuong.tenNotHuong }}</td>
         <td class="p-2">{{ notHuong.moTa }}</td>
-        <td class="p-2">{{ notHuong.tenMuiHuong || 'Chưa có' }}</td>
         <td class="p-2">
           <button (click)="openUpdateModal(notHuong)" class="bg-yellow-500 text-white p-1 rounded mr-1 hover:bg-yellow-600">Sửa</button>
           <button *ngIf="!notHuong.hasProduct" (click)="openDeleteModal(notHuong.id)" class="bg-red-500 text-white p-1 rounded mr-1 hover:bg-red-600">Xóa</button>
@@ -104,7 +102,7 @@
     <app-update-not-huong
       [notHuong]="selectedNotHuong"
       (close)="closeUpdateModal()"
-      (notHuongUpdated)="closeUpdateModal()"
+      (notHuongUpdated)="handleNotHuongUpdated($event)"
     ></app-update-not-huong>
   </div>
 </div>
