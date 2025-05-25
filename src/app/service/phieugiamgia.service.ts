@@ -46,12 +46,23 @@ export class PhieugiamgiaService {
     if (params.maGiamGia) {
       httpParams = httpParams.set('maGiamGia', params.maGiamGia);
     }
+
+    // Xử lý ngayBatDau
     if (params.ngayBatDau) {
-      httpParams = httpParams.set('ngayBatDau', params.ngayBatDau);
+      const startDate = new Date(params.ngayBatDau);
+      // Chuyển thành định dạng yyyy-MM-ddTHH:mm:ss (00:00:00)
+      const formattedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0).toISOString().slice(0, -5);
+      httpParams = httpParams.set('ngayBatDau', formattedStartDate);
     }
+
+    // Xử lý ngayHetHan
     if (params.ngayHetHan) {
-      httpParams = httpParams.set('ngayHetHan', params.ngayHetHan);
+      const endDate = new Date(params.ngayHetHan);
+      // Chuyển thành định dạng yyyy-MM-ddTHH:mm:ss (23:59:59)
+      const formattedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59).toISOString().slice(0, -5);
+      httpParams = httpParams.set('ngayHetHan', formattedEndDate);
     }
+
     // Chỉ gửi trangThai nếu nó là giá trị hợp lệ ('0' hoặc '1')
     if (params.trangThai && params.trangThai !== null && params.trangThai !== undefined) {
       httpParams = httpParams.set('trangThai', params.trangThai);

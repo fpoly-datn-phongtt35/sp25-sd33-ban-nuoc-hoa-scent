@@ -214,7 +214,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   switchTab(tab: string): void {
     this.selectedTab = tab;
-    this.selectedPaymentMethod = null; // Reset payment method filter
+    this.selectedPaymentMethod = "tm"; // Reset payment method filter
     this.selectedStatus = null; // Reset status filter
     this.applySearch(this.searchControl.value || '');
   }

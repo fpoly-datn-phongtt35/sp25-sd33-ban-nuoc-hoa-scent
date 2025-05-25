@@ -30,10 +30,12 @@
               <label [for]="'soLuong-' + i">Số Lượng (Tối đa: {{ getMaxQuantity(item.get('idSpct')?.value) }})</label>
               <input type="number" [id]="'soLuong-' + i" formControlName="soLuong"
                      [max]="getMaxQuantity(item.get('idSpct')?.value)"
+                     [min]="0"
                      [class.error-border]="item.get('soLuong')?.invalid && item.get('soLuong')?.touched"
-                     placeholder="Nhập số lượng">
+                     placeholder="Nhập số lượng"
+                     (input)="restrictQuantity($event, item, i)">
               <div *ngIf="item.get('soLuong')?.invalid && item.get('soLuong')?.touched" class="error-message">
-                Số lượng phải từ 1 đến {{ getMaxQuantity(item.get('idSpct')?.value) }}
+                Số không được vượt quá {{ getMaxQuantity(item.get('idSpct')?.value) }}
               </div>
             </div>
             <div class="form-group">
@@ -87,12 +89,12 @@
               </div>
             </div>
             <div class="form-group">
-              <label [for]="'video-' + i">Video Minh Chứng (Bắt Buộc)</label>
+              <label [for]="'video-' + i">Video Minh Chứng (Bắt Buộc, tối đa 15 giây)</label>
               <input type="file" [id]="'video-' + i" accept="video/mp4"
                      (change)="onVideoChange($event, i)"
                      [class.error-border]="item.get('videoError')?.value">
               <div *ngIf="item.get('videoError')?.value" class="error-message">
-                Vui lòng tải lên một video minh chứng
+                Vui lòng tải lên một video minh chứng (MP4, tối đa 15 giây)
               </div>
               <div *ngIf="item.get('videoFile')?.value" class="file-info">
                 <p>Đã chọn video: {{ item.get('videoFile')?.value.name }}</p>
@@ -102,12 +104,11 @@
         </div>
       </div>
 
-      <!-- Phần lưu ý được làm nổi bật -->
       <div class="notice-section">
         <h3>Lưu Ý Quan Trọng:</h3>
-        <p>-Sản phẩm phải có video khi mở kiện hàng. </p>
-        <p>-Được trả hàng nếu có lỗi về phía cửa hàng hoặc vận chuyển.</p>
-        <p>-Trả hàng sau 7 ngày kể từ ngày đặt.</p>
+        <p>- Sản phẩm phải có video khi mở kiện hàng (tối đa 15 giây).</p>
+        <p>- Được trả hàng nếu có lỗi về phía cửa hàng hoặc vận chuyển.</p>
+        <p>- Trả hàng sau 7 ngày kể từ ngày đặt.</p>
       </div>
 
       <div class="form-actions">

@@ -22,12 +22,12 @@
       </div>
       <div class="form-group">
         <label for="startDate">Ngày bắt đầu</label>
-        <input type="datetime-local" id="startDate" class="form-control" [(ngModel)]="searchParams.ngayBatDau"
+        <input type="date" id="startDate" class="form-control" [(ngModel)]="searchParams.ngayBatDau"
           name="ngayBatDau" />
       </div>
       <div class="form-group">
         <label for="endDate">Ngày kết thúc</label>
-        <input type="datetime-local" id="endDate" class="form-control" [(ngModel)]="searchParams.ngayHetHan"
+        <input type="date" id="endDate" class="form-control" [(ngModel)]="searchParams.ngayHetHan"
           name="ngayHetHan" />
       </div>
       <button type="submit" class="btn btn-primary">Tìm kiếm</button>

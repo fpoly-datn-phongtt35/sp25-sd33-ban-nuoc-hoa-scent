@@ -146,17 +146,17 @@ export class VourcherComponent {
       trangThai: this.statusFilter === 'active' ? '1' : this.statusFilter === 'inactive' ? '0' : null,
       dieuKienapDung: this.filterType === 'online' ? '1' : this.filterType === 'offline' ? '0' : null
     };
-
+  
     if (this.searchParams.maGiamGia) {
       params.maGiamGia = this.searchParams.maGiamGia;
     }
     if (this.searchParams.ngayBatDau) {
-      params.ngayBatDau = new Date(this.searchParams.ngayBatDau).toISOString();
+      params.ngayBatDau = this.searchParams.ngayBatDau; // Giữ nguyên định dạng yyyy-MM-dd
     }
     if (this.searchParams.ngayHetHan) {
-      params.ngayHetHan = new Date(this.searchParams.ngayHetHan).toISOString();
+      params.ngayHetHan = this.searchParams.ngayHetHan; // Giữ nguyên định dạng yyyy-MM-dd
     }
-
+  
     this.phieuGiamGiaService.searchVouchers(params).subscribe({
       next: (response) => {
         console.log('✅ API response:', response);
@@ -195,10 +195,6 @@ export class VourcherComponent {
     });
   }
 
-  private scrollToTop(): void {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
   onSearchInput(): void {
     const params: any = {
       page: this.page.toString(),
@@ -213,10 +209,10 @@ export class VourcherComponent {
       params.maGiamGia = this.searchParams.maGiamGia;
     }
     if (this.searchParams.ngayBatDau) {
-      params.ngayBatDau = new Date(this.searchParams.ngayBatDau).toISOString();
+      params.ngayBatDau = this.searchParams.ngayBatDau; // Giữ nguyên định dạng yyyy-MM-dd
     }
     if (this.searchParams.ngayHetHan) {
-      params.ngayHetHan = new Date(this.searchParams.ngayHetHan).toISOString();
+      params.ngayHetHan = this.searchParams.ngayHetHan; // Giữ nguyên định dạng yyyy-MM-dd
     }
 
     this.phieuGiamGiaService.searchVouchers(params).subscribe({
@@ -266,6 +262,10 @@ export class VourcherComponent {
         });
       }
     });
+  }
+
+  private scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   clearField(field: string): void {
