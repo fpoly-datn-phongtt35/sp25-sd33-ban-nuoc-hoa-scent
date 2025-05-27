@@ -209,7 +209,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     const day = date.getDate().toString().padStart(2, '0');
     const dateString = `${year}${month}${day}`;
     const paddedId = order.id.toString().padStart(4, '0');
-    return `${paddedId}${dateString}`;
+    return `${dateString}${paddedId}`;
   }
 
   switchTab(tab: string): void {

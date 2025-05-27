@@ -41,13 +41,13 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
     };
 
     // Validator cho email (local check)
-    const emailExistsValidator: ValidatorFn = (control: AbstractControl) => {
-      const email = control.value?.trim();
-      if (!email || !this.accounts) return null;
-      return this.accounts.some(account => account.email?.toLowerCase() === email.toLowerCase())
-        ? { emailExists: true }
-        : null;
-    };
+ const emailExistsValidator: ValidatorFn = (control: AbstractControl) => {
+  const email = control.value?.trim();
+  if (!email || !this.accounts) return null;
+  return this.accounts.some(account => account.email?.toLowerCase() === email.toLowerCase())
+    ? { emailExists: true }
+    : null;
+};
 
     // Validator cho soDienThoai
     const sdtValidator: ValidatorFn = (control: AbstractControl) => {
@@ -96,22 +96,22 @@ export class AddStaffAccountComponent implements OnInit, OnDestroy {
   }
 
   // Async validator cho email
-  emailAsyncValidator(control: AbstractControl) {
-    const email = control.value?.trim();
-    if (!email) return of(null);
-    return this.accountService.findByEmail(email).pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      map(response => {
-        console.log('Email API response:', response); // Debug response
-        return response.success ? null : { emailExists: true };
-      }),
-      catchError((error) => {
-        console.warn('Email check failed:', error.message); // Debug lỗi
-        return of(null); // Trả về null để tránh báo nhầm tồn tại
-      })
-    );
-  }
+emailAsyncValidator(control: AbstractControl) {
+  const email = control.value?.trim();
+  if (!email) return of(null);
+  return this.accountService.findByEmail(email).pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    map(response => {
+      console.log('Email API response:', response);
+      return response.success ? { emailExists: true } : null; // Đảo ngược logic
+    }),
+    catchError((error) => {
+      console.warn('Email check failed:', error.message);
+      return of(null); // Trả về null nếu API lỗi
+    })
+  );
+}
 
   // Async validator cho số điện thoại
   phoneNumberAsyncValidator(control: AbstractControl) {
