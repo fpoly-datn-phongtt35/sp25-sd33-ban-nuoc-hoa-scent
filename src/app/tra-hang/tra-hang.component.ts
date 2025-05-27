@@ -477,7 +477,7 @@ export class TraHangComponent implements OnInit {
   onSubmit(): void {
     this.errorMessage = null;
     this.successMsg = null;
-
+  
     if (!this.idTaiKhoan) {
       this.errorMessage = 'Không thể xác định ID tài khoản. Vui lòng đăng nhập lại.';
       Swal.fire({
@@ -491,7 +491,7 @@ export class TraHangComponent implements OnInit {
       });
       return;
     }
-
+  
     const selectedItems = this.returnItems.controls.filter(item => (item as FormGroup).get('selected')?.value);
     if (selectedItems.length === 0) {
       this.errorMessage = 'Vui lòng chọn ít nhất một sản phẩm để trả hàng.';
@@ -504,7 +504,7 @@ export class TraHangComponent implements OnInit {
       });
       return;
     }
-
+  
     const selectedItemsInvalid = selectedItems.some((item: AbstractControl) => {
       const formGroupItem = item as FormGroup;
       const isInvalid = (
@@ -517,7 +517,7 @@ export class TraHangComponent implements OnInit {
       );
       return isInvalid;
     });
-
+  
     if (selectedItemsInvalid) {
       this.errorMessage = 'Vui lòng điền đầy đủ thông tin bắt buộc và tải lên hình ảnh/video minh chứng.';
       Swal.fire({
@@ -529,7 +529,7 @@ export class TraHangComponent implements OnInit {
       });
       return;
     }
-
+  
     const hasFiles = selectedItems.every((item: AbstractControl) => {
       const formGroupItem = item as FormGroup;
       return (formGroupItem.get('hinhAnhFiles')?.value.length > 0 && formGroupItem.get('videoFile')?.value);
@@ -545,7 +545,7 @@ export class TraHangComponent implements OnInit {
       });
       return;
     }
-
+  
     Swal.fire({
       title: 'Đang gửi yêu cầu trả hàng...',
       text: 'Vui lòng đợi trong giây lát.',
@@ -554,7 +554,7 @@ export class TraHangComponent implements OnInit {
         Swal.showLoading();
       }
     });
-
+  
     const formData = new FormData();
     const yeuCauTraHangList: YeuCauTraHang[] = selectedItems.map((item: AbstractControl) => {
       const formGroupItem = item as FormGroup;
@@ -572,28 +572,32 @@ export class TraHangComponent implements OnInit {
         urlVideo: undefined
       };
     });
-
+  
     formData.append('yeuCauRequest', JSON.stringify(yeuCauTraHangList));
     formData.append('idTaiKhoan', String(this.idTaiKhoan));
-
-    selectedItems.forEach((item: AbstractControl) => {
+  
+    // Sửa cách thêm file vào FormData
+    selectedItems.forEach((item: AbstractControl, index: number) => {
       const formGroupItem = item as FormGroup;
+      const idSpct = formGroupItem.get('idSpct')?.value;
+  
       const hinhAnhFiles: File[] = formGroupItem.get('hinhAnhFiles')?.value || [];
-      hinhAnhFiles.forEach(file => {
-        formData.append('hinhAnh', file, file.name);
+      hinhAnhFiles.forEach((file, fileIndex) => {
+        formData.append(`hinhAnh_${idSpct}_${fileIndex}`, file, file.name);
       });
+  
       const videoFile: File = formGroupItem.get('videoFile')?.value;
       if (videoFile) {
-        formData.append('video', videoFile, videoFile.name);
+        formData.append(`video_${idSpct}`, videoFile, videoFile.name);
       }
     });
-
+  
     console.log('idTaiKhoan:', formData.get('idTaiKhoan'));
     console.log('yeuCauRequest:', yeuCauTraHangList);
     for (const pair of formData.entries()) {
       console.log(`formData - ${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
     }
-
+  
     this.traHangService.createYeuCauTraHang(formData).subscribe({
       next: (response: YeuCauTraHang[]) => {
         response.forEach((item, index) => {
@@ -601,7 +605,7 @@ export class TraHangComponent implements OnInit {
           if (item.urlVideo) selectedItem.get('urlVideo')?.setValue(item.urlVideo);
           if (item.hinhAnhUrls) selectedItem.get('hinhAnhUrls')?.setValue(item.hinhAnhUrls);
         });
-
+  
         this.successMsg = 'Yêu cầu trả hàng đã được tạo thành công!';
         Swal.fire({
           icon: 'success',
@@ -613,7 +617,7 @@ export class TraHangComponent implements OnInit {
         }).then(() => {
           this.dialogRef.close(true);
         });
-
+  
         this.traHangForm.reset({
           idDonHang: this.data.maDonHang,
           returnItems: []
