@@ -64,7 +64,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.userId) {
-    
+
       Swal.fire({
         title: 'Lỗi',
         text: 'Vui lòng đăng nhập để xem đơn hàng.',
@@ -96,7 +96,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           this.loadUserReviews();
           this.cdRef.detectChanges();
         } else {
-          
+
           Swal.fire({
             title: 'Lỗi',
             text: `Không tìm thấy đơn hàng với mã ${orderId}.`,
@@ -116,14 +116,14 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   }
 
   private handleWebSocketUpdate(update: any): void {
-   
+
     if (!update || !update.idDonHang || update.trangThai === undefined) {
-      
+
       return;
     }
 
     const { idDonHang, trangThai } = update;
-    
+
     const orderToUpdate = this.orders.find((order) => order.maDonHang === idDonHang);
     if (orderToUpdate) {
       orderToUpdate.trangThai = trangThai;
@@ -165,11 +165,11 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
               this.checkPaymentStatus(order);
             }
           });
-          
+
           resolve();
         },
         error: (error) => {
-          
+
           Swal.fire({
             title: 'Lỗi',
             text: 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.',
@@ -217,9 +217,9 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
     const utf8ToBase64 = (str: string) => btoa(unescape(encodeURIComponent(str)));
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-   const now = new Date();
-const timestamp = now.toISOString().replace(/[-:T.]/g, "").slice(0, 14); // Format: YYYYMMDDHHMMSS
-const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timestamp}`;
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[-:T.]/g, "").slice(0, 14); // Format: YYYYMMDDHHMMSS
+    const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timestamp}`;
     const extraData = utf8ToBase64(
       JSON.stringify({
         orderId: newMomoOrderId,
@@ -238,7 +238,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
       requestType: 'captureWallet',
     };
 
-    
+
 
     this.momoService.createPayment(momoRequest).subscribe({
       next: (res: any) => {
@@ -254,7 +254,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
         }
       },
       error: (err) => {
-     
+
         Swal.fire({
           title: 'Lỗi',
           text: 'Có lỗi xảy ra khi khởi tạo thanh toán. Vui lòng thử lại.',
@@ -278,12 +278,12 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
       .then(res => {
         if (res.ok) {
           return res.json().then(data => {
-            
+
             this.loadOrders(); // Tải lại danh sách đơn hàng
           });
         } else {
           return res.text().then(errorMessage => {
-          
+
             Swal.fire({
               title: 'Lỗi',
               text: 'Không thể cập nhật trạng thái đơn hàng.',
@@ -294,7 +294,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
         }
       })
       .catch(err => {
-       
+
         Swal.fire({
           title: 'Lỗi',
           text: 'Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.',
@@ -311,14 +311,14 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
           id: parseInt(key),
           name: response.result[key],
         }));
-        
+
         if (this.provinces.length === 0) {
           console.warn('Danh sách tỉnh rỗng, thử tải lại sau 2 giây');
           setTimeout(() => this.loadProvinces(), 2000);
         }
       },
       error: (error) => {
-       
+
         setTimeout(() => this.loadProvinces(), 2000);
       },
     });
@@ -339,7 +339,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
           }
         },
         error: (error) => {
-        
+
         },
       });
     } else {
@@ -361,7 +361,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
           this.selectedOrder.maPhuong = this.selectedOrder.maPhuong || '';
         },
         error: (error) => {
-         
+
         },
       });
     } else {
@@ -427,7 +427,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
             });
           },
           error: (error) => {
-          
+
             this.isUpdateAddressFormVisible = false;
             Swal.fire({
               title: 'Lỗi',
@@ -819,16 +819,16 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
   openReturnModal(order?: any): void {
     // Sử dụng order nếu được truyền từ danh sách, nếu không thì dùng selectedOrder
     const tempSelectedOrder = order || this.selectedOrder;
-  
+
     if (tempSelectedOrder && tempSelectedOrder.maDonHang) {
       const dialogRef = this.dialog.open(TraHangComponent, {
         width: '500px',
-        data: { 
+        data: {
           maDonHang: tempSelectedOrder.maDonHang,
           chiTietDonHangs: tempSelectedOrder.chiTietDonHangs // Truyền danh sách sản phẩm
         },
       });
-  
+
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
           this.loadOrders(); // Làm mới danh sách đơn hàng

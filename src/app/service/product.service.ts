@@ -27,11 +27,11 @@ private urb ='http://localhost:8080/api';
   }
   // Phương thức để lấy danh sách sản phẩm
   getSanPhamDetails(page: number = 0, size: number = 12): Observable<any> {
-    console.log(`Requesting API: ${this.apiURL}?page=${page}&size=${size}`);
+    
     return this.http.get<any>(`${this.apiURL}?page=${page}&size=${size}`);
   }
   getSanPhamDetailonAdmin(query: string,page: number = 0, size: number = 12): Observable<any> {
-    console.log(`Requesting API: ${this.apiSearchonAmin}?keyword=${query}&page=${page}&size=${size}`);
+    
     return this.http.get<any>(`${this.apiSearchonAmin}?keyword=${query}&page=${page}&size=${size}`);
   }
 
@@ -91,7 +91,7 @@ private urb ='http://localhost:8080/api';
     // page và size luôn được gửi, với giá trị mặc định nếu không có
     params = params.set('page', queryParams.page?.toString() || '0');
     params = params.set('size', queryParams.size?.toString() || '16');
-   console.log(this.apiURLbb,params);
+   
     return this.http.get<any>(this.apiURLbb, { params });
   }
 
@@ -144,7 +144,7 @@ getMultipleProductStatuses(idSpcts: number[]): Observable<{ [key: number]: numbe
 
   return this.http.get<{ [key: number]: number }>(`${this.baseUrl}/statuses`, { params }).pipe(
     catchError((error) => {
-      console.error('Lỗi khi lấy trạng thái của Spct:', error);
+      
       return throwError(() => new Error('Không thể lấy trạng thái của Spct'));
     })
   );

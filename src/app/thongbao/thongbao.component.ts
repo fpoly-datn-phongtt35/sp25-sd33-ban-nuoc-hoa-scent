@@ -46,15 +46,13 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
       this.webSocketService.connect(this.userId);
 
       this.orderSubscription = this.webSocketService.getMessages().subscribe({
-        next: (update: any) => this.handleOrderUpdate(update),
-        error: (error) => console.error('Order subscription error:', error),
-        complete: () => console.log('Order subscription completed'),
+        next: (update: any) => this.handleOrderUpdate(update)
+        
       });
 
       this.returnSubscription = this.webSocketService.getReturnMessages().subscribe({
         next: (update: any) => this.handleReturnUpdate(update),
-        error: (error) => console.error('Return subscription error:', error),
-        complete: () => console.log('Return subscription completed'),
+        
       });
     } else {
      
@@ -113,7 +111,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
 
   private getOrderMessage(orderId: number, status: number, reason?: string): string {
     switch (status) {
-      case 1: return `Đơn hàng #${orderId} đang chờ xác nhận.`;
+     
       case 2: return `Đơn hàng #${orderId} đã được xác nhận.`;
       case 3: return `Đơn hàng #${orderId} đang giao.`;
       case 4: return `Đơn hàng #${orderId} đã hoàn thành.`;
@@ -125,7 +123,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
 
   private getReturnMessage(returnId: number, status: number, reason?: string): string {
     switch (status) {
-      case 0: return `Yêu cầu trả hàng #${returnId} đang chờ duyệt.`;
+    
       case 1: return `Yêu cầu trả hàng #${returnId} đã được duyệt.`;
       case 2: return `Yêu cầu trả hàng #${returnId} đã bị từ chối. Lý do: ${reason || 'Không có lý do'}.`;
       case 3: return `Yêu cầu trả hàng #${returnId} đã hoàn thành.`;
@@ -189,7 +187,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
         this.saveNotificationsToStorage();
         this.cdr.detectChanges();
       } else {
-        console.error('Không thể trích xuất mã yêu cầu trả hàng từ thông báo:', notification.message);
+        
       }
     }
     this.togglePopup(false);

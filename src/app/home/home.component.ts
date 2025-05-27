@@ -78,7 +78,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private webSocketService: WebSocketService,
     private bannerService: BannerService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.fetchFilters();
@@ -225,7 +225,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     this.isLoading = true;
-    
+
     const queryParams = {
       searchQuery: this.selectedFilters.searchQuery || '',
       minPrice: this.selectedFilters.minPrice || null,
@@ -242,7 +242,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
       next: (data: any) => {
         this.sanPhams = data.content || [];
-       
+
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
         this.isLoading = false;

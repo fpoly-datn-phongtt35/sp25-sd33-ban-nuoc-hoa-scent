@@ -6,12 +6,8 @@
     <a routerLink="/">Trang Chủ</a>
     <a routerLink="/app-gioithieu">Giới thiệu</a>
     <div class="search-box" *ngIf="isHomePage">
-      <input
-        type="text"
-        [(ngModel)]="query"
-        (ngModelChange)="onSearchChange($event)"
-        placeholder="🔍 Tìm kiếm sản phẩm..."
-        class="form-control">
+      <input type="text" [(ngModel)]="query" (ngModelChange)="onSearchChange($event)"
+        placeholder="🔍 Tìm kiếm sản phẩm..." class="form-control">
     </div>
   </nav>
   <div class="header-actions">
@@ -30,8 +26,9 @@
           <a class="dropdown-item" routerLink="/app-order-id">Đơn Hàng</a>
           <a class="dropdown-item" (click)="openChangePasswordModal()">Đổi Mật Khẩu</a>
           <a class="dropdown-item" routerLink="/account-info">Cập nhật thông tin</a>
-          <a class="dropdown-item" (click)="logout()">Đăng Xuất</a>
+
           <a class="dropdown-item" routerLink="/app-tra-hang-user">Trạng thái Trả hàng</a>
+          <a class="dropdown-item" (click)="logout()">Đăng Xuất</a>
         </div>
       </div>
     </ng-container>

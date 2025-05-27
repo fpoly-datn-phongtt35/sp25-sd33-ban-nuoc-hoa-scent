@@ -904,7 +904,19 @@ export class StatisticsComponent implements OnInit {
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `${fileName}.xlsx`);
   }
-
+  getStockStatus(product: any): string {
+    const soLuongTonKho = product.soLuongTonKho || 0;
+    if (product.stockStatus) {
+      return product.stockStatus;
+    }
+    if (soLuongTonKho === 0) {
+      return 'Hết hàng';
+    }
+    if (soLuongTonKho < 5) {
+      return 'Sắp hết hàng';
+    }
+    return 'Còn hàng';
+  }
   sortColumn(field: string, direction: string): void {
     if (this.sortField !== field) {
       this.sortField = field;
