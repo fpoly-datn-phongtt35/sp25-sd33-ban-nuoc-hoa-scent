@@ -84,7 +84,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
     this.spctSubscription = this.webSocketService.getSpctUpdates().subscribe({
       next: (update: any) => {
-        // console.log('Nhận được cập nhật Spct:', update);
+       
         this.updateSpctStatus(update);
       },
       error: (error) => console.error('Lỗi WebSocket trong ProductDetailComponent:', error),
@@ -103,13 +103,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const idSpct = update.idSpct;
     const trangThai = update.trangThai;
 
-    // console.log('Cập nhật Spct:', update);
-    // console.log('Volumes trước cập nhật:', this.volumes);
-
+  
     const volumeExists = this.volumes.some(volume => volume.idSpct === idSpct);
 
     if (!volumeExists) {
-      // console.log(`idSpct ${idSpct} không có trong volumes, tải lại volumes...`);
+     
       this.loadVolumes();
       return;
     }
@@ -182,7 +180,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           next: (data: any) => {
             if (data && data.length > 0) {
               this.product = { ...data[0] };
-               console.log('datâ',this.product)
+              
               if (this.product.imageURL) {
                 this.imageUrls = this.product.imageURL.split(',').map((url: string) => url.trim());
               }

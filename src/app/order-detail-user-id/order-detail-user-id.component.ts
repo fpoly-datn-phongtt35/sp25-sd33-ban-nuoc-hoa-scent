@@ -64,7 +64,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.userId) {
-      console.error('Không tìm thấy userId từ token');
+    
       Swal.fire({
         title: 'Lỗi',
         text: 'Vui lòng đăng nhập để xem đơn hàng.',
@@ -96,7 +96,7 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
           this.loadUserReviews();
           this.cdRef.detectChanges();
         } else {
-          console.warn(`Không tìm thấy đơn hàng với mã ${orderId}`);
+          
           Swal.fire({
             title: 'Lỗi',
             text: `Không tìm thấy đơn hàng với mã ${orderId}.`,
@@ -116,14 +116,14 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
   }
 
   private handleWebSocketUpdate(update: any): void {
-    console.log('Received WebSocket update:', update);
+   
     if (!update || !update.idDonHang || update.trangThai === undefined) {
-      console.error('Invalid WebSocket update:', update);
+      
       return;
     }
 
     const { idDonHang, trangThai } = update;
-    console.log(`Cập nhật trạng thái đơn hàng ${idDonHang}: ${trangThai}`);
+    
     const orderToUpdate = this.orders.find((order) => order.maDonHang === idDonHang);
     if (orderToUpdate) {
       orderToUpdate.trangThai = trangThai;
@@ -165,11 +165,11 @@ export class OrderDetailUserIDComponent implements OnInit, OnDestroy {
               this.checkPaymentStatus(order);
             }
           });
-          console.log('Dữ liệu đơn hàng:', this.orders);
+          
           resolve();
         },
         error: (error) => {
-          console.error('Lỗi khi lấy đơn hàng:', error);
+          
           Swal.fire({
             title: 'Lỗi',
             text: 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.',
@@ -238,7 +238,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
       requestType: 'captureWallet',
     };
 
-    console.log('Gửi yêu cầu thanh toán MoMo:', momoRequest);
+    
 
     this.momoService.createPayment(momoRequest).subscribe({
       next: (res: any) => {
@@ -254,7 +254,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
         }
       },
       error: (err) => {
-        console.error('Lỗi khi gọi API MoMo:', err);
+     
         Swal.fire({
           title: 'Lỗi',
           text: 'Có lỗi xảy ra khi khởi tạo thanh toán. Vui lòng thử lại.',
@@ -278,12 +278,12 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
       .then(res => {
         if (res.ok) {
           return res.json().then(data => {
-            console.log('Cập nhật trạng thái đơn hàng thành "Đã thanh toán":', data);
+            
             this.loadOrders(); // Tải lại danh sách đơn hàng
           });
         } else {
           return res.text().then(errorMessage => {
-            console.error('Cập nhật trạng thái thất bại:', errorMessage);
+          
             Swal.fire({
               title: 'Lỗi',
               text: 'Không thể cập nhật trạng thái đơn hàng.',
@@ -294,7 +294,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
         }
       })
       .catch(err => {
-        console.error('Lỗi khi gọi API cập nhật trạng thái:', err);
+       
         Swal.fire({
           title: 'Lỗi',
           text: 'Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.',
@@ -311,15 +311,14 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
           id: parseInt(key),
           name: response.result[key],
         }));
-        console.log('Danh sách tỉnh đã tải:', this.provinces);
+        
         if (this.provinces.length === 0) {
           console.warn('Danh sách tỉnh rỗng, thử tải lại sau 2 giây');
           setTimeout(() => this.loadProvinces(), 2000);
         }
       },
       error: (error) => {
-        console.error('Lỗi khi lấy danh sách tỉnh:', error);
-        console.warn('Thử tải lại danh sách tỉnh sau 2 giây');
+       
         setTimeout(() => this.loadProvinces(), 2000);
       },
     });
@@ -340,7 +339,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
           }
         },
         error: (error) => {
-          console.error('Lỗi khi lấy danh sách quận:', error);
+        
         },
       });
     } else {
@@ -362,7 +361,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
           this.selectedOrder.maPhuong = this.selectedOrder.maPhuong || '';
         },
         error: (error) => {
-          console.error('Lỗi khi lấy danh sách phường:', error);
+         
         },
       });
     } else {
@@ -428,7 +427,7 @@ const newMomoOrderId = `ORDERTOSCENT_${order.maDonHang}_${randomSuffix}_${timest
             });
           },
           error: (error) => {
-            console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+          
             this.isUpdateAddressFormVisible = false;
             Swal.fire({
               title: 'Lỗi',

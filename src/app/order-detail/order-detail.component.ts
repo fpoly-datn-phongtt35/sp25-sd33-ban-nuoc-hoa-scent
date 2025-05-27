@@ -30,11 +30,11 @@ export class OrderDetailComponent implements OnInit {
   loadOrderDetails(orderId: number) {
     this.donHangService.getOrderDetails(orderId).subscribe(
       (      data: any) => {
-        console.log("Order details:", data);
+        
         this.orderDetails = data;
       },
       (      error: any) => {
-        console.error('Error loading the order details:', error);
+      
       }
     );
   }
