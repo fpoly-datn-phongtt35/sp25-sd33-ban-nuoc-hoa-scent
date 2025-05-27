@@ -1,6 +1,11 @@
 <div class="statistics-container">
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-spinner">
+    <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+  </div>
+
   <!-- Error Message -->
-  <div *ngIf="errorMessage" class="error-message">
+  <div *ngIf="errorMessage && !isLoading" class="error-message">
     <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
   </div>
 
@@ -105,6 +110,7 @@
       mat-raised-button
       class="export-button"
       (click)="selectedTab === 'don-hang-doanh-thu' ? exportToExcelDonHangDoanhThu() : exportToExcelSanPham()"
+      [disabled]="isLoading"
     >
       <i class="fas fa-download"></i> Xuất Excel
     </button>
@@ -115,7 +121,7 @@
     <!-- Tab 1: Đơn hàng - Doanh thu -->
     <div *ngIf="selectedTab === 'don-hang-doanh-thu'">
       <!-- Tổng quan (Cố định) -->
-      <div *ngIf="thongKeTongQuan" class="overview">
+      <div *ngIf="thongKeTongQuan && !isLoading" class="overview">
         <h2><i class="fas fa-chart-bar"></i> Doanh thu - Đơn hàng</h2>
         <div class="overview-grid">
           <div class="overview-section">
@@ -140,7 +146,7 @@
       </div>
 
       <!-- Tổng quan (Theo bộ lọc) -->
-      <div *ngIf="thongKeTongQuanFiltered && isTimeFilterApplied()" class="overview">
+      <div *ngIf="thongKeTongQuanFiltered && isTimeFilterApplied() && !isLoading" class="overview">
         <h2><i class="fas fa-filter"></i> Tổng quan (Theo bộ lọc)</h2>
         <div class="overview-grid">
           <div class="overview-section">
@@ -165,7 +171,7 @@
       </div>
 
       <!-- Biểu đồ doanh thu -->
-      <div class="chart-container">
+      <div class="chart-container" *ngIf="!isLoading">
         <h2><i class="fas fa-chart-line"></i> Doanh thu</h2>
         <canvas baseChart [data]="doanhThuConfig" [options]="doanhThuOptions" [type]="doanhThuType"></canvas>
         <div class="data-table" *ngIf="doanhThuData.length > 0">
@@ -192,7 +198,7 @@
       </div>
 
       <!-- Biểu đồ số lượng đơn -->
-      <div class="chart-container">
+      <div class="chart-container" *ngIf="!isLoading">
         <h2><i class="fas fa-chart-bar"></i> Số lượng đơn</h2>
         <canvas baseChart [data]="soLuongDonConfig" [options]="soLuongDonOptions" [type]="soLuongDonType"></canvas>
       </div>
@@ -213,7 +219,7 @@
       </div>
 
       <!-- Best-Selling Products -->
-      <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0; else noProducts">
+      <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0 && !isLoading; else noProducts">
         <h2><i class="fas fa-boxes"></i> Danh sách sản phẩm</h2>
         <div class="table-container">
           <table class="product-table">
@@ -345,7 +351,7 @@
         </div>
       </div>
       <ng-template #noProducts>
-        <div class="no-data">
+        <div *ngIf="!isLoading" class="no-data">
           <i class="fas fa-exclamation-triangle"></i>
           <span *ngIf="isTimeFilterApplied()">Không có dữ liệu sản phẩm cho khoảng thời gian này.</span>
           <span *ngIf="!isTimeFilterApplied()">Không có sản phẩm nào trong cửa hàng.</span>

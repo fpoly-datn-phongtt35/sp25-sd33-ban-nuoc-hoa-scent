@@ -109,13 +109,11 @@ export class StatisticsComponent implements OnInit {
   isLoading: boolean = false;
   doanhThuData: ThongKeTheoThoiGianDTO[] = [];
   soLuongDonData: SoLuongDonHangDTO[] = [];
-  compareDoanhThuData: ThongKeTheoThoiGianDTO[] = [];
 
   selectedTimeType: string = 'tuan';
-  selectedMonth: string = (new Date().getMonth() + 1).toString();
-  selectedYear: string = new Date().getFullYear().toString();
-  compareYear: string | null = null;
-  selectedWeek: string = '1';
+  selectedMonth: string = '';
+  selectedYear: string = '';
+  selectedWeek: string = '';
   startDate: string = '';
   endDate: string = '';
 
@@ -167,10 +165,12 @@ export class StatisticsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const today = new Date();
+    const today = new Date('2025-05-28T01:17:00+07:00');
     const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
     const pastDaysOfYear = Math.floor((today.getTime() - firstDayOfYear.getTime()) / (1000 * 60 * 60 * 24));
     this.selectedWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7).toString();
+    this.selectedYear = today.getFullYear().toString();
+    this.selectedMonth = (today.getMonth() + 1).toString();
 
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
@@ -207,10 +207,35 @@ export class StatisticsComponent implements OnInit {
   }
 
   onTimeTypeChange(): void {
+    const today = new Date('2025-05-28T01:17:00+07:00');
     this.resetFilters();
     this.searchQuery = '';
     this.sortField = 'totalQuantitySold';
     this.sortDirection = 'desc';
+
+    // Tự động điền giá trị mặc định dựa trên loại bộ lọc
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        this.startDate = this.formatDate(yesterday);
+        this.endDate = this.formatDate(today);
+        break;
+      case 'tuan':
+        const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
+        const pastDaysOfYear = Math.floor((today.getTime() - firstDayOfYear.getTime()) / (1000 * 60 * 60 * 24));
+        this.selectedWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7).toString();
+        this.selectedYear = today.getFullYear().toString();
+        break;
+      case 'thang':
+        this.selectedMonth = (today.getMonth() + 1).toString();
+        this.selectedYear = today.getFullYear().toString();
+        break;
+      case 'nam':
+        this.selectedYear = today.getFullYear().toString();
+        break;
+    }
+
     this.updateChartTypes();
     this.updateChartLabels();
     this.filterChange.next();
@@ -223,7 +248,7 @@ export class StatisticsComponent implements OnInit {
       this.loadDataForSelectedTimeType();
       this.initializeExpandedCells();
     } else {
-      this.errorMessage = 'Vui lòng nhập đầy đủ và đúng thông tin bộ lọc (ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc).';
+      this.errorMessage = 'Vui lòng nhập đầy đủ và đúng thông tin bộ lọc.';
       this.bestSellingProducts = [];
       this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
       this.cdr.detectChanges();
@@ -241,36 +266,43 @@ export class StatisticsComponent implements OnInit {
   }
 
   validateFilters(): boolean {
-    const today = new Date();
+    const today = new Date('2025-05-28T01:17:00+07:00');
     if (this.selectedTimeType === 'ngay') {
       if (this.startDate && this.endDate) {
         const start = new Date(this.startDate);
         const end = new Date(this.endDate);
-        return start <= end && start <= today && end <= today;
+        // Kiểm tra ngày hợp lệ và không vượt quá ngày hiện tại
+        return !isNaN(start.getTime()) && !isNaN(end.getTime()) && start <= end && start <= today && end <= today;
       }
-      return true;
+      return false;
     }
     if (this.selectedTimeType === 'tuan') {
       if (this.selectedYear && this.selectedWeek) {
-        return parseInt(this.selectedWeek) >= 1 && parseInt(this.selectedWeek) <= 52;
+        const year = parseInt(this.selectedYear);
+        const week = parseInt(this.selectedWeek);
+        return year <= today.getFullYear() && week >= 1 && week <= 52;
       }
-      return true;
+      return false;
     }
     if (this.selectedTimeType === 'thang') {
       if (this.selectedYear && this.selectedMonth) {
-        return parseInt(this.selectedMonth) >= 1 && parseInt(this.selectedMonth) <= 12;
+        const year = parseInt(this.selectedYear);
+        const month = parseInt(this.selectedMonth);
+        return year <= today.getFullYear() && month >= 1 && month <= 12;
       }
-      return true;
+      
+      return false;
     }
     if (this.selectedTimeType === 'nam') {
       if (this.selectedYear) {
-        return parseInt(this.selectedYear) <= today.getFullYear();
+        const year = parseInt(this.selectedYear);
+        return year <= today.getFullYear();
       }
-      return true;
+      return false;
     }
-    return false;
+    return true;
   }
-
+  
   isTimeFilterApplied(): boolean {
     switch (this.selectedTimeType) {
       case 'ngay':
@@ -302,8 +334,6 @@ export class StatisticsComponent implements OnInit {
     this.selectedWeek = '';
     this.startDate = '';
     this.endDate = '';
-    this.compareYear = null;
-    this.compareDoanhThuData = [];
   }
 
   updateChartTypes(): void {
@@ -321,13 +351,16 @@ export class StatisticsComponent implements OnInit {
   }
 
   loadThongKeTongQuan(): void {
+    this.isLoading = true;
     this.http.get<ThongKeDonHangDTO>('http://localhost:8080/api/thong-ke/tong-quan').subscribe({
       next: (data) => {
         this.thongKeTongQuan = data;
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = 'Không thể tải dữ liệu tổng quan cố định.';
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
@@ -364,13 +397,16 @@ export class StatisticsComponent implements OnInit {
         return;
     }
 
+    this.isLoading = true;
     this.http.get<ThongKeDonHangDTO>(url).subscribe({
       next: (data) => {
         this.thongKeTongQuanFiltered = data;
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.thongKeTongQuanFiltered = null;
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
@@ -385,7 +421,7 @@ export class StatisticsComponent implements OnInit {
       .set('searchQuery', this.searchQuery || '')
       .set('sortField', this.sortField)
       .set('sortDirection', this.sortDirection);
-  
+
     switch (this.selectedTimeType) {
       case 'ngay':
         url = `http://localhost:8080/api/thong-ke/best-selling/ngay`;
@@ -418,11 +454,10 @@ export class StatisticsComponent implements OnInit {
         }
         break;
     }
-  
-    console.log('Calling API with params:', params.toString());
+
+    this.isLoading = true;
     this.http.get<Page<BestSellingProductDTO>>(url, { params }).subscribe({
       next: (data) => {
-        console.log('API response:', data);
         this.bestSellingProductsPage = data;
         this.bestSellingProducts = data.content || [];
         this.currentPage = data.page.number;
@@ -436,13 +471,14 @@ export class StatisticsComponent implements OnInit {
           this.errorMessage = null;
         }
         this.initializeExpandedCells();
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('API error:', err);
         this.errorMessage = err.status === 400 ? 'Dữ liệu bộ lọc không hợp lệ. Vui lòng kiểm tra lại.' : 'Lỗi khi tải dữ liệu sản phẩm.';
         this.bestSellingProducts = [];
         this.bestSellingProductsPage = { content: [], page: { totalPages: 0, totalElements: 0, number: 0, size: this.pageSize } };
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
@@ -529,9 +565,6 @@ export class StatisticsComponent implements OnInit {
     }
     this.loadDoanhThu();
     this.loadSoLuongDon();
-    if (this.compareYear) {
-      this.loadCompareDoanhThu();
-    }
   }
 
   loadDoanhThu(): void {
@@ -564,57 +597,18 @@ export class StatisticsComponent implements OnInit {
         return;
     }
 
+    this.isLoading = true;
     this.http.get<ThongKeTheoThoiGianDTO[]>(url).subscribe({
       next: (data) => {
         this.doanhThuData = data;
         this.updateDoanhThuChart();
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.doanhThuData = [];
         this.updateDoanhThuChart();
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  loadCompareDoanhThu(): void {
-    if (!this.compareYear || !this.validateFilters()) {
-      this.compareDoanhThuData = [];
-      this.updateDoanhThuChart();
-      this.cdr.detectChanges();
-      return;
-    }
-
-    let url = '';
-    switch (this.selectedTimeType) {
-      case 'ngay':
-        url = `http://localhost:8080/api/thong-ke/doanh-thu/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
-        break;
-      case 'tuan':
-        url = `http://localhost:8080/api/thong-ke/doanh-thu/tuan?year=${this.compareYear}&week=${parseInt(this.selectedWeek)}`;
-        break;
-      case 'thang':
-        url = `http://localhost:8080/api/thong-ke/doanh-thu/thang?year=${this.compareYear}&month=${parseInt(this.selectedMonth)}`;
-        break;
-      case 'nam':
-        url = `http://localhost:8080/api/thong-ke/doanh-thu/nam?year=${this.compareYear}`;
-        break;
-    }
-
-    this.http.get<ThongKeTheoThoiGianDTO[]>(url).subscribe({
-      next: (data) => {
-        this.compareDoanhThuData = data;
-        const hasData = data.some(item => item.tongDoanhThu > 0 || item.doanhThuOnline > 0 || item.doanhThuOffline > 0);
-        if (!hasData) {
-          this.compareDoanhThuData = [];
-        }
-        this.updateDoanhThuChart();
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.compareDoanhThuData = [];
-        this.updateDoanhThuChart();
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
@@ -623,18 +617,28 @@ export class StatisticsComponent implements OnInit {
   updateDoanhThuChart(): void {
     const labels = this.doanhThuData.map(item => item.thoiGian);
     const datasets = [
-      { data: this.doanhThuData.map(item => item.tongDoanhThu), label: `Tổng doanh thu (${this.selectedYear || 'Tất cả'})`, backgroundColor: '#FF6384', borderColor: '#FF6384', fill: false },
-      { data: this.doanhThuData.map(item => item.doanhThuOnline), label: `Doanh thu online (${this.selectedYear || 'Tất cả'})`, backgroundColor: '#36A2EB', borderColor: '#36A2EB', fill: false },
-      { data: this.doanhThuData.map(item => item.doanhThuOffline), label: `Doanh thu offline (${this.selectedYear || 'Tất cả'})`, backgroundColor: '#FFCE56', borderColor: '#FFCE56', fill: false }
+      { 
+        data: this.doanhThuData.map(item => item.tongDoanhThu), 
+        label: `Tổng doanh thu (${this.selectedYear || 'Tất cả'})`, 
+        backgroundColor: '#FF6384', 
+        borderColor: '#FF6384', 
+        fill: false 
+      },
+      { 
+        data: this.doanhThuData.map(item => item.doanhThuOnline), 
+        label: `Doanh thu online (${this.selectedYear || 'Tất cả'})`, 
+        backgroundColor: '#36A2EB', 
+        borderColor: '#36A2EB', 
+        fill: false 
+      },
+      { 
+        data: this.doanhThuData.map(item => item.doanhThuOffline), 
+        label: `Doanh thu offline (${this.selectedYear || 'Tất cả'})`, 
+        backgroundColor: '#FFCE56', 
+        borderColor: '#FFCE56', 
+        fill: false 
+      }
     ];
-
-    if (this.compareDoanhThuData.length > 0) {
-      datasets.push(
-        { data: this.compareDoanhThuData.map(item => item.tongDoanhThu), label: `Tổng doanh thu (${this.compareYear})`, backgroundColor: '#FF9999', borderColor: '#FF9999', fill: false },
-        { data: this.compareDoanhThuData.map(item => item.doanhThuOnline), label: `Doanh thu online (${this.compareYear})`, backgroundColor: '#66B2FF', borderColor: '#66B2FF', fill: false },
-        { data: this.compareDoanhThuData.map(item => item.doanhThuOffline), label: `Doanh thu offline (${this.compareYear})`, backgroundColor: '#FFE066', borderColor: '#FFE066', fill: false }
-      );
-    }
 
     this.doanhThuConfig = { labels, datasets };
     this.cdr.detectChanges();
@@ -655,12 +659,12 @@ export class StatisticsComponent implements OnInit {
         url = `http://localhost:8080/api/thong-ke/so-luong-don/ngay?startDate=${this.startDate}&endDate=${this.endDate}`;
         break;
       case 'tuan':
-        if (!this.selectedYear || !this.selectedWeek) return;
+        if (!this.selectedYear) return;
         url = `http://localhost:8080/api/thong-ke/so-luong-don/tuan?year=${this.selectedYear}&week=${parseInt(this.selectedWeek)}`;
         break;
       case 'thang':
-        if (!this.selectedYear || !this.selectedMonth) return;
-        url = `http://localhost:8080/api/thong-ke/so-luong-don/thang?year=${this.selectedYear}&month=${parseInt(this.selectedMonth)}`;
+        if (!this.selectedYear) return;
+        url = `http://localhost:8080/api/thong-ke/so-luong-don/thang?year=${this.selectedYear}`;
         break;
       case 'nam':
         if (!this.selectedYear) return;
@@ -670,27 +674,62 @@ export class StatisticsComponent implements OnInit {
         return;
     }
 
+    this.isLoading = true;
     this.http.get<SoLuongDonHangDTO[]>(url).subscribe({
       next: (data) => {
-        this.soLuongDonData = data;
+        if (this.selectedTimeType === 'tuan' && this.selectedYear) {
+          const fullWeeks = Array.from({ length: 52 }, (_, i) => ({
+            thoiGian: `${this.selectedYear}-W${String(i + 1).padStart(2, '0')}`,
+            soLuongDon: 0
+          }));
+          data.forEach(item => {
+            const index = fullWeeks.findIndex(w => w.thoiGian === item.thoiGian);
+            if (index !== -1) fullWeeks[index].soLuongDon = item.soLuongDon;
+          });
+          this.soLuongDonData = fullWeeks.slice(0, parseInt(this.selectedWeek));
+        } else if (this.selectedTimeType === 'thang' && this.selectedYear) {
+          const fullMonths = Array.from({ length: 12 }, (_, i) => ({
+            thoiGian: `${this.selectedYear}-${String(i + 1).padStart(2, '0')}`,
+            soLuongDon: 0
+          }));
+          data.forEach(item => {
+            const index = fullMonths.findIndex(m => m.thoiGian === item.thoiGian);
+            if (index !== -1) fullMonths[index].soLuongDon = item.soLuongDon;
+          });
+          this.soLuongDonData = fullMonths;
+        } else if (this.selectedTimeType === 'nam') {
+          const allYears = this.years.map(year => ({ thoiGian: year, soLuongDon: 0 }));
+          data.forEach(item => {
+            const index = allYears.findIndex(y => y.thoiGian === item.thoiGian);
+            if (index !== -1) allYears[index].soLuongDon = item.soLuongDon;
+          });
+          this.soLuongDonData = allYears;
+        } else {
+          this.soLuongDonData = data;
+        }
+
         this.soLuongDonConfig = {
-          labels: data.map(item => item.thoiGian),
+          labels: this.soLuongDonData.map(item => item.thoiGian),
           datasets: [
-            { data: data.map(item => item.soLuongDon), label: 'Số lượng đơn', backgroundColor: '#4BC0C0', borderColor: '#4BC0C0', fill: false }
+            { 
+              data: this.soLuongDonData.map(item => item.soLuongDon), 
+              label: 'Số lượng đơn', 
+              backgroundColor: '#4BC0C0', 
+              borderColor: '#4BC0C0', 
+              fill: false 
+            }
           ]
         };
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.soLuongDonData = [];
         this.soLuongDonConfig = { labels: [], datasets: [] };
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
-  }
-
-  onCompareYearChange(): void {
-    this.filterChange.next();
   }
 
   prevPage(): void {
@@ -717,12 +756,29 @@ export class StatisticsComponent implements OnInit {
     }
     const totalPages = this.bestSellingProductsPage.page.totalPages;
     const range: { page: number; isEllipsis: boolean }[] = [];
-  
-    // Hiển thị tất cả các trang
-    for (let i = 0; i < totalPages; i++) {
+    const maxVisiblePages = 5;
+    const half = Math.floor(maxVisiblePages / 2);
+    let start = Math.max(0, this.currentPage - half);
+    let end = Math.min(totalPages, start + maxVisiblePages);
+
+    if (end - start < maxVisiblePages) {
+      start = Math.max(0, end - maxVisiblePages);
+    }
+
+    if (start > 0) {
+      range.push({ page: 0, isEllipsis: false });
+      if (start > 1) range.push({ page: -1, isEllipsis: true });
+    }
+
+    for (let i = start; i < end; i++) {
       range.push({ page: i, isEllipsis: false });
     }
-  
+
+    if (end < totalPages) {
+      if (end < totalPages - 1) range.push({ page: -1, isEllipsis: true });
+      range.push({ page: totalPages - 1, isEllipsis: false });
+    }
+
     return range;
   }
 
@@ -746,7 +802,7 @@ export class StatisticsComponent implements OnInit {
       ['Online hoàn thành', this.thongKeTongQuan.onlineHoanThanh],
       ['Online không hoàn thành', this.thongKeTongQuan.onlineHuy],
       ['Offline hoàn thành', this.thongKeTongQuan.offlineHoanThanh],
-      ['Offline hủy', this.thongKeTongQuan.offlineHuy],
+     
       [],
     ];
 
@@ -761,19 +817,19 @@ export class StatisticsComponent implements OnInit {
       ['Online hoàn thành', this.thongKeTongQuanFiltered?.onlineHoanThanh || 0],
       ['Online không hoàn thành', this.thongKeTongQuanFiltered?.onlineHuy || 0],
       ['Offline hoàn thành', this.thongKeTongQuanFiltered?.offlineHoanThanh || 0],
-      ['Offline hủy', this.thongKeTongQuanFiltered?.offlineHuy || 0],
+     
       [],
     ];
 
     const chiTietDoanhThuData = [
       ['Chi tiết doanh thu'],
-      ['Thời gian', 'Tổng doanh thu', 'Doanh thu online', 'Doanh thu offline', 'Tỉ lệ tăng trưởng (%)'],
+      ['Thời gian', 'Tổng doanh thu', 'Doanh thu online', 'Doanh thu offline'],
       ...this.doanhThuData.map(item => [
         item.thoiGian,
         item.tongDoanhThu,
         item.doanhThuOnline,
         item.doanhThuOffline,
-        item.tiLeTangTruongDoanhThu !== null ? item.tiLeTangTruongDoanhThu : 'N/A'
+       
       ]),
       [],
     ];
@@ -848,18 +904,20 @@ export class StatisticsComponent implements OnInit {
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `${fileName}.xlsx`);
   }
+
   sortColumn(field: string, direction: string): void {
     if (this.sortField !== field) {
       this.sortField = field;
       this.sortDirection = direction;
     } else if (this.sortDirection === direction) {
-      this.sortDirection = direction === 'asc' ? 'desc' : 'asc'; // Đảo chiều nếu cùng hướng
+      this.sortDirection = direction === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortDirection = direction;
     }
     this.currentPage = 0;
     this.loadBestSellingProducts(this.currentPage);
   }
+
   async exportToExcelSanPham(): Promise<void> {
     try {
       const products = await this.loadAllBestSellingProducts();
