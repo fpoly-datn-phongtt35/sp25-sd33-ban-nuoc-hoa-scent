@@ -91,26 +91,6 @@ moTa: ['', [
       this.cdr.detectChanges();
     });
   }
-
-  customSearchFn(term: string, item: any): boolean {
-    if (!term || !item) return false;
-    const searchTerm = this.removeVietnameseTones(term.toLowerCase());
-    const itemName = this.removeVietnameseTones(
-      (item.tenThuongHieu || item.tenNhomHuong || item.tenDanhMuc || item.tenNongDo || item.tenMuiHuong || item.tenNotHuong || item.tenPhongCach || '').toLowerCase()
-    );
-    if (item.id === -1) return true;
-    this.searchSubject.next(term);
-    return itemName.includes(searchTerm);
-  }
-
-  removeVietnameseTones(str: string): string {
-    return str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D');
-  }
-
   async ngOnInit() {
     this.muiHuongSelections = [];
     try {

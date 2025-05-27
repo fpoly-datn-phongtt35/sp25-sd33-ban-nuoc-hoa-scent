@@ -13,10 +13,10 @@
         </div>
 
         <!-- Loading Spinner -->
-        <div *ngIf="loadingMuiHuong && !errorMessage" class="text-center text-muted mb-4">
+        <!-- <div *ngIf="loadProductData && !errorMessage" class="text-center text-muted mb-4">
           <div class="spinner-border spinner-border-sm" role="status"></div>
           Đang tải dữ liệu sản phẩm...
-        </div>
+        </div> -->
 
         <!-- Form -->
         <form *ngIf="!loadingMuiHuong && !errorMessage" [formGroup]="productForm" class="row g-3">
@@ -42,7 +42,6 @@
                   bindValue="id"
                   placeholder="Chọn thương hiệu..."
                   [searchable]="true"
-                  [searchFn]="customSearchFn"
                 >
                   <ng-template ng-option-tmp let-item="item">
                     <div *ngIf="item.id !== -1">{{ item.tenThuongHieu }}</div>
@@ -55,10 +54,15 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Danh mục</label>
-                <select class="form-select" formControlName="idDanhMuc">
-                  <option value="" disabled>Chọn danh mục...</option>
-                  <option *ngFor="let dm of danhMucList" [value]="dm.id">{{ dm.tenDanhMuc }}</option>
-                </select>
+                <ng-select
+                  formControlName="idDanhMuc"
+                  [items]="danhMucList"
+                  bindLabel="tenDanhMuc"
+                  bindValue="id"
+                  placeholder="Chọn danh mục..."
+                  [searchable]="true"
+                >
+                </ng-select>
                 <div *ngIf="productForm.get('idDanhMuc')?.touched && productForm.get('idDanhMuc')?.invalid" class="text-danger small mt-1">
                   Vui lòng chọn danh mục.
                 </div>
@@ -72,7 +76,6 @@
                   bindValue="id"
                   placeholder="Chọn nồng độ..."
                   [searchable]="true"
-                  [searchFn]="customSearchFn"
                 >
                   <ng-template ng-option-tmp let-item="item">
                     <div *ngIf="item.id !== -1">{{ item.tenNongDo }}</div>
@@ -92,7 +95,6 @@
                   bindValue="id"
                   placeholder="Chọn nhóm hương..."
                   [searchable]="true"
-                  [searchFn]="customSearchFn"
                 >
                   <ng-template ng-option-tmp let-item="item">
                     <div *ngIf="item.id !== -1">{{ item.tenNhomHuong }}</div>
@@ -117,7 +119,6 @@
                   bindValue="id"
                   [multiple]="true"
                   [searchable]="true"
-                  [searchFn]="customSearchFn"
                   placeholder="Chọn nốt hương đầu..."
                   formControlName="notHuongDauIds"
                   (change)="onNotHuongChange('notHuongDauIds', $event)"
@@ -139,7 +140,6 @@
                   bindValue="id"
                   [multiple]="true"
                   [searchable]="true"
-                  [searchFn]="customSearchFn"
                   placeholder="Chọn nốt hương giữa..."
                   formControlName="notHuongGiuaIds"
                   (change)="onNotHuongChange('notHuongGiuaIds', $event)"
@@ -161,7 +161,6 @@
                   bindValue="id"
                   [multiple]="true"
                   [searchable]="true"
-                  [searchFn]="customSearchFn"
                   placeholder="Chọn nốt hương cuối..."
                   formControlName="notHuongCuoiIds"
                   (change)="onNotHuongChange('notHuongCuoiIds', $event)"
@@ -193,7 +192,6 @@
               bindValue="id"
               [multiple]="true"
               [searchable]="true"
-              [searchFn]="customSearchFn"
               placeholder="Chọn mùi hương..."
               formControlName="muiHuongIds"
               (add)="onMuiHuongAdd($event)"
@@ -268,7 +266,6 @@
               bindValue="id"
               [multiple]="true"
               [searchable]="true"
-              [searchFn]="customSearchFn"
               placeholder="Chọn phong cách..."
               formControlName="phongCachIds"
               (change)="onPhongCachChange($event)"

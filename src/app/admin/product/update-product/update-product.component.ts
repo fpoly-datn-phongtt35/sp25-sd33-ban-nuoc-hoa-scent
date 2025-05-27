@@ -117,34 +117,6 @@ export class UpdateProductComponent implements OnInit {
       this.cdr.detectChanges();
     });
   }
-
-  // Custom search function for ng-select with Vietnamese tone removal
-  customSearchFn(term: string, item: any): boolean {
-    if (!term || !item) return false;
-
-    const searchTerm = this.removeVietnameseTones(term.toLowerCase());
-    const itemName = this.removeVietnameseTones(
-      (item.tenThuongHieu || item.tenNhomHuong || item.tenNotHuong || item.tenMuiHuong || item.tenPhongCach || '').toLowerCase()
-    );
-
-    // Ensure "Thêm mới..." option always appears during search
-    if (item.id === -1) return true;
-
-    // Trigger debounced search
-    this.searchSubject.next(term);
-
-    return itemName.includes(searchTerm);
-  }
-
-  // Remove Vietnamese tones for better search matching
-  removeVietnameseTones(str: string): string {
-    return str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D');
-  }
-
   async ngOnInit() {
     if (!this.productId) {
       this.errorMessage = 'Không tìm thấy ID sản phẩm';
