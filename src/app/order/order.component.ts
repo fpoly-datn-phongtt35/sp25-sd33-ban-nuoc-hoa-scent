@@ -129,7 +129,8 @@ export class OrderComponent implements OnInit, OnDestroy {
 
   private loadSelectedProducts() {
     this.selectedProducts = this.cartService.getSelectedCartItems();
-    console.log('product',this.selectedProducts)
+  
+    
     if (this.selectedProducts.length === 0) {
       Swal.fire({
         icon: 'warning',
@@ -169,7 +170,8 @@ export class OrderComponent implements OnInit, OnDestroy {
         this.calculateTotals();
       },
       error: (error) => {
-        console.error('Lỗi khi lấy đơn hàng gần nhất:', error);
+        
+        
         this.calculateTotals();
       },
     });
@@ -321,7 +323,8 @@ export class OrderComponent implements OnInit, OnDestroy {
         this.danhSachTinh = this.mapDiaChiObjectToArray(res.result);
       },
       error: (err) => {
-        console.error('Lỗi khi lấy danh sách tỉnh:', err);
+       
+        
         Swal.fire('Lỗi', 'Không thể tải danh sách tỉnh. Vui lòng thử lại!', 'error');
       },
     });
@@ -334,7 +337,7 @@ export class OrderComponent implements OnInit, OnDestroy {
         this.danhSachHuyen = this.mapDiaChiObjectToArray(res.result);
       },
       error: (err) => {
-        console.error('Lỗi khi lấy danh sách huyện:', err);
+
         Swal.fire('Lỗi', 'Không thể tải danh sách huyện. Vui lòng thử lại!', 'error');
       },
     });
@@ -347,7 +350,7 @@ export class OrderComponent implements OnInit, OnDestroy {
         this.danhSachXa = this.mapDiaChiObjectToArray(res.result);
       },
       error: (err) => {
-        console.error('Lỗi khi lấy danh sách xã:', err);
+        
         Swal.fire('Lỗi', 'Không thể tải danh sách xã. Vui lòng thử lại!', 'error');
       },
     });
@@ -425,14 +428,9 @@ export class OrderComponent implements OnInit, OnDestroy {
     this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
     if (this.finalAmount < 0) {
       this.finalAmount = 0;
-      console.error('finalAmount đã được điều chỉnh vì âm:', this.finalAmount);
+    
     }
-    console.log('Tính toán tổng:', {
-      totalProductPrice: this.totalProductPrice,
-      discount: this.discount,
-      shippingFee: this.shippingFee,
-      finalAmount: this.finalAmount
-    });
+   
     this.cdr.markForCheck();
   }
 
@@ -465,7 +463,7 @@ onDiscountCodeEntered(code: string): void {
         this.checkDiscountCode(code, registeredSdt);
       },
       error: (err) => {
-        console.error('Lỗi khi lấy thông tin tài khoản:', err);
+       
         this.handleDiscountError('Không thể lấy thông tin tài khoản!');
       },
     });
@@ -505,10 +503,7 @@ private checkDiscountCode(code: string, sdt: string): void {
       const endDate = new Date(response.ngayHetHan);
 
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.error('Định dạng ngày không hợp lệ:', {
-          ngayBatDau: response.ngayBatDau,
-          ngayHetHan: response.ngayHetHan,
-        });
+       
         this.handleDiscountError('Lỗi định dạng ngày từ server!');
         return;
       }
@@ -549,7 +544,7 @@ private checkDiscountCode(code: string, sdt: string): void {
     },
     error: (err: any) => {
       Swal.close();
-      console.error('Lỗi từ API kiểm tra mã giảm giá:', err);
+
       this.handleDiscountError(err.message);
     },
   });
@@ -675,7 +670,7 @@ private handleDiscountError(message: string) {
       const orderRes = await this.orderService.createOrder(payload).toPromise();
       await this.handlePostOrderSuccess(orderRes);
     } catch (err) {
-      console.error('Order creation error:', err);
+     
       Swal.close();
       Swal.fire('Lỗi', err.error?.message || 'Lỗi khi đặt đơn hàng.', 'error');
     }
@@ -744,19 +739,18 @@ private handleDiscountError(message: string) {
       Swal.fire('Lỗi', 'Tổng số tiền không hợp lệ cho thanh toán MoMo!', 'error');
       return;
     }
-    console.log('Yêu cầu MoMo:', momoRequest);
-
+    
     const sub = this.momoPaymentService.createPayment(momoRequest).subscribe({
       next: (res: any) => {
-        console.log('Phản hồi MoMo:', res);
+       
         if (res.payUrl) window.location.href = res.payUrl;
         else {
-          console.error('Không nhận được payUrl từ MoMo:', res);
+         
           Swal.fire('Lỗi', 'Không nhận được URL thanh toán từ MoMo. Phản hồi: ' + JSON.stringify(res), 'error');
         }
       },
       error: (err) => {
-        console.error('Lỗi gọi API MoMo:', err);
+      
         Swal.fire('Lỗi', err.error?.message || 'Lỗi khi gọi API MoMo.', 'error');
       },
     });

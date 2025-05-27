@@ -33,7 +33,7 @@ export class TraHangComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { maDonHang: number }
   ) {
     this.idTaiKhoan = this.tokenService.getUserId();
-    console.log('idtk lay token:', this.idTaiKhoan);
+   
     this.traHangForm = this.fb.group({
       idDonHang: [{ value: data.maDonHang, disabled: true }, [Validators.required]],
       returnItems: this.fb.array([])
@@ -80,8 +80,7 @@ export class TraHangComponent implements OnInit {
       this.traHangService.getSpctByDonHang(this.data.maDonHang.toString()).subscribe({
         next: (spctData) => {
           this.spctList = Array.isArray(spctData) ? spctData : [];
-          console.log('spct', spctData);
-          console.log('spct1', this.spctList);
+         
           if (!this.spctList || this.spctList.length === 0) {
             this.errorMessage = 'Đơn hàng này không có sản phẩm để trả.';
             Swal.fire({
@@ -155,10 +154,9 @@ export class TraHangComponent implements OnInit {
       videoError: [true]
     });
 
-    console.log(`Created item for idSpct ${spct.idSpct}: hasReturnRequest = ${spct.hasReturnRequest}`);
-
+    
     item.get('selected')?.valueChanges.subscribe(selected => {
-      console.log(`Selected changed for ID ${spct.idSpct} to ${selected}`);
+     
       if (!selected && (item.get('soLuong')?.value || item.get('lyDoTraHang')?.value)) {
         Swal.fire({
           icon: 'warning',
@@ -230,7 +228,7 @@ export class TraHangComponent implements OnInit {
   restrictQuantity(event: Event, item: AbstractControl, index: number): void {
     const formGroupItem = item as FormGroup;
     if (!formGroupItem.get) {
-      console.error(`Item at index ${index} is not a FormGroup`);
+      
       return;
     }
     const input = event.target as HTMLInputElement;
@@ -311,14 +309,14 @@ export class TraHangComponent implements OnInit {
           } else {
             item.get('videoError')?.setValue(false);
             item.get('videoFile')?.setValue(file);
-            console.log(`Video hợp lệ: ${file.name} for ID ${item.get('idSpct')?.value}, videoError: ${item.get('videoError')?.value}`);
+           
           }
         }
       }
     } else {
       item.get('videoError')?.setValue(true);
       item.get('videoFile')?.setValue(null);
-      console.log(`Không có video for ID ${item.get('idSpct')?.value}, videoError: true`);
+     
     }
     item.updateValueAndValidity();
     this.traHangForm.updateValueAndValidity();
@@ -381,12 +379,12 @@ export class TraHangComponent implements OnInit {
       } else {
         item.get('hinhAnhError')?.setValue(false);
         item.get('hinhAnhFiles')?.setValue(files);
-        console.log(`Hình ảnh hợp lệ: ${files.length} files uploaded for ID ${item.get('idSpct')?.value}, hinhAnhError: ${item.get('hinhAnhError')?.value}`);
+       
       }
     } else {
       item.get('hinhAnhError')?.setValue(true);
       item.get('hinhAnhFiles')?.setValue([]);
-      console.log(`Không có hình ảnh for ID ${item.get('idSpct')?.value}, hinhAnhError: true`);
+      
     }
     item.updateValueAndValidity();
     this.traHangForm.updateValueAndValidity();
@@ -406,11 +404,11 @@ export class TraHangComponent implements OnInit {
     const item = this.returnItems.at(index) as FormGroup;
     const isChecked = event.target.checked;
     if (!item.get('selected')) {
-      console.error(`Selected control not found for index ${index}`);
+   
       return;
     }
     item.get('selected')?.setValue(isChecked, { emitEvent: true });
-    console.log(`Manually set selected for index ${index} to ${isChecked}, idSpct: ${item.get('idSpct')?.value}`);
+   
     this.updateItemValidators(item, isChecked, this.getMaxQuantity(item.get('idSpct')?.value));
     item.updateValueAndValidity();
     this.traHangForm.updateValueAndValidity();
@@ -419,14 +417,14 @@ export class TraHangComponent implements OnInit {
 
   isSubmitDisabled(): boolean {
     const hasSelectedItem = this.returnItems.controls.some(item => (item as FormGroup).get('selected')?.value);
-    console.log('Has selected item:', hasSelectedItem);
+
     if (!hasSelectedItem) {
-      console.log('No selected items, submit is disabled');
+      
       return true;
     }
 
     const selectedItems = this.returnItems.controls.filter(item => (item as FormGroup).get('selected')?.value);
-    console.log('Selected items count:', selectedItems.length);
+   
     const selectedItemsInvalid = selectedItems.some((item: AbstractControl) => {
       const formGroupItem = item as FormGroup;
       const idSpct = formGroupItem.get('idSpct')?.value;
@@ -438,16 +436,11 @@ export class TraHangComponent implements OnInit {
         formGroupItem.get('hinhAnhError')?.value ||
         formGroupItem.get('videoError')?.value
       );
-      console.log(`Item ${idSpct} invalid: ${isInvalid}`);
-      console.log(`- soLuong invalid: ${formGroupItem.get('soLuong')?.invalid}, value: ${formGroupItem.get('soLuong')?.value}, required: ${formGroupItem.get('soLuong')?.hasError('required')}`);
-      console.log(`- lyDoTraHang invalid: ${formGroupItem.get('lyDoTraHang')?.invalid}, value: ${formGroupItem.get('lyDoTraHang')?.value}, required: ${formGroupItem.get('lyDoTraHang')?.hasError('required')}`);
-      console.log(`- tinhTrangHang invalid: ${formGroupItem.get('tinhTrangHang')?.invalid}, value: ${formGroupItem.get('tinhTrangHang')?.value}, required: ${formGroupItem.get('tinhTrangHang')?.hasError('required')}`);
-      console.log(`- hinhThucTraHang invalid: ${formGroupItem.get('hinhThucTraHang')?.invalid}, value: ${formGroupItem.get('hinhThucTraHang')?.value}, required: ${formGroupItem.get('hinhThucTraHang')?.hasError('required')}`);
-      console.log(`- hinhAnhError: ${formGroupItem.get('hinhAnhError')?.value}, videoError: ${formGroupItem.get('videoError')?.value}`);
+    
       return isInvalid;
     });
 
-    console.log('Selected items invalid:', selectedItemsInvalid);
+  
     return !hasSelectedItem || selectedItemsInvalid;
   }
 
@@ -593,10 +586,9 @@ export class TraHangComponent implements OnInit {
       }
     });
   
-    console.log('idTaiKhoan:', formData.get('idTaiKhoan'));
-    console.log('yeuCauRequest:', yeuCauTraHangList);
+  
     for (const pair of formData.entries()) {
-      console.log(`formData - ${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
+     
     }
   
     this.traHangService.createYeuCauTraHang(formData).subscribe({

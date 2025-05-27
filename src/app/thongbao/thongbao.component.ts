@@ -41,7 +41,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
     const userInfo = this.tokenService.getUserInfo();
     if (userInfo && userInfo.UserID) {
       this.userId = userInfo.UserID;
-      console.log('UserID:', this.userId);
+   
       this.loadNotificationsFromStorage();
       this.webSocketService.connect(this.userId);
 
@@ -57,7 +57,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
         complete: () => console.log('Return subscription completed'),
       });
     } else {
-      console.error('User not logged in, cannot connect to WebSocket');
+     
     }
   }
 
@@ -70,14 +70,14 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
   private loadNotificationsFromStorage(): void {
     if (this.userId) {
       const storedNotifications = localStorage.getItem(`notifications_${this.userId}`);
-      console.log('Loading from localStorage:', storedNotifications);
+      
       if (storedNotifications) {
         this.notifications = JSON.parse(storedNotifications).map((notif: any) => ({
           ...notif,
           timestamp: new Date(notif.timestamp).toISOString()
         }));
         this.unreadCount = this.notifications.filter(n => !n.read).length;
-        console.log('Restored notifications:', this.notifications);
+      
       }
     }
   }
@@ -85,14 +85,14 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
   private saveNotificationsToStorage(): void {
     if (this.userId) {
       localStorage.setItem(`notifications_${this.userId}`, JSON.stringify(this.notifications));
-      console.log('Saved to localStorage:', this.notifications);
+   
     }
   }
 
   private handleOrderUpdate(update: any): void {
-    console.log('Order update:', update);
+
     if (!update || typeof update !== 'object' || !update.idDonHang || update.trangThai === undefined) {
-      console.log('Invalid order update:', update);
+    
       return;
     }
     const { idDonHang, trangThai, lyDoHuy } = update;
@@ -101,9 +101,9 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
   }
 
   private handleReturnUpdate(update: any): void {
-    console.log('Return update:', update);
+    
     if (!update || typeof update !== 'object' || !update.id || update.trangThai === undefined) {
-      console.log('Invalid return update:', update);
+     
       return;
     }
     const { id, trangThai, lyDoTuChoi } = update;
@@ -149,7 +149,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
 
   togglePopup(state: boolean) {
     this.showPopup = state;
-    console.log('Toggle popup to:', this.showPopup);
+   
     if (this.showPopup) {
       this.notifications.forEach(n => n.read = true);
       this.unreadCount = 0;
@@ -177,7 +177,7 @@ export class ThongbaoComponent implements OnInit, OnDestroy {
         this.saveNotificationsToStorage();
         this.cdr.detectChanges();
       } else {
-        console.error('Không thể trích xuất mã đơn hàng từ thông báo:', notification.message);
+        
       }
     } else if (notification.type === 'return') {
       const returnIdMatch = notification.message.match(/#(\d+)/);

@@ -66,9 +66,7 @@ export class AdminTraHangComponent implements OnInit {
           this.totalPages = response.page.totalPages || 0;
           this.errorMessage = null;
           this.isLoading = false;
-          console.log('Dữ liệu yêu cầu sau khi tải:', this.yeuCauPage);
-          console.log('Content:', this.yeuCauPage?.content);
-          console.log('Total Pages:', this.totalPages);
+         
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -76,7 +74,7 @@ export class AdminTraHangComponent implements OnInit {
           this.yeuCauPage = null;
           this.totalPages = 0;
           this.isLoading = false;
-          console.log('Lỗi tải dữ liệu:', error);
+         
           this.cdr.detectChanges();
         }
       });
@@ -87,9 +85,7 @@ export class AdminTraHangComponent implements OnInit {
           this.totalPages = response.page.totalPages || 0;
           this.errorMessage = null;
           this.isLoading = false;
-          console.log('Dữ liệu yêu cầu sau khi tải:', this.yeuCauPage);
-          console.log('Content:', this.yeuCauPage?.content);
-          console.log('Total Pages:', this.totalPages);
+          
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -97,7 +93,7 @@ export class AdminTraHangComponent implements OnInit {
           this.yeuCauPage = null;
           this.totalPages = 0;
           this.isLoading = false;
-          console.log('Lỗi tải dữ liệu:', error);
+         
           this.cdr.detectChanges();
         }
       });
@@ -106,7 +102,7 @@ export class AdminTraHangComponent implements OnInit {
 
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.currentPage) {
-      console.log('🔄 Chuyển đến trang:', p);
+    
       this.currentPage = p;
       this.loadYeuCauTraHang();
     }
@@ -165,7 +161,7 @@ export class AdminTraHangComponent implements OnInit {
       range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
-    console.log('📌 Pagination range:', range);
+    
     return range;
   }
 
@@ -299,7 +295,7 @@ export class AdminTraHangComponent implements OnInit {
   }
 
   onImageError(event: Event): void {
-    console.error('Lỗi tải hình ảnh:', event);
+   
     Swal.fire({
       icon: 'error',
       title: 'Lỗi!',
@@ -310,7 +306,7 @@ export class AdminTraHangComponent implements OnInit {
   }
 
   onVideoError(event: Event): void {
-    console.error('Lỗi tải video:', event);
+    
     Swal.fire({
       icon: 'error',
       title: 'Lỗi!',

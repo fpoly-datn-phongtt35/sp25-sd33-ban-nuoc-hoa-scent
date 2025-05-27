@@ -104,7 +104,7 @@ export class VourcherComponent {
         }
         this.users = users;
         this.filteredUsers = [...this.users];
-        console.log('Danh sách khách hàng:', this.users);
+        
         const modalRef = this.modalService.open(this.sendCouponModal, {
           backdrop: 'static',
           keyboard: false,
@@ -120,7 +120,7 @@ export class VourcherComponent {
         });
       },
       error: (error) => {
-        console.error('Lỗi khi tải danh sách khách hàng:', error);
+       
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',
@@ -137,7 +137,7 @@ export class VourcherComponent {
   }
 
   loadAllPhieuGiamGia(): void {
-    console.log('📌 Gọi API với:', this.page, this.size, this.statusFilter, this.filterType);
+    
     const params: any = {
       page: this.page.toString(),
       size: this.size.toString(),
@@ -159,7 +159,7 @@ export class VourcherComponent {
   
     this.phieuGiamGiaService.searchVouchers(params).subscribe({
       next: (response) => {
-        console.log('✅ API response:', response);
+       
         if (response.status === 'success') {
           this.phieuGiamGias = response.data || [];
           this.totalPages = response.totalPages || 1;
@@ -181,7 +181,7 @@ export class VourcherComponent {
         }
       },
       error: (error) => {
-        console.error('❌ Lỗi khi lấy dữ liệu:', error);
+  
         this.phieuGiamGias = [];
         this.totalPages = 1;
         this.cdr.detectChanges();
@@ -250,7 +250,7 @@ export class VourcherComponent {
         }
       },
       error: (error) => {
-        console.error('❌ Lỗi khi tìm kiếm:', error);
+     
         this.phieuGiamGias = [];
         this.totalPages = 1;
         this.cdr.detectChanges();
@@ -518,7 +518,7 @@ export class VourcherComponent {
     } else {
       this.selectedUserIds.splice(index, 1);
     }
-    console.log('Danh sách ID người dùng đã chọn:', this.selectedUserIds);
+  
   }
 
   sendCoupon(): void {
@@ -533,10 +533,10 @@ export class VourcherComponent {
     }
 
     this.isSending = true;
-    console.log('Gửi mã giảm giá:', { voucherId: this.selectedVoucher.id, userIds: this.selectedUserIds });
+   
     this.phieuGiamGiaService.sendCoupon(this.selectedVoucher.id, this.selectedUserIds).subscribe({
       next: (response) => {
-        console.log('Phản hồi từ API:', response);
+        
         if (response.status === 'success') {
           Swal.fire({
             icon: 'success',
@@ -558,7 +558,7 @@ export class VourcherComponent {
         }
       },
       error: (error) => {
-        console.error('Lỗi khi gửi mã giảm giá:', error);
+        
         Swal.fire({
           icon: 'error',
           title: 'Lỗi!',

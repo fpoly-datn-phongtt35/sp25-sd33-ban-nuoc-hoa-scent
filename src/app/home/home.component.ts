@@ -225,7 +225,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     this.isLoading = true;
-    console.log('Sort value:', this.selectedFilters.sort);
+    
     const queryParams = {
       searchQuery: this.selectedFilters.searchQuery || '',
       minPrice: this.selectedFilters.minPrice || null,
@@ -242,7 +242,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
       next: (data: any) => {
         this.sanPhams = data.content || [];
-        console.log('Sorted products:', this.sanPhams);
+       
         this.totalPages = data.page?.totalPages || 1;
         this.updateVisiblePages();
         this.isLoading = false;

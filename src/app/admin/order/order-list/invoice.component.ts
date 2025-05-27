@@ -74,9 +74,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     if (userInfo) {
       this.userID = userInfo.UserID;
       this.tenDangNhap = userInfo.sub;
-      console.log('UserID:', this.userID);
-      console.log('tenDangNhap:', this.tenDangNhap);
-
+     
       this.loadCustomers().then(() => {
         this.setupSearch();
         this.webSocketService.connectAdmin();
@@ -87,7 +85,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         });
       });
     } else {
-      console.error('User not logged in or token invalid');
+     
       this.showErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       setTimeout(() => {
         this.router.navigate(['/login']);
@@ -107,19 +105,19 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   }
 
   private handleWebSocketUpdate(update: any): void {
-    console.log('Received WebSocket update for admin:', update);
+
     if (!update || !update.idDonHang || update.trangThai === undefined) {
-      console.error('Invalid WebSocket update:', update);
+
       return;
     }
 
     const { idDonHang, trangThai, isNewOrder } = update;
 
     if (isNewOrder) {
-      console.log(`New order received: ${idDonHang}`);
+     
       this.fetchOrderDetails(idDonHang);
     } else {
-      console.log(`Cập nhật trạng thái đơn hàng ${idDonHang}: ${trangThai}`);
+      
       const orderToUpdate = this.orders.find((order) => order.id === idDonHang);
       if (orderToUpdate) {
         orderToUpdate.selectedStatus = trangThai;
@@ -139,7 +137,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           showConfirmButton: false,
         });
       } else {
-        console.log('Order not found in orders array, reloading orders...');
+        
         this.loadCustomers();
       }
     }
@@ -157,7 +155,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   private fetchOrderDetails(orderId: number): void {
     this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`).subscribe({
       next: (orderDetails: any) => {
-        console.log('Fetched order details:', orderDetails);
+       
         const newOrder = {
           ...orderDetails,
           selectedStatus: orderDetails.trangThai,
@@ -177,7 +175,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         });
       },
       error: (error) => {
-        console.error('Error fetching order details:', error);
+        
         this.showErrorMessage('Không thể tải thông tin đơn hàng mới.');
       },
     });
@@ -305,18 +303,18 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 }
 
   private checkInventory(orderId: number): boolean {
-    console.log('Checking inventory for order:', orderId);
+   
     const order = this.orders.find((o) => o.id === orderId);
     if (!order) {
-      console.warn('Order not found in this.orders:', orderId);
+     
       this.showErrorMessage('Không tìm thấy đơn hàng để kiểm tra tồn kho.');
       return false;
     }
 
-    console.log('Order found:', order);
+    
     const chiTietDonHang = order.chiTietDonHangs || [];
     if (!Array.isArray(chiTietDonHang) || chiTietDonHang.length === 0) {
-      console.warn('No chiTietDonHang found for order:', orderId);
+    
       this.showErrorMessage('Không tìm thấy chi tiết đơn hàng để kiểm tra tồn kho.');
       return false;
     }
@@ -327,8 +325,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       const tenSanPham = item.spct.sanPham?.tenSanPham ?? 'Sản phẩm không xác định';
       const dungTich = item.spct.dungTich;
 
-      console.log(`Checking product: ${tenSanPham}, dung tích: ${dungTich}, soLuong: ${soLuong}, soLuongTonKho: ${soLuongTonKho}`);
-
+     
       if (soLuong > soLuongTonKho) {
         Swal.fire({
           title: 'Lỗi tồn kho',
@@ -340,7 +337,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       }
     }
 
-    console.log(`Inventory check passed for order ${orderId}`);
+
     return true;
   }
 
@@ -366,7 +363,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           }
         },
         (reason) => {
-          console.error('Modal dismissed or error:', reason);
+          
         }
       );
     } else {
@@ -400,7 +397,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         }
       },
       (reason) => {
-        console.log('Modal dismissed:', reason);
+        
       }
     );
   }
@@ -469,7 +466,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         Swal.fire('Cập nhật thành công!', '', 'success');
       },
       error: (error) => {
-        console.error('Error updating status:', error);
+        
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       },
     });
@@ -501,7 +498,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         Swal.fire('✅ Thành công', 'Đơn hàng đã được chuyển trạng thái thành giao không thành công!', 'success');
       },
       error: (error) => {
-        console.error('Error updating status:', error);
+  
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       },
     });
@@ -527,12 +524,12 @@ export class InvoiceComponent implements OnInit, OnDestroy {
             selectedStatus: order.trangThai,
           }));
           this.orders.sort((a, b) => b.id - a.id);
-          console.log('Dữ liệu đơn hàng sau khi sắp xếp:', this.orders);
+      
           this.applySearch();
           resolve();
         },
         error: (error: any) => {
-          console.error('Error loading orders:', error);
+        
           this.showErrorMessage('Không thể tải danh sách đơn hàng.');
           reject(error);
         },

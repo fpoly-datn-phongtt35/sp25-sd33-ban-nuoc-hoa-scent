@@ -122,7 +122,6 @@ export class TraHangNhaSanXuatComponent implements OnInit {
         this.totalElements = data.totalElements ?? 0;
         this.isLoading = false;
 
-        console.log('Defective Products after load:', data);
       },
       error: (err) => {
         this.isLoading = false;
@@ -150,7 +149,7 @@ export class TraHangNhaSanXuatComponent implements OnInit {
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
       this.page = p;
-      console.log('[TraHangNhaSanXuatComponent] Navigating to page:', this.page);
+    
       this.loadDefectiveProducts();
     }
   }
@@ -158,7 +157,7 @@ export class TraHangNhaSanXuatComponent implements OnInit {
   prevPage(): void {
     if (this.page > 0) {
       this.page--;
-      console.log('[TraHangNhaSanXuatComponent] Navigating to previous page:', this.page);
+     
       this.loadDefectiveProducts();
     }
   }
@@ -166,7 +165,7 @@ export class TraHangNhaSanXuatComponent implements OnInit {
   nextPage(): void {
     if (this.page < this.totalPages - 1) {
       this.page++;
-      console.log('[TraHangNhaSanXuatComponent] Navigating to next page:', this.page);
+     
       this.loadDefectiveProducts();
     }
   }
@@ -180,7 +179,7 @@ export class TraHangNhaSanXuatComponent implements OnInit {
     for (let i = start; i < end; i++) {
       range.push(i);
     }
-    console.log('[TraHangNhaSanXuatComponent] Pagination range:', range);
+    
     return range;
   }
 
