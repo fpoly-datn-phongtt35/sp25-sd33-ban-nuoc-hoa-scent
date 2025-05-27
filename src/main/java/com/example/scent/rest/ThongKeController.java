@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -112,6 +113,15 @@ public class ThongKeController {
     public List<SoLuongDonHangDTO> getSoLuongDonTheoTuan(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "week", required = false) Integer week) {
+        if (year == null) {
+            return new ArrayList<>(); // Bắt buộc phải có năm để hiển thị các tuần
+        }
+        if (year < 2000 || year > 2100) {
+            return new ArrayList<>(); // Trả về danh sách rỗng nếu năm không hợp lệ
+        }
+        if (week != null && (week < 1 || week > 52)) {
+            return new ArrayList<>(); // Trả về danh sách rỗng nếu tuần không hợp lệ
+        }
         return thongKeService.getSoLuongDonTheoTuan(year, week);
     }
 
@@ -119,12 +129,21 @@ public class ThongKeController {
     public List<SoLuongDonHangDTO> getSoLuongDonTheoThang(
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "month", required = false) Integer month) {
+        if (year == null) {
+            return new ArrayList<>(); // Bắt buộc phải có năm để hiển thị các tháng
+        }
+        if (year < 2000 || year > 2100) {
+            return new ArrayList<>(); // Trả về danh sách rỗng nếu năm không hợp lệ
+        }
         return thongKeService.getSoLuongDonTheoThang(year, month);
     }
 
     @GetMapping("/so-luong-don/nam")
     public List<SoLuongDonHangDTO> getSoLuongDonTheoNam(
             @RequestParam(value = "year", required = false) Integer year) {
+        if (year != null && (year < 2000 || year > 2100)) {
+            return new ArrayList<>(); // Trả về danh sách rỗng nếu năm không hợp lệ
+        }
         return thongKeService.getSoLuongDonTheoNam(year);
     }
 

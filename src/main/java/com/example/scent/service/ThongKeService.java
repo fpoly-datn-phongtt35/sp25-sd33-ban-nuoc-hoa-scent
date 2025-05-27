@@ -200,38 +200,107 @@ public class ThongKeService {
         List<Object[]> results = donHangRepository.getSoLuongDonTheoTuan(year, week);
         List<SoLuongDonHangDTO> dtos = new ArrayList<>();
 
-        for (Object[] result : results) {
-            dtos.add(new SoLuongDonHangDTO(
-                    result[0] + "-W" + String.format("%02d", ((Number) result[1]).intValue()), // nam-tuan
-                    ((Number) result[2]).longValue() // soLuongDon
-            ));
+        if (year != null && week != null) {
+            // Trả về các tuần từ 1 đến tuần được chọn
+            for (int i = 1; i <= week; i++) {
+                String label = year + "-W" + String.format("%02d", i);
+                long soLuongDon = 0L;
+                for (Object[] result : results) {
+                    if ((result[0] + "-W" + String.format("%02d", ((Number) result[1]).intValue())).equals(label)) {
+                        soLuongDon = ((Number) result[2]).longValue();
+                        break;
+                    }
+                }
+                dtos.add(new SoLuongDonHangDTO(label, soLuongDon));
+            }
+        } else if (year != null) {
+            // Nếu chỉ có năm, trả về tất cả 52 tuần
+            for (int i = 1; i <= 52; i++) {
+                String label = year + "-W" + String.format("%02d", i);
+                long soLuongDon = 0L;
+                for (Object[] result : results) {
+                    if ((result[0] + "-W" + String.format("%02d", ((Number) result[1]).intValue())).equals(label)) {
+                        soLuongDon = ((Number) result[2]).longValue();
+                        break;
+                    }
+                }
+                dtos.add(new SoLuongDonHangDTO(label, soLuongDon));
+            }
         }
+
+        dtos.sort((a, b) -> a.getThoiGian().compareTo(b.getThoiGian()));
         return dtos;
     }
-
     public List<SoLuongDonHangDTO> getSoLuongDonTheoThang(Integer year, Integer month) {
-        List<Object[]> results = donHangRepository.getSoLuongDonTheoThang(year, month);
+        List<Object[]> results = donHangRepository.getSoLuongDonTheoThang(year, null); // Bỏ tham số month
         List<SoLuongDonHangDTO> dtos = new ArrayList<>();
 
-        for (Object[] result : results) {
-            dtos.add(new SoLuongDonHangDTO(
-                    result[0].toString(), // thang
-                    ((Number) result[1]).longValue() // soLuongDon
-            ));
+        if (year != null) {
+            // Trả về tất cả 12 tháng trong năm được chọn
+            for (int i = 1; i <= 12; i++) {
+                String label = String.format("%d-%02d", year, i);
+                long soLuongDon = 0L;
+                for (Object[] result : results) {
+                    if (result[1].toString().equals(label)) {
+                        soLuongDon = ((Number) result[2]).longValue();
+                        break;
+                    }
+                }
+                dtos.add(new SoLuongDonHangDTO(label, soLuongDon));
+            }
         }
+
+        // Sắp xếp theo thời gian
+        dtos.sort((a, b) -> a.getThoiGian().compareTo(b.getThoiGian()));
         return dtos;
     }
-
     public List<SoLuongDonHangDTO> getSoLuongDonTheoNam(Integer year) {
         List<Object[]> results = donHangRepository.getSoLuongDonTheoNam(year);
         List<SoLuongDonHangDTO> dtos = new ArrayList<>();
 
-        for (Object[] result : results) {
-            dtos.add(new SoLuongDonHangDTO(
-                    result[0].toString(), // nam
-                    ((Number) result[1]).longValue() // soLuongDon
-            ));
+        // Lấy danh sách các năm từ kết quả
+        if (year == null) {
+            // Nếu không lọc năm, trả về tất cả các năm có dữ liệu
+            for (Object[] result : results) {
+                dtos.add(new SoLuongDonHangDTO(
+                        result[0].toString(), // nam
+                        ((Number) result[1]).longValue() // soLuongDon
+                ));
+            }
+
+            // Nếu không có dữ liệu, trả về các năm từ 2020 đến 2025 với giá trị 0
+            if (dtos.isEmpty()) {
+                for (int y = 2020; y <= 2025; y++) {
+                    dtos.add(new SoLuongDonHangDTO(String.valueOf(y), 0L));
+                }
+            } else {
+                // Đảm bảo các năm từ 2020 đến 2025 được hiển thị
+                for (int y = 2020; y <= 2025; y++) {
+                    String label = String.valueOf(y);
+                    long soLuongDon = 0L;
+                    for (SoLuongDonHangDTO dto : dtos) {
+                        if (dto.getThoiGian().equals(label)) {
+                            soLuongDon = dto.getSoLuongDon();
+                            break;
+                        }
+                    }
+                    dtos.add(new SoLuongDonHangDTO(label, soLuongDon));
+                }
+            }
+        } else {
+            // Nếu có năm được chọn, chỉ trả về năm đó
+            long soLuongDon = 0L;
+            for (Object[] result : results) {
+                if (result[0].toString().equals(year.toString())) {
+                    soLuongDon = ((Number) result[1]).longValue();
+                    break;
+                }
+            }
+            dtos.add(new SoLuongDonHangDTO(year.toString(), soLuongDon));
         }
+
+        // Sắp xếp theo thời gian
+        dtos.sort((a, b) -> a.getThoiGian().compareTo(b.getThoiGian()));
         return dtos;
     }
 

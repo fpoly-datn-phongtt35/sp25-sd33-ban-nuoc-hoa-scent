@@ -174,31 +174,58 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     List<Object[]> getSoLuongDonTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     // Số lượng đơn hàng theo tuần với năm và tuần cụ thể
-    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, DATEPART(WEEK, dh.ngay_tao) as tuan, COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "AND (:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
-            "GROUP BY DATEPART(YEAR, dh.ngay_tao), DATEPART(WEEK, dh.ngay_tao) " +
-            "ORDER BY nam, tuan", nativeQuery = true)
+    @Query(value = """
+    SET DATEFIRST 1; -- Đặt thứ Hai là ngày đầu tiên của tuần
+    WITH Weeks AS (
+        SELECT number + 1 AS tuan
+        FROM master.dbo.spt_values
+        WHERE type = 'P'
+        AND number < 53
+        AND (:week IS NULL OR number + 1 <= :week)
+    )
+    SELECT 
+        :year AS nam,
+        w.tuan,
+        COALESCE(COUNT(dh.id), 0) AS soLuongDon
+    FROM Weeks w
+    LEFT JOIN don_hang dh ON DATEPART(YEAR, dh.ngay_tao) = :year
+        AND DATEPART(WEEK, dh.ngay_tao) = w.tuan
+    WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
+    GROUP BY w.tuan
+    ORDER BY w.tuan
+""", nativeQuery = true)
     List<Object[]> getSoLuongDonTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
 
     // Số lượng đơn hàng theo tháng với năm và tháng cụ thể
-    @Query(value = "SELECT FORMAT(dh.ngay_tao, 'yyyy-MM') as thang, COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
-            "GROUP BY FORMAT(dh.ngay_tao, 'yyyy-MM') " +
-            "ORDER BY thang", nativeQuery = true)
+    @Query(value = """
+    WITH Months AS (
+        SELECT number + 1 AS thang
+        FROM master.dbo.spt_values
+        WHERE type = 'P'
+        AND number < 12
+    )
+    SELECT 
+        :year AS nam,
+        FORMAT(DATEADD(MONTH, m.thang - 1, CAST(CAST(:year AS VARCHAR(4)) + '-01-01' AS DATE)), 'yyyy-MM') AS thang,
+        COALESCE(COUNT(dh.id), 0) AS soLuongDon
+    FROM Months m
+    LEFT JOIN don_hang dh ON DATEPART(YEAR, dh.ngay_tao) = :year
+        AND DATEPART(MONTH, dh.ngay_tao) = m.thang
+    WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
+    GROUP BY m.thang
+    ORDER BY m.thang
+""", nativeQuery = true)
     List<Object[]> getSoLuongDonTheoThang(@Param("year") Integer year, @Param("month") Integer month);
-
     // Số lượng đơn hàng theo năm với năm cụ thể
-    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "GROUP BY DATEPART(YEAR, dh.ngay_tao) " +
-            "ORDER BY nam", nativeQuery = true)
+    @Query(value = """
+    SELECT DATEPART(YEAR, dh.ngay_tao) AS nam, 
+           COALESCE(COUNT(dh.id), 0) AS soLuongDon 
+    FROM don_hang dh 
+    WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) 
+    GROUP BY DATEPART(YEAR, dh.ngay_tao) 
+    ORDER BY nam
+""", nativeQuery = true)
     List<Object[]> getSoLuongDonTheoNam(@Param("year") Integer year);
-
     // Thống kê doanh thu và số đơn theo ngày với khoảng thời gian
     @Query(value = "SELECT CONVERT(DATE, dh.ngay_tao) as ngay, " +
             "SUM(dh.tong_tien) as tongDoanhThu, " +
