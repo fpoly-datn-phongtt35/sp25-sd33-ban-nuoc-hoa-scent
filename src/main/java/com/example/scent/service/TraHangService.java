@@ -19,9 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TraHangService {
@@ -234,7 +232,7 @@ public class TraHangService {
     }
 
     public List<YeuCauTraHang> createYeuCauTraHang(List<YeuCauTraHang> yeuCauList, Integer idTaiKhoan,
-                                                   List<MultipartFile> hinhAnhFiles, List<MultipartFile> videoFiles) {
+                                                   Map<String, MultipartFile> fileMap) {
         // Validate idTaiKhoan
         if (idTaiKhoan == null) {
             throw new CustomException(
@@ -294,61 +292,100 @@ public class TraHangService {
             );
         }
 
-        // Validate files
-        if (hinhAnhFiles == null || hinhAnhFiles.isEmpty()) {
-            throw new CustomException(
-                    "Vui lòng cung cấp ít nhất một hình ảnh minh chứng.",
-                    HttpStatus.BAD_REQUEST,
-                    "MISSING_HINH_ANH"
-            );
-        }
-        if (hinhAnhFiles.size() > 2 * yeuCauList.size()) {
-            throw new CustomException(
-                    "Chỉ được phép tải lên tối đa 2 hình ảnh minh chứng cho mỗi yêu cầu.",
-                    HttpStatus.BAD_REQUEST,
-                    "TOO_MANY_HINH_ANH"
-            );
-        }
-        if (videoFiles == null || videoFiles.isEmpty() || videoFiles.size() < yeuCauList.size()) {
-            throw new CustomException(
-                    "Vui lòng cung cấp một video minh chứng cho mỗi yêu cầu.",
-                    HttpStatus.BAD_REQUEST,
-                    "MISSING_VIDEO"
-            );
-        }
+        // Tạo map để ánh xạ file với idSpct (dựa trên key từ frontend)
+        Map<Integer, List<MultipartFile>> hinhAnhMap = new HashMap<>();
+        Map<Integer, MultipartFile> videoMap = new HashMap<>();
 
-        // Validate image files
-        for (MultipartFile file : hinhAnhFiles) {
-            String contentType = file.getContentType();
-            if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
-                throw new CustomException(
-                        "Hình ảnh phải có định dạng JPEG hoặc PNG.",
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_IMAGE_FORMAT"
-                );
-            }
-            if (file.getSize() > 5 * 1024 * 1024) {
-                throw new CustomException(
-                        "Kích thước hình ảnh không được vượt quá 5MB.",
-                        HttpStatus.BAD_REQUEST,
-                        "IMAGE_SIZE_EXCEEDED"
-                );
+        for (Map.Entry<String, MultipartFile> entry : fileMap.entrySet()) {
+            String key = entry.getKey();
+            MultipartFile file = entry.getValue();
+            System.out.println("Processing file key: " + key + ", filename: " + file.getOriginalFilename());
+
+            if (key.startsWith("hinhAnh_")) {
+                String[] parts = key.split("_");
+                if (parts.length >= 3) {
+                    try {
+                        Integer idSpct = Integer.parseInt(parts[1]);
+                        hinhAnhMap.computeIfAbsent(idSpct, k -> new ArrayList<>()).add(file);
+                        System.out.println("Mapped hinhAnh to idSpct: " + idSpct);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid idSpct in hinhAnh key: " + key);
+                    }
+                }
+            } else if (key.startsWith("video_")) {
+                String[] parts = key.split("_");
+                if (parts.length >= 2) {
+                    try {
+                        Integer idSpct = Integer.parseInt(parts[1]);
+                        videoMap.put(idSpct, file);
+                        System.out.println("Mapped video to idSpct: " + idSpct);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid idSpct in video key: " + key);
+                    }
+                }
             }
         }
 
-        // Validate video files
-        for (MultipartFile videoFile : videoFiles) {
-            String contentType = videoFile.getContentType();
+        // Gán file vào yeuCauList dựa trên idSpct
+        for (YeuCauTraHang yeuCau : yeuCauList) {
+            Integer idSpct = yeuCau.getSpct().getIdSpct();
+            yeuCau.setHinhAnhUrls(new ArrayList<>()); // Khởi tạo danh sách URL
+            List<MultipartFile> yeuCauHinhAnhFiles = hinhAnhMap.getOrDefault(idSpct, new ArrayList<>());
+            MultipartFile yeuCauVideoFile = videoMap.get(idSpct);
+
+            if (yeuCauHinhAnhFiles.isEmpty()) {
+                throw new CustomException(
+                        "Vui lòng cung cấp ít nhất một hình ảnh minh chứng cho sản phẩm ID: " + idSpct,
+                        HttpStatus.BAD_REQUEST,
+                        "MISSING_HINH_ANH"
+                );
+            }
+            if (yeuCauHinhAnhFiles.size() > 2) {
+                throw new CustomException(
+                        "Chỉ được phép tải lên tối đa 2 hình ảnh minh chứng cho sản phẩm ID: " + idSpct,
+                        HttpStatus.BAD_REQUEST,
+                        "TOO_MANY_HINH_ANH"
+                );
+            }
+            if (yeuCauVideoFile == null) {
+                throw new CustomException(
+                        "Vui lòng cung cấp video minh chứng cho sản phẩm ID: " + idSpct,
+                        HttpStatus.BAD_REQUEST,
+                        "MISSING_VIDEO"
+                );
+            }
+
+            // Validate image files
+            for (MultipartFile file : yeuCauHinhAnhFiles) {
+                String contentType = file.getContentType();
+                if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+                    throw new CustomException(
+                            "Hình ảnh phải có định dạng JPEG hoặc PNG cho sản phẩm ID: " + idSpct,
+                            HttpStatus.BAD_REQUEST,
+                            "INVALID_IMAGE_FORMAT"
+                    );
+                }
+                if (file.getSize() > 5 * 1024 * 1024) {
+                    throw new CustomException(
+                            "Kích thước hình ảnh không được vượt quá 5MB cho sản phẩm ID: " + idSpct,
+                            HttpStatus.BAD_REQUEST,
+                            "IMAGE_SIZE_EXCEEDED"
+                    );
+                }
+            }
+
+            // Validate video file
+            String contentType = yeuCauVideoFile.getContentType();
             if (!"video/mp4".equals(contentType)) {
                 throw new CustomException(
-                        "Video phải có định dạng MP4.",
+                        "Video phải có định dạng MP4 cho sản phẩm ID: " + idSpct,
                         HttpStatus.BAD_REQUEST,
                         "INVALID_VIDEO_FORMAT"
                 );
             }
-            if (videoFile.getSize() > 50 * 1024 * 1024) {
+            if (yeuCauVideoFile.getSize() > 50 * 1024 * 1024) {
                 throw new CustomException(
-                        "Kích thước video không được vượt quá 50MB.",
+                        "Kích thước video không được vượt quá 50MB cho sản phẩm ID: " + idSpct,
                         HttpStatus.BAD_REQUEST,
                         "VIDEO_SIZE_EXCEEDED"
                 );
@@ -356,8 +393,10 @@ public class TraHangService {
         }
 
         List<YeuCauTraHang> savedYeuCauList = new ArrayList<>();
-        for (int i = 0; i < yeuCauList.size(); i++) {
-            YeuCauTraHang yeuCau = yeuCauList.get(i);
+        for (YeuCauTraHang yeuCau : yeuCauList) {
+            Integer idSpct = yeuCau.getSpct().getIdSpct();
+            List<MultipartFile> yeuCauHinhAnhFiles = hinhAnhMap.get(idSpct);
+            MultipartFile yeuCauVideoFile = videoMap.get(idSpct);
 
             // Validate soLuong
             validateSoLuongTraHang(yeuCau, idTaiKhoan);
@@ -367,7 +406,7 @@ public class TraHangService {
             yeuCau.setNgayYeuCau(LocalDateTime.now());
             if (!isEligibleForReturn(donHang, yeuCau)) {
                 throw new CustomException(
-                        "Yêu cầu trả hàng đã vượt quá thời gian cho phép.",
+                        "Yêu cầu trả hàng đã vượt quá thời gian cho phép cho sản phẩm ID: " + idSpct,
                         HttpStatus.BAD_REQUEST,
                         "RETURN_TIME_EXCEEDED"
                 );
@@ -376,23 +415,21 @@ public class TraHangService {
             // Validate tinhTrangHang
             if (!yeuCau.getTinhTrangHang().equals("HuHong") && !yeuCau.getTinhTrangHang().equals("NguyenVen")) {
                 throw new CustomException(
-                        "Tình trạng hàng không hợp lệ. Vui lòng chọn 'Nguyên vẹn' hoặc 'Hỏng'.",
+                        "Tình trạng hàng không hợp lệ cho sản phẩm ID: " + idSpct + ". Vui lòng chọn 'Nguyên vẹn' hoặc 'Hỏng'.",
                         HttpStatus.BAD_REQUEST,
                         "INVALID_TINH_TRANG_HANG"
                 );
             }
 
-            // Upload images (split evenly among requests)
+            // Upload images
             List<String> hinhAnhUrls = new ArrayList<>();
-            int startIdx = i * 2;
-            int endIdx = Math.min(startIdx + 2, hinhAnhFiles.size());
-            for (int j = startIdx; j < endIdx; j++) {
+            for (MultipartFile file : yeuCauHinhAnhFiles) {
                 try {
-                    String imageUrl = storageService.uploadImageToStorage(hinhAnhFiles.get(j));
+                    String imageUrl = storageService.uploadImageToStorage(file);
                     hinhAnhUrls.add(imageUrl);
                 } catch (IOException e) {
                     throw new CustomException(
-                            "Lỗi khi tải lên hình ảnh. Vui lòng thử lại.",
+                            "Lỗi khi tải lên hình ảnh cho sản phẩm ID: " + idSpct + ". Vui lòng thử lại.",
                             HttpStatus.INTERNAL_SERVER_ERROR,
                             "IMAGE_UPLOAD_FAILED"
                     );
@@ -401,35 +438,32 @@ public class TraHangService {
             yeuCau.setHinhAnhUrls(hinhAnhUrls);
 
             // Upload video
-            MultipartFile videoFile = videoFiles.get(i);
             String videoUrl = null;
             File videoTempFile = null;
-            if (videoFile != null && !videoFile.isEmpty()) {
-                try {
-                    videoTempFile = File.createTempFile("video", ".mp4");
-                    videoFile.transferTo(videoTempFile);
+            try {
+                videoTempFile = File.createTempFile("video_" + idSpct, ".mp4");
+                yeuCauVideoFile.transferTo(videoTempFile);
 
-                    double duration = getVideoDuration(videoTempFile);
-                    if (duration < 5 || duration > 15) {
-                        throw new CustomException(
-                                "Video minh chứng phải có độ dài từ 5 đến 15 giây.",
-                                HttpStatus.BAD_REQUEST,
-                                "INVALID_VIDEO_DURATION"
-                        );
-                    }
-
-                    videoUrl = storageService.uploadVideoToStorageFromFile(videoTempFile, videoFile.getOriginalFilename());
-                    yeuCau.setUrlVideo(videoUrl);
-                } catch (Exception e) {
+                double duration = getVideoDuration(videoTempFile);
+                if (duration < 5 || duration > 15) {
                     throw new CustomException(
-                            "Lỗi khi xử lý video. Vui lòng thử lại.",
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            "VIDEO_UPLOAD_FAILED"
+                            "Video minh chứng cho sản phẩm ID: " + idSpct + " phải có độ dài từ 5 đến 15 giây.",
+                            HttpStatus.BAD_REQUEST,
+                            "INVALID_VIDEO_DURATION"
                     );
-                } finally {
-                    if (videoTempFile != null && videoTempFile.exists()) {
-                        videoTempFile.delete();
-                    }
+                }
+
+                videoUrl = storageService.uploadVideoToStorageFromFile(videoTempFile, yeuCauVideoFile.getOriginalFilename());
+                yeuCau.setUrlVideo(videoUrl);
+            } catch (Exception e) {
+                throw new CustomException(
+                        "Lỗi khi xử lý video cho sản phẩm ID: " + idSpct + ". Vui lòng thử lại.",
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "VIDEO_UPLOAD_FAILED"
+                );
+            } finally {
+                if (videoTempFile != null && videoTempFile.exists()) {
+                    videoTempFile.delete();
                 }
             }
 

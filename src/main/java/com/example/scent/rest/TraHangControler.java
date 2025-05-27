@@ -14,6 +14,8 @@ import com.example.scent.service.TraHangService;
 import com.example.scent.websocket.YeuCauTraHangUpdateDTO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Part;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +27,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,35 +80,52 @@ private LichSuTraHangInterface lichSuTraHang;
         return ResponseEntity.ok(yeuCauPage);
     }
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<YeuCauTraHang>> createYeuCauTraHang(
+    public ResponseEntity<Object> createYeuCauTraHang(
+            HttpServletRequest request,
             @RequestPart("yeuCauRequest") String yeuCauRequestJson,
-            @RequestPart("idTaiKhoan") String idTaiKhoanStr,
-            @RequestPart(value = "hinhAnh", required = false) List<MultipartFile> hinhAnhFiles,
-            @RequestPart(value = "video", required = false) List<MultipartFile> videoFiles) throws Exception {
-
-        System.out.println("Nhận được idTaiKhoan: " + idTaiKhoanStr);
-        System.out.println("Nhận được yeuCauRequestJson: " + yeuCauRequestJson);
-        System.out.println("Số lượng hinhAnhFiles: " + (hinhAnhFiles != null ? hinhAnhFiles.size() : 0));
-        System.out.println("Số lượng videoFiles: " + (videoFiles != null ? videoFiles.size() : 0));
-
-        // Parse idTaiKhoan
-        Integer idTaiKhoan;
+            @RequestPart("idTaiKhoan") String idTaiKhoanStr) throws IOException {
         try {
-            idTaiKhoan = Integer.parseInt(idTaiKhoanStr);
-        } catch (NumberFormatException e) {
-            throw new CustomException(
-                    "ID tài khoản không hợp lệ.",
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_TAI_KHOAN_ID"
-            );
+            System.out.println("Nhận được idTaiKhoan: " + idTaiKhoanStr);
+            System.out.println("Nhận được yeuCauRequestJson: " + yeuCauRequestJson);
+
+            Integer idTaiKhoan;
+            try {
+                idTaiKhoan = Integer.parseInt(idTaiKhoanStr);
+            } catch (NumberFormatException e) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "ID tài khoản không hợp lệ.");
+                errorResponse.put("errorCode", "INVALID_TAI_KHOAN_ID");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+
+            List<YeuCauTraHang> yeuCauList = objectMapper.readValue(yeuCauRequestJson,
+                    new TypeReference<List<YeuCauTraHang>>() {});
+
+            // Lấy tất cả các file từ request
+            Map<String, MultipartFile> fileMap = new HashMap<>();
+            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+            for (String paramName : multipartRequest.getFileMap().keySet()) {
+                MultipartFile file = multipartRequest.getFile(paramName);
+                if (file != null && (file.getContentType() != null && (file.getContentType().startsWith("image/") || file.getContentType().startsWith("video/")))) {
+                    fileMap.put(paramName, file);
+                    System.out.println("Received file key: " + paramName + ", filename: " + file.getOriginalFilename());
+                }
+            }
+
+            List<YeuCauTraHang> savedYeuCauList = traHangService.createYeuCauTraHang(yeuCauList, idTaiKhoan, fileMap);
+            savedYeuCauList.forEach(this::sendWebSocketNotification); // Gửi thông báo WebSocket
+            return ResponseEntity.ok().body(savedYeuCauList);
+        } catch (CustomException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("errorCode", e.getErrorCode());
+            return ResponseEntity.status(e.getHttpStatus()).body(errorResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Lỗi máy chủ: " + e.getMessage());
+            errorResponse.put("errorCode", "INTERNAL_SERVER_ERROR");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
-
-        // Parse yeuCauRequestJson
-        List<YeuCauTraHang> yeuCauList = objectMapper.readValue(yeuCauRequestJson,
-                new TypeReference<List<YeuCauTraHang>>() {});
-
-        List<YeuCauTraHang> savedYeuCauList = traHangService.createYeuCauTraHang(yeuCauList, idTaiKhoan, hinhAnhFiles, videoFiles);
-        return ResponseEntity.ok(savedYeuCauList);
     }
     @PutMapping("/{id}/approve")
     public ResponseEntity<YeuCauTraHang> approveYeuCauTraHang(@PathVariable Integer id, @RequestParam Integer idTaiKhoanDuyet) {
