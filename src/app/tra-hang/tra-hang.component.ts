@@ -560,6 +560,7 @@ export class TraHangComponent implements OnInit {
       const formGroupItem = item as FormGroup;
       return {
         idTaiKhoan: this.idTaiKhoan!,
+        taiKhoan: { id: this.idTaiKhoan, tenDangNhap: this.tokenService.getTenDangNhap() || '' },
         donHang: { id: this.data.maDonHang },
         spct: { idSpct: Number(formGroupItem.get('idSpct')?.value) },
         soLuong: Number(formGroupItem.get('soLuong')?.value),

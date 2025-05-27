@@ -1,6 +1,7 @@
 export interface YeuCauTraHang {
   id?: number;
   idTaiKhoan: number;
+  taiKhoan: TaiKhoan;
   donHang: { id: number };
   spct: { idSpct: number };
   soLuong: number;
@@ -11,4 +12,8 @@ export interface YeuCauTraHang {
   ghiChu?: string;
   hinhAnhUrls?: string[];
   urlVideo?: string;
+}
+export interface TaiKhoan {
+  id: number;
+  tenDangNhap: string;
 }

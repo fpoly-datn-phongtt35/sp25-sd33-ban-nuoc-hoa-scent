@@ -24,6 +24,7 @@
     <thead>
       <tr class="bg-gray-100 text-gray-700 text-sm">
         <th class="border-b border-gray-200 p-3 text-left font-semibold">ID</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Tài khoản</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Mã Đơn Hàng</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Sản Phẩm (ID SPCT)</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Số Lượng</th>
@@ -39,6 +40,7 @@
     <tbody>
       <tr *ngFor="let yeuCau of yeuCauPage.content" class="hover:bg-gray-50 text-sm">
         <td class="border-b border-gray-200 p-3">{{ yeuCau.id }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.taiKhoan?.tenDangNhap}}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.donHang?.id || 'N/A' }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.spct?.idSpct || 'N/A' }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.soLuong }}</td>
