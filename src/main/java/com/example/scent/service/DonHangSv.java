@@ -896,7 +896,7 @@ itemDTO.setDungTich(spct.getDungTich());
         }
 
         // Nếu trạng thái mới là "Đã xác nhận" (trangThaiMoi = 2), cập nhật tồn kho (trừ số lượng)
-        if (trangThaiMoi == 2) {
+        if (trangThaiMoi == 2||trangThaiMoi==6) {
             System.out.println("⚠️ Đang cập nhật tồn kho (trừ số lượng)...");
             for (ChiTietDonHang chiTiet : chiTietDonHangs) {
                 Spct spct = chiTiet.getSpct();
