@@ -9,7 +9,8 @@ import { MatSliderModule } from '@angular/material/slider';
 import { NhomHuongService } from '../service/nhomhuong.service';
 import { ThuongHieuService } from '../service/thuonghieu.service';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { WebSocketService } from '../service/WebSocketService';
 import { BannerService, Banner } from '../service/BannerService';
 
@@ -31,7 +32,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   sanPhams: any[] = [];
   bestSellingProducts: any[] = [];
   page: number = 0;
-  size: number = 20;
+  size: number = 16;
   totalPages: number = 1;
   visiblePages: number[] = [];
 
@@ -62,6 +63,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   };
 
   private webSocketSubscription: Subscription | undefined;
+  private sortChangeSubject = new Subject<string>();
 
   // Banner Slider
   slides: { banner: Banner; loaded: boolean }[] = [];
@@ -78,7 +80,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private webSocketService: WebSocketService,
     private bannerService: BannerService,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.fetchFilters();
@@ -133,9 +135,25 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.startAutoSlide();
       });
     });
+
+    // Debounce sort changes
+    this.sortChangeSubject.pipe(debounceTime(300)).subscribe((value) => {
+      this.selectedFilters.sort = value;
+      this.page = 0;
+      this.loadProducts();
+    });
   }
+
+  ngOnDestroy(): void {
+    if (this.webSocketSubscription) {
+      this.webSocketSubscription.unsubscribe();
+    }
+    this.webSocketService.disconnect();
+    this.stopAutoSlide();
+    this.sortChangeSubject.complete();
+  }
+
   resetFilters(): void {
-    // Đặt lại các bộ lọc trong selectedFilters
     this.selectedFilters = {
       searchQuery: '',
       tenDanhMuc: '',
@@ -146,31 +164,21 @@ export class HomeComponent implements OnInit, OnDestroy {
       maxPrice: null,
       sort: '',
     };
-  
-    // Đặt lại giá trị tìm kiếm
     this.query = '';
-  
-    // Đặt lại giá min và max
-    this.selectedMinPrice = this.minPrice; // 100,000
-    this.selectedMaxPrice = this.maxPrice; // 10,000,000
-  
-    // Đặt lại trang về trang đầu tiên
+    this.selectedMinPrice = this.minPrice;
+    this.selectedMaxPrice = this.maxPrice;
     this.page = 0;
-  
-    // Tải lại sản phẩm với bộ lọc mặc định
     this.loadProducts();
   }
+
   showThumbLabel(type: string) {
     if (type === 'min') this.showMinLabel = true;
     else this.showMaxLabel = true;
   }
 
-  ngOnDestroy(): void {
-    if (this.webSocketSubscription) {
-      this.webSocketSubscription.unsubscribe();
-    }
-    this.webSocketService.disconnect();
-    this.stopAutoSlide();
+  hideThumbLabel(type: string) {
+    if (type === 'min') this.showMinLabel = false;
+    else this.showMaxLabel = false;
   }
 
   loadBanners(): Promise<void> {
@@ -250,48 +258,74 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     this.isLoading = true;
-
-    const queryParams = {
-      searchQuery: this.selectedFilters.searchQuery || '',
-      minPrice: this.selectedFilters.minPrice || null,
-      maxPrice: this.selectedFilters.maxPrice || null,
-      tenDanhMuc: this.selectedFilters.tenDanhMuc || '',
-      tenNhomHuong: this.selectedFilters.tenNhomHuong || '',
-      tenThuongHieu: this.selectedFilters.tenThuongHieu || '',
-      quocGia: this.selectedFilters.quocGia || '',
-      page: this.page,
-      size: this.size,
-      sort: this.selectedFilters.sort || '',
-    };
-
-    this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
-      next: (data: any) => {
-        this.sanPhams = data.content || [];
-
-        this.totalPages = data.page?.totalPages || 1;
-        this.updateVisiblePages();
-        this.isLoading = false;
-      },
-      error: (err: any) => {
-        this.sanPhams = [];
-        this.totalPages = 1;
-        this.visiblePages = [];
-        this.isLoading = false;
-      },
-    });
-  }
-
-  hideThumbLabel(type: string) {
-    if (type === 'min') this.showMinLabel = false;
-    else this.showMaxLabel = false;
-  }
-
-  isNewProduct(createDate: string | Date): boolean {
-    const today = new Date();
-    const productDate = new Date(createDate);
-    const timeDiff = today.getTime() - productDate.getTime();
-    const daysDiff = timeDiff / (1000 * 3600 * 24);
-    return daysDiff <= 40;
+  
+    if (this.selectedFilters.sort && this.selectedFilters.sort.startsWith('donGia')) {
+      // Sử dụng API riêng cho sắp xếp theo giá
+      this.sanPhamService.getSanPhamsSortedByPrice(this.selectedFilters.sort, this.page, this.size).subscribe({
+        next: (data: any) => {
+          console.log('Data from sorted-by-price API:', data); // Debug log
+          if (data && data.content) {
+            this.sanPhams = data.content;
+            this.totalPages = data.page?.totalPages || 1;
+            // Kiểm tra xem dữ liệu có được sắp xếp đúng không
+            console.log('Sản phẩm sau khi sắp xếp:', this.sanPhams.map(p => ({ tenSanPham: p.tenSanPham, donGia: p.donGia })));
+          } else {
+            this.sanPhams = [];
+            this.totalPages = 1;
+            console.warn('[HomeComponent] Không nhận được dữ liệu hợp lệ từ API sorted-by-price');
+          }
+          this.updateVisiblePages();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: any) => {
+          this.sanPhams = [];
+          this.totalPages = 1;
+          this.visiblePages = [];
+          this.isLoading = false;
+          console.error('[HomeComponent] Lỗi tải sản phẩm theo giá:', err);
+          alert('Lỗi khi tải sản phẩm. Vui lòng thử lại sau.');
+        },
+      });
+    } else {
+      // Sử dụng API searchFilterSanPham cho các trường hợp khác
+      const queryParams = {
+        searchQuery: this.selectedFilters.searchQuery || '',
+        minPrice: this.selectedFilters.minPrice || null,
+        maxPrice: this.selectedFilters.maxPrice || null,
+        tenDanhMuc: this.selectedFilters.tenDanhMuc || '',
+        tenNhomHuong: this.selectedFilters.tenNhomHuong || '',
+        tenThuongHieu: this.selectedFilters.tenThuongHieu || '',
+        quocGia: this.selectedFilters.quocGia || '',
+        page: this.page,
+        size: this.size,
+        sort: this.selectedFilters.sort || '',
+      };
+  
+      this.sanPhamService.searchFilterSanPham(queryParams).subscribe({
+        next: (data: any) => {
+          if (data && data.content) {
+            this.sanPhams = data.content;
+            this.totalPages = data.page?.totalPages || 1;
+          } else {
+            this.sanPhams = [];
+            this.totalPages = 1;
+            console.warn('[HomeComponent] Không nhận được dữ liệu hợp lệ từ API searchFilterSanPham');
+          }
+          this.updateVisiblePages();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: any) => {
+          this.sanPhams = [];
+          this.totalPages = 1;
+          this.visiblePages = [];
+          this.isLoading = false;
+          console.error('[HomeComponent] Lỗi tải sản phẩm:', err);
+          alert('Lỗi khi tải sản phẩm. Vui lòng thử lại sau.');
+        },
+      });
+    }
   }
 
   loadBestSellingProducts(): void {
@@ -304,14 +338,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         this.bestSellingProducts = [];
         this.isBestSellingLoading = false;
+        console.error('[HomeComponent] Lỗi tải sản phẩm bán chạy:', err);
       },
     });
   }
 
-  sortProducts(sortOption: string): void {
-    this.selectedFilters.sort = sortOption;
-    this.page = 0;
-    this.loadProducts();
+  onSortChange(value: string): void {
+    console.log(`Sort value changed to: ${value}`);
+    this.sortChangeSubject.next(value);
   }
 
   updateVisiblePages(): void {
@@ -380,6 +414,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       range.push(i);
     }
     return range;
+  }
+
+  isNewProduct(createDate: string | Date): boolean {
+    const today = new Date();
+    const productDate = new Date(createDate);
+    const timeDiff = today.getTime() - productDate.getTime();
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+    return daysDiff <= 40;
   }
 
   startAutoSlide(): void {

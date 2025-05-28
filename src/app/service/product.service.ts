@@ -18,6 +18,7 @@ private apiDanhMuc='http://localhost:8080/rest/danh-muc/getAll';
 private apiSearchonAmin='http://localhost:8080/rest/san-pham/search-product-on-admin';
 private apiURLbb = 'http://localhost:8080/rest/san-pham/search-combined'; // API mới
 private urb ='http://localhost:8080/api';
+private apiSortedByPrice = 'http://localhost:8080/rest/san-pham/sorted-by-price';
   constructor(private http: HttpClient) {
     console.log('SanPhamService đã được khởi tạo.');
   }
@@ -62,7 +63,6 @@ private urb ='http://localhost:8080/api';
   searchFilterSanPham(queryParams: any): Observable<any> {
     let params = new HttpParams();
 
-    // Chỉ thêm tham số nếu giá trị không phải null, undefined, hoặc chuỗi rỗng
     if (queryParams.searchQuery != null && queryParams.searchQuery !== '') {
       params = params.set('searchQuery', queryParams.searchQuery);
     }
@@ -85,16 +85,34 @@ private urb ='http://localhost:8080/api';
       params = params.set('quocGia', queryParams.quocGia);
     }
     if (queryParams.sort != null && queryParams.sort !== '') {
-      params = params.set('sort', queryParams.sort); // Thêm tham số sort
+      params = params.set('sort', queryParams.sort);
     }
 
-    // page và size luôn được gửi, với giá trị mặc định nếu không có
     params = params.set('page', queryParams.page?.toString() || '0');
     params = params.set('size', queryParams.size?.toString() || '16');
-   
-    return this.http.get<any>(this.apiURLbb, { params });
-  }
 
+    return this.http.get<any>(this.apiURLbb, { params }).pipe(
+      catchError((error) => {
+        console.error('[SanPhamService] Lỗi khi gọi API searchFilterSanPham:', error);
+        return throwError(() => new Error('Lỗi khi tìm kiếm sản phẩm. Vui lòng thử lại sau.'));
+      })
+    );
+  }
+  getSanPhamsSortedByPrice(sort: string, page: number = 0, size: number = 16): Observable<any> {
+    // Chỉ lấy giá trị 'asc' hoặc 'desc' từ sort (bỏ 'donGia,')
+    const sortDirection = sort.split(',')[1]; // Lấy 'asc' hoặc 'desc'
+    let params = new HttpParams()
+      .set('sort', sortDirection) // Gửi 'asc' hoặc 'desc'
+      .set('page', page.toString())
+      .set('size', size.toString());
+  
+    return this.http.get<any>(this.apiSortedByPrice, { params }).pipe(
+      catchError((error) => {
+        console.error('[SanPhamService] Lỗi khi gọi API sorted-by-price:', error);
+        return throwError(() => new Error('Lỗi khi sắp xếp sản phẩm theo giá. Vui lòng thử lại sau.'));
+      })
+    );
+  }
 addProductOnAdmin(formData: FormData): Observable<any> {
   const url = `${this.baseUrl}/add`;
   return this.http.post<any>(url, formData);

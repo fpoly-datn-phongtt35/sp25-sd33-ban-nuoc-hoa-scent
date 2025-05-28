@@ -14,7 +14,31 @@ body {
 .banner-section {
   margin-bottom: 2rem;
 }
+.search-filter-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px; /* Khoảng cách giữa các dropdown */
+  margin-bottom: 20px;
+}
 
+.sort-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+
+.sort-label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.form-select {
+  width: 150px; /* Điều chỉnh kích thước dropdown */
+  padding: 5px;
+}
 .banner {
   position: relative;
   width: 100%;

@@ -140,12 +140,27 @@
         <div class="search-filter-container">
           <div class="sort-container">
             <label for="sort-filter" class="sort-label">Sắp xếp theo</label>
-            <select id="sort-filter" class="form-select" [(ngModel)]="selectedFilters.sort" (ngModelChange)="sortProducts(selectedFilters.sort)">
+            <select
+              id="sort-filter"
+              class="form-select"
+              [(ngModel)]="selectedFilters.sort"
+              (ngModelChange)="onSortChange($event)"
+            >
               <option value="">Mặc định</option>
               <option value="createDate,desc">Mới nhất</option>
-              
               <option value="soLuongBan,desc">Bán chạy</option>
+              <option value="donGia,asc">Giá: Tăng dần</option>
+              <option value="donGia,desc">Giá: Giảm dần</option>
             </select>
+          </div>
+          <!-- Hiển thị trạng thái sắp xếp -->
+          <div class="sort-status" *ngIf="selectedFilters.sort">
+            <small>Đang sắp xếp theo: 
+              {{ selectedFilters.sort === 'createDate,desc' ? 'Mới nhất' : 
+                 selectedFilters.sort === 'soLuongBan,desc' ? 'Bán chạy' : 
+                 selectedFilters.sort === 'donGia,asc' ? 'Giá tăng dần' : 
+                 selectedFilters.sort === 'donGia,desc' ? 'Giá giảm dần' : 'Mặc định' }}
+            </small>
           </div>
         </div>
 
