@@ -88,10 +88,10 @@
               <i class="bi bi-printer"></i> In hóa đơn
             </button>
             <button *ngIf="order.isInvoicePrinted" 
-                    class="btn btn-sm btn-outline-warning" 
-                    (click)="requestReprint(order)">
-              <i class="bi bi-printer-fill"></i> Yêu cầu in lại
-            </button>
+            class="btn btn-sm btn-outline-warning" 
+            (click)="requestReprint(order)">
+      <i class="bi bi-printer-fill"></i> Yêu cầu in lại
+    </button>
           </div>
         </td>
         <td *ngIf="selectedTab === 'online' && selectedStatus !== 4 && selectedStatus !== 5">

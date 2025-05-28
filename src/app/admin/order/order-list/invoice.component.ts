@@ -407,7 +407,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       });
       return;
     }
-
+  
     const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
     modalRef.componentInstance.orderData = order;
     modalRef.result.then(
@@ -431,39 +431,14 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   }
 
   requestReprint(order: any) {
-    Swal.fire({
-      title: 'Yêu cầu in lại hóa đơn',
-      text: `Bạn có chắc chắn muốn yêu cầu in lại hóa đơn cho đơn hàng ${this.formatOrderId(order)}? Vui lòng cung cấp lý do:`,
-      input: 'text',
-      inputPlaceholder: 'Nhập lý do (ví dụ: hóa đơn bị mất, hư hỏng...)',
-      showCancelButton: true,
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy',
-      preConfirm: (reason) => {
-        if (!reason || reason.trim() === '') {
-          Swal.showValidationMessage('Lý do không được để trống!');
-        }
-        return reason;
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const reason = result.value;
-        // Ghi log lý do yêu cầu in lại (có thể gửi lên server nếu cần)
-        console.log(`Yêu cầu in lại hóa đơn cho đơn hàng ${order.id}. Lý do: ${reason}`);
-
-        // Cho phép in lại hóa đơn
-        order.isInvoicePrinted = false;
-        this.cdRef.detectChanges();
-
-        Swal.fire({
-          title: 'Yêu cầu được chấp nhận',
-          text: 'Bạn có thể in lại hóa đơn ngay bây giờ.',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-        });
-      }
-    });
+    // Cho phép in lại hóa đơn
+    order.isInvoicePrinted = false;
+    this.cdRef.detectChanges();
+  
+    // Mở modal để in hóa đơn ngay lập tức
+    this.openInvoiceModal(order);
+  
+    
   }
 
   requestCancellationReason(orderId: number): void {

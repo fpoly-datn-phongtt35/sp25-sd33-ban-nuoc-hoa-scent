@@ -43,8 +43,13 @@
     <div class="row">
       <!-- Bộ lọc bên trái -->
       <div class="col-md-3 filter-section">
-        <h3 class="filter-title">Bộ Lọc Sản Phẩm</h3>
-
+        <div class="filter-header d-flex justify-content-between align-items-center">
+          <h3 class="filter-title">Bộ Lọc Sản Phẩm</h3>
+          <button class="btn btn-outline-secondary btn-sm" (click)="resetFilters()" title="Đặt lại bộ lọc">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        </div>
+      
         <div class="filter-group">
           <label for="category-filter" class="filter-label">Danh Mục</label>
           <select id="category-filter" class="form-select" [(ngModel)]="selectedFilters.tenDanhMuc" (ngModelChange)="applyFilter('tenDanhMuc')">
@@ -52,7 +57,7 @@
             <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
           </select>
         </div>
-
+      
         <div class="filter-group">
           <label for="brand-filter" class="filter-label">Thương Hiệu</label>
           <select id="brand-filter" class="form-select" [(ngModel)]="selectedFilters.tenThuongHieu" (ngModelChange)="applyFilter('tenThuongHieu')">
@@ -60,7 +65,7 @@
             <option *ngFor="let brand of tenThuongHieus" [value]="brand">{{ brand }}</option>
           </select>
         </div>
-
+      
         <div class="filter-group">
           <label for="scent-filter" class="filter-label">Nhóm Hương</label>
           <select id="scent-filter" class="form-select" [(ngModel)]="selectedFilters.tenNhomHuong" (ngModelChange)="applyFilter('tenNhomHuong')">
@@ -68,7 +73,7 @@
             <option *ngFor="let scent of tenNhomHuongs" [value]="scent">{{ scent }}</option>
           </select>
         </div>
-
+      
         <div class="filter-group">
           <label for="country-filter" class="filter-label">Quốc Gia</label>
           <select id="country-filter" class="form-select" [(ngModel)]="selectedFilters.quocGia" (ngModelChange)="applyFilter('quocGia')">
@@ -76,9 +81,9 @@
             <option *ngFor="let country of quocGias" [value]="country">{{ country }}</option>
           </select>
         </div>
-
+      
         <hr class="divider">
-
+      
         <div class="filter-group price-filter">
           <h4 class="filter-subtitle">Lọc Theo Giá</h4>
           <mat-slider class="price-slider" [min]="minPrice" [max]="maxPrice" [step]="50000" (change)="filterByPrice()">
@@ -89,7 +94,7 @@
             Giá: <strong>{{ selectedMinPrice | number }} đ</strong> — <strong>{{ selectedMaxPrice | number }} đ</strong>
           </div>
         </div>
-
+      
         <!-- Sản phẩm bán chạy -->
         <div class="best-selling-section">
           <h4 class="filter-subtitle">Sản Phẩm Bán Chạy</h4>

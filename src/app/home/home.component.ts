@@ -134,7 +134,32 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
     });
   }
-
+  resetFilters(): void {
+    // Đặt lại các bộ lọc trong selectedFilters
+    this.selectedFilters = {
+      searchQuery: '',
+      tenDanhMuc: '',
+      tenThuongHieu: '',
+      tenNhomHuong: '',
+      quocGia: '',
+      minPrice: null,
+      maxPrice: null,
+      sort: '',
+    };
+  
+    // Đặt lại giá trị tìm kiếm
+    this.query = '';
+  
+    // Đặt lại giá min và max
+    this.selectedMinPrice = this.minPrice; // 100,000
+    this.selectedMaxPrice = this.maxPrice; // 10,000,000
+  
+    // Đặt lại trang về trang đầu tiên
+    this.page = 0;
+  
+    // Tải lại sản phẩm với bộ lọc mặc định
+    this.loadProducts();
+  }
   showThumbLabel(type: string) {
     if (type === 'min') this.showMinLabel = true;
     else this.showMaxLabel = true;
