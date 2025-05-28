@@ -49,7 +49,7 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "GROUP BY sp.id, sp.ten " +
             "ORDER BY SUM(ctdh.so_luong) DESC", nativeQuery = true)
     List<Object[]> findTop10ByOrderBySoLuongBanDesc();
-
+    List<SanPham> findByThuongHieuId(Integer thuongHieuId);
     // Tìm sản phẩm theo ID thương hiệu
     List<SanPham> findByThuongHieu_Id(Integer id);
 

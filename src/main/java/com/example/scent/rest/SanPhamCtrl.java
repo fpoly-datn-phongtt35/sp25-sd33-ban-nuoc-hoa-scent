@@ -393,7 +393,7 @@ public class SanPhamCtrl {
         List<Spct> listSpct = spcts.findByidSanPham(id);
 
         // Cập nhật trạng thái của tất cả Spct
-        if (trangThai == 0) {
+        if (trangThai == 0 || trangThai==2) {
             // Dừng bán: Chuyển tất cả Spct sang trạng thái 0
             for (Spct spct : listSpct) {
                 spcts.updateTrangThai(spct.getIdSpct(), 0);

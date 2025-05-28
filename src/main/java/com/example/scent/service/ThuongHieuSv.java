@@ -1,8 +1,11 @@
 package com.example.scent.service;
 
 import com.example.scent.dto.ThuongHieuWithStatusDTO;
+import com.example.scent.entity.SanPham;
+import com.example.scent.entity.Spct;
 import com.example.scent.entity.ThuongHieu;
 import com.example.scent.repo.SanPhamInterface;
+import com.example.scent.repo.SpctInterface;
 import com.example.scent.repo.ThuongHieuInterface;
 import com.example.scent.reques.CustomException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +27,8 @@ public class ThuongHieuSv {
     private SimpMessagingTemplate messagingTemplate;
     @Autowired
     SanPhamInterface sanPhamRepository;
-
+@Autowired
+    SpctInterface spctRepository;
     public Page<ThuongHieu> getAllThuongHieu(Pageable pageable) {
         return thuongHieuRepository.findAll(pageable);
     }
@@ -138,18 +142,47 @@ public class ThuongHieuSv {
     }
 
     // Ngừng bán sản phẩm theo thương hiệu
+    @Transactional
     public void deactivateSanPhamByThuongHieuId(Integer thuongHieuId) {
         if (thuongHieuId == null) {
             throw new IllegalArgumentException("ID thương hiệu không được null");
         }
+
+        // Cập nhật trạng thái tất cả SanPham thuộc thương hiệu thành 2 (tắt do thương hiệu)
         sanPhamRepository.updateTrangThaiToDeactivatedByThuongHieuId(thuongHieuId);
+
+        // Cập nhật trạng thái tất cả Spct của các SanPham thuộc thương hiệu
+        List<SanPham> sanPhamList = sanPhamRepository.findByThuongHieuId(thuongHieuId);
+        for (SanPham sp : sanPhamList) {
+            List<Spct> spctList = spctRepository.findByidSanPham(sp.getIdSanPham());
+            for (Spct spct : spctList) {
+                if (spct.getTrangThai() != 0) { // Không ghi đè nếu đã tắt thủ công (0)
+                    spct.setTrangThai(2); // Tắt do sản phẩm
+                    spctRepository.save(spct);
+                }
+            }
+        }
     }
 
-    // Khôi phục sản phẩm theo thương hiệu
+    @Transactional
     public void restoreSanPhamByThuongHieuId(Integer thuongHieuId) {
         if (thuongHieuId == null) {
             throw new IllegalArgumentException("ID thương hiệu không được null");
         }
+
+        // Cập nhật trạng thái tất cả SanPham thuộc thương hiệu thành 1 (hoạt động)
         sanPhamRepository.updateTrangThaiToActiveByThuongHieuId(thuongHieuId);
+
+        // Cập nhật trạng thái tất cả Spct của các SanPham thuộc thương hiệu
+        List<SanPham> sanPhamList = sanPhamRepository.findByThuongHieuId(thuongHieuId);
+        for (SanPham sp : sanPhamList) {
+            List<Spct> spctList = spctRepository.findByidSanPham(sp.getIdSanPham());
+            for (Spct spct : spctList) {
+                if (spct.getTrangThai() != 0) { // Không bật lại nếu đã tắt thủ công (0)
+                    spct.setTrangThai(1); // Bật lại Spct
+                    spctRepository.save(spct);
+                }
+            }
+        }
     }
 }

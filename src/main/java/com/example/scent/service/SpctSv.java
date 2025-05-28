@@ -78,7 +78,7 @@ public class SpctSv {
         List<Spct> spctList = spcti.findBySanPhamIdSanPham(spId);
 
         // Kiểm tra trạng thái của tất cả Spct
-        boolean allNgungBan = spctList.stream().allMatch(s -> s.getTrangThai() == 0);
+        boolean allNgungBan = spctList.stream().allMatch(s -> s.getTrangThai() == 0 );
         boolean hasDangBan = spctList.stream().anyMatch(s -> s.getTrangThai() == 1);
 
         // Cập nhật trạng thái của SanPham
