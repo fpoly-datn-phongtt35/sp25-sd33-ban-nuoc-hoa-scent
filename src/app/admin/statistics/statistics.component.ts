@@ -50,13 +50,9 @@ interface SoLuongDonHangDTO {
 interface BestSellingProductDTO {
   idSanPham: number;
   tenSanPham: string;
-  moTaSanPham: string;
   thuongHieu: string;
   nhomHuong: string;
   danhMuc: string;
-  huongDau: string;
-  huongGiua: string;
-  huongCuoi: string;
   stockStatus: string;
   idSpct: number;
   dungTich: number;
@@ -183,9 +179,9 @@ export class StatisticsComponent implements OnInit {
     this.initializeExpandedCells();
   }
 
-  private initializeExpandedCells(): void {
-    this.expandedCells = this.bestSellingProducts.map(() => new Array(12).fill(false));
-  }
+private initializeExpandedCells(): void {
+  this.expandedCells = this.bestSellingProducts.map(() => new Array(9).fill(false));
+}
 
   toggleFullContent(rowIndex: number, colIndex: number): void {
     this.expandedCells[rowIndex] = this.expandedCells[rowIndex].map((_, i) => i === colIndex ? !this.expandedCells[rowIndex][i] : false);
@@ -904,19 +900,7 @@ export class StatisticsComponent implements OnInit {
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `${fileName}.xlsx`);
   }
-  getStockStatus(product: any): string {
-    const soLuongTonKho = product.soLuongTonKho || 0;
-    if (product.stockStatus) {
-      return product.stockStatus;
-    }
-    if (soLuongTonKho === 0) {
-      return 'Hết hàng';
-    }
-    if (soLuongTonKho < 5) {
-      return 'Sắp hết hàng';
-    }
-    return 'Còn hàng';
-  }
+
   sortColumn(field: string, direction: string): void {
     if (this.sortField !== field) {
       this.sortField = field;
@@ -930,107 +914,101 @@ export class StatisticsComponent implements OnInit {
     this.loadBestSellingProducts(this.currentPage);
   }
 
-  async exportToExcelSanPham(): Promise<void> {
-    try {
-      const products = await this.loadAllBestSellingProducts();
-      if (!products || products.length === 0) {
-        this.errorMessage = 'Không có dữ liệu sản phẩm để xuất Excel.';
-        this.cdr.detectChanges();
-        return;
-      }
-
-      const productData = [
-        ['Sản phẩm'],
-        [
-          'Tên sản phẩm',
-          'Thương hiệu',
-          'Danh mục',
-          'Nhóm hương',
-          'Hương đầu',
-          'Hương giữa',
-          'Hương cuối',
-          'Dung tích (ml)',
-          'Số lượng bán',
-          'Số lượt trả hàng',
-          'Số lượng tồn kho',
-          'Trạng thái tồn kho'
-        ],
-        ...products.map(product => [
-          product.tenSanPham || 'N/A',
-          product.thuongHieu || 'N/A',
-          product.danhMuc || 'N/A',
-          product.nhomHuong || 'N/A',
-          product.huongDau || 'N/A',
-          product.huongGiua || 'N/A',
-          product.huongCuoi || 'N/A',
-          product.dungTich || 0,
-          product.totalQuantitySold || 0,
-          product.soLuotTraHang || 0,
-          product.soLuongTonKho || 0,
-          product.stockStatus || (product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng'))
-        ])
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(productData);
-
-      const colWidths = [];
-      const minWidth = 15;
-      const maxWidth = 60;
-      const numberMultiplier = 1.5;
-      const stringMultiplier = 1.2;
-
-      for (let i = 0; i < productData[0].length; i++) {
-        let maxWidthForCol = 0;
-        for (let j = 0; j < productData.length; j++) {
-          const cellValue = productData[j][i] ? productData[j][i].toString() : '';
-          let width;
-
-          if (!isNaN(Number(cellValue)) && cellValue !== 'N/A') {
-            width = (cellValue.length * numberMultiplier) + 5;
-          } else {
-            width = (cellValue.length * stringMultiplier) + 2;
-          }
-
-          maxWidthForCol = Math.max(maxWidthForCol, width);
-        }
-        maxWidthForCol = Math.max(minWidth, Math.min(maxWidth, maxWidthForCol));
-        colWidths.push({ wch: maxWidthForCol });
-      }
-      ws['!cols'] = colWidths;
-
-      XLSX.utils.book_append_sheet(workbook, ws, 'SanPham');
-
-      let fileName = 'thong_ke_san_pham';
-      switch (this.selectedTimeType) {
-        case 'ngay':
-          if (this.startDate && this.endDate) {
-            fileName += `_${this.startDate}_den_${this.endDate}`;
-          }
-          break;
-        case 'tuan':
-          if (this.selectedYear && this.selectedWeek) {
-            fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
-          }
-          break;
-        case 'thang':
-          if (this.selectedYear && this.selectedMonth) {
-            fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
-          }
-          break;
-        case 'nam':
-          if (this.selectedYear) {
-            fileName += `_${this.selectedYear}`;
-          }
-          break;
-      }
-
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/octet-stream' });
-      saveAs(blob, `${fileName}.xlsx`);
-    } catch (error) {
-      this.errorMessage = 'Lỗi khi xuất dữ liệu sản phẩm ra Excel.';
+async exportToExcelSanPham(): Promise<void> {
+  try {
+    const products = await this.loadAllBestSellingProducts();
+    if (!products || products.length === 0) {
+      this.errorMessage = 'Không có dữ liệu sản phẩm để xuất Excel.';
       this.cdr.detectChanges();
+      return;
     }
+
+    const productData = [
+      ['Sản phẩm'],
+      [
+        'Tên sản phẩm',
+        'Thương hiệu',
+        'Danh mục',
+        'Nhóm hương',
+        'Dung tích (ml)',
+        'Số lượng bán',
+        'Số lượt trả hàng',
+        'Số lượng tồn kho',
+        'Trạng thái tồn kho'
+      ],
+      ...products.map(product => [
+        product.tenSanPham || 'N/A',
+        product.thuongHieu || 'N/A',
+        product.danhMuc || 'N/A',
+        product.nhomHuong || 'N/A',
+        product.dungTich || 0,
+        product.totalQuantitySold || 0,
+        product.soLuotTraHang || 0,
+        product.soLuongTonKho || 0,
+        product.stockStatus || (product.soLuongTonKho === 0 ? 'Hết hàng' : (product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng'))
+      ])
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(productData);
+
+    const colWidths = [];
+    const minWidth = 15;
+    const maxWidth = 60;
+    const numberMultiplier = 1.5;
+    const stringMultiplier = 1.2;
+
+    for (let i = 0; i < productData[0].length; i++) {
+      let maxWidthForCol = 0;
+      for (let j = 0; j < productData.length; j++) {
+        const cellValue = productData[j][i] ? productData[j][i].toString() : '';
+        let width;
+
+        if (!isNaN(Number(cellValue)) && cellValue !== 'N/A') {
+          width = (cellValue.length * numberMultiplier) + 5;
+        } else {
+          width = (cellValue.length * stringMultiplier) + 2;
+        }
+
+        maxWidthForCol = Math.max(maxWidthForCol, width);
+      }
+      maxWidthForCol = Math.max(minWidth, Math.min(maxWidth, maxWidthForCol));
+      colWidths.push({ wch: maxWidthForCol });
+    }
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(workbook, ws, 'SanPham');
+
+    let fileName = 'thong_ke_san_pham';
+    switch (this.selectedTimeType) {
+      case 'ngay':
+        if (this.startDate && this.endDate) {
+          fileName += `_${this.startDate}_den_${this.endDate}`;
+        }
+        break;
+      case 'tuan':
+        if (this.selectedYear && this.selectedWeek) {
+          fileName += `_tuan${this.selectedWeek}_${this.selectedYear}`;
+        }
+        break;
+      case 'thang':
+        if (this.selectedYear && this.selectedMonth) {
+          fileName += `_thang${this.selectedMonth}_${this.selectedYear}`;
+        }
+        break;
+      case 'nam':
+        if (this.selectedYear) {
+          fileName += `_${this.selectedYear}`;
+        }
+        break;
+    }
+
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, `${fileName}.xlsx`);
+  } catch (error) {
+    this.errorMessage = 'Lỗi khi xuất dữ liệu sản phẩm ra Excel.';
+    this.cdr.detectChanges();
   }
+}
 }

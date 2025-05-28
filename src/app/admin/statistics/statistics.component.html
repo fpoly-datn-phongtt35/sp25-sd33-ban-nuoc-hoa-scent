@@ -219,137 +219,126 @@
       </div>
 
       <!-- Best-Selling Products -->
-      <div class="best-selling-products" *ngIf="bestSellingProducts.length > 0 && !isLoading; else noProducts">
-        <h2><i class="fas fa-boxes"></i> Danh sách sản phẩm</h2>
-        <div class="table-container">
-          <table class="product-table">
-            <thead class="sticky-header">
-              <tr>
-                <th>Tên sản phẩm</th>
-                <th>Thương hiệu</th>
-                <th>Danh mục</th>
-                <th>Nhóm hương</th>
-                <th>Hương đầu</th>
-                <th>Hương giữa</th>
-                <th>Hương cuối</th>
-                <th>Dung tích (ml)</th>
-                <th>
-                  Số lượng bán
-                  <span class="sort-icons">
-                    <i
-                      class="fas fa-arrow-up"
-                      [class.active]="sortField === 'totalQuantitySold' && sortDirection === 'asc'"
-                      (click)="sortColumn('totalQuantitySold', 'asc')"
-                      title="Tăng dần"
-                      data-tooltip
-                    ></i>
-                    <i
-                      class="fas fa-arrow-down"
-                      [class.active]="sortField === 'totalQuantitySold' && sortDirection === 'desc'"
-                      (click)="sortColumn('totalQuantitySold', 'desc')"
-                      title="Giảm dần"
-                      data-tooltip
-                    ></i>
-                  </span>
-                </th>
-                <th>
-                  Số lượt trả hàng
-                  <span class="sort-icons">
-                    <i
-                      class="fas fa-arrow-up"
-                      [class.active]="sortField === 'soLuotTraHang' && sortDirection === 'asc'"
-                      (click)="sortColumn('soLuotTraHang', 'asc')"
-                      title="Tăng dần"
-                      data-tooltip
-                    ></i>
-                    <i
-                      class="fas fa-arrow-down"
-                      [class.active]="sortField === 'soLuotTraHang' && sortDirection === 'desc'"
-                      (click)="sortColumn('soLuotTraHang', 'desc')"
-                      title="Giảm dần"
-                      data-tooltip
-                    ></i>
-                  </span>
-                </th>
-                <th>
-                  Số lượng tồn kho
-                  <span class="sort-icons">
-                    <i
-                      class="fas fa-arrow-up"
-                      [class.active]="sortField === 'soLuongTonKho' && sortDirection === 'asc'"
-                      (click)="sortColumn('soLuongTonKho', 'asc')"
-                      title="Tăng dần"
-                      data-tooltip
-                    ></i>
-                    <i
-                      class="fas fa-arrow-down"
-                      [class.active]="sortField === 'soLuongTonKho' && sortDirection === 'desc'"
-                      (click)="sortColumn('soLuongTonKho', 'desc')"
-                      title="Giảm dần"
-                      data-tooltip
-                    ></i>
-                  </span>
-                </th>
-                <th>Trạng thái tồn kho</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let product of bestSellingProducts; let i = index">
-                <td class="truncate" (click)="toggleFullContent(i, 0)" [class.expanded]="expandedCells[i]?.[0]">
-                  {{ expandedCells[i]?.[0] ? product.tenSanPham : (product.tenSanPham.length > 20 ? product.tenSanPham.slice(0, 20) + '...' : product.tenSanPham) }}
-                </td>
-                <td>{{ product.thuongHieu || 'N/A' }}</td>
-                <td>{{ product.danhMuc || 'N/A' }}</td>
-                <td class="truncate" (click)="toggleFullContent(i, 3)" [class.expanded]="expandedCells[i]?.[3]">
-                  {{ expandedCells[i]?.[3] ? product.nhomHuong : (product.nhomHuong?.length > 15 ? product.nhomHuong.slice(0, 15) + '...' : product.nhomHuong || 'N/A') }}
-                </td>
-                <td class="truncate" (click)="toggleFullContent(i, 4)" [class.expanded]="expandedCells[i]?.[4]">
-                  {{ expandedCells[i]?.[4] ? product.huongDau : (product.huongDau?.length > 15 ? product.huongDau.slice(0, 15) + '...' : product.huongDau || 'N/A') }}
-                </td>
-                <td class="truncate" (click)="toggleFullContent(i, 5)" [class.expanded]="expandedCells[i]?.[5]">
-                  {{ expandedCells[i]?.[5] ? product.huongGiua : (product.huongGiua?.length > 15 ? product.huongGiua.slice(0, 15) + '...' : product.huongGiua || 'N/A') }}
-                </td>
-                <td class="truncate" (click)="toggleFullContent(i, 6)" [class.expanded]="expandedCells[i]?.[6]">
-                  {{ expandedCells[i]?.[6] ? product.huongCuoi : (product.huongCuoi?.length > 15 ? product.huongCuoi.slice(0, 15) + '...' : product.huongCuoi || 'N/A') }}
-                </td>
-                <td>{{ product.dungTich || 0 }}</td>
-                <td>{{ product.totalQuantitySold || 0 }}</td>
-                <td>{{ product.soLuotTraHang || 0 }}</td>
-                <td>{{ product.soLuongTonKho || 0 }}</td>
-                <td [ngClass]="{'warning': (product.soLuongTonKho || 0) === 0 || (product.soLuongTonKho || 0) < 5}">
-                  {{ product.stockStatus || (product.soLuongTonKho === 0 ? 'Hết hàng' : product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng') }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!-- Pagination Controls -->
-        <div class="pagination" *ngIf="bestSellingProductsPage && bestSellingProductsPage.page.totalPages > 1">
-          <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center flex gap-2">
-              <li class="page-item" [class.disabled]="currentPage === 0">
-                <button class="page-link" (click)="goToPage(0)">«</button>
-              </li>
-              <li class="page-item" [class.disabled]="currentPage === 0">
-                <button class="page-link" (click)="prevPage()">‹</button>
-              </li>
-              <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === currentPage" [class.disabled]="p.isEllipsis">
-                <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
-                <span *ngIf="p.isEllipsis" class="page-link">...</span>
-              </li>
-              <li class="page-item" [class.disabled]="currentPage === bestSellingProductsPage.page.totalPages - 1">
-                <button class="page-link" (click)="nextPage()">›</button>
-              </li>
-              <li class="page-item" [class.disabled]="currentPage === bestSellingProductsPage.page.totalPages - 1">
-                <button class="page-link" (click)="goToPage(bestSellingProductsPage.page.totalPages - 1)">»</button>
-              </li>
-            </ul>
-          </nav>
-          <div class="debug-info">
-            Trang hiện tại: {{ currentPage + 1 }} / {{ bestSellingProductsPage?.page.totalPages || 0 }}, Tổng sản phẩm: {{ bestSellingProductsPage?.page.totalElements || 0 }}
-          </div>
-        </div>
-      </div>
+    <!-- Best-Selling Products -->
+<div class="best-selling-products" *ngIf="bestSellingProducts.length > 0 && !isLoading; else noProducts">
+  <h2><i class="fas fa-boxes"></i> Danh sách sản phẩm</h2>
+  <div class="table-container">
+    <table class="product-table">
+      <thead class="sticky-header">
+        <tr>
+          <th>Tên sản phẩm</th>
+          <th>Thương hiệu</th>
+          <th>Danh mục</th>
+          <th>Nhóm hương</th>
+          <th>Dung tích (ml)</th>
+          <th>
+            Số lượng bán
+            <span class="sort-icons">
+              <i
+                class="fas fa-arrow-up"
+                [class.active]="sortField === 'totalQuantitySold' && sortDirection === 'asc'"
+                (click)="sortColumn('totalQuantitySold', 'asc')"
+                title="Tăng dần"
+                data-tooltip
+              ></i>
+              <i
+                class="fas fa-arrow-down"
+                [class.active]="sortField === 'totalQuantitySold' && sortDirection === 'desc'"
+                (click)="sortColumn('totalQuantitySold', 'desc')"
+                title="Giảm dần"
+                data-tooltip
+              ></i>
+            </span>
+          </th>
+          <th>
+            Số lượt trả hàng
+            <span class="sort-icons">
+              <i
+                class="fas fa-arrow-up"
+                [class.active]="sortField === 'soLuotTraHang' && sortDirection === 'asc'"
+                (click)="sortColumn('soLuotTraHang', 'asc')"
+                title="Tăng dần"
+                data-tooltip
+              ></i>
+              <i
+                class="fas fa-arrow-down"
+                [class.active]="sortField === 'soLuotTraHang' && sortDirection === 'desc'"
+                (click)="sortColumn('soLuotTraHang', 'desc')"
+                title="Giảm dần"
+                data-tooltip
+              ></i>
+            </span>
+          </th>
+          <th>
+            Số lượng tồn kho
+            <span class="sort-icons">
+              <i
+                class="fas fa-arrow-up"
+                [class.active]="sortField === 'soLuongTonKho' && sortDirection === 'asc'"
+                (click)="sortColumn('soLuongTonKho', 'asc')"
+                title="Tăng dần"
+                data-tooltip
+              ></i>
+              <i
+                class="fas fa-arrow-down"
+                [class.active]="sortField === 'soLuongTonKho' && sortDirection === 'desc'"
+                (click)="sortColumn('soLuongTonKho', 'desc')"
+                title="Giảm dần"
+                data-tooltip
+              ></i>
+            </span>
+          </th>
+          <th>Trạng thái tồn kho</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of bestSellingProducts; let i = index">
+          <td class="truncate" (click)="toggleFullContent(i, 0)" [class.expanded]="expandedCells[i]?.[0]">
+            {{ expandedCells[i]?.[0] ? product.tenSanPham : (product.tenSanPham.length > 20 ? product.tenSanPham.slice(0, 20) + '...' : product.tenSanPham) }}
+          </td>
+          <td>{{ product.thuongHieu || 'N/A' }}</td>
+          <td>{{ product.danhMuc || 'N/A' }}</td>
+          <td class="truncate" (click)="toggleFullContent(i, 3)" [class.expanded]="expandedCells[i]?.[3]">
+            {{ expandedCells[i]?.[3] ? product.nhomHuong : (product.nhomHuong?.length > 15 ? product.nhomHuong.slice(0, 15) + '...' : product.nhomHuong || 'N/A') }}
+          </td>
+          <td>{{ product.dungTich || 0 }}</td>
+          <td>{{ product.totalQuantitySold || 0 }}</td>
+          <td>{{ product.soLuotTraHang || 0 }}</td>
+          <td>{{ product.soLuongTonKho || 0 }}</td>
+          <td [ngClass]="{'warning': (product.soLuongTonKho || 0) === 0 || (product.soLuongTonKho || 0) < 5}">
+            {{ product.stockStatus || (product.soLuongTonKho === 0 ? 'Hết hàng' : product.soLuongTonKho < 5 ? 'Sắp hết hàng' : 'Còn hàng') }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Pagination Controls -->
+  <div class="pagination" *ngIf="bestSellingProductsPage && bestSellingProductsPage.page.totalPages > 1">
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center flex gap-2">
+        <li class="page-item" [class.disabled]="currentPage === 0">
+          <button class="page-link" (click)="goToPage(0)">«</button>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === 0">
+          <button class="page-link" (click)="prevPage()">‹</button>
+        </li>
+        <li *ngFor="let p of getPaginationRange()" class="page-item" [class.active]="p.page === currentPage" [class.disabled]="p.isEllipsis">
+          <button *ngIf="!p.isEllipsis" class="page-link" (click)="goToPage(p.page)">{{ p.page + 1 }}</button>
+          <span *ngIf="p.isEllipsis" class="page-link">...</span>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === bestSellingProductsPage.page.totalPages - 1">
+          <button class="page-link" (click)="nextPage()">›</button>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === bestSellingProductsPage.page.totalPages - 1">
+          <button class="page-link" (click)="goToPage(bestSellingProductsPage.page.totalPages - 1)">»</button>
+        </li>
+      </ul>
+    </nav>
+    <div class="debug-info">
+      Trang hiện tại: {{ currentPage + 1 }} / {{ bestSellingProductsPage?.page.totalPages || 0 }}, Tổng sản phẩm: {{ bestSellingProductsPage?.page.totalElements || 0 }}
+    </div>
+  </div>
+</div>
       <ng-template #noProducts>
         <div *ngIf="!isLoading" class="no-data">
           <i class="fas fa-exclamation-triangle"></i>
