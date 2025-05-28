@@ -142,17 +142,91 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 
     long countByLuongBanAndTrangThai(Integer luongBan, Integer trangThai);
 
-    @Query(value = "SELECT SUM(tong_tien) FROM don_hang", nativeQuery = true)
+    @Query(value = """
+    SELECT SUM(adjusted_tong_tien) as totalRevenue
+    FROM (
+        SELECT 
+            dh.id,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ctdh.thanh_tien)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 1
+                )
+            )
+    ) sub
+""", nativeQuery = true)
     BigDecimal getTotalRevenue();
 
 
-    @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE luong_ban = 1 AND trang_thai = 4", nativeQuery = true)
+    @Query(value = """
+    SELECT SUM(adjusted_tong_tien) as totalRevenue
+    FROM (
+        SELECT 
+            dh.id,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ctdh.thanh_tien)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND dh.luong_ban = 1
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 1
+                )
+            )
+    ) sub
+""", nativeQuery = true)
     BigDecimal getRevenueOnline();
 
     @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE luong_ban = 0 AND trang_thai = 4", nativeQuery = true)
     BigDecimal getRevenueOffline();
 
-    @Query(value = "SELECT COUNT(*) FROM don_hang WHERE luong_ban = 1", nativeQuery = true)
+    @Query(value = """
+    SELECT COUNT(*) 
+    FROM don_hang dh
+    WHERE dh.luong_ban = 1
+        AND dh.trang_thai = 4
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            )
+        )
+""", nativeQuery = true)
     long countOnlineOrders();
 
     @Query(value = "SELECT COUNT(*) FROM don_hang WHERE luong_ban = 0", nativeQuery = true)
@@ -165,17 +239,34 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 
 
     // Số lượng đơn hàng theo ngày với khoảng thời gian
-    @Query(value = "SELECT CONVERT(DATE, dh.ngay_tao) as ngay, COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate) " +
-            "AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
-            "GROUP BY CONVERT(DATE, dh.ngay_tao) " +
-            "ORDER BY ngay", nativeQuery = true)
+    @Query(value = """
+    SELECT 
+        CONVERT(DATE, dh.ngay_tao) as ngay, 
+        COUNT(*) as soLuongDon
+    FROM don_hang dh
+    WHERE dh.trang_thai = 4
+        AND (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate)
+        AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate)
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            )
+        )
+    GROUP BY CONVERT(DATE, dh.ngay_tao)
+    ORDER BY ngay
+""", nativeQuery = true)
     List<Object[]> getSoLuongDonTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     // Số lượng đơn hàng theo tuần với năm và tuần cụ thể
     @Query(value = """
-    SET DATEFIRST 1; -- Đặt thứ Hai là ngày đầu tiên của tuần
+    SET DATEFIRST 1;
     WITH Weeks AS (
         SELECT number + 1 AS tuan
         FROM master.dbo.spt_values
@@ -190,6 +281,19 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     FROM Weeks w
     LEFT JOIN don_hang dh ON DATEPART(YEAR, dh.ngay_tao) = :year
         AND DATEPART(WEEK, dh.ngay_tao) = w.tuan
+        AND dh.trang_thai = 4
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            )
+        )
     WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
     GROUP BY w.tuan
     ORDER BY w.tuan
@@ -211,102 +315,252 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     FROM Months m
     LEFT JOIN don_hang dh ON DATEPART(YEAR, dh.ngay_tao) = :year
         AND DATEPART(MONTH, dh.ngay_tao) = m.thang
+        AND dh.trang_thai = 4
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            )
+        )
     WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
     GROUP BY m.thang
     ORDER BY m.thang
 """, nativeQuery = true)
     List<Object[]> getSoLuongDonTheoThang(@Param("year") Integer year, @Param("month") Integer month);
+
     // Số lượng đơn hàng theo năm với năm cụ thể
     @Query(value = """
-    SELECT DATEPART(YEAR, dh.ngay_tao) AS nam, 
-           COALESCE(COUNT(dh.id), 0) AS soLuongDon 
+    SELECT 
+        DATEPART(YEAR, dh.ngay_tao) AS nam, 
+        COALESCE(COUNT(dh.id), 0) AS soLuongDon 
     FROM don_hang dh 
-    WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) 
-    GROUP BY DATEPART(YEAR, dh.ngay_tao) 
+    WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
+        AND dh.trang_thai = 4
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            )
+        )
+    GROUP BY DATEPART(YEAR, dh.ngay_tao)
     ORDER BY nam
 """, nativeQuery = true)
     List<Object[]> getSoLuongDonTheoNam(@Param("year") Integer year);
+
     // Thống kê doanh thu và số đơn theo ngày với khoảng thời gian
-    @Query(value = "SELECT CONVERT(DATE, dh.ngay_tao) as ngay, " +
-            "SUM(dh.tong_tien) as tongDoanhThu, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
-            "COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate) " +
-            "AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
-            "GROUP BY CONVERT(DATE, dh.ngay_tao) " +
-            "ORDER BY ngay", nativeQuery = true)
+    @Query(value = """
+    SELECT 
+        CONVERT(DATE, dh.ngay_tao) as ngay,
+        SUM(dh.adjusted_tong_tien) as tongDoanhThu,
+        SUM(CASE WHEN dh.luong_ban = 1 THEN dh.adjusted_tong_tien ELSE 0 END) as doanhThuOnline,
+        SUM(CASE WHEN dh.luong_ban = 0 THEN dh.adjusted_tong_tien ELSE 0 END) as doanhThuOffline,
+        SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh,
+        SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy,
+        SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh,
+        SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy,
+        COUNT(*) as soLuongDon
+    FROM (
+        SELECT 
+            dh.id,
+            dh.ngay_tao,
+            dh.luong_ban,
+            dh.trang_thai,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ctdh.thanh_tien)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND (:startDate IS NULL OR CONVERT(DATE, dh.ngay_tao) >= :startDate)
+            AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 1
+                )
+            )
+    ) dh
+    GROUP BY CONVERT(DATE, dh.ngay_tao)
+    ORDER BY ngay
+""", nativeQuery = true)
     List<Object[]> thongKeTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     // Thống kê doanh thu và số đơn theo tuần với năm và tuần cụ thể
-    @Query(value =
-            "SET DATEFIRST 1; " + // Đặt thứ Hai là ngày đầu tiên của tuần
-                    "WITH Weeks AS ( " +
-                    "    SELECT DISTINCT " +
-                    "        DATEPART(YEAR, DATEADD(WEEK, number, DATEADD(YEAR, :year - 1900, 0))) as nam, " +
-                    "        number + 1 as tuan " +
-                    "    FROM master.dbo.spt_values " +
-                    "    WHERE type = 'P' " +
-                    "    AND DATEPART(YEAR, DATEADD(WEEK, number, DATEADD(YEAR, :year - 1900, 0))) = :year " +
-                    "    AND number < DATEPART(WEEK, GETDATE()) " +
-                    ") " +
-                    "SELECT " +
-                    "    w.nam, " +
-                    "    w.tuan, " +
-                    "    ISNULL(SUM(dh.tong_tien), 0) as tongDoanhThu, " +
-                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END), 0) as doanhThuOnline, " +
-                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END), 0) as doanhThuOffline, " +
-                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END), 0) as onlineHoanThanh, " +
-                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END), 0) as onlineHuy, " +
-                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END), 0) as offlineHoanThanh, " +
-                    "    ISNULL(SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END), 0) as offlineHuy, " +
-                    "    ISNULL(COUNT(dh.id), 0) as soLuongDon " +
-                    "FROM Weeks w " +
-                    "LEFT JOIN don_hang dh ON " +
-                    "    DATEPART(YEAR, dh.ngay_tao) = w.nam " +
-                    "    AND DATEPART(WEEK, dh.ngay_tao) = w.tuan " +
-                    "WHERE (:year IS NULL OR w.nam = :year) " +
-                    "    AND (:week IS NULL OR w.tuan = :week) " +
-                    "GROUP BY w.nam, w.tuan " +
-                    "ORDER BY w.nam, w.tuan",
-            nativeQuery = true)
+    @Query(value = """
+    SET DATEFIRST 1;
+    WITH Weeks AS (
+        SELECT DISTINCT 
+            DATEPART(YEAR, DATEADD(WEEK, number, DATEADD(YEAR, :year - 1900, 0))) as nam,
+            number + 1 as tuan
+        FROM master.dbo.spt_values
+        WHERE type = 'P'
+        AND DATEPART(YEAR, DATEADD(WEEK, number, DATEADD(YEAR, :year - 1900, 0))) = :year
+        AND number < DATEPART(WEEK, GETDATE())
+    )
+    SELECT 
+        w.nam,
+        w.tuan,
+        ISNULL(SUM(dh.adjusted_tong_tien), 0) as tongDoanhThu,
+        ISNULL(SUM(CASE WHEN dh.luong_ban = 1 THEN dh.adjusted_tong_tien ELSE 0 END), 0) as doanhThuOnline,
+        ISNULL(SUM(CASE WHEN dh.luong_ban = 0 THEN dh.adjusted_tong_tien ELSE 0 END), 0) as doanhThuOffline,
+        ISNULL(SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END), 0) as onlineHoanThanh,
+        ISNULL(SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END), 0) as onlineHuy,
+        ISNULL(SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END), 0) as offlineHoanThanh,
+        ISNULL(SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END), 0) as offlineHuy,
+        ISNULL(COUNT(dh.id), 0) as soLuongDon
+    FROM Weeks w
+    LEFT JOIN (
+        SELECT 
+            dh.id,
+            dh.ngay_tao,
+            dh.luong_ban,
+            dh.trang_thai,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ctdh.thanh_tien)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 1
+                )
+            )
+    ) dh ON DATEPART(YEAR, dh.ngay_tao) = w.nam
+        AND DATEPART(WEEK, dh.ngay_tao) = w.tuan
+    WHERE (:year IS NULL OR w.nam = :year)
+        AND (:week IS NULL OR w.tuan = :week)
+    GROUP BY w.nam, w.tuan
+    ORDER BY w.nam, w.tuan
+""", nativeQuery = true)
     List<Object[]> thongKeTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
+
     // Thống kê doanh thu và số đơn theo tháng với năm và tháng cụ thể
-    @Query(value = "SELECT FORMAT(dh.ngay_tao, 'yyyy-MM') as thang, " +
-            "SUM(dh.tong_tien) as tongDoanhThu, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
-            "COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
-            "GROUP BY FORMAT(dh.ngay_tao, 'yyyy-MM') " +
-            "ORDER BY thang", nativeQuery = true)
+    @Query(value = """
+    SELECT 
+        FORMAT(dh.ngay_tao, 'yyyy-MM') as thang,
+        SUM(dh.adjusted_tong_tien) as tongDoanhThu,
+        SUM(CASE WHEN dh.luong_ban = 1 THEN dh.adjusted_tong_tien ELSE 0 END) as doanhThuOnline,
+        SUM(CASE WHEN dh.luong_ban = 0 THEN dh.adjusted_tong_tien ELSE 0 END) as doanhThuOffline,
+        SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh,
+        SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy,
+        SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh,
+        SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy,
+        COUNT(*) as soLuongDon
+    FROM (
+        SELECT 
+            dh.id,
+            dh.ngay_tao,
+            dh.luong_ban,
+            dh.trang_thai,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ctdh.thanh_tien)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
+            AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 1
+                )
+            )
+    ) dh
+    GROUP BY FORMAT(dh.ngay_tao, 'yyyy-MM')
+    ORDER BY thang
+""", nativeQuery = true)
     List<Object[]> thongKeTheoThang(@Param("year") Integer year, @Param("month") Integer month);
 
     // Thống kê doanh thu và số đơn theo năm với năm cụ thể
-    @Query(value = "SELECT DATEPART(YEAR, dh.ngay_tao) as nam, " +
-            "SUM(dh.tong_tien) as tongDoanhThu, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 THEN dh.tong_tien ELSE 0 END) as doanhThuOnline, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 THEN dh.tong_tien ELSE 0 END) as doanhThuOffline, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh, " +
-            "SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy, " +
-            "COUNT(*) as soLuongDon " +
-            "FROM don_hang dh " +
-            "WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
-            "GROUP BY DATEPART(YEAR, dh.ngay_tao) " +
-            "ORDER BY nam", nativeQuery = true)
+    @Query(value = """
+    SELECT 
+        DATEPART(YEAR, dh.ngay_tao) as nam,
+        SUM(dh.adjusted_tong_tien) as tongDoanhThu,
+        SUM(CASE WHEN dh.luong_ban = 1 THEN dh.adjusted_tong_tien ELSE 0 END) as doanhThuOnline,
+        SUM(CASE WHEN dh.luong_ban = 0 THEN dh.adjusted_tong_tien ELSE 0 END) as doanhThuOffline,
+        SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as onlineHoanThanh,
+        SUM(CASE WHEN dh.luong_ban = 1 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as onlineHuy,
+        SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 4 THEN 1 ELSE 0 END) as offlineHoanThanh,
+        SUM(CASE WHEN dh.luong_ban = 0 AND dh.trang_thai = 5 THEN 1 ELSE 0 END) as offlineHuy,
+        COUNT(*) as soLuongDon
+    FROM (
+        SELECT 
+            dh.id,
+            dh.ngay_tao,
+            dh.luong_ban,
+            dh.trang_thai,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ctdh.thanh_tien)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 1
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 1
+                )
+            )
+    ) dh
+    GROUP BY DATEPART(YEAR, dh.ngay_tao)
+    ORDER BY nam
+""", nativeQuery = true)
     List<Object[]> thongKeTheoNam(@Param("year") Integer year);
     Optional<DonHang> findTopByTaiKhoanIdOrderByNgayTaoDesc(Integer id);
 
