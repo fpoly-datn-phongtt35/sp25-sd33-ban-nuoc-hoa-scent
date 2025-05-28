@@ -96,7 +96,7 @@
             <td>{{ sp.donGia | currency: 'VND' }}</td>
             <td>{{ sp.soLuongTonKho }}</td>
             <td>{{ sp.trangThai === 1 ? 'Đang bán' : 'Ngưng bán' }}</td>
-            <td class="action-buttons"  *ngIf="userRole !== 'STAFF'">
+            <td class="action-buttons" *ngIf="userRole !== 'STAFF'">
               <button
                 class="btn btn-edit"
                 (click)="openUpdateSpctModal(sp)"
@@ -109,11 +109,12 @@
                 class="btn"
                 [ngClass]="sp.trangThai === 1 ? 'btn-stop' : 'btn-resume'"
                 (click)="toggleSpctStatus(sp.idSpct, sp.trangThai)"
-                *ngIf="userRole !== 'STAFF'"
+                *ngIf="userRole !== 'STAFF' && sp.trangThai !== 2"
                 title="{{ sp.trangThai === 1 ? 'Ngưng bán' : 'Tiếp tục bán' }}"
               >
                 <i class="bi" [ngClass]="sp.trangThai === 1 ? 'bi-pause' : 'bi-play'"></i>
               </button>
+              <span *ngIf="sp.trangThai === 2" class="text-gray-500">Không thể chỉnh sửa</span>
             </td>
           </tr>
           <tr *ngIf="!spct?.length">
