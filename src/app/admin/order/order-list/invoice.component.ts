@@ -322,17 +322,28 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  async confirmStatusChange(order: any) {
+  async confirmStatusChange(order: any, newStatus?: number) {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
-    const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
-    const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
-
-    if (order.selectedStatus === 1) {
+    const currentStatus = order.selectedStatus;
+  
+    // Xác định trạng thái tiếp theo
+    let nextStatus: number;
+    if (newStatus !== undefined) {
+      nextStatus = newStatus; // Sử dụng trạng thái từ nút (ví dụ: 5 khi hủy đơn)
+    } else {
+      nextStatus = this.getNextStatusCode(currentStatus, isCK); // Sử dụng logic cũ nếu không truyền newStatus
+    }
+  
+    const nextStatusText = this.getStatusText(nextStatus);
+  
+    // Kiểm tra tồn kho nếu chuyển từ trạng thái 1
+    if (currentStatus === 1) {
       const isInventorySufficient = await this.checkInventory(order.id);
       if (!isInventorySufficient) {
         return;
       }
-
+  
+      // Nếu là thanh toán chuyển khoản (CK) và chuyển sang trạng thái 6
       if (isCK && nextStatus === 6) {
         Swal.fire({
           title: 'Kiểm tra tài khoản ngân hàng',
@@ -351,8 +362,9 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         return;
       }
     }
-
-    if ((order.selectedStatus === 2 || order.selectedStatus === 6) && nextStatus === 3) {
+  
+    // Nếu chuyển từ trạng thái 2 hoặc 6 sang 3 (Đang giao)
+    if ((currentStatus === 2 || currentStatus === 6) && nextStatus === 3) {
       if (!order.isInvoicePrinted) {
         Swal.fire({
           title: 'Chưa in hóa đơn',
@@ -362,36 +374,27 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         });
         return;
       }
-
-      Swal.fire({
-        title: 'Xác nhận chuyển trạng thái',
-        text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Hủy',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.updateStatus(order.id, nextStatus);
-        }
-      });
-    } else if (order.selectedStatus === 3) {
-      this.selectShippingOption(order.id);
-      return;
-    } else {
-      Swal.fire({
-        title: 'Xác nhận chuyển trạng thái',
-        text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Hủy',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.updateStatus(order.id, nextStatus);
-        }
-      });
     }
+  
+    // Nếu chuyển từ trạng thái 3 (Đang giao) sang 5 (Hủy đơn)
+    if (currentStatus === 3 && nextStatus === 5) {
+      this.requestCancellationReason(order.id);
+      return;
+    }
+  
+    // Xác nhận chuyển trạng thái
+    Swal.fire({
+      title: 'Xác nhận chuyển trạng thái',
+      text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Hủy',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.updateStatus(order.id, nextStatus);
+      }
+    });
   }
 
   openInvoiceModal(order: any) {

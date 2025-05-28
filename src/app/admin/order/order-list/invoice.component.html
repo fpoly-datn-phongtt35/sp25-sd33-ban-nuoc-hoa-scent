@@ -45,8 +45,8 @@
         <th>Ngày tạo</th>
         <th>Trạng thái</th>
         <th>Phương thức bán</th>
-        <th>In hóa đơn</th>
-        <th>Chuyển trạng thái</th>
+        <th *ngIf="selectedTab === 'online' && (selectedStatus === null || selectedStatus === 2 || selectedStatus === 6)">In hóa đơn</th>
+        <th *ngIf="selectedTab === 'online' && selectedStatus !== 4 && selectedStatus !== 5">Chuyển trạng thái</th>
         <th>Xem chi tiết</th>
       </tr>
     </thead>
@@ -59,13 +59,13 @@
         <td>{{ order.ngayTao | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>
           <ng-container [ngSwitch]="order.selectedStatus">
-            <div *ngSwitchCase="1" class="badge-status status-warning" title="Click để xác nhận đơn" (click)="confirmStatusChange(order)">
+            <div *ngSwitchCase="1" class="badge-status status-warning">
               {{ order.phuongThucThanhToan?.toLowerCase().includes('ck') ? '💳 Chờ Thanh Toán' : '🕒 Chờ Xác Nhận' }}
             </div>
             <div *ngSwitchCase="2" class="badge-status status-success">
               ✅ Đã Xác Nhận
             </div>
-            <div *ngSwitchCase="3" class="badge-status status-info" title="Click để hoàn thành hoặc hủy đơn" (click)="confirmStatusChange(order)">
+            <div *ngSwitchCase="3" class="badge-status status-info">
               🚚 Đang Giao
             </div>
             <div *ngSwitchCase="4" class="badge-status status-secondary disabled" title="Đơn hàng đã hoàn tất">
@@ -79,8 +79,8 @@
             </div>
           </ng-container>
         </td>
-        <td>{{ order.luongBan === 0 ? 'Offline' : 'Online' }}</td>
-        <td>
+        <td>{{ order.luongBan === 0 ? 'Đơn hàng tại quầy' : 'Đơn hàng bán trên Website' }}</td>
+        <td *ngIf="selectedTab === 'online' && (selectedStatus === null || selectedStatus === 2 || selectedStatus === 6)">
           <div *ngIf="order.selectedStatus === 2 || order.selectedStatus === 6">
             <button *ngIf="!order.isInvoicePrinted" 
                     class="btn btn-sm btn-outline-success" 
@@ -94,11 +94,39 @@
             </button>
           </div>
         </td>
-        <td>
+        <td *ngIf="selectedTab === 'online' && selectedStatus !== 4 && selectedStatus !== 5">
+          <!-- Trạng thái 1: Chờ xác nhận/Chờ thanh toán -->
+          <button *ngIf="order.selectedStatus === 1 && !order.phuongThucThanhToan?.toLowerCase().includes('ck')"
+                  class="btn btn-sm btn-outline-success" 
+                  (click)="confirmStatusChange(order)"
+                  [disabled]="order.selectedStatus === 4 || order.selectedStatus === 5">
+            <i class="bi bi-check"></i> Xác nhận
+          </button>
+          <button *ngIf="order.selectedStatus === 1 && order.phuongThucThanhToan?.toLowerCase().includes('ck')"
+                  class="btn btn-sm btn-outline-success" 
+                  (click)="confirmStatusChange(order)"
+                  [disabled]="order.selectedStatus === 4 || order.selectedStatus === 5">
+            <i class="bi bi-check"></i> Xác nhận thanh toán
+          </button>
+          <!-- Trạng thái 2 hoặc 6: Đã xác nhận/Đã thanh toán -->
           <button *ngIf="(order.selectedStatus === 2 || order.selectedStatus === 6) && order.isInvoicePrinted" 
                   class="btn btn-sm btn-outline-info" 
-                  (click)="confirmStatusChange(order)">
+                  (click)="confirmStatusChange(order)"
+                  [disabled]="order.selectedStatus === 4 || order.selectedStatus === 5">
             <i class="bi bi-truck"></i> Chuyển sang Đang giao
+          </button>
+          <!-- Trạng thái 3: Đang giao -->
+          <button *ngIf="order.selectedStatus === 3"
+                  class="btn btn-sm btn-outline-success" 
+                  (click)="confirmStatusChange(order)"
+                  [disabled]="order.selectedStatus === 4 || order.selectedStatus === 5">
+            <i class="bi bi-check"></i> Hoàn thành
+          </button>
+          <button *ngIf="order.selectedStatus === 3"
+                  class="btn btn-sm btn-outline-danger" 
+                  (click)="confirmStatusChange(order, 5)"
+                  [disabled]="order.selectedStatus === 4 || order.selectedStatus === 5">
+            <i class="bi bi-x"></i> Giao hàng thất bại
           </button>
         </td>
         <td>
