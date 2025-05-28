@@ -16,7 +16,9 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -484,6 +486,15 @@ class ProductUpdateMessage {
         } catch (Exception e) {
             throw new RuntimeException("Lỗi khi lấy trạng thái Spct: " + e.getMessage(), e);
         }
+    }
+
+    @GetMapping("/sorted-by-price")
+    public ResponseEntity<Page<SanPhamInfoDTO>> getSanPhamsSortedByPrice(
+            @RequestParam(name = "sort", defaultValue = "asc") String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<SanPhamInfoDTO> sanPhams = sps.getSanPhamsSortedByDonGia(sort, page, size);
+        return ResponseEntity.ok(sanPhams);
     }
 }
 

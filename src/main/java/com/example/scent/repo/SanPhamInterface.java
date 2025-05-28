@@ -523,6 +523,72 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
             "nh.id, nh.tenNhomHuong, th.quocGia, hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi " +
             "ORDER BY COALESCE(SUM(ctdh.soLuong), 0L) DESC")
     List<SanPhamInfoDTO2> findTopSellingProducts();
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "s.idSanPham, s.tenSanPham, MIN(spct.donGia), " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = s.idSanPham ORDER BY ha.id ASC FETCH FIRST 1 ROWS ONLY), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, s.trangThai, " +
+            "s.createDate, " +
+            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = s.idSanPham)) " +
+            "FROM SanPham s " +
+            "LEFT JOIN s.thuongHieu th " +
+            "LEFT JOIN s.danhMuc dm " +
+            "LEFT JOIN s.nhomHuong nh " +
+            "LEFT JOIN s.spcts spct " +
+            "LEFT JOIN s.huongDau hd " +
+            "LEFT JOIN s.huongGiua hg " +
+            "LEFT JOIN s.huongCuoi hc " +
+            "WHERE s.trangThai = 1 " +
+            "GROUP BY s.idSanPham, s.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
+            "nh.tenNhomHuong, th.quocGia, s.trangThai, s.createDate")
+    Page<SanPhamInfoDTO> findAllSanPhamInfo(Pageable pageable);
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "s.idSanPham, s.tenSanPham, MIN(spct.donGia) AS donGia, " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = s.idSanPham ORDER BY ha.id ASC FETCH FIRST 1 ROWS ONLY), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, s.trangThai, " +
+            "s.createDate, " +
+            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = s.idSanPham)) " +
+            "FROM SanPham s " +
+            "LEFT JOIN s.thuongHieu th " +
+            "LEFT JOIN s.danhMuc dm " +
+            "LEFT JOIN s.nhomHuong nh " +
+            "LEFT JOIN s.spcts spct " +
+            "LEFT JOIN s.huongDau hd " +
+            "LEFT JOIN s.huongGiua hg " +
+            "LEFT JOIN s.huongCuoi hc " +
+            "WHERE s.trangThai = 1 " +
+            "GROUP BY s.idSanPham, s.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
+            "nh.tenNhomHuong, th.quocGia, s.trangThai, s.createDate " +
+            "ORDER BY MIN(spct.donGia) DESC") // Đảm bảo sắp xếp giảm dần
+    Page<SanPhamInfoDTO> findAllSanPhamInfoSortedByDonGiaDesc(Pageable pageable);
+
+    @Query("SELECT new com.example.scent.dto.SanPhamInfoDTO(" +
+            "s.idSanPham, s.tenSanPham, MIN(spct.donGia) AS donGia, " +
+            "(SELECT ha.link FROM HinhAnh ha WHERE ha.sanPham.idSanPham = s.idSanPham ORDER BY ha.id ASC FETCH FIRST 1 ROWS ONLY), " +
+            "th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, " +
+            "nh.id, nh.tenNhomHuong, th.quocGia, s.trangThai, " +
+            "s.createDate, " +
+            "(SELECT COALESCE(SUM(ctdh2.soLuong), 0) FROM ChiTietDonHang ctdh2 JOIN ctdh2.spct spct3 WHERE spct3.sanPham.idSanPham = s.idSanPham)) " +
+            "FROM SanPham s " +
+            "LEFT JOIN s.thuongHieu th " +
+            "LEFT JOIN s.danhMuc dm " +
+            "LEFT JOIN s.nhomHuong nh " +
+            "LEFT JOIN s.spcts spct " +
+            "LEFT JOIN s.huongDau hd " +
+            "LEFT JOIN s.huongGiua hg " +
+            "LEFT JOIN s.huongCuoi hc " +
+            "WHERE s.trangThai = 1 " +
+            "GROUP BY s.idSanPham, s.tenSanPham, th.tenThuongHieu, dm.tenDanhMuc, " +
+            "hd.moTaHuongDau, hg.moTaHuongGiua, hc.moTaHuongCuoi, nh.id, " +
+            "nh.tenNhomHuong, th.quocGia, s.trangThai, s.createDate " +
+            "ORDER BY MIN(spct.donGia) ASC") // Đảm bảo sắp xếp tăng dần
+    Page<SanPhamInfoDTO> findAllSanPhamInfoSortedByDonGiaAsc(Pageable pageable);
 }
 
 

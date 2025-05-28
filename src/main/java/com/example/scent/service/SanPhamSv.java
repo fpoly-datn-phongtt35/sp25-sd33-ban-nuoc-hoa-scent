@@ -923,5 +923,34 @@
                     })
                     .collect(Collectors.toList());
         }
+//        public Page<SanPhamInfoDTO> getSanPhamsSortedByDonGia(String sort, int page, int size) {
+//            Sort.Direction direction = sort.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+//            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, "donGia"));
+//            return spi.findAllSanPhamInfo(pageable);
+//        }
+        public Page<SanPhamInfoDTO> getSanPhamsSortedByDonGia(String sort, int page, int size) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<SanPhamInfoDTO> sanPhams;
 
+            if ("desc".equalsIgnoreCase(sort)) {
+                sanPhams = spi.findAllSanPhamInfoSortedByDonGiaDesc(pageable);
+            } else {
+                sanPhams = spi.findAllSanPhamInfoSortedByDonGiaAsc(pageable); // Mặc định asc
+            }
+
+            // Cập nhật tongSoLuongTonKho nếu cần
+            List<Object[]> tongSoLuongList = spi.findTongSoLuongBySanPham();
+            Map<Integer, Integer> tongSoLuongMap = new HashMap<>();
+            for (Object[] result : tongSoLuongList) {
+                Integer idSanPham = ((Number) result[0]).intValue();
+                Integer tongSoLuong = ((Number) result[1]).intValue();
+                tongSoLuongMap.put(idSanPham, tongSoLuong);
+            }
+            sanPhams.getContent().forEach(dto -> {
+                Integer tongSoLuong = tongSoLuongMap.getOrDefault(dto.getIdSanPham(), 0);
+                dto.setTongSoLuongTonKho(tongSoLuong);
+            });
+
+            return sanPhams;
+        }
     }

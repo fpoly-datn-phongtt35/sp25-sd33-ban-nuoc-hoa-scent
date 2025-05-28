@@ -150,7 +150,7 @@ public class SecurityConfig {
                 "/rest/san-pham/search-price/**",
                 "/rest/san-pham/search/**",
                 "/rest/san-pham/search-danhmuc/**",
-                "rest/san-pham/sorted")
+                "rest/san-pham/sorted","/rest/san-pham/sorted-by-price/**")
             .permitAll()
 
             .requestMatchers("rest/spct/getAll", "rest/spct/getByidSanPham/**",
