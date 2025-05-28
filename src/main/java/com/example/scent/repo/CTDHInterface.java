@@ -20,9 +20,8 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
     List<ChiTietDonHang> findBySpctSanPhamIdSanPham(Integer idSanPham);
 
     @Query(value = "WITH ProductStats AS ( " +
-            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
-            "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
             "(:startDate IS NOT NULL OR :endDate IS NOT NULL) AND " +
@@ -43,9 +42,6 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
@@ -54,15 +50,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
-            "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%')) " +
+            "GROUP BY sp.id, sp.ten, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
+            "spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             ") " +
-            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
-            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
-            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "SELECT id_san_pham, ten_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "id_spct, dung_tich, so_luong_ton_kho, total_quantity_sold, stock_status, so_luot_tra_hang " +
             "FROM ProductStats " +
             "ORDER BY " +
             "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
@@ -87,25 +80,20 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "WHERE (:searchQuery IS NULL OR " +
             "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
     Long countBestSellingProductsByDateRangeWithSearch(
             @Param("startDate") String startDate,
             @Param("endDate") String endDate,
             @Param("searchQuery") String searchQuery);
+
     @Query(value = "WITH ProductStats AS ( " +
-            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
-            "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
             "(:year IS NOT NULL OR :week IS NOT NULL) AND " +
@@ -126,9 +114,6 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
@@ -137,15 +122,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
-            "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%')) " +
+            "GROUP BY sp.id, sp.ten, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
+            "spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             ") " +
-            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
-            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
-            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "SELECT id_san_pham, ten_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "id_spct, dung_tich, so_luong_ton_kho, total_quantity_sold, stock_status, so_luot_tra_hang " +
             "FROM ProductStats " +
             "ORDER BY " +
             "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
@@ -170,26 +152,20 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "WHERE (:searchQuery IS NULL OR " +
             "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
     Long countBestSellingProductsByWeekWithSearch(
             @Param("year") Integer year,
             @Param("week") Integer week,
             @Param("searchQuery") String searchQuery);
 
     @Query(value = "WITH ProductStats AS ( " +
-            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
-            "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
             "(:year IS NOT NULL OR :month IS NOT NULL) AND " +
@@ -210,9 +186,6 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
@@ -221,15 +194,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
-            "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%')) " +
+            "GROUP BY sp.id, sp.ten, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
+            "spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             ") " +
-            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
-            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
-            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "SELECT id_san_pham, ten_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "id_spct, dung_tich, so_luong_ton_kho, total_quantity_sold, stock_status, so_luot_tra_hang " +
             "FROM ProductStats " +
             "ORDER BY " +
             "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
@@ -254,26 +224,20 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "WHERE (:searchQuery IS NULL OR " +
             "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
     Long countBestSellingProductsByMonthWithSearch(
             @Param("year") Integer year,
             @Param("month") Integer month,
             @Param("searchQuery") String searchQuery);
 
     @Query(value = "WITH ProductStats AS ( " +
-            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, sp.mo_ta AS mo_ta_san_pham, " +
+            "SELECT sp.id AS id_san_pham, sp.ten AS ten_san_pham, " +
             "th.ten_thuong_hieu AS thuong_hieu, nh.ten_nhom AS nhom_huong, dm.ten_danh_muc AS danh_muc, " +
-            "hd.mota AS huong_dau, hg.mota AS huong_giua, hc.mota AS huong_cuoi, " +
             "spct.id AS id_spct, spct.dung_tich, spct.so_luong_ton_kho, " +
             "COALESCE(SUM(CASE WHEN dh.trang_thai = 4 AND " +
             "(:year IS NOT NULL) AND " +
@@ -292,9 +256,6 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "LEFT JOIN chi_tiet_don_hang ctdh ON spct.id = ctdh.id_spct " +
             "LEFT JOIN don_hang dh ON ctdh.id_don_hang = dh.id " +
             "LEFT JOIN yeu_cau_tra_hang ctth ON spct.id = ctth.id_spct " +
@@ -303,15 +264,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%')) " +
-            "GROUP BY sp.id, sp.ten, sp.mo_ta, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
-            "hd.mota, hg.mota, hc.mota, spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%')) " +
+            "GROUP BY sp.id, sp.ten, th.ten_thuong_hieu, nh.ten_nhom, dm.ten_danh_muc, " +
+            "spct.id, spct.dung_tich, spct.so_luong_ton_kho " +
             ") " +
-            "SELECT id_san_pham, ten_san_pham, mo_ta_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
-            "huong_dau, huong_giua, huong_cuoi, id_spct, dung_tich, so_luong_ton_kho, " +
-            "total_quantity_sold, stock_status, so_luot_tra_hang " +
+            "SELECT id_san_pham, ten_san_pham, thuong_hieu, nhom_huong, danh_muc, " +
+            "id_spct, dung_tich, so_luong_ton_kho, total_quantity_sold, stock_status, so_luot_tra_hang " +
             "FROM ProductStats " +
             "ORDER BY " +
             "CASE WHEN :sortField = 'totalQuantitySold' AND :sortDirection = 'asc' THEN total_quantity_sold END ASC, " +
@@ -335,17 +293,12 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id " +
             "LEFT JOIN nhom_huong nh ON sp.id_nhom_huong = nh.id " +
             "LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id " +
-            "LEFT JOIN huong_dau hd ON sp.id_huong_dau = hd.id " +
-            "LEFT JOIN huong_giua hg ON sp.id_huong_giua = hg.id " +
-            "LEFT JOIN huong_cuoi hc ON sp.id_huong_cuoi = hc.id " +
             "WHERE (:searchQuery IS NULL OR " +
             "sp.ten LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(sp.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "CAST(spct.id AS CHAR) LIKE CONCAT('%', :searchQuery, '%') OR " +
             "nh.ten_nhom LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hd.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hg.mota LIKE CONCAT('%', :searchQuery, '%') OR " +
-            "hc.mota LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
+            "dm.ten_danh_muc LIKE CONCAT('%', :searchQuery, '%'))", nativeQuery = true)
     Long countBestSellingProductsByYearWithSearch(
             @Param("year") Integer year,
             @Param("searchQuery") String searchQuery);

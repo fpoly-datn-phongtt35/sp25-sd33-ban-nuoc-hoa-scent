@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ThongKeService {
@@ -500,34 +502,23 @@ public class ThongKeService {
     }
 
     private List<BestSellingProductDTO> mapToBestSellingProductDTO(List<Object[]> results) {
-        List<BestSellingProductDTO> dtos = new ArrayList<>();
-        for (Object[] result : results) {
-            if (result.length < 15) {
-                System.out.println("Invalid result length: " + result.length);
-                continue;
-            }
-            Integer soLuongTonKho = (Integer) result[11];
-            boolean stockWarning = soLuongTonKho < 7;
-
-            dtos.add(new BestSellingProductDTO(
-                    (Integer) result[0],  // idSanPham
-                    (String) result[1],   // tenSanPham
-                    (String) result[2],   // moTaSanPham
-                    (String) result[3],   // thuongHieu
-                    (String) result[4],   // nhomHuong
-                    (String) result[5],   // danhMuc
-                    (String) result[6],   // huongDau
-                    (String) result[7],   // huongGiua
-                    (String) result[8],   // huongCuoi
-                    (String) result[13],  // stockStatus
-                    (Integer) result[9],  // idSpct
-                    (Integer) result[10], // dungTich
-                    soLuongTonKho,        // soLuongTonKho
-                    ((Number) result[12]).longValue(), // totalQuantitySold
-                    stockWarning,         // stockWarning
-                    ((Number) result[14]).longValue()  // soLuotTraHang
-            ));
-        }
-        return dtos;
+        return results.stream().map(row -> {
+            System.out.println("Row: " + Arrays.toString(row)); // Debug
+            return new BestSellingProductDTO(
+                    (Integer) row[0],   // id_san_pham
+                    (String) row[1],    // ten_san_pham
+                    (String) row[2],    // thuong_hieu
+                    (String) row[3],    // nhom_huong
+                    (String) row[4],    // danh_muc
+                    (String) row[9],    // stock_status (đúng vị trí theo log)
+                    (Integer) row[5],   // id_spct
+                    (Integer) row[6],   // dung_tich
+                    (Integer) row[7],   // so_luong_ton_kho
+                    ((Number) row[8]).longValue(), // total_quantity_sold
+                    (Integer) row[7] < 7, // stockWarning (dựa trên so_luong_ton_kho)
+                    ((Number) row[10]).longValue() // so_luot_tra_hang
+            );
+        }).collect(Collectors.toList());
     }
+
 }
