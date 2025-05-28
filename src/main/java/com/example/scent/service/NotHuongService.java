@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class NotHuongService {
     @Autowired
     private NotHuongInterface notHuongRepository;
@@ -41,17 +42,32 @@ public class NotHuongService {
         return new PageImpl<>(dtos, pageable, notHuongPage.getTotalElements());
     }
 
+    @Transactional
     public NotHuong save(NotHuongRequestDTO notHuongDTO) {
-        NotHuong notHuong = new NotHuong();
-        notHuong.setId(notHuongDTO.getId());
+        System.out.println("Muihuongid = " + notHuongDTO.getIdmuiHuong());
+        System.out.println("Received NotHuongRequestDTO: " + notHuongDTO);
+        NotHuong notHuong;
+        if (notHuongDTO.getId() != null) {
+            notHuong = notHuongRepository.findById(notHuongDTO.getId())
+                    .orElseThrow(() -> new RuntimeException("NotHuong not found with id: " + notHuongDTO.getId()));
+        } else {
+            notHuong = new NotHuong();
+        }
         notHuong.setTenNotHuong(notHuongDTO.getTenNotHuong());
         notHuong.setMoTa(notHuongDTO.getMoTa());
         if (notHuongDTO.getIdmuiHuong() != null) {
             MuiHuong muiHuong = muiHuongRepository.findById(notHuongDTO.getIdmuiHuong())
                     .orElseThrow(() -> new RuntimeException("MuiHuong not found with id: " + notHuongDTO.getIdmuiHuong()));
+            System.out.println("Muihuong"+muiHuong);
             notHuong.setMuiHuong(muiHuong);
+        } else {
+            System.out.println("Muihuong null rồi" );
+            notHuong.setMuiHuong(null);
         }
-        return notHuongRepository.save(notHuong);
+        System.out.println("Received NotHuongRequestDTO: " + notHuong);
+        NotHuong saved = notHuongRepository.save(notHuong);
+        System.out.println("Saved NotHuong: " + saved);
+        return saved;
     }
 
     public void deleteById(Integer id) {

@@ -9,7 +9,9 @@ public class NotHuongRequestDTO {
     private Integer id;
 
     private String tenNotHuong;
+    private String moTa;
 
+    private Integer idmuiHuong;
     public Integer getId() {
         return id;
     }
@@ -35,15 +37,10 @@ public class NotHuongRequestDTO {
     }
 
     public Integer getIdmuiHuong() {
-        return IdmuiHuong;
+        return idmuiHuong;
     }
 
     public void setIdmuiHuong(Integer idmuiHuong) {
-        IdmuiHuong = idmuiHuong;
+        this.idmuiHuong = idmuiHuong;
     }
-
-    private String moTa;
-
-    private Integer IdmuiHuong;
-
 }

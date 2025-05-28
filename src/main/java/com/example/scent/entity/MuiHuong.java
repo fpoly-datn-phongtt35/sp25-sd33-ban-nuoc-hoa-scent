@@ -6,7 +6,6 @@ import lombok.Data;
 
 import java.util.List;
 
-@Data
 @Entity
 @Table(name = "mui_huong")
 public class MuiHuong {
@@ -48,5 +47,53 @@ public class MuiHuong {
     }
 
     public MuiHuong() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTenMuiHuong() {
+        return tenMuiHuong;
+    }
+
+    public void setTenMuiHuong(String tenMuiHuong) {
+        this.tenMuiHuong = tenMuiHuong;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public List<NotHuong> getNotHuongs() {
+        return notHuongs;
+    }
+
+    public void setNotHuongs(List<NotHuong> notHuongs) {
+        this.notHuongs = notHuongs;
+    }
+
+    public List<NhomHuong> getNhomHuongs() {
+        return nhomHuongs;
+    }
+
+    public void setNhomHuongs(List<NhomHuong> nhomHuongs) {
+        this.nhomHuongs = nhomHuongs;
+    }
+
+    public List<SanPhamMuiHuong> getSanPhamMuiHuongs() {
+        return sanPhamMuiHuongs;
+    }
+
+    public void setSanPhamMuiHuongs(List<SanPhamMuiHuong> sanPhamMuiHuongs) {
+        this.sanPhamMuiHuongs = sanPhamMuiHuongs;
     }
 }

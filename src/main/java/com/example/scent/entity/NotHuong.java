@@ -9,14 +9,15 @@ import lombok.Data;
 @Data
 public class NotHuong {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Integer id;
 
     @Column(name = "ten_not_huong")
     private String tenNotHuong;
 
     @Column(name = "mo_ta")
     private String moTa;
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_mui_huong")
