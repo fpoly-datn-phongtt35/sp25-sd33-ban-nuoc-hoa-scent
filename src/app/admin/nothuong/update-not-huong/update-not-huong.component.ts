@@ -1,12 +1,22 @@
-import { Component, EventEmitter, Input, OnInit, Output, Directive } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, Directive, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ValidatorFn, AbstractControl, ValidationErrors, NG_VALIDATORS, Validator } from '@angular/forms';
 import { NotHuongService } from '../../../service/nothuong.service';
+import { Subscription } from 'rxjs';
 
-// Import validator từ AddNotHuongComponent (nếu cần điều chỉnh, sẽ định nghĩa lại ở đây)
+// Định nghĩa interface cho NotHuong
 export interface NotHuong {
   id?: number;
   tenNotHuong: string;
+  moTa: string;
+  muiHuongId?: number;
+  muiHuong?: MuiHuong;
+}
+
+// Định nghĩa interface cho MuiHuong
+export interface MuiHuong {
+  id: number;
+  tenMuiHuong: string;
   moTa: string;
 }
 
@@ -99,33 +109,61 @@ export class MoTaValidatorDirective implements Validator {
   templateUrl: './update-not-huong.component.html',
   styleUrls: ['./update-not-huong.component.scss']
 })
-export class UpdateNotHuongComponent implements OnInit {
-  @Input() notHuong: NotHuong = { tenNotHuong: '', moTa: '' };
+export class UpdateNotHuongComponent implements OnInit, OnDestroy {
+  @Input() notHuong: NotHuong = { tenNotHuong: '', moTa: '', muiHuongId: undefined };
   @Output() close = new EventEmitter<void>();
   @Output() notHuongUpdated = new EventEmitter<NotHuong>();
   errorMessage: string = '';
+  muiHuongs: MuiHuong[] = [];
+  private muiHuongSubscription: Subscription;
 
   constructor(private notHuongService: NotHuongService) {}
 
   ngOnInit(): void {
-    // Không cần tải muiHuongs
+    // Đăng ký lắng nghe danh sách mùi hương từ service
+    this.muiHuongSubscription = this.notHuongService.muiHuongs$.subscribe({
+      next: (muiHuongs) => {
+        this.muiHuongs = muiHuongs;
+      },
+      error: (err) => {
+        console.error('Lỗi khi tải danh sách mùi hương:', err);
+        this.muiHuongs = [];
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.muiHuongSubscription) {
+      this.muiHuongSubscription.unsubscribe();
+    }
   }
 
   onSubmit(): void {
+    if (!this.notHuong.muiHuongId) {
+      this.errorMessage = 'Vui lòng chọn một mùi hương.';
+      return;
+    }
+
     if (this.notHuong.id !== undefined) {
       this.errorMessage = '';
       const payload = {
         tenNotHuong: this.notHuong.tenNotHuong.trim(),
-        moTa: this.notHuong.moTa.trim()
+        moTa: this.notHuong.moTa.trim(),
+        idmuiHuong: this.notHuong.muiHuongId
       };
       this.notHuongService.updateNotHuong(this.notHuong.id, payload).subscribe({
         next: (updatedNotHuong) => {
+          const selectedMuiHuong = this.muiHuongs.find(mh => mh.id === updatedNotHuong.muiHuongId);
           this.notHuongUpdated.emit({
             id: updatedNotHuong.id,
             tenNotHuong: updatedNotHuong.tenNotHuong,
-            moTa: updatedNotHuong.moTa
+            moTa: updatedNotHuong.moTa,
+            muiHuongId: updatedNotHuong.muiHuongId,
+            muiHuong: selectedMuiHuong
           });
           this.close.emit();
+          // Làm mới danh sách mùi hương sau khi sửa nốt hương
+          this.notHuongService.loadMuiHuongs();
         },
         error: (err) => {
           console.error('Lỗi khi cập nhật Nốt Hương:', err);

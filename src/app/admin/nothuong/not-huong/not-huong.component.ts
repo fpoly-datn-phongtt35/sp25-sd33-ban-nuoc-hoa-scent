@@ -8,12 +8,22 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
+// Định nghĩa interface cho NotHuong
 export interface NotHuong {
   id?: number;
   tenNotHuong: string;
   moTa: string;
+  muiHuongId?: number;
+  muiHuong?: MuiHuong;
   hasProduct?: boolean;
   isNew?: boolean;
+}
+
+// Định nghĩa interface cho MuiHuong
+export interface MuiHuong {
+  id: number;
+  tenMuiHuong: string;
+  moTa: string;
 }
 
 @Component({
@@ -27,6 +37,7 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   notHuongs: NotHuong[] = [];
   filteredNotHuongs: NotHuong[] = [];
   displayedNotHuongs: NotHuong[] = [];
+  muiHuongs: MuiHuong[] = [];
   isLoading = false;
   errorMessage = '';
   showAddModal = false;
@@ -36,13 +47,14 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   notHuongToDelete: number | null = null;
 
   page: number = 0;
-  size: number = 10000; // Giữ nguyên để lấy tất cả dữ liệu
+  size: number = 10000;
   pageSize: number = 10;
   totalPages: number = 1;
   totalElements: number = 0;
   searchTerm: string = '';
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription | null = null;
+  private muiHuongSubscription: Subscription;
 
   constructor(
     private notHuongService: NotHuongService,
@@ -50,7 +62,18 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadNotHuongs();
+    // Đăng ký lắng nghe danh sách mùi hương
+    this.muiHuongSubscription = this.notHuongService.muiHuongs$.subscribe({
+      next: (muiHuongs) => {
+        this.muiHuongs = muiHuongs;
+        this.loadNotHuongs(); // Cập nhật lại danh sách nốt hương khi mùi hương thay đổi
+      },
+      error: (err) => {
+        console.error('Lỗi khi tải danh sách mùi hương:', err);
+        this.muiHuongs = [];
+      }
+    });
+
     this.searchSubscription = this.searchSubject
       .pipe(debounceTime(300))
       .subscribe((term: string) => {
@@ -63,6 +86,9 @@ export class NotHuongComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
+    }
+    if (this.muiHuongSubscription) {
+      this.muiHuongSubscription.unsubscribe();
     }
   }
 
@@ -90,9 +116,9 @@ export class NotHuongComponent implements OnInit, OnDestroy {
       );
     }
     this.totalElements = this.filteredNotHuongs.length;
-    this.totalPages = Math.ceil(this.totalElements / this.pageSize) || 1; // Đảm bảo ít nhất 1 trang
+    this.totalPages = Math.ceil(this.totalElements / this.pageSize) || 1;
     if (this.page >= this.totalPages) {
-      this.page = Math.max(0, this.totalPages - 1); // Điều chỉnh trang nếu vượt quá
+      this.page = Math.max(0, this.totalPages - 1);
     }
     this.updateDisplayedNotHuongs();
   }
@@ -111,9 +137,10 @@ export class NotHuongComponent implements OnInit, OnDestroy {
         if (res && res.content) {
           this.notHuongs = res.content.map((notHuong: NotHuong) => ({
             ...notHuong,
+            muiHuong: this.muiHuongs.find(mh => mh.id === notHuong.muiHuongId),
             isNew: false
           }));
-          this.filterNotHuongs(); // Lọc lại để cập nhật danh sách hiển thị
+          this.filterNotHuongs();
         } else {
           this.errorMessage = 'Không tìm thấy dữ liệu nốt hương.';
           this.notHuongs = [];

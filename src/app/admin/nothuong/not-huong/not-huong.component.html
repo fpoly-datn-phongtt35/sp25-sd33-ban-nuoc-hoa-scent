@@ -48,6 +48,7 @@
           <th class="p-2 text-left">ID</th>
           <th class="p-2 text-left">Tên Nốt Hương</th>
           <th class="p-2 text-left">Mô Tả</th>
+          <th class="p-2 text-left">Tên Mùi Hương</th>
           <th class="p-2 text-left">Hành Động</th>
         </tr>
       </thead>
@@ -56,6 +57,7 @@
           <td class="p-2">{{ notHuong.id }}</td>
           <td class="p-2">{{ notHuong.tenNotHuong }}</td>
           <td class="p-2">{{ notHuong.moTa }}</td>
+          <td class="p-2">{{ notHuong.muiHuong?.tenMuiHuong || 'Chưa có mùi hương' }}</td>
           <td class="p-2 space-x-1">
             <button (click)="openUpdateModal(notHuong)" class="btn btn-edit" aria-label="Sửa nốt hương">Sửa</button>
             <button *ngIf="!notHuong.hasProduct" (click)="openDeleteModal(notHuong.id)" class="btn btn-delete" aria-label="Xóa nốt hương">Xóa</button>
