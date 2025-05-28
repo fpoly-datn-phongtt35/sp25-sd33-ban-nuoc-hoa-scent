@@ -459,27 +459,27 @@ export class VourcherComponent {
     });
   }
 
-  isNotExpired(expiryDate: string): boolean {
+ isNotExpired(expiryDate: string): boolean {
     if (!expiryDate) {
-      return false;
+        return false;
     }
     const expiry = new Date(expiryDate).getTime();
     if (isNaN(expiry)) {
-      return false;
+        return false;
     }
     const now = new Date().getTime();
     return expiry > now;
-  }
+}
 
   shouldShowToggleButton(item: any): boolean {
     const show = item.trangThai === 1 && this.isNotExpired(item.ngayHetHan);
     return show;
   }
 
-  shouldShowActivateButton(item: any): boolean {
-    const show = item.trangThai === 0 || item.trangThai === 2 && this.isNotExpired(item.ngayHetHan);
+ shouldShowActivateButton(item: any): boolean {
+    const show = (item.trangThai === 0 || item.trangThai === 2) && this.isNotExpired(item.ngayHetHan);
     return show;
-  }
+}
 
   exportToExcel(): void {
     const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.phieuGiamGias.map(item => ({

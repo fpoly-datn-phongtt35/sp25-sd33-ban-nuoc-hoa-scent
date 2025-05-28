@@ -27,8 +27,7 @@
       </div>
       <div class="form-group">
         <label for="endDate">Ngày kết thúc</label>
-        <input type="date" id="endDate" class="form-control" [(ngModel)]="searchParams.ngayHetHan"
-          name="ngayHetHan" />
+        <input type="date" id="endDate" class="form-control" [(ngModel)]="searchParams.ngayHetHan" name="ngayHetHan" />
       </div>
       <button type="submit" class="btn btn-primary">Tìm kiếm</button>
       <button type="button" class="btn btn-secondary" (click)="resetSearch()">Xóa bộ lọc</button>
@@ -243,8 +242,10 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Cancel click')" [disabled]="isSending">Đóng</button>
-      <button type="button" class="btn btn-primary" (click)="sendCoupon()" [disabled]="selectedUserIds.length === 0 || isSending">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Cancel click')"
+        [disabled]="isSending">Đóng</button>
+      <button type="button" class="btn btn-primary" (click)="sendCoupon()"
+        [disabled]="selectedUserIds.length === 0 || isSending">
         <span *ngIf="isSending" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         {{ isSending ? ' Đang gửi...' : 'Gửi mã' }}
       </button>
