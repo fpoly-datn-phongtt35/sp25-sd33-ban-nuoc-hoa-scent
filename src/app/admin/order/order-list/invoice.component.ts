@@ -49,12 +49,12 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     cancelled: 5,
   };
 
- private allowedStatuses: { [key: string]: number[] } = {
-  online: [1, 2, 3, 4, 5, 6],
-  offline: [4, 5],
-  'online_ck': [1, 3,4, 5, 6], // Chuyển khoản: Chờ xác nhận, Đã thanh toán, Hoàn thành, Đã hủy
-  'online_tm': [1, 2, 3, 4, 5], // Tiền mặt: Chờ xác nhận, Đã xác nhận, Đang giao, Hoàn thành, Đã hủy
-};
+  private allowedStatuses: { [key: string]: number[] } = {
+    online: [1, 2, 3, 4, 5, 6],
+    offline: [4, 5],
+    'online_ck': [1, 3, 4, 5, 6],
+    'online_tm': [1, 2, 3, 4, 5],
+  };
 
   private webSocketSubscription: Subscription | undefined;
   private searchSubscription: Subscription | undefined;
@@ -74,7 +74,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     if (userInfo) {
       this.userID = userInfo.UserID;
       this.tenDangNhap = userInfo.sub;
-     
       this.loadCustomers().then(() => {
         this.setupSearch();
         this.webSocketService.connectAdmin();
@@ -85,7 +84,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         });
       });
     } else {
-     
       this.showErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       setTimeout(() => {
         this.router.navigate(['/login']);
@@ -105,26 +103,24 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   }
 
   private handleWebSocketUpdate(update: any): void {
-
     if (!update || !update.idDonHang || update.trangThai === undefined) {
-
       return;
     }
 
     const { idDonHang, trangThai, isNewOrder } = update;
 
     if (isNewOrder) {
-     
       this.fetchOrderDetails(idDonHang);
     } else {
-      
       const orderToUpdate = this.orders.find((order) => order.id === idDonHang);
       if (orderToUpdate) {
         orderToUpdate.selectedStatus = trangThai;
+        orderToUpdate.isInvoicePrinted = false;
         this.applySearch();
 
         if (this.selectedOrder && this.selectedOrder.id === idDonHang) {
           this.selectedOrder.selectedStatus = trangThai;
+          this.selectedOrder.isInvoicePrinted = false;
         }
 
         this.cdRef.detectChanges();
@@ -137,28 +133,27 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           showConfirmButton: false,
         });
       } else {
-        
         this.loadCustomers();
       }
     }
   }
 
   private setupSearch(): void {
-  this.searchSubscription = this.searchControl.valueChanges.pipe(
-    debounceTime(100),
-    distinctUntilChanged()
-  ).subscribe((keyword) => {
-    this.applySearch(keyword ?? '');
-  });
-}
+    this.searchSubscription = this.searchControl.valueChanges.pipe(
+      debounceTime(100),
+      distinctUntilChanged()
+    ).subscribe((keyword) => {
+      this.applySearch(keyword ?? '');
+    });
+  }
 
   private fetchOrderDetails(orderId: number): void {
     this.http.get(`http://localhost:8080/rest/don-hang/${orderId}`).subscribe({
       next: (orderDetails: any) => {
-       
         const newOrder = {
           ...orderDetails,
           selectedStatus: orderDetails.trangThai,
+          isInvoicePrinted: false,
         };
         this.orders.unshift(newOrder);
         this.orders.sort((a, b) => b.id - a.id);
@@ -175,7 +170,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         });
       },
       error: (error) => {
-        
         this.showErrorMessage('Không thể tải thông tin đơn hàng mới.');
       },
     });
@@ -212,8 +206,8 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   switchTab(tab: string): void {
     this.selectedTab = tab;
-    this.selectedPaymentMethod = "tm"; // Reset payment method filter
-    this.selectedStatus = null; // Reset status filter
+    this.selectedPaymentMethod = "tm";
+    this.selectedStatus = null;
     this.applySearch(this.searchControl.value || '');
   }
 
@@ -225,107 +219,95 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     this.selectedOrder = null;
   }
 
- private applySearch(keyword: string | null = ''): void {
-  const searchTerm = (keyword ?? '').toLowerCase().trim();
-  const statusCode = this.selectedStatus;
-  const paymentMethod = this.selectedPaymentMethod;
+  private applySearch(keyword: string | null = ''): void {
+    const searchTerm = (keyword ?? '').toLowerCase().trim();
+    const statusCode = this.selectedStatus;
+    const paymentMethod = this.selectedPaymentMethod;
 
-  // Lọc đơn hàng dựa trên từ khóa tìm kiếm
-  let filteredResults = this.orders.filter((order) => {
-    const idDonHangStringFake = this.formatOrderId(order);
-    const searchableText = [
-      idDonHangStringFake,
-      order.tenNguoiNhanHang,
-      order.sdtNguoiNhan,
-      order.diaChiGiaoHang,
-      order.ghiChu,
-      order.phuongThucThanhToan,
-      order.taiKhoan?.tenDangNhap,
-    ]
-      .filter((field) => field != null)
-      .map((field) => field.toString().toLowerCase())
-      .join(' ');
+    let filteredResults = this.orders.filter((order) => {
+      const idDonHangStringFake = this.formatOrderId(order);
+      const searchableText = [
+        idDonHangStringFake,
+        order.tenNguoiNhanHang,
+        order.sdtNguoiNhan,
+        order.diaChiGiaoHang,
+        order.ghiChu,
+        order.phuongThucThanhToan,
+        order.taiKhoan?.tenDangNhap,
+      ]
+        .filter((field) => field != null)
+        .map((field) => field.toString().toLowerCase())
+        .join(' ');
 
-    return searchTerm === '' || searchableText.includes(searchTerm);
-  });
-
-  // Nếu chỉ tìm thấy 1 đơn hàng, tự động điều chỉnh bộ lọc
-  if (filteredResults.length === 1) {
-    const order = filteredResults[0];
-    const isOnline = order.luongBan === 1;
-
-    // Cập nhật selectedTab
-    this.selectedTab = isOnline ? 'online' : 'offline';
-
-    // Cập nhật selectedPaymentMethod (chỉ áp dụng cho tab online)
-    if (isOnline) {
-      this.selectedPaymentMethod = order.phuongThucThanhToan?.toLowerCase() || 'tm';
-    } else {
-      this.selectedPaymentMethod = null; // Reset nếu là offline
-    }
-
-    // Cập nhật selectedStatus
-    this.selectedStatus = order.selectedStatus;
-
-    // Kiểm tra xem trạng thái có được phép trong tab hiện tại không
-    const statusKey = this.selectedTab === 'online' && this.selectedPaymentMethod
-      ? `online_${this.selectedPaymentMethod}`
-      : this.selectedTab;
-    const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
-
-    if (!allowedStatuses.includes(order.selectedStatus)) {
-      this.selectedStatus = null; // Reset nếu trạng thái không hợp lệ
-    }
-  } else {
-    // Nếu có nhiều hơn 1 đơn hàng hoặc không có đơn hàng nào, giữ bộ lọc hiện tại
-    const statusKey = this.selectedTab === 'online' && paymentMethod
-      ? `online_${paymentMethod}`
-      : this.selectedTab;
-    const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
-
-    filteredResults = filteredResults.filter((order) => {
-      const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
-      const matchesPaymentMethod =
-        this.selectedTab !== 'online' ||
-        paymentMethod == null ||
-        order.phuongThucThanhToan?.toLowerCase() === paymentMethod;
-      const isOnline = order.luongBan === 1;
-      const matchesTab = this.selectedTab === 'online' ? isOnline : !isOnline;
-      const matchesAllowedStatus =
-        allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
-
-      return matchesStatus && matchesPaymentMethod && matchesTab && matchesAllowedStatus;
+      return searchTerm === '' || searchableText.includes(searchTerm);
     });
+
+    if (filteredResults.length === 1) {
+      const order = filteredResults[0];
+      const isOnline = order.luongBan === 1;
+
+      this.selectedTab = isOnline ? 'online' : 'offline';
+
+      if (isOnline) {
+        this.selectedPaymentMethod = order.phuongThucThanhToan?.toLowerCase() || 'tm';
+      } else {
+        this.selectedPaymentMethod = null;
+      }
+
+      this.selectedStatus = order.selectedStatus;
+
+      const statusKey = this.selectedTab === 'online' && this.selectedPaymentMethod
+        ? `online_${this.selectedPaymentMethod}`
+        : this.selectedTab;
+      const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
+
+      if (!allowedStatuses.includes(order.selectedStatus)) {
+        this.selectedStatus = null;
+      }
+    } else {
+      const statusKey = this.selectedTab === 'online' && paymentMethod
+        ? `online_${paymentMethod}`
+        : this.selectedTab;
+      const allowedStatuses = this.allowedStatuses[statusKey] || this.allowedStatuses[this.selectedTab] || [];
+
+      filteredResults = filteredResults.filter((order) => {
+        const matchesStatus = statusCode == null || order.selectedStatus === statusCode;
+        const matchesPaymentMethod =
+          this.selectedTab !== 'online' ||
+          paymentMethod == null ||
+          order.phuongThucThanhToan?.toLowerCase() === paymentMethod;
+        const isOnline = order.luongBan === 1;
+        const matchesTab = this.selectedTab === 'online' ? isOnline : !isOnline;
+        const matchesAllowedStatus =
+          allowedStatuses.length === 0 || allowedStatuses.includes(order.selectedStatus);
+
+        return matchesStatus && matchesPaymentMethod && matchesTab && matchesAllowedStatus;
+      });
+    }
+
+    this.filteredDonhang = filteredResults;
+    this.cdRef.detectChanges();
   }
 
-  this.filteredDonhang = filteredResults;
-  this.cdRef.detectChanges();
-}
-
   private checkInventory(orderId: number): boolean {
-   
     const order = this.orders.find((o) => o.id === orderId);
     if (!order) {
-     
       this.showErrorMessage('Không tìm thấy đơn hàng để kiểm tra tồn kho.');
       return false;
     }
 
-    
     const chiTietDonHang = order.chiTietDonHangs || [];
     if (!Array.isArray(chiTietDonHang) || chiTietDonHang.length === 0) {
-    
       this.showErrorMessage('Không tìm thấy chi tiết đơn hàng để kiểm tra tồn kho.');
       return false;
     }
 
     for (const item of chiTietDonHang) {
       const soLuong = item.soLuong ?? 0;
-      const soLuongTonKho = item.spct.soLuongTonKho?? 0;
+      const soLuongTonKho = item.spct.soLuongTonKho ?? 0;
       const tenSanPham = item.spct.sanPham?.tenSanPham ?? 'Sản phẩm không xác định';
       const dungTich = item.spct.dungTich;
 
-     
       if (soLuong > soLuongTonKho) {
         Swal.fire({
           title: 'Lỗi tồn kho',
@@ -337,7 +319,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       }
     }
 
-
     return true;
   }
 
@@ -345,15 +326,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
-  
-    // Kiểm tra tồn kho nếu đang ở trạng thái "Chờ xác nhận" (1)
+
     if (order.selectedStatus === 1) {
       const isInventorySufficient = await this.checkInventory(order.id);
       if (!isInventorySufficient) {
         return;
       }
-  
-      // Nếu là thanh toán chuyển khoản (CK) và đang chuyển từ trạng thái 1 sang 6
+
       if (isCK && nextStatus === 6) {
         Swal.fire({
           title: 'Kiểm tra tài khoản ngân hàng',
@@ -372,26 +351,34 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         return;
       }
     }
-  
-    // Xử lý các trạng thái khác (2 -> 3, 6 -> 3, v.v.)
+
     if ((order.selectedStatus === 2 || order.selectedStatus === 6) && nextStatus === 3) {
-      const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
-      modalRef.componentInstance.orderData = order;
-      modalRef.result.then(
-        (result) => {
-          if (result === 'confirm') {
-            this.updateStatus(order.id, nextStatus);
-          }
-        },
-        (reason) => {
-          // Người dùng đóng modal mà không xác nhận
+      if (!order.isInvoicePrinted) {
+        Swal.fire({
+          title: 'Chưa in hóa đơn',
+          text: 'Vui lòng in hóa đơn trước khi chuyển trạng thái sang "Đang giao".',
+          icon: 'warning',
+          confirmButtonText: 'OK',
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'Xác nhận chuyển trạng thái',
+        text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Hủy',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.updateStatus(order.id, nextStatus);
         }
-      );
+      });
     } else if (order.selectedStatus === 3) {
       this.selectShippingOption(order.id);
       return;
     } else {
-      // Xử lý các trường hợp khác (ví dụ: 1 -> 2 cho tiền mặt)
       Swal.fire({
         title: 'Xác nhận chuyển trạng thái',
         text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
@@ -408,18 +395,72 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   }
 
   openInvoiceModal(order: any) {
+    if (order.isInvoicePrinted) {
+      Swal.fire({
+        title: 'Hóa đơn đã được in',
+        text: 'Hóa đơn chỉ được in một lần. Vui lòng sử dụng chức năng "Yêu cầu in lại" nếu cần.',
+        icon: 'info',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
     const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
-    modalRef.componentInstance.order = order;
+    modalRef.componentInstance.orderData = order;
     modalRef.result.then(
       (result) => {
-        if (result === 'printed') {
-          this.updateStatus(order.id, 3);
+        if (result === 'confirm') {
+          order.isInvoicePrinted = true;
+          this.cdRef.detectChanges();
+          Swal.fire({
+            title: 'In hóa đơn thành công',
+            text: 'Hóa đơn đã được in. Bạn có thể chuyển trạng thái sang "Đang giao".',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+          });
         }
       },
       (reason) => {
-        
+        // Người dùng đóng modal mà không xác nhận
       }
     );
+  }
+
+  requestReprint(order: any) {
+    Swal.fire({
+      title: 'Yêu cầu in lại hóa đơn',
+      text: `Bạn có chắc chắn muốn yêu cầu in lại hóa đơn cho đơn hàng ${this.formatOrderId(order)}? Vui lòng cung cấp lý do:`,
+      input: 'text',
+      inputPlaceholder: 'Nhập lý do (ví dụ: hóa đơn bị mất, hư hỏng...)',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy',
+      preConfirm: (reason) => {
+        if (!reason || reason.trim() === '') {
+          Swal.showValidationMessage('Lý do không được để trống!');
+        }
+        return reason;
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const reason = result.value;
+        // Ghi log lý do yêu cầu in lại (có thể gửi lên server nếu cần)
+        console.log(`Yêu cầu in lại hóa đơn cho đơn hàng ${order.id}. Lý do: ${reason}`);
+
+        // Cho phép in lại hóa đơn
+        order.isInvoicePrinted = false;
+        this.cdRef.detectChanges();
+
+        Swal.fire({
+          title: 'Yêu cầu được chấp nhận',
+          text: 'Bạn có thể in lại hóa đơn ngay bây giờ.',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
+    });
   }
 
   requestCancellationReason(orderId: number): void {
@@ -480,13 +521,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         const order = this.orders.find((o) => o.id === orderId);
         if (order) {
           order.selectedStatus = newStatus;
+          order.isInvoicePrinted = false;
         }
         this.applySearch();
         this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('Cập nhật thành công!', '', 'success');
       },
       error: (error) => {
-        
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       },
     });
@@ -512,13 +553,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
         if (order) {
           order.selectedStatus = newStatus;
           order.lyDoHuy = cancellationReason;
+          order.isInvoicePrinted = false;
         }
         this.applySearch();
         this.filterOrders(this.getFilterKey(newStatus));
         Swal.fire('✅ Thành công', 'Đơn hàng đã được chuyển trạng thái thành giao không thành công!', 'success');
       },
       error: (error) => {
-  
         this.showErrorMessage('Có lỗi xảy ra khi cập nhật trạng thái đơn hàng.');
       },
     });
@@ -542,14 +583,13 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           this.orders = response.map((order: any) => ({
             ...order,
             selectedStatus: order.trangThai,
+            isInvoicePrinted: false,
           }));
           this.orders.sort((a, b) => b.id - a.id);
-      
           this.applySearch();
           resolve();
         },
         error: (error: any) => {
-        
           this.showErrorMessage('Không thể tải danh sách đơn hàng.');
           reject(error);
         },
@@ -565,7 +605,7 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   filterByPaymentMethod(method: string | null): void {
     this.selectedPaymentMethod = method;
-    this.selectedStatus = null; // Reset status filter when payment method changes
+    this.selectedStatus = null;
     this.applySearch(this.searchControl.value || '');
   }
 
@@ -607,35 +647,35 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     }
   }
 
- getNextStatusText(currentStatus: number, isCK: boolean): string {
-  switch (currentStatus) {
-    case 1:
-      return isCK ? 'Đã Thanh Toán' : 'Đã Xác Nhận';
-    case 2:
-      return 'Đang Giao';
-    case 3:
-      return 'Đã Hoàn Thành';
-    case 6:
-      return 'Đang Giao';
-    default:
-      return 'Không xác định';
+  getNextStatusText(currentStatus: number, isCK: boolean): string {
+    switch (currentStatus) {
+      case 1:
+        return isCK ? 'Đã Thanh Toán' : 'Đã Xác Nhận';
+      case 2:
+        return 'Đang Giao';
+      case 3:
+        return 'Đã Hoàn Thành';
+      case 6:
+        return 'Đang Giao';
+      default:
+        return 'Không xác định';
+    }
   }
-}
 
- getNextStatusCode(currentStatus: number, isCK: boolean): number {
-  switch (currentStatus) {
-    case 1:
-      return isCK ? 6 : 2;
-    case 2:
-      return 3;
-    case 3:
-      return 4;
-    case 6:
-      return 3;
-    default:
-      return currentStatus;
+  getNextStatusCode(currentStatus: number, isCK: boolean): number {
+    switch (currentStatus) {
+      case 1:
+        return isCK ? 6 : 2;
+      case 2:
+        return 3;
+      case 3:
+        return 4;
+      case 6:
+        return 3;
+      default:
+        return currentStatus;
+    }
   }
-}
 
   goToPage(p: number) {
     if (p >= 0 && p < this.totalPages && p !== this.page) {
