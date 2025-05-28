@@ -895,8 +895,8 @@ itemDTO.setDungTich(spct.getDungTich());
             throw new RuntimeException("Đơn hàng không có chi tiết đơn hàng!");
         }
 
-        // Nếu trạng thái mới là "Đã xác nhận" (trangThaiMoi = 2), cập nhật tồn kho (trừ số lượng)
-        if (trangThaiMoi == 2||trangThaiMoi==6) {
+        // Xử lý cập nhật tồn kho dựa trên trạng thái
+        if (trangThaiMoi == 2 || trangThaiMoi == 6) { // Đã xác nhận hoặc Đã thanh toán
             System.out.println("⚠️ Đang cập nhật tồn kho (trừ số lượng)...");
             for (ChiTietDonHang chiTiet : chiTietDonHangs) {
                 Spct spct = chiTiet.getSpct();
@@ -916,27 +916,13 @@ itemDTO.setDungTich(spct.getDungTich());
                 }
 
                 spct.setSoLuongTonKho(soLuongMoi);
-                try {
-                    spc.save(spct);
-                    System.out.println("✅ Lưu Spct thành công: " + spct.getIdSpct());
-                } catch (Exception e) {
-                    System.out.println("❌ Lỗi khi lưu Spct: " + e.getMessage());
-                    throw new RuntimeException("Lỗi khi lưu Spct: " + e.getMessage(), e);
-                }
+                spc.save(spct);
+                System.out.println("✅ Lưu Spct thành công: " + spct.getIdSpct());
 
-                // Gửi thông báo WebSocket qua /topic/inventory
-                try {
-                    messagingTemplate.convertAndSend("/topic/inventory",
-                            new InventoryUpdateMessage(spct.getIdSpct(), soLuongMoi));
-                    System.out.println("📡 Gửi thông báo WebSocket: productId=" + spct.getIdSpct() + ", newStock=" + soLuongMoi);
-                } catch (Exception e) {
-                    System.out.println("❌ Lỗi khi gửi thông báo WebSocket: " + e.getMessage());
-                }
+                // Gửi thông báo WebSocket về số lượng tồn kho
+                sendInventoryUpdate(spct.getIdSpct(), soLuongMoi);
             }
-        }
-
-        // Nếu trạng thái mới là "Đã hủy" (trangThaiMoi = 5), cộng lại số lượng vào tồn kho
-        if (trangThaiMoi == 5) {
+        } else if (trangThaiMoi == 5) { // Đã hủy
             System.out.println("⚠️ Đang cập nhật tồn kho (cộng lại số lượng do hủy đơn)...");
             for (ChiTietDonHang chiTiet : chiTietDonHangs) {
                 Spct spct = chiTiet.getSpct();
@@ -951,22 +937,11 @@ itemDTO.setDungTich(spct.getDungTich());
                 System.out.println("🛒 Sản phẩm: " + spct.getIdSpct() + " | Tồn kho trước: " + soLuongTonKhoCu + " | Cộng: " + soLuongCong + " | Tồn kho sau: " + soLuongMoi);
 
                 spct.setSoLuongTonKho(soLuongMoi);
-                try {
-                    spc.save(spct);
-                    System.out.println("✅ Lưu Spct thành công: " + spct.getIdSpct());
-                } catch (Exception e) {
-                    System.out.println("❌ Lỗi khi lưu Spct: " + e.getMessage());
-                    throw new RuntimeException("Lỗi khi lưu Spct: " + e.getMessage(), e);
-                }
+                spc.save(spct);
+                System.out.println("✅ Lưu Spct thành công: " + spct.getIdSpct());
 
-                // Gửi thông báo WebSocket qua /topic/inventory
-                try {
-                    messagingTemplate.convertAndSend("/topic/inventory",
-                            new InventoryUpdateMessage(spct.getIdSpct(), soLuongMoi));
-                    System.out.println("📡 Gửi thông báo WebSocket: productId=" + spct.getIdSpct() + ", newStock=" + soLuongMoi);
-                } catch (Exception e) {
-                    System.out.println("❌ Lỗi khi gửi thông báo WebSocket: " + e.getMessage());
-                }
+                // Gửi thông báo WebSocket về số lượng tồn kho
+                sendInventoryUpdate(spct.getIdSpct(), soLuongMoi);
             }
         }
 
@@ -975,13 +950,8 @@ itemDTO.setDungTich(spct.getDungTich());
         if (ghiChuHuy != null && !ghiChuHuy.isEmpty()) {
             donHang.setGhiChu(ghiChuHuy);
         }
-        try {
-            dhi.save(donHang);
-            System.out.println("✅ Lưu DonHang thành công: " + donHang.getId());
-        } catch (Exception e) {
-            System.out.println("❌ Lỗi khi lưu DonHang: " + e.getMessage());
-            throw new RuntimeException("Lỗi khi lưu DonHang: " + e.getMessage(), e);
-        }
+        dhi.save(donHang);
+        System.out.println("✅ Lưu DonHang thành công: " + donHang.getId());
 
         // Lưu lịch sử thao tác
         LichSuThaoTac lichSu = new LichSuThaoTac();
@@ -993,7 +963,6 @@ itemDTO.setDungTich(spct.getDungTich());
         lichSu.setGhiChu(ghiChuHuy);
         lichSu.setThoiGianThaoTac(LocalDateTime.now());
 
-        // Định dạng thông điệp thao tác mới
         String thaoTacMessage = String.format(
                 "Cập nhật trạng thái đơn hàng từ trạng thái %s sang trạng thái %s",
                 getStatusName(trangThaiCu),
@@ -1001,16 +970,22 @@ itemDTO.setDungTich(spct.getDungTich());
         );
         lichSu.setThaoTac(thaoTacMessage);
 
-        try {
-            lichSuThaoTacInterface.save(lichSu);
-            System.out.println("✅ Lưu lịch sử thao tác thành công: MaDonHang=" + maDonHang);
-        } catch (Exception e) {
-            System.out.println("❌ Lỗi khi lưu lịch sử thao tác: " + e.getMessage());
-            throw new RuntimeException("Lỗi khi lưu lịch sử thao tác: " + e.getMessage(), e);
-        }
+        lichSuThaoTacInterface.save(lichSu);
+        System.out.println("✅ Lưu lịch sử thao tác thành công: MaDonHang=" + maDonHang);
 
         System.out.println("🔄 Commit transaction thành công!");
         return donHang;
+    }
+
+    // Phương thức gửi thông báo WebSocket về số lượng tồn kho
+    private void sendInventoryUpdate(Integer productId, Integer newStock) {
+        try {
+            messagingTemplate.convertAndSend("/topic/inventory",
+                    new InventoryUpdateMessage(productId, newStock));
+            System.out.println("📡 Gửi thông báo WebSocket: productId=" + productId + ", newStock=" + newStock);
+        } catch (Exception e) {
+            System.out.println("❌ Lỗi khi gửi thông báo WebSocket: " + e.getMessage());
+        }
     }
     public Integer tinhTrangThaiMoi(Integer trangThaiCu, String phuongThucThanhToan, String lyDoHuy) {
 

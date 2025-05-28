@@ -49,6 +49,11 @@ public class SpctSv {
             spcti.deleteAllById(spctsId);
         }
     public Spct updateTrangThai(Integer id, Integer trangThai) {
+        // Kiểm tra giá trị trangThai
+        if (trangThai != 0 && trangThai != 1) {
+            throw new IllegalArgumentException("Trạng thái chỉ có thể là 0 (Ngừng bán) hoặc 1 (Đang bán)");
+        }
+
         // Tìm Spct theo ID
         Spct spct = spcti.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm chi tiết không tồn tại"));
@@ -57,29 +62,34 @@ public class SpctSv {
         spct.setTrangThai(trangThai);
         Spct updatedSpct = spcti.save(spct);
 
-        // Lấy ID của Sp từ Spct
-        Integer spId = spct.getSanPham().getIdSanPham(); // Giả định Spct có thuộc tính idSanPham
+        // Lấy ID của SanPham từ Spct
+        Integer spId = spct.getSanPham().getIdSanPham();
 
-        // Tìm tất cả Spct thuộc cùng Sp
+        // Tìm SanPham tương ứng
+        SanPham sp = sanPhamInterface.findById(spId)
+                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+
+        // Nếu SanPham đang ở trạng thái 2 (dừng do thương hiệu), không cập nhật trạng thái
+        if (sp.getTrangThai() == 2) {
+            return updatedSpct; // Trả về Spct đã cập nhật mà không thay đổi SanPham
+        }
+
+        // Tìm tất cả Spct thuộc cùng SanPham
         List<Spct> spctList = spcti.findBySanPhamIdSanPham(spId);
 
         // Kiểm tra trạng thái của tất cả Spct
         boolean allNgungBan = spctList.stream().allMatch(s -> s.getTrangThai() == 0);
         boolean hasDangBan = spctList.stream().anyMatch(s -> s.getTrangThai() == 1);
 
-        // Tìm Sp tương ứng
-        SanPham sp = sanPhamInterface.findById(spId)
-                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
-
-        // Cập nhật trạng thái của Sp
+        // Cập nhật trạng thái của SanPham
         Integer oldSpTrangThai = sp.getTrangThai();
         if (allNgungBan) {
-            sp.setTrangThai(0); // Tất cả Spct ngừng bán -> Sp ngừng bán
+            sp.setTrangThai(0); // Tất cả Spct ngừng bán -> SanPham ngừng bán
         } else if (hasDangBan) {
-            sp.setTrangThai(1); // Có ít nhất một Spct đang bán -> Sp đang bán
+            sp.setTrangThai(1); // Có ít nhất một Spct đang bán -> SanPham đang bán
         }
 
-        // Lưu Sp nếu trạng thái thay đổi
+        // Lưu SanPham nếu trạng thái thay đổi
         if (!oldSpTrangThai.equals(sp.getTrangThai())) {
             sanPhamInterface.save(sp);
         }

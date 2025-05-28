@@ -5,6 +5,7 @@ import com.example.scent.entity.HinhAnh;
 import com.example.scent.entity.SanPham;
 import com.example.scent.entity.Spct;
 import com.example.scent.repo.SanPhamBanChayDto;
+import com.example.scent.repo.SanPhamInterface;
 import com.example.scent.repo.SpctInterface;
 import com.example.scent.service.SanPhamSv;
 import com.example.scent.service.SpctSv;
@@ -39,6 +40,8 @@ public class SanPhamCtrl {
     SanPhamSv sps;
     @Autowired
     SpctSv spcts;
+    @Autowired
+    private SanPhamInterface sanPhamInterface;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
     public SanPhamCtrl(SanPhamSv sps) {
@@ -370,24 +373,53 @@ public class SanPhamCtrl {
             @PathVariable Integer id,
             @RequestParam("trangThai") Integer trangThai
     ) {
-        // Cập nhật trạng thái chi tiết sản phẩm (Spct) nếu trạng thái là "Ngừng bán" (0)
+        // Kiểm tra giá trị trangThai
+        if (trangThai != 0 && trangThai != 1) {
+            return ResponseEntity.badRequest()
+                    .body(null); // Có thể thay bằng thông báo lỗi tùy chỉnh
+        }
+
+        // Tìm SanPham theo ID
+        SanPham sanPham = sanPhamInterface.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+
+        // Nếu SanPham đang ở trạng thái 2 (dừng do thương hiệu), không cho phép thay đổi
+        if (sanPham.getTrangThai() == 2) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(null); // Có thể thay bằng thông báo lỗi: "Sản phẩm đang bị dừng do thương hiệu"
+        }
+
+        // Lấy danh sách Spct thuộc SanPham
+        List<Spct> listSpct = spcts.findByidSanPham(id);
+
+        // Cập nhật trạng thái của tất cả Spct
         if (trangThai == 0) {
-            List<Spct> listSpct = spcts.findByidSanPham(id);
+            // Dừng bán: Chuyển tất cả Spct sang trạng thái 0
             for (Spct spct : listSpct) {
                 spcts.updateTrangThai(spct.getIdSpct(), 0);
             }
+        } else if (trangThai == 1) {
+            // Khôi phục: Chuyển tất cả Spct sang trạng thái 1
+            for (Spct spct : listSpct) {
+                spcts.updateTrangThai(spct.getIdSpct(), 1);
+            }
         }
 
-        // Cập nhật trạng thái sản phẩm
-        SanPham updatedSanPham = sps.updateTrangThai(id, trangThai);
+        // Lấy lại SanPham sau khi cập nhật Spct (trạng thái đã được updateTrangThai tự động cập nhật)
+        SanPham updatedSanPham = sanPhamInterface.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
         // Gửi thông báo qua WebSocket đến tất cả client
-        messagingTemplate.convertAndSend("/topic/productUpdates",
-                new ProductUpdateMessage(id, trangThai));
+        try {
+            messagingTemplate.convertAndSend("/topic/productUpdates",
+                    new ProductUpdateMessage(id, trangThai));
+        } catch (Exception e) {
+            // Log lỗi nếu gửi WebSocket thất bại
+            e.printStackTrace();
+        }
 
         return ResponseEntity.ok(updatedSanPham);
-
-}
+    }
 
 // Class để định dạng thông điệp WebSocket
 class ProductUpdateMessage {

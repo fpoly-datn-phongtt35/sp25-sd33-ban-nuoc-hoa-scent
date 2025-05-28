@@ -482,11 +482,12 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer>, JpaSp
 
     @Modifying
     @Transactional
-    @Query("UPDATE SanPham sp SET sp.trangThai = 0 WHERE sp.thuongHieu.id = :thuongHieuId")
-    void updateTrangThaiToInactiveByThuongHieuId(Integer thuongHieuId);
+    @Query("UPDATE SanPham sp SET sp.trangThai = 2 WHERE sp.thuongHieu.id = :thuongHieuId AND sp.trangThai = 1")
+    void updateTrangThaiToDeactivatedByThuongHieuId(Integer thuongHieuId);
+
     @Modifying
     @Transactional
-    @Query("UPDATE SanPham sp SET sp.trangThai = 1 WHERE sp.thuongHieu.id = :thuongHieuId")
+    @Query("UPDATE SanPham sp SET sp.trangThai = 1 WHERE sp.thuongHieu.id = :thuongHieuId AND sp.trangThai = 2")
     void updateTrangThaiToActiveByThuongHieuId(Integer thuongHieuId);
 
 

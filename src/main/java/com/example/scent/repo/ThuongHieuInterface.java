@@ -29,7 +29,8 @@ public interface ThuongHieuInterface extends JpaRepository<ThuongHieu, Integer> 
     // Kiểm tra xem có sản phẩm nào ngừng bán (trang_thai = 0) không
     @Query("SELECT COUNT(sp) > 0 FROM SanPham sp WHERE sp.thuongHieu.id = :thuongHieuId AND sp.trangThai = 0")
     boolean existsSanPhamInactiveByThuongHieuId(@Param("thuongHieuId") Integer thuongHieuId);
-
+    @Query("SELECT COUNT(sp) > 0 FROM SanPham sp WHERE sp.thuongHieu.id = :thuongHieuId AND sp.trangThai = 2")
+    boolean existsSanPhamWithTrangThai2ByThuongHieuId(@Param("thuongHieuId") Integer thuongHieuId);
     // Kiểm tra xem tất cả sản phẩm của thương hiệu có trang_thai = 0 không
     @Query("SELECT CASE " +
             "WHEN (SELECT COUNT(sp) FROM SanPham sp WHERE sp.thuongHieu.id = :thuongHieuId) = 0 THEN true " +

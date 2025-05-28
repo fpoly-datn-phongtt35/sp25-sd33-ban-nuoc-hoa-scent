@@ -22,6 +22,7 @@ import java.util.Map;
 public class ThuongHieuCtrl {
     @Autowired
     ThuongHieuSv thuongHieuService;
+
     @GetMapping("/getAll")
     public List<ThuongHieu> getAll() {
         return thuongHieuService.getAll();
@@ -54,15 +55,13 @@ public class ThuongHieuCtrl {
         return thuongHieuService.findAllWithStatusPaged(searchQuery, pageable);
     }
 
-
-    // Read (Get by ID)
     @GetMapping("/{id}")
-    public ResponseEntity<ThuongHieu> getThuongHieuById(@PathVariable Integer id) {
-        ThuongHieu thuongHieu = thuongHieuService.getThuongHieuById(id);
+    public ResponseEntity<ThuongHieuWithStatusDTO> getThuongHieuById(@PathVariable Integer id) {
+        ThuongHieuWithStatusDTO thuongHieu = thuongHieuService.getThuongHieuById(id);
         return ResponseEntity.ok(thuongHieu);
     }
 
-    // Update
+
     @PutMapping("/{id}")
     public ResponseEntity<ThuongHieu> updateThuongHieu(@PathVariable Integer id, @RequestBody ThuongHieu thuongHieu) {
         ThuongHieu updatedThuongHieu = thuongHieuService.updateThuongHieu(id, thuongHieu);
