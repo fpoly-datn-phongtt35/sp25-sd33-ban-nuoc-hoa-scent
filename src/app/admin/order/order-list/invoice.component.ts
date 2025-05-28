@@ -345,14 +345,35 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     const isCK = order.phuongThucThanhToan?.toLowerCase().includes('ck');
     const nextStatus = this.getNextStatusCode(order.selectedStatus, isCK);
     const nextStatusText = this.getNextStatusText(order.selectedStatus, isCK);
-
+  
+    // Kiểm tra tồn kho nếu đang ở trạng thái "Chờ xác nhận" (1)
     if (order.selectedStatus === 1) {
       const isInventorySufficient = await this.checkInventory(order.id);
       if (!isInventorySufficient) {
         return;
       }
+  
+      // Nếu là thanh toán chuyển khoản (CK) và đang chuyển từ trạng thái 1 sang 6
+      if (isCK && nextStatus === 6) {
+        Swal.fire({
+          title: 'Kiểm tra tài khoản ngân hàng',
+          text: `Vui lòng kiểm tra tài khoản ngân hàng để xác nhận thanh toán cho đơn hàng ${this.formatOrderId(order)}. Bạn có muốn xác nhận đã nhận được thanh toán không?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Xác nhận',
+          cancelButtonText: 'Hủy',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.updateStatus(order.id, nextStatus);
+          } else {
+            this.showErrorMessage('Đã hủy xác nhận thanh toán. Trạng thái đơn hàng không thay đổi.');
+          }
+        });
+        return;
+      }
     }
-
+  
+    // Xử lý các trạng thái khác (2 -> 3, 6 -> 3, v.v.)
     if ((order.selectedStatus === 2 || order.selectedStatus === 6) && nextStatus === 3) {
       const modalRef = this.modalService.open(HoadonComponent, { size: 'lg' });
       modalRef.componentInstance.orderData = order;
@@ -363,10 +384,14 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           }
         },
         (reason) => {
-          
+          // Người dùng đóng modal mà không xác nhận
         }
       );
+    } else if (order.selectedStatus === 3) {
+      this.selectShippingOption(order.id);
+      return;
     } else {
+      // Xử lý các trường hợp khác (ví dụ: 1 -> 2 cho tiền mặt)
       Swal.fire({
         title: 'Xác nhận chuyển trạng thái',
         text: `Chuyển trạng thái đơn hàng sang "${nextStatusText}"?`,
@@ -379,11 +404,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
           this.updateStatus(order.id, nextStatus);
         }
       });
-    }
-
-    if (order.selectedStatus === 3) {
-      this.selectShippingOption(order.id);
-      return;
     }
   }
 
