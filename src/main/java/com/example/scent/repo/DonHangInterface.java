@@ -18,10 +18,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-
 public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     List<DonHang> findByPhieuGiamGiaMaGiamGiaAndSdtNguoiNhan(String maGiamGia, String sdtNguoiNhan);
-    List<DonHang> findByPhieuGiamGiaMaGiamGiaAndIdAndTaiKhoanSdt(String maGiamGia,Integer id,String sdt);
+    List<DonHang> findByPhieuGiamGiaMaGiamGiaAndIdAndTaiKhoanSdt(String maGiamGia, Integer id, String sdt);
+
     @Query(value = "SELECT SUM(o.tong_tien) FROM don_hang o WHERE "
             + "(:year IS NULL OR YEAR(o.ngay_van_chuyen) = :year) "
             + "AND (:month IS NULL OR MONTH(o.ngay_van_chuyen) = :month)", nativeQuery = true)
@@ -49,7 +49,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     void updateStatusToProcessing(@Param("id") Integer id);
 
     List<DonHang> findByTrangThai(Integer trangThai);
-
 
     @Query(value = """
     SELECT 
@@ -79,10 +78,9 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
         dh.id, dh.ten_nguoi_nhan_hang, dh.dia_chi_giao_hang, dh.sdt_nguoi_nhan,
         dh.tong_tien, dh.ngay_tao, dh.ngay_van_chuyen,
         dh.phuong_thuc_van_chuyen, dh.phuong_thuc_thanh_toan,
-        sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, ctdh.so_luong,dh.trang_thai
+        sp.ten, sp.mo_ta, spct.dung_tich, spct.don_gia, ctdh.so_luong, dh.trang_thai
 """, nativeQuery = true)
     List<donhangDetailDTO> findDonHangDetailsById(@Param("id") Integer id);
-
 
     @Query("SELECT dh FROM DonHang dh " +
             "LEFT JOIN FETCH dh.chiTietDonHangs ctdh " +
@@ -93,7 +91,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 
     @Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai)")
     Page<DonHang> findByTrangThai(@Param("trangThai") Integer trangThai, Pageable pageable);
-
 
     List<DonHang> findByTaiKhoanId(Integer taiKhoanId);
 
@@ -107,8 +104,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 
     @Query("SELECT COUNT(dh) > 0 FROM DonHang dh WHERE dh.taiKhoan = :taiKhoan AND dh.phieuGiamGia = :phieuGiamGia")
     boolean existsByTaiKhoanAndPhieuGiamGia(@Param("taiKhoan") TaiKhoan taiKhoan, @Param("phieuGiamGia") PhieuGiamGia phieuGiamGia);
-
-
 
     @Query(value = "SELECT k.ten_khach_hang, sp.ten, SUM(ctdh.so_luong) AS totalQuantity " +
             "FROM khach_hang k " +
@@ -131,16 +126,43 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
             nativeQuery = true)
     List<Object[]> findTopSellingProductsCompletedOrders();
 
-
-    //===================Thống kê===========================
-
-
-    // Tổng đơn Online hoàn thành (luongBan = 1, trangThai = 4)
-
-    // Tổng số đơn hàng
+    @Query(value = """
+    SELECT COUNT(*) 
+    FROM don_hang dh
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM chi_tiet_don_hang ctdh
+        WHERE ctdh.id_don_hang = dh.id
+        GROUP BY ctdh.id_don_hang
+        HAVING SUM(ctdh.so_luong) = (
+            SELECT SUM(ycth.so_luong)
+            FROM yeu_cau_tra_hang ycth
+            WHERE ycth.id_don_hang = dh.id
+                AND ycth.trangThai = 1
+        )
+    )
+""", nativeQuery = true)
     long count();
 
-    long countByLuongBanAndTrangThai(Integer luongBan, Integer trangThai);
+    @Query(value = """
+    SELECT COUNT(*) 
+    FROM don_hang dh
+    WHERE dh.luong_ban = :luongBan 
+        AND dh.trang_thai = :trangThai
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 3
+            )
+        )
+""", nativeQuery = true)
+    long countByLuongBanAndTrangThai(@Param("luongBan") Integer luongBan, @Param("trangThai") Integer trangThai);
 
     @Query(value = """
     SELECT SUM(adjusted_tong_tien) as totalRevenue
@@ -148,12 +170,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
         SELECT 
             dh.id,
             dh.tong_tien - COALESCE((
-                SELECT SUM(ctdh.thanh_tien)
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
                 FROM chi_tiet_don_hang ctdh
                 JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
                     AND ctdh.id_don_hang = ycth.id_don_hang
                 WHERE ctdh.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             ), 0) as adjusted_tong_tien
         FROM don_hang dh
         WHERE dh.trang_thai = 4
@@ -166,13 +188,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                     SELECT SUM(ycth.so_luong)
                     FROM yeu_cau_tra_hang ycth
                     WHERE ycth.id_don_hang = dh.id
-                        AND ycth.trangThai = 1
+                        AND ycth.trangThai = 3
                 )
             )
     ) sub
 """, nativeQuery = true)
     BigDecimal getTotalRevenue();
-
 
     @Query(value = """
     SELECT SUM(adjusted_tong_tien) as totalRevenue
@@ -180,12 +201,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
         SELECT 
             dh.id,
             dh.tong_tien - COALESCE((
-                SELECT SUM(ctdh.thanh_tien)
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
                 FROM chi_tiet_don_hang ctdh
                 JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
                     AND ctdh.id_don_hang = ycth.id_don_hang
                 WHERE ctdh.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             ), 0) as adjusted_tong_tien
         FROM don_hang dh
         WHERE dh.trang_thai = 4
@@ -199,14 +220,43 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                     SELECT SUM(ycth.so_luong)
                     FROM yeu_cau_tra_hang ycth
                     WHERE ycth.id_don_hang = dh.id
-                        AND ycth.trangThai = 1
+                        AND ycth.trangThai = 3
                 )
             )
     ) sub
 """, nativeQuery = true)
     BigDecimal getRevenueOnline();
 
-    @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE luong_ban = 0 AND trang_thai = 4", nativeQuery = true)
+    @Query(value = """
+    SELECT SUM(adjusted_tong_tien) as totalRevenue
+    FROM (
+        SELECT 
+            dh.id,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 3
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND dh.luong_ban = 0
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 3
+                )
+            )
+    ) sub
+""", nativeQuery = true)
     BigDecimal getRevenueOffline();
 
     @Query(value = """
@@ -223,22 +273,64 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                 SELECT SUM(ycth.so_luong)
                 FROM yeu_cau_tra_hang ycth
                 WHERE ycth.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             )
         )
 """, nativeQuery = true)
     long countOnlineOrders();
 
-    @Query(value = "SELECT COUNT(*) FROM don_hang WHERE luong_ban = 0", nativeQuery = true)
+    @Query(value = """
+    SELECT COUNT(*) 
+    FROM don_hang dh
+    WHERE dh.luong_ban = 0
+        AND dh.trang_thai = 4
+        AND NOT EXISTS (
+            SELECT 1
+            FROM chi_tiet_don_hang ctdh
+            WHERE ctdh.id_don_hang = dh.id
+            GROUP BY ctdh.id_don_hang
+            HAVING SUM(ctdh.so_luong) = (
+                SELECT SUM(ycth.so_luong)
+                FROM yeu_cau_tra_hang ycth
+                WHERE ycth.id_don_hang = dh.id
+                    AND ycth.trangThai = 3
+            )
+        )
+""", nativeQuery = true)
     long countOfflineOrders();
 
-
-
-    @Query(value = "SELECT SUM(tong_tien) FROM don_hang WHERE trang_thai = 4 AND DATEPART(YEAR, ngay_tao) = :year", nativeQuery = true)
+    @Query(value = """
+    SELECT SUM(adjusted_tong_tien) as totalRevenue
+    FROM (
+        SELECT 
+            dh.id,
+            dh.tong_tien - COALESCE((
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
+                FROM chi_tiet_don_hang ctdh
+                JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
+                    AND ctdh.id_don_hang = ycth.id_don_hang
+                WHERE ctdh.id_don_hang = dh.id
+                    AND ycth.trangThai = 3
+            ), 0) as adjusted_tong_tien
+        FROM don_hang dh
+        WHERE dh.trang_thai = 4
+            AND DATEPART(YEAR, dh.ngay_tao) = :year
+            AND NOT EXISTS (
+                SELECT 1
+                FROM chi_tiet_don_hang ctdh
+                WHERE ctdh.id_don_hang = dh.id
+                GROUP BY ctdh.id_don_hang
+                HAVING SUM(ctdh.so_luong) = (
+                    SELECT SUM(ycth.so_luong)
+                    FROM yeu_cau_tra_hang ycth
+                    WHERE ycth.id_don_hang = dh.id
+                        AND ycth.trangThai = 3
+                )
+            )
+    ) sub
+""", nativeQuery = true)
     BigDecimal getTotalRevenueByYear(@Param("year") Integer year);
 
-
-    // Số lượng đơn hàng theo ngày với khoảng thời gian
     @Query(value = """
     SELECT 
         CONVERT(DATE, dh.ngay_tao) as ngay, 
@@ -256,7 +348,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                 SELECT SUM(ycth.so_luong)
                 FROM yeu_cau_tra_hang ycth
                 WHERE ycth.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             )
         )
     GROUP BY CONVERT(DATE, dh.ngay_tao)
@@ -264,7 +356,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> getSoLuongDonTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    // Số lượng đơn hàng theo tuần với năm và tuần cụ thể
     @Query(value = """
     SET DATEFIRST 1;
     WITH Weeks AS (
@@ -291,7 +382,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                 SELECT SUM(ycth.so_luong)
                 FROM yeu_cau_tra_hang ycth
                 WHERE ycth.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             )
         )
     WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
@@ -300,7 +391,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> getSoLuongDonTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
 
-    // Số lượng đơn hàng theo tháng với năm và tháng cụ thể
     @Query(value = """
     WITH Months AS (
         SELECT number + 1 AS thang
@@ -325,7 +415,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                 SELECT SUM(ycth.so_luong)
                 FROM yeu_cau_tra_hang ycth
                 WHERE ycth.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             )
         )
     WHERE (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year)
@@ -334,7 +424,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> getSoLuongDonTheoThang(@Param("year") Integer year, @Param("month") Integer month);
 
-    // Số lượng đơn hàng theo năm với năm cụ thể
     @Query(value = """
     SELECT 
         DATEPART(YEAR, dh.ngay_tao) AS nam, 
@@ -351,7 +440,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                 SELECT SUM(ycth.so_luong)
                 FROM yeu_cau_tra_hang ycth
                 WHERE ycth.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             )
         )
     GROUP BY DATEPART(YEAR, dh.ngay_tao)
@@ -359,7 +448,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> getSoLuongDonTheoNam(@Param("year") Integer year);
 
-    // Thống kê doanh thu và số đơn theo ngày với khoảng thời gian
     @Query(value = """
     SELECT 
         CONVERT(DATE, dh.ngay_tao) as ngay,
@@ -378,12 +466,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
             dh.luong_ban,
             dh.trang_thai,
             dh.tong_tien - COALESCE((
-                SELECT SUM(ctdh.thanh_tien)
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
                 FROM chi_tiet_don_hang ctdh
                 JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
                     AND ctdh.id_don_hang = ycth.id_don_hang
                 WHERE ctdh.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             ), 0) as adjusted_tong_tien
         FROM don_hang dh
         WHERE dh.trang_thai = 4
@@ -398,7 +486,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                     SELECT SUM(ycth.so_luong)
                     FROM yeu_cau_tra_hang ycth
                     WHERE ycth.id_don_hang = dh.id
-                        AND ycth.trangThai = 1
+                        AND ycth.trangThai = 3
                 )
             )
     ) dh
@@ -407,7 +495,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> thongKeTheoNgay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    // Thống kê doanh thu và số đơn theo tuần với năm và tuần cụ thể
     @Query(value = """
     SET DATEFIRST 1;
     WITH Weeks AS (
@@ -438,12 +525,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
             dh.luong_ban,
             dh.trang_thai,
             dh.tong_tien - COALESCE((
-                SELECT SUM(ctdh.thanh_tien)
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
                 FROM chi_tiet_don_hang ctdh
                 JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
                     AND ctdh.id_don_hang = ycth.id_don_hang
                 WHERE ctdh.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             ), 0) as adjusted_tong_tien
         FROM don_hang dh
         WHERE dh.trang_thai = 4
@@ -456,7 +543,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                     SELECT SUM(ycth.so_luong)
                     FROM yeu_cau_tra_hang ycth
                     WHERE ycth.id_don_hang = dh.id
-                        AND ycth.trangThai = 1
+                        AND ycth.trangThai = 3
                 )
             )
     ) dh ON DATEPART(YEAR, dh.ngay_tao) = w.nam
@@ -468,7 +555,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> thongKeTheoTuan(@Param("year") Integer year, @Param("week") Integer week);
 
-    // Thống kê doanh thu và số đơn theo tháng với năm và tháng cụ thể
     @Query(value = """
     SELECT 
         FORMAT(dh.ngay_tao, 'yyyy-MM') as thang,
@@ -487,12 +573,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
             dh.luong_ban,
             dh.trang_thai,
             dh.tong_tien - COALESCE((
-                SELECT SUM(ctdh.thanh_tien)
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
                 FROM chi_tiet_don_hang ctdh
                 JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
                     AND ctdh.id_don_hang = ycth.id_don_hang
                 WHERE ctdh.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             ), 0) as adjusted_tong_tien
         FROM don_hang dh
         WHERE dh.trang_thai = 4
@@ -507,7 +593,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                     SELECT SUM(ycth.so_luong)
                     FROM yeu_cau_tra_hang ycth
                     WHERE ycth.id_don_hang = dh.id
-                        AND ycth.trangThai = 1
+                        AND ycth.trangThai = 3
                 )
             )
     ) dh
@@ -516,7 +602,6 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
 """, nativeQuery = true)
     List<Object[]> thongKeTheoThang(@Param("year") Integer year, @Param("month") Integer month);
 
-    // Thống kê doanh thu và số đơn theo năm với năm cụ thể
     @Query(value = """
     SELECT 
         DATEPART(YEAR, dh.ngay_tao) as nam,
@@ -535,12 +620,12 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
             dh.luong_ban,
             dh.trang_thai,
             dh.tong_tien - COALESCE((
-                SELECT SUM(ctdh.thanh_tien)
+                SELECT SUM(ycth.so_luong * ctdh.don_gia)
                 FROM chi_tiet_don_hang ctdh
                 JOIN yeu_cau_tra_hang ycth ON ctdh.id_spct = ycth.id_spct 
                     AND ctdh.id_don_hang = ycth.id_don_hang
                 WHERE ctdh.id_don_hang = dh.id
-                    AND ycth.trangThai = 1
+                    AND ycth.trangThai = 3
             ), 0) as adjusted_tong_tien
         FROM don_hang dh
         WHERE dh.trang_thai = 4
@@ -554,7 +639,7 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
                     SELECT SUM(ycth.so_luong)
                     FROM yeu_cau_tra_hang ycth
                     WHERE ycth.id_don_hang = dh.id
-                        AND ycth.trangThai = 1
+                        AND ycth.trangThai = 3
                 )
             )
     ) dh
@@ -562,9 +647,8 @@ public interface DonHangInterface extends JpaRepository<DonHang, Integer> {
     ORDER BY nam
 """, nativeQuery = true)
     List<Object[]> thongKeTheoNam(@Param("year") Integer year);
-    Optional<DonHang> findTopByTaiKhoanIdOrderByNgayTaoDesc(Integer id);
 
+    Optional<DonHang> findTopByTaiKhoanIdOrderByNgayTaoDesc(Integer id);
 
     List<DonHang> findByTaiKhoan(TaiKhoan taiKhoan);
 }
-
