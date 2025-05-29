@@ -38,8 +38,8 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "AND (:endDate IS NULL OR CONVERT(DATE, dh.ngay_tao) <= :endDate) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_ordered, " +
             "COALESCE(SUM(COALESCE(rs.returned_quantity, 0)), 0) AS total_returned, " +
-            "CASE WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
+            "CASE WHEN spct.so_luong_ton_kho = 0 THEN N'Hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN N'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -121,8 +121,8 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "AND (:week IS NULL OR DATEPART(WEEK, dh.ngay_tao) = :week) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_ordered, " +
             "COALESCE(SUM(COALESCE(rs.returned_quantity, 0)), 0) AS total_returned, " +
-            "CASE WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
+            "CASE WHEN spct.so_luong_ton_kho = 0 THEN N'Hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN N'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -203,8 +203,8 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "AND (:month IS NULL OR DATEPART(MONTH, dh.ngay_tao) = :month) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_ordered, " +
             "COALESCE(SUM(COALESCE(rs.returned_quantity, 0)), 0) AS total_returned, " +
-            "CASE WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
+            "CASE WHEN spct.so_luong_ton_kho = 0 THEN N'Hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN N'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
@@ -284,8 +284,8 @@ public interface CTDHInterface extends JpaRepository<ChiTietDonHang, Integer> {
             "AND (:year IS NULL OR DATEPART(YEAR, dh.ngay_tao) = :year) " +
             "THEN ctdh.so_luong ELSE 0 END), 0) AS total_ordered, " +
             "COALESCE(SUM(COALESCE(rs.returned_quantity, 0)), 0) AS total_returned, " +
-            "CASE WHEN spct.so_luong_ton_kho = 0 THEN 'Hết hàng' " +
-            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN 'Sắp hết hàng' " +
+            "CASE WHEN spct.so_luong_ton_kho = 0 THEN N'Hết hàng' " +
+            "WHEN spct.so_luong_ton_kho BETWEEN 1 AND 5 THEN N'Sắp hết hàng' " +
             "ELSE 'Còn hàng' END AS stock_status " +
             "FROM san_pham sp " +
             "JOIN spct spct ON sp.id = spct.id_san_pham " +
