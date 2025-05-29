@@ -662,52 +662,80 @@ public class TraHangService {
 
         Integer trangThaiCu = yeuCau.getTrangThai();
 
-        if (yeuCau.getTinhTrangHang().equals("NguyenVen")) {
-            Integer soLuongTra = yeuCau.getSoLuong();
-            if (soLuongTra == null || soLuongTra <= 0) {
-                throw new CustomException(
-                        "Số lượng sản phẩm trả không hợp lệ.",
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_SO_LUONG"
-                );
-            }
+        Integer soLuongTra = yeuCau.getSoLuong();
+        if (soLuongTra == null || soLuongTra <= 0) {
+            throw new CustomException(
+                    "Số lượng sản phẩm trả không hợp lệ.",
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_SO_LUONG"
+            );
+        }
 
-            if (yeuCau.getSpct() == null) {
-                throw new CustomException(
-                        "Sản phẩm chi tiết không hợp lệ.",
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_SPCT"
-                );
-            }
-            Optional<Spct> spctOpt = spctRepo.findById(yeuCau.getSpct().getIdSpct());
-            if (spctOpt.isEmpty()) {
-                throw new CustomException(
-                        "Không tìm thấy sản phẩm chi tiết.",
-                        HttpStatus.NOT_FOUND,
-                        "SPCT_NOT_FOUND"
-                );
-            }
-            Spct spct = spctOpt.get();
+        // Kiểm tra sản phẩm chi tiết
+        if (yeuCau.getSpct() == null) {
+            throw new CustomException(
+                    "Sản phẩm chi tiết không hợp lệ.",
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_SPCT"
+            );
+        }
+        Optional<Spct> spctOpt = spctRepo.findById(yeuCau.getSpct().getIdSpct());
+        if (spctOpt.isEmpty()) {
+            throw new CustomException(
+                    "Không tìm thấy sản phẩm chi tiết.",
+                    HttpStatus.NOT_FOUND,
+                    "SPCT_NOT_FOUND"
+            );
+        }
+        Spct spct = spctOpt.get();
+
+        // Xử lý theo trạng thái hàng
+        if (yeuCau.getTinhTrangHang().equals("NguyenVen")) {
+            // Trường hợp hàng nguyên vẹn: Cộng số lượng vào tồn kho của Spct
             Integer currentSoLuongSpct = spct.getSoLuongTonKho() != null ? spct.getSoLuongTonKho() : 0;
             spct.setSoLuongTonKho(currentSoLuongSpct + soLuongTra);
             spctRepo.save(spct);
+        } else if (yeuCau.getTinhTrangHang().equals("HuHong")) {
+            // Trường hợp hàng hư hỏng: Trừ số lượng trong YeuCauTraHang
+            Integer soLuongHienTai = yeuCau.getSoLuong();
+            if (soLuongHienTai < soLuongTra) {
+                throw new CustomException(
+                        "Số lượng trả vượt quá số lượng hiện có trong yêu cầu trả hàng.",
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_SO_LUONG_EXCEEDED"
+                );
+            }
+            yeuCau.setSoLuong(soLuongHienTai - soLuongTra);
+            if (yeuCau.getSoLuong() <= 0) {
+                yeuCau.setSoLuong(0);
+                yeuCau.setTrangThai(3); // Hoàn thành yêu cầu nếu số lượng trả về 0
+            }
+        } else {
+            throw new CustomException(
+                    "Tình trạng hàng không hợp lệ. Chỉ chấp nhận 'NguyenVen' hoặc 'HuHong'.",
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_TINH_TRANG_HANG"
+            );
         }
 
-        yeuCau.setTrangThai(3); // Hoàn thành
+        // Cập nhật trạng thái yêu cầu trả hàng nếu chưa được xử lý ở trên
+        if (!yeuCau.getTinhTrangHang().equals("HuHong") || yeuCau.getSoLuong() == 0) {
+            yeuCau.setTrangThai(3); // Hoàn thành
+        }
         yeuCauTraHangRepo.save(yeuCau);
 
+        // Lưu lịch sử thao tác
         LichSuTraHang lichSu = new LichSuTraHang();
         lichSu.setYeuCauTraHang(yeuCau);
         lichSu.setThaoTac(3); // Hoàn thành
         lichSu.setThoiGianThaoTac(LocalDateTime.now());
         lichSu.setTaiKhoan(taiKhoanOpt.get());
         lichSu.setTrangThaiCu(trangThaiCu);
-        lichSu.setTrangThaiMoi(3);
+        lichSu.setTrangThaiMoi(yeuCau.getTrangThai());
         lichSuTraHangRepo.save(lichSu);
 
         return yeuCau;
     }
-
     public Page<YeuCauTraHang> getYeuCauByTinhTrangHang(String tinhTrangHang, Pageable pageable) {
         if (!tinhTrangHang.equals("NguyenVen") && !tinhTrangHang.equals("HuHong")) {
             throw new CustomException(

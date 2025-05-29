@@ -1175,7 +1175,6 @@ itemDTO.setDungTich(spct.getDungTich());
         // Chuyển đổi DonHang thành DonHangResponseDTO
         return DonHangResponseDTO.fromEntity(donHang);
     }
-
     public DonHangResponseDTO updateOrderAddress(Integer orderId, UpdateOrderAddressDTO updateRequest) throws Exception {
         // Tìm đơn hàng theo ID
         DonHang donhang = dhi.findById(orderId)
@@ -1186,7 +1185,11 @@ itemDTO.setDungTich(spct.getDungTich());
             throw new RuntimeException("⚠️ Lỗi: Không thể cập nhật địa chỉ vì đơn hàng không ở trạng thái chờ xác nhận!");
         }
 
-        // Kiểm tra và cập nhật địa chỉ giao hàng (tỉnh, quận, phường)
+        // Lấy tổng tiền và phí vận chuyển cũ trước khi cập nhật
+        BigDecimal tongTienHienTai = donhang.getTongTien();
+        BigDecimal phiVanChuyenCu = donhang.getPhiVanChuyen() != null ? donhang.getPhiVanChuyen() : BigDecimal.ZERO;
+
+        // Cập nhật địa chỉ giao hàng (tỉnh, quận, phường) nếu có
         if (updateRequest.getMaTinh() != null && updateRequest.getMaQuan() != null && updateRequest.getMaPhuong() != null) {
             // Kiểm tra tỉnh, quận, phường
             Map<Integer, String> tinhList = DiaChiApi.callGetTinhThanhAPI();
@@ -1230,23 +1233,19 @@ itemDTO.setDungTich(spct.getDungTich());
             if (newPhiVanChuyen.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("⚠️ Lỗi: Phí vận chuyển mới không hợp lệ!");
             }
-
-            // Cập nhật phí vận chuyển mới
             donhang.setPhiVanChuyen(newPhiVanChuyen);
 
-            // Tính lại tổng tiền: thanhTienSauGiam + phiVanChuyen mới
-            BigDecimal thanhTienGoc = BigDecimal.ZERO;
-            for (ChiTietDonHang chiTiet : donhang.getChiTietDonHangs()) {
-                thanhTienGoc = thanhTienGoc.add(chiTiet.getThanhTien());
+            // Tính lại tổng tiền: Lấy tổng tiền hiện tại - phí vận chuyển cũ + phí vận chuyển mới
+            BigDecimal newTongTien = tongTienHienTai
+                    .subtract(phiVanChuyenCu)
+                    .add(newPhiVanChuyen);
+
+            // Đảm bảo tổng tiền không âm
+            if (newTongTien.compareTo(BigDecimal.ZERO) < 0) {
+                newTongTien = BigDecimal.ZERO;
             }
 
-            BigDecimal thanhTienSauGiam = thanhTienGoc;
-            if (donhang.getSoTienGiam() != null && donhang.getSoTienGiam().compareTo(BigDecimal.ZERO) > 0) {
-                thanhTienSauGiam = thanhTienGoc.subtract(donhang.getSoTienGiam());
-            }
-
-            // Tổng tiền mới = thanhTienSauGiam + phí vận chuyển mới
-            BigDecimal newTongTien = thanhTienSauGiam.add(newPhiVanChuyen);
+            // Cập nhật tổng tiền mới
             donhang.setTongTien(newTongTien);
         }
 
@@ -1262,9 +1261,9 @@ itemDTO.setDungTich(spct.getDungTich());
 
         // Lưu đơn hàng đã cập nhật
         DonHang updatedOrder = dhi.save(donhang);
+
         return DonHangResponseDTO.fromEntity(updatedOrder);
     }
-
     public List<DonHang> findByIdTk(Integer idTaiKhoan) {
         TaiKhoan taiKhoan=tki.findByIdTk(idTaiKhoan);
         return dhi.findByTaiKhoan(taiKhoan);
