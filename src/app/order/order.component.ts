@@ -358,66 +358,53 @@ export class OrderComponent implements OnInit, OnDestroy {
   }
 
   getQuyDoiKichThuocVaCanNang(soLuong: number) {
-    const weight = soLuong * 150;
-    let length = 12, width = 6, height = 6;
-    let discountRate = 0;
-
-    if (soLuong <= 1) { /* unchanged */ }
-    else if (soLuong <= 4) { length = 15; width = 10; height = 7; }
-    else if (soLuong <= 8) { length = 20; width = 12; height = 8; }
-    else if (soLuong <= 12) { length = 22; width = 14; height = 10; }
-    else if (soLuong <= 20) { length = 26; width = 18; height = 12; }
-    else {
-      const multiplier = Math.ceil(soLuong / 20);
-      length = 26 * multiplier; width = 18 * multiplier; height = 12 * multiplier;
-    }
-
-    const volWeight = (length * width * height) / 5;
-    const usedWeight = Math.max(weight, volWeight);
-    if (soLuong >= 10) discountRate = 0.2;
-    else if (soLuong >= 6) discountRate = 0.15;
-    else if (soLuong >= 3) discountRate = 0.1;
-
-    return { weight: Math.ceil(usedWeight), length, width, height, discountRate };
+    const weight = 1000; // Trọng lượng cố định: 1000g
+    const length = 20;   // Chiều dài cố định: 20cm
+    const width = 20;    // Chiều rộng cố định: 20cm
+    const height = 20;   // Chiều cao cố định: 20cm
+    const trungBinhCacCanh = Math.round((length + width + height) / 3); // Trung bình các cạnh
+  
+    return { weight, length, width, height, trungBinhCacCanh };
   }
 
   tinhPhiVanChuyen() {
     const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
-    const { weight, length, width, height, discountRate } = this.getQuyDoiKichThuocVaCanNang(soLuong);
-
+    const { weight, length, width, height, trungBinhCacCanh } = this.getQuyDoiKichThuocVaCanNang(soLuong);
+  
     if (!this.selectedTinh || !this.selectedHuyen || !this.selectedXa) {
       this.shippingFee = 0;
       this.shippingDiscount = 0;
       this.calculateTotals();
       return;
     }
-
+  
     const body = {
       from_district_id: 1482,
-      to_ward_code: String(this.selectedXa?.id || ''),
+      idMaTinh: Number(this.selectedTinh?.id || 0), // Thêm idMaTinh từ selectedTinh
+      idQuanHuyen: Number(this.selectedHuyen?.id || 0), // Thêm idQuanHuyen từ selectedHuyen
+      idPhuongXa: String(this.selectedXa?.id || ''), // Thêm idPhuongXa từ selectedXa
+      to_ward_code: String(this.selectedXa?.id || ''), // Giữ nguyên to_ward_code
+      service_type_id: 2,
       weight,
       length,
       width,
       height,
-      idMaTinh: this.selectedTinh?.id || 0,
-      idQuanHuyen: this.selectedHuyen?.id || 0,
-      idPhuongXa: this.selectedXa?.id || 0,
       soLuongSanPham: soLuong,
-      trungBinhCacCanh: Math.round((length + width + height) / 3),
+      trungBinhCacCanh,
     };
-
+  
     const sub = this.diaChiService.tinhPhiVanChuyen(body).subscribe({
       next: (fee) => {
-        const giamPhi = Math.round(fee * discountRate);
-        this.shippingDiscount = giamPhi;
-        this.shippingFee = fee - giamPhi;
+        this.shippingFee = fee;
+        this.shippingDiscount = 0;
         this.calculateTotals();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.shippingFee = 0;
         this.shippingDiscount = 0;
         this.calculateTotals();
-        Swal.fire('Lỗi', 'Không thể tính phí vận chuyển. Vui lòng thử lại!', 'error');
+        Swal.fire('Lỗi', 'Không thể tính phí vận chuyển. Vui lòng thử lại! Chi tiết: ' + err.message, 'error');
       },
     });
     this.subscriptions.push(sub);
@@ -428,9 +415,7 @@ export class OrderComponent implements OnInit, OnDestroy {
     this.finalAmount = this.totalProductPrice - this.discount + this.shippingFee;
     if (this.finalAmount < 0) {
       this.finalAmount = 0;
-
     }
-
     this.cdr.markForCheck();
   }
 
@@ -643,10 +628,10 @@ export class OrderComponent implements OnInit, OnDestroy {
 
   async onSubmit() {
     if (!this.validateOrderData()) return;
-
+  
     const soLuong = this.selectedProducts.reduce((sum, item) => sum + item.quantity, 0);
-    const { length, width, height } = this.getQuyDoiKichThuocVaCanNang(soLuong);
-
+    const { length, width, height, trungBinhCacCanh } = this.getQuyDoiKichThuocVaCanNang(soLuong);
+  
     const payload = {
       ...this.orderData,
       diaChiGiaoHang: `${this.orderData.diachiChiTiet}, ${this.fullAddress}`,
@@ -660,17 +645,16 @@ export class OrderComponent implements OnInit, OnDestroy {
       maTinh: String(this.selectedTinh?.id || ''),
       maQuan: String(this.selectedHuyen?.id || ''),
       maPhuong: String(this.selectedXa?.id || ''),
-      trungBinhCacCanh: Math.round((length + width + height) / 3),
+      trungBinhCacCanh, // Sử dụng giá trị từ getQuyDoiKichThuocVaCanNang
       trangThai: this.orderData.phuongThucThanhToan === 'tm' ? 1 : 0,
     };
-
+  
     Swal.fire({ title: 'Đang xử lý...', text: 'Vui lòng chờ!', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
+  
     try {
       const orderRes = await this.orderService.createOrder(payload).toPromise();
       await this.handlePostOrderSuccess(orderRes);
     } catch (err) {
-
       Swal.close();
       Swal.fire('Lỗi', err.error?.message || 'Lỗi khi đặt đơn hàng.', 'error');
     }

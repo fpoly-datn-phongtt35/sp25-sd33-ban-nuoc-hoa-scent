@@ -55,7 +55,7 @@ export class EditVoucherComponent implements OnInit {
         Validators.maxLength(50),
         noSpecialCharactersOrOnlySpacesValidator() // Thêm validator tùy chỉnh
       ]],
-      giaTriGiam: [0, [Validators.required, Validators.min(0.1), Validators.max(0.9)]], // Updated max to 0.9 (90%)
+      giaTriGiam: [0, [Validators.required, Validators.min(0.01), Validators.max(0.99)]], // Updated max to 0.9 (90%)
       ngayBatDau: ['', Validators.required],
       gioPhutBatDau: ['', Validators.required],
       ngayHetHan: ['', Validators.required],
@@ -100,13 +100,19 @@ export class EditVoucherComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const value = input.value;
     const numericValue = value ? parseFloat(value) : null;
-    const decimalValue = numericValue ? numericValue / 100 : null;
-    if (decimalValue !== null && (decimalValue < 0.1 || decimalValue > 0.9)) {
+    let decimalValue = numericValue ? numericValue / 100 : null;
+  
+    if (decimalValue === null) {
+      this.voucherForm.get('giaTriGiam')?.setValue(null);
+      this.voucherForm.get('giaTriGiam')?.setErrors({ required: true });
+    } else if (numericValue < 1 || numericValue > 99) {
+      this.voucherForm.get('giaTriGiam')?.setValue(decimalValue, { emitEvent: false });
       this.voucherForm.get('giaTriGiam')?.setErrors({ range: true });
     } else {
       this.voucherForm.get('giaTriGiam')?.setValue(decimalValue, { emitEvent: false });
-      this.voucherForm.get('giaTriGiam')?.markAsTouched();
+      this.voucherForm.get('giaTriGiam')?.setErrors(null); // Xóa lỗi nếu giá trị hợp lệ
     }
+    this.voucherForm.get('giaTriGiam')?.markAsTouched();
     this.cdr.detectChanges();
   }
 

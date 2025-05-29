@@ -5,8 +5,9 @@ import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
 import { TraHangService, Page } from '../service/TraHangService';
 import { TokenService } from '../service/token.service';
-import { YeuCauTraHang } from '../service/response/YeuCauTraHang';
+import { YeuCauTraHang, SanPhamChiTietTraHang } from '../service/response/YeuCauTraHang';
 import Swal from 'sweetalert2';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-admin-tra-hang',
@@ -54,7 +55,26 @@ export class AdminTraHangComponent implements OnInit {
       });
     }
   }
-
+  getTinhTrangHangText(tinhTrangHang: string): string {
+    switch (tinhTrangHang?.toLowerCase()) {
+      case 'huhong':
+        return 'Hư Hỏng';
+      case 'nguyenven':
+        return 'Nguyên Vẹn';
+      default:
+        return tinhTrangHang || 'Không xác định';
+    }
+  }
+  getHinhThucTraHangText(hinhThucTraHang: string): string {
+    switch (hinhThucTraHang?.toLowerCase()) {
+      case 'taicuahang':
+        return 'Tại Cửa hàng';
+      case 'quavanchuyen':
+        return 'Qua Vận Chuyển';
+      default:
+        return hinhThucTraHang || 'Không xác định';
+    }
+  }
   loadYeuCauTraHang(): void {
     this.isLoading = true;
     this.cdr.detectChanges();
@@ -66,7 +86,34 @@ export class AdminTraHangComponent implements OnInit {
           this.totalPages = response.page.totalPages || 0;
           this.errorMessage = null;
           this.isLoading = false;
-         
+
+          // Lấy thông tin spct (bao gồm tenSanPham) cho từng yeuCau
+          if (this.yeuCauPage.content && this.yeuCauPage.content.length) {
+            this.yeuCauPage.content.forEach(yeuCau => {
+              if (yeuCau.donHang?.id && yeuCau.spct?.idSpct) {
+                this.traHangService.getSpctByDonHang(yeuCau.donHang.id.toString()).subscribe({
+                  next: (spctDetails) => {
+                    const matchingSpct = spctDetails.find(spct => spct.idSpct === yeuCau.spct?.idSpct);
+                    if (matchingSpct) {
+                      yeuCau.spct = {
+                        idSpct: yeuCau.spct.idSpct,
+                        tenSanPham: matchingSpct.tenSanPham,
+                        maxQuantity: matchingSpct.maxQuantity,
+                        dungTich: matchingSpct.dungTich,
+                        hasReturnRequest: matchingSpct.hasReturnRequest,
+                        trangThai: matchingSpct.trangThai
+                      };
+                    }
+                    this.cdr.detectChanges(); // Cập nhật giao diện
+                  },
+                  error: (error) => {
+                    console.error(`Lỗi khi tải thông tin spct cho đơn hàng ${yeuCau.donHang.id}:`, error);
+                  }
+                });
+              }
+            });
+          }
+
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -74,7 +121,6 @@ export class AdminTraHangComponent implements OnInit {
           this.yeuCauPage = null;
           this.totalPages = 0;
           this.isLoading = false;
-         
           this.cdr.detectChanges();
         }
       });
@@ -85,7 +131,34 @@ export class AdminTraHangComponent implements OnInit {
           this.totalPages = response.page.totalPages || 0;
           this.errorMessage = null;
           this.isLoading = false;
-          
+
+          // Lấy thông tin spct (bao gồm tenSanPham) cho từng yeuCau
+          if (this.yeuCauPage.content && this.yeuCauPage.content.length) {
+            this.yeuCauPage.content.forEach(yeuCau => {
+              if (yeuCau.donHang?.id && yeuCau.spct?.idSpct) {
+                this.traHangService.getSpctByDonHang(yeuCau.donHang.id.toString()).subscribe({
+                  next: (spctDetails) => {
+                    const matchingSpct = spctDetails.find(spct => spct.idSpct === yeuCau.spct?.idSpct);
+                    if (matchingSpct) {
+                      yeuCau.spct = {
+                        idSpct: yeuCau.spct.idSpct,
+                        tenSanPham: matchingSpct.tenSanPham,
+                        maxQuantity: matchingSpct.maxQuantity,
+                        dungTich: matchingSpct.dungTich,
+                        hasReturnRequest: matchingSpct.hasReturnRequest,
+                        trangThai: matchingSpct.trangThai
+                      };
+                    }
+                    this.cdr.detectChanges(); // Cập nhật giao diện
+                  },
+                  error: (error) => {
+                    console.error(`Lỗi khi tải thông tin spct cho đơn hàng ${yeuCau.donHang.id}:`, error);
+                  }
+                });
+              }
+            });
+          }
+
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -93,7 +166,6 @@ export class AdminTraHangComponent implements OnInit {
           this.yeuCauPage = null;
           this.totalPages = 0;
           this.isLoading = false;
-         
           this.cdr.detectChanges();
         }
       });
@@ -102,7 +174,6 @@ export class AdminTraHangComponent implements OnInit {
 
   goToPage(p: number): void {
     if (p >= 0 && p < this.totalPages && p !== this.currentPage) {
-    
       this.currentPage = p;
       this.loadYeuCauTraHang();
     }
@@ -161,7 +232,6 @@ export class AdminTraHangComponent implements OnInit {
       range.push({ page: this.totalPages - 1, isEllipsis: false });
     }
 
-    
     return range;
   }
 
@@ -295,7 +365,6 @@ export class AdminTraHangComponent implements OnInit {
   }
 
   onImageError(event: Event): void {
-   
     Swal.fire({
       icon: 'error',
       title: 'Lỗi!',
@@ -306,7 +375,6 @@ export class AdminTraHangComponent implements OnInit {
   }
 
   onVideoError(event: Event): void {
-    
     Swal.fire({
       icon: 'error',
       title: 'Lỗi!',

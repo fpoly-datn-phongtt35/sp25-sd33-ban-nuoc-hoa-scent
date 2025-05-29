@@ -26,6 +26,7 @@
         <th class="border-b border-gray-200 p-3 text-left font-semibold">ID</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Tài khoản</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Mã Đơn Hàng</th>
+        <th class="border-b border-gray-200 p-3 text-left font-semibold">Tên sản phẩm</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Sản Phẩm (ID SPCT)</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Số Lượng</th>
         <th class="border-b border-gray-200 p-3 text-left font-semibold">Lý Do Trả</th>
@@ -42,11 +43,12 @@
         <td class="border-b border-gray-200 p-3">{{ yeuCau.id }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.taiKhoan?.tenDangNhap}}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.donHang?.id || 'N/A' }}</td>
+        <td class="border-b border-gray-200 p-3">{{ yeuCau.spct?.tenSanPham || 'N/A' }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.spct?.idSpct || 'N/A' }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.soLuong }}</td>
         <td class="border-b border-gray-200 p-3">{{ yeuCau.lyDoTraHang }}</td>
-        <td class="border-b border-gray-200 p-3">{{ yeuCau.tinhTrangHang }}</td>
-        <td class="border-b border-gray-200 p-3">{{ yeuCau.hinhThucTraHang }}</td>
+        <td class="border-b border-gray-200 p-3">{{ getTinhTrangHangText(yeuCau.tinhTrangHang) }}</td>
+        <td class="border-b border-gray-200 p-3">{{ getHinhThucTraHangText(yeuCau.hinhThucTraHang) }}</td>
         <td class="border-b border-gray-200 p-3">
           <div *ngIf="yeuCau.hinhAnhUrls && yeuCau.hinhAnhUrls.length > 0; else noImage">
             <img *ngFor="let url of yeuCau.hinhAnhUrls" [src]="url" alt="Hình ảnh sản phẩm"
